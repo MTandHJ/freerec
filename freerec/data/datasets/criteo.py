@@ -15,11 +15,11 @@ class Criteo(RecDataSet):
 
     cfg = Config(
         # dataset
-        sparse = Config({f"C{idx}": SparseField(name=f"C{idx}", na_value='-1', dtype=str) for idx in range(1, 27)}),
-        dense = Config({f"I{idx}": DenseField(name=f"I{idx}", na_value=0., dtype=float) for idx in range(1, 14)}),
-        label = Config({'label': SparseField(name='label', na_value=None, dtype=int)})
+        sparse = [SparseField(name=f"C{idx}", na_value='-1', dtype=str) for idx in range(1, 27)],
+        dense = [DenseField(name=f"I{idx}", na_value=0., dtype=float) for idx in range(1, 14)],
+        label = [SparseField(name='label', na_value=None, dtype=int)]
     )
-    cfg.fields = cfg.label | cfg.dense | cfg.sparse
+    cfg.fields = cfg.label + cfg.dense + cfg.sparse
 
     open_kw = Config(mode='rt', delimiter=',', skip_lines=1)
 
@@ -39,7 +39,7 @@ class Criteo(RecDataSet):
 
     def row_processer(self, row):
         return {
-            name: caster(val) for val, name, caster in zip(row, self.cfg.fields.keys(), self.cfg.fields.values())
+            field.name: field(val) for val, field in zip(row, self.cfg.fields)
         }
 
     def __iter__(self) -> Iterator:

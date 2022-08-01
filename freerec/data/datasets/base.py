@@ -1,22 +1,21 @@
 
 
 
-from typing import Iterable, Iterator, Any, Hashable, Union
+from typing import Dict, Iterable, Iterator, Hashable, Union, List
 
 import torch
 import torchdata.datapipes as dp
 import pandas as pd
 from collections import defaultdict
-from itertools import chain
 
-from ..features import SparseField, DenseField
+from ..features import Field, SparseField, DenseField
 from ...dict2obj import Config
 
 
 
 __all__ = ['RecDataSet', 'Encoder']
 
-def _add(field: defaultdict, val: Hashable, key: str = 'nums'):
+def _count(field: defaultdict, val: Hashable, key: str = 'nums'):
     field[key][val] += 1
 
 def _min(field: dict, val: Union[int, float], key: str = 'min'):
@@ -27,7 +26,7 @@ def _max(field: dict, val: Union[int, float], key: str = 'max'):
 
 
 STATISTICS = {
-    "nums": _add, # sparse
+    "nums": _count, # sparse
     "min": _min, # dense
     "max": _max # dense
 }
@@ -44,18 +43,18 @@ class RecDataSet(dp.iter.IterDataPipe):
 
     def summary(self):
         data = dict(datasize=0)
-        data.update({field: dict(nums=defaultdict(int)) for field in self.cfg.sparse.keys()})
-        data.update({field: dict(min=float('inf'), max=float('-inf')) for field in self.cfg.dense.keys()})
-        data.update({field: dict(nums=defaultdict(int)) for field in self.cfg.label.keys()})
+        data.update({field.name: dict(nums=defaultdict(int)) for field in self.cfg.sparse})
+        data.update({field.name: dict(min=float('inf'), max=float('-inf')) for field in self.cfg.dense})
+        data.update({field.name: dict(nums=defaultdict(int)) for field in self.cfg.label})
 
         for row in self:
             data['datasize'] += 1
-            for field, val in row.items():
-                for key in data[field]:
-                    STATISTICS[key](data[field], val, key)
+            for field_name, val in row.items():
+                for key in data[field_name]:
+                    STATISTICS[key](data[field_name], val, key)
 
         for fields in self.cfg.values():
-            for field in fields.values(): 
+            for field in fields: 
                 item = data[field.name]
                 if isinstance(field, SparseField):
                     field.fit(list(sorted(item['nums'].keys())))
@@ -100,23 +99,21 @@ class Encoder(dp.iter.IterDataPipe):
         self.shuffle = shuffle
         self.buffer_size = (buffer_size // batch_size) * batch_size
 
-        self.cfg = self.source.cfg
-        if fields is None:
-            self.fields = list(self.cfg.fields.keys())
-        else:
-            self.fields = fields
+        self.fields: List[Field] = self.source.cfg.fields
+        if fields:
+            self.fields = [field for field in self.fields if field.name in fields]
 
-    def fields_filter(self, row: dict):
-        return {field: row[field] for field in self.fields}
+    def fields_filter(self, row: dict) -> Dict:
+        return {field.name: row[field.name] for field in self.fields}
 
-    def batch_processor(self, batch: pd.DataFrame) -> pd.DataFrame:
-        return  {field: self.cfg.fields[field].transform(batch[field]) for field in self.fields}
+    def batch_processor(self, batch: List) -> Dict:
+        return  {field.name: field.transform(batch[field.name]) for field in self.fields}
 
     def __iter__(self) -> Iterator:
         datapipe = self.source
         datapipe = datapipe.map(self.fields_filter)
         if self.shuffle:
-            datapipe = datapipe.shuffle(buffer_size=self.shuffle)
+            datapipe = datapipe.shuffle(buffer_size=self.buffer_size)
         datapipe = datapipe.sharder()
         datapipe = datapipe.batch(batch_size=self.batch_size)
         datapipe = datapipe.collate()
