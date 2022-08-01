@@ -43,9 +43,8 @@ class RecDataSet(dp.iter.IterDataPipe):
 
     def summary(self):
         data = dict(datasize=0)
-        data.update({field.name: dict(nums=defaultdict(int)) for field in self.cfg.sparse})
-        data.update({field.name: dict(min=float('inf'), max=float('-inf')) for field in self.cfg.dense})
-        data.update({field.name: dict(nums=defaultdict(int)) for field in self.cfg.label})
+        data.update({field.name: dict(nums=defaultdict(int)) for field in SparseField.filter(self.cfg.fields)})
+        data.update({field.name: dict(min=float('inf'), max=float('-inf')) for field in DenseField.filter(self.cfg.fields)})
 
         for row in self:
             data['datasize'] += 1
@@ -53,14 +52,13 @@ class RecDataSet(dp.iter.IterDataPipe):
                 for key in data[field_name]:
                     STATISTICS[key](data[field_name], val, key)
 
-        for fields in self.cfg.values():
-            for field in fields: 
-                item = data[field.name]
-                if isinstance(field, SparseField):
-                    field.fit(list(sorted(item['nums'].keys())))
-                elif isinstance(field, DenseField):
-                    field.fit(lower=item['min'], upper=item['max'])
         self.cfg.datasize = data['datasize']
+        for field in SparseField.filter(self.cfg.fields):
+            item = data[field.name]
+            field.fit(list(sorted(item['nums'].keys())))
+        for field in DenseField.filter(self.cfg.fields):
+            item = data[field.name]
+            field.fit(lower=item['min'], upper=item['max'])
 
 
 @dp.functional_datapipe("sharder")
