@@ -1,7 +1,7 @@
 
 
-from gc import callbacks
 from typing import Callable, Iterable, List, Dict
+from pyparsing import Optional
 
 import torch
 import os
@@ -12,7 +12,6 @@ from collections import defaultdict
 from .dict2obj import Config
 from .utils import AverageMeter, getLogger
 from .metrics import *
-
 
 
 DEFAULT_METRICS = {
@@ -108,17 +107,26 @@ class Coach:
                             fmt=DEFAULT_FMTS[callback]
                         )
                     )
-        self.callbacks = set(self.meters.train.keys())
 
-    def summary(self, epoch: int):
+    def callback(
+        self, *values,
+        n: int = 1, mode: str = 'mean', 
+        prefix: str = 'train', pool: Optional[List] = None
+    ):
+        metrics: Dict[List] = self.meters[prefix]
+        for metric in pool:
+            for meter in metrics.get(metric, []):
+                meter(*values, n=n, mode=mode)
+
+    def step(self, epoch: int):
         for prefix, callbacks in self.meters.items():
             callbacks: defaultdict[str, List[AverageMeter]]
             infos = [f"[Epoch: {epoch:<4d}]" + prefix + " >>> "]
             for meters in callbacks.values():
-                infos += [str(meter) for meter in meters if meter.active]
+                infos += [meter.step() for meter in meters if meter.active]
             getLogger().info('\t'.join(infos))
 
-    def over(self):
+    def summary(self):
         for prefix, callbacks in self.meters.items():
             callbacks: defaultdict[str, List[AverageMeter]]
             for meters in callbacks.values():
@@ -128,22 +136,44 @@ class Coach:
 
     def train(self, trainloader: Iterable):
         self.model.train()
-        for data in trainloader:
-            data = {item.to(self.device) for item in data}
+        inputs: Dict[str, torch.Tensor]
+        targets: torch.Tensor
+        for inputs, targets in trainloader:
+            inputs = {field: val.to(self.device) for field, val in inputs.items()}
+            targets = targets.to(self.device)
 
-            self.model.train() # make sure in training mode
-            outs = self.model(data)
-            loss = self.criterion(outs, data)
+            outs = self.model(inputs)
+            loss = self.criterion(outs, targets)
 
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
+            
+            self.callback(loss.item(), n=targets.size(0), mode="mean", prefix='train', pool=['LOSS'])
 
         self.lr_scheduler.step() # TODO: step() per epoch or per mini-batch ?
-        return self.meter.loss.avg
 
 
-    def evaluate(self, dataloader: Iterable): ...
+    @torch.no_grad()
+    def evaluate(self, dataloader: Iterable, prefix: str = 'valid'):
+        self.model.eval()
+        inputs: Dict[str, torch.Tensor]
+        targets: Dict[str, torch.Tensor]
+        for inputs, targets in dataloader:
+            inputs = {field: val.to(self.device) for field, val in inputs.items()}
+            targets = {field: val.to(self.device) for field, val in targets.items()}
+
+            preds = self.model(inputs)
+            loss = self.criterion(preds, targets)
+
+            self.callback(
+                preds, targets, 
+                n=targets.size(0), mode="mean", prefix=prefix,
+                pool=['NDCG', 'RECALL', 'PRECISION', 'HITRATE', 'MSE', 'MAE', 'RMSE']
+            )
+            if prefix == 'valid':
+                self.callback(loss, n=targets.size(0), mode="mean", prefix=prefix, pool=['LOSS'])
+
 
     def fit(
         self, trainloader: Iterable, validloader: Iterable,
@@ -154,14 +184,14 @@ class Coach:
                 self.save_checkpoint(epoch)
             if epoch % self.cfg.EVAL_FREQ == 0:
                 if self.cfg.EVAL_TRAIN:
-                    self.evaluate(trainloader)
+                    self.evaluate(trainloader, prefix='train')
                 if self.cfg.EVAL_VALID:
-                    results = self.evaluate(validloader)
+                    results = self.evaluate(validloader, prefix='valid')
                     self.check_best(results)
             
             self.train(trainloader)
 
-            self.summary(epoch)
-        
-        self.over()
+            self.step(epoch)
+        self.save()
+        self.summary()
 

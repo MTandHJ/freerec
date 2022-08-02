@@ -10,7 +10,6 @@ import random
 import os
 from freeplot.base import FreePlot
 
-
 from .dict2obj import Config
 
 
@@ -24,7 +23,7 @@ LOGGER = Config(
 )
 
 
-def _identity(value):
+def _unitary(value):
     return value
 
 class AverageMeter:
@@ -35,7 +34,7 @@ class AverageMeter:
         self.reset()
         self.history = []
         self.active = False
-        self.__metric = metric if metric else _identity
+        self.__metric = metric if metric else _unitary
 
     def reset(self) -> None:
         self.val = 0.
@@ -54,14 +53,15 @@ class AverageMeter:
             raise ValueError(f"Receive mode {mode} but 'mean' or 'sum' expected ...")
         self.avg = self.sum / self.count
 
-    def step(self):
+    def step(self) -> str:
         self.history.append(self.avg)
         self.reset()
+        return str(self)
 
-    def callback(self, *args, **kwargs):
-        val = self.__metric(*args, **kwargs)
+    def callback(self, *values):
+        val = self.__metric(*values)
         try:
-            return val.item # Tensor|ndarray
+            return val.item() # Tensor|ndarray
         except AttributeError:
             return val # float
 
@@ -84,29 +84,13 @@ class AverageMeter:
         fmtstr = "{name} Avg:{avg:{fmt}}"
         return fmtstr.format(**self.__dict__)
 
-    def __call__(self, values, *, n: int = 1, mode: str = "mean", **kwargs) -> None:
+    def __call__(self, *values, n: int = 1, mode: str = "mean")  -> None:
         self.active = True
         self.update(
-            val = self.callback(values, **kwargs),
+            val = self.callback(*values),
             n = n,
             mode = mode
         )
-
-class ProgressMeter:
-
-    def __init__(self, *meters: AverageMeter, prefix: str = ""):
-        self.meters = list(meters)
-        self.prefix = prefix
-
-    def display(self, *, epoch: int = 8888) -> None:
-        entries = [f"[Epoch: {epoch:<4d}]" + self.prefix]
-        entries += [str(meter) for meter in self.meters]
-        logger = getLogger()
-        logger.info('\t'.join(entries))
-
-    def step(self) -> None:
-        for meter in self.meters:
-            meter.step()
 
 
 def set_logger(

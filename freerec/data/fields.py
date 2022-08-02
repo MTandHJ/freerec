@@ -9,7 +9,10 @@ from sklearn.preprocessing import LabelEncoder
 from .utils import safe_cast
 
 
+
 class Field(torch.nn.Module):
+    
+    is_feature: bool
 
     def __init__(self, name: str, na_value: Union[str, int, float], dtype: Callable):
         """
@@ -56,6 +59,8 @@ class Field(torch.nn.Module):
 
 class SparseField(Field):
 
+    is_feature: bool = True
+
     def fit(self, enum: Iterable):
         """
         enum: all possible values (unique)
@@ -79,6 +84,7 @@ class SparseField(Field):
 
 class DenseField(Field):
 
+    is_feature: bool = True
     
     def fit(self, lower: float, upper: float, bound: Tuple = (0., 1.)):
         """
@@ -96,8 +102,13 @@ class DenseField(Field):
         return (x * self.scale_ + self.min_).float()
 
 
-class LabelField(SparseField): ...
+class LabelField(SparseField): 
+    is_feature: bool = False
+    ...
+
 class TagetField(DenseField):
+
+    is_feature: bool = False
 
     def fit(self, lower: float, upper: float, bound: Tuple = (0, 1)):
         ...
@@ -111,8 +122,8 @@ class Tokenizer(torch.nn.Module):
     def __init__(self, fields: Iterable[Field]) -> None:
         super().__init__()
 
-        self.sparse = torch.nn.ModuleList(SparseField.filter(fields))
-        self.dense = torch.nn.ModuleList(DenseField.filter(fields))
+        self.sparse = torch.nn.ModuleList(SparseField.filter(fields, strict=True))
+        self.dense = torch.nn.ModuleList(DenseField.filter(fields, strict=True))
 
     def look_up(self, inputs: Dict[torch.Tensor]) -> List[torch.Tensor]:
         """

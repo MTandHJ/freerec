@@ -1,7 +1,7 @@
 
 
 
-from typing import Dict, Iterable, Iterator, Hashable, Union, List
+from typing import Dict, Iterable, Iterator, Hashable, Tuple, Union, List
 
 import torch
 import torchdata.datapipes as dp
@@ -99,12 +99,16 @@ class Encoder(dp.iter.IterDataPipe):
         self.fields: List[Field] = self.source.cfg.fields
         if fields:
             self.fields = [field for field in self.fields if field.name in fields]
+        self.features = [field for field in self.fields if field.is_feature]
+        self.target = [field for field in self.fields if not field.is_feature][0] # TODO: multi-targets ?
 
     def fields_filter(self, row: dict) -> Dict:
         return {field.name: row[field.name] for field in self.fields}
 
-    def batch_processor(self, batch: List) -> Dict:
-        return  {field.name: field.transform(batch[field.name]) for field in self.fields}
+    def batch_processor(self, batch: List) -> Tuple[Dict, torch.Tensor]:
+        features = {field.name: field.transform(batch[field.name]) for field in self.features}
+        targets = self.target.transform(batch[self.target.name])
+        return features, targets
 
     def __iter__(self) -> Iterator:
         datapipe = self.source
