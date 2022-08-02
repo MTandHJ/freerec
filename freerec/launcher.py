@@ -1,7 +1,6 @@
 
 
-from typing import Callable, Iterable, List, Dict
-from pyparsing import Optional
+from typing import Callable, Iterable, List, Dict, Optional
 
 import torch
 import os
@@ -63,7 +62,7 @@ class Coach:
         path = os.path.join(self.cfg.INFO_PATH, self.cfg.CHECKPOINT_FILENAME)
         checkpoint = dict()
         checkpoint['epoch'] = epoch
-        for module in self.CHECKPOINT_MODULES:
+        for module in self.cfg.CHECKPOINT_MODULES:
             checkpoint[module] = getattr(self, module).state_dict()
         torch.save(checkpoint, path)
 
@@ -87,7 +86,8 @@ class Coach:
             valid=defaultdict(list)
         )
         for name in callbacks:
-            if '@' in callback:
+            name = name.upper()
+            if '@' in name:
                 callback, K = name.split('@')
                 for prefix in self.meters:
                     self.meters[prefix][callback].append(
@@ -121,7 +121,7 @@ class Coach:
     def step(self, epoch: int):
         for prefix, callbacks in self.meters.items():
             callbacks: defaultdict[str, List[AverageMeter]]
-            infos = [f"[Epoch: {epoch:<4d}]" + prefix + " >>> "]
+            infos = [f"[Epoch: {epoch:<3d}] " + prefix.upper() + " >>> "]
             for meters in callbacks.values():
                 infos += [meter.step() for meter in meters if meter.active]
             getLogger().info('\t'.join(infos))
@@ -161,7 +161,7 @@ class Coach:
         targets: Dict[str, torch.Tensor]
         for inputs, targets in dataloader:
             inputs = {field: val.to(self.device) for field, val in inputs.items()}
-            targets = {field: val.to(self.device) for field, val in targets.items()}
+            targets = targets.to(self.device)
 
             preds = self.model(inputs)
             loss = self.criterion(preds, targets)

@@ -148,7 +148,7 @@ class Tokenizer(torch.nn.Module):
         """
         List[torch.Tensor: B x k x d] -> torch.Tensor: B x (k1 x d1 + k2 x d2 + ...)
         """
-        return torch.cat([input_.flatten(1) for input_ in inputs])
+        return torch.cat([input_.flatten(1) for input_ in inputs], dim=1)
 
     def dimension(self, features: Union[str, List] = 'all'):
         """

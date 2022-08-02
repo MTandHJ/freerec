@@ -55,8 +55,9 @@ class AverageMeter:
 
     def step(self) -> str:
         self.history.append(self.avg)
+        info = str(self)
         self.reset()
-        return str(self)
+        return info
 
     def callback(self, *values):
         val = self.__metric(*values)
@@ -81,7 +82,7 @@ class AverageMeter:
         self.fp.savefig(os.path.join(path, filename))
 
     def __str__(self):
-        fmtstr = "{name} Avg:{avg:{fmt}}"
+        fmtstr = "{name} Avg: {avg:{fmt}}"
         return fmtstr.format(**self.__dict__)
 
     def __call__(self, *values, n: int = 1, mode: str = "mean")  -> None:

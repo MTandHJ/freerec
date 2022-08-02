@@ -5,7 +5,6 @@ from typing import Dict, List
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from .base import RecSysArch
 
@@ -33,6 +32,7 @@ class DeepFM(RecSysArch):
             # nn.BatchNorm1d(128),
             nn.ReLU(True),
             # nn.Dropout(0.)
+            nn.Linear(128, 1)
         )
         self.bias = nn.parameter.Parameter(torch.zeros((1,)), requires_grad=True)
 
@@ -47,7 +47,7 @@ class DeepFM(RecSysArch):
         )
         outs = outs_linear + outs_fm + outs_dnn + self.bias
 
-        return F.sigmoid(outs) # B x 1
+        return outs.sigmoid() # B x 1
 
 
 
