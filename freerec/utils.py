@@ -1,16 +1,23 @@
 
 
-from typing import Optional
 import torch
-import torch.nn as nn
 import numpy as np
 
 import logging
 import time
 import random
 import os
+from .dict2obj import Config
 
-from .config import SAVED_FILENAME, LOGGER, DEVICE
+
+LOGGER = Config(
+    name='RecSys', filename='log.txt', level=logging.DEBUG,
+    filelevel=logging.DEBUG, consolelevel=logging.INFO,
+    formatter=Config(
+        filehandler=logging.Formatter('%(asctime)s:\t%(message)s'),
+        consolehandler=logging.Formatter('%(message)s')
+    )
+)
 
 
 
@@ -64,7 +71,7 @@ class ProgressMeter:
 
 
 def set_logger(
-    path: str, 
+    path: str,
     log2file: bool = True, log2console: bool = True
 ) -> None:
     logger = logging.getLogger(LOGGER.name)
@@ -113,44 +120,30 @@ def mkdirs(*paths: str) -> None:
         except FileExistsError:
             pass
 
-def readme(path: str, opts: "parser", mode: str = "w") -> None:
-    """
-    opts: the argparse
-    """
-    import time
-    time_ = time.strftime("%Y-%m-%d-%H:%M:%S")
-    filename = path + "/README.md"
-    s = "|  {0[0]}  |   {0[1]}    |\n"
-    info = "\n## {0} \n\n\n".format(time_)
-    info += "|  Attribute   |   Value   |\n"
-    info += "| :-------------: | :-----------: |\n"
-    for item in opts._get_kwargs():
-        info += s.format(item)
-    with open(filename, mode, encoding="utf8") as fh:
-        fh.write(info)
 
-# load model's parameters
-def load(
-    model: nn.Module, 
-    path: str, 
-    device: torch.device = DEVICE,
-    filename: str = SAVED_FILENAME,
-    strict: bool = True, 
-    except_key: Optional[str] = None
-) -> None:
 
-    filename = os.path.join(path, filename)
-    if str(device) == "cpu":
-        state_dict = torch.load(filename, map_location="cpu")
+# # load model's parameters
+# def load(
+#     model: nn.Module, 
+#     path: str, 
+#     device: torch.device,
+#     filename: str,
+#     strict: bool = True, 
+#     except_key: Optional[str] = None
+# ) -> None:
+
+#     filename = os.path.join(path, filename)
+#     if str(device) == "cpu":
+#         state_dict = torch.load(filename, map_location="cpu")
         
-    else:
-        state_dict = torch.load(filename)
-    if except_key is not None:
-        except_keys = list(filter(lambda key: except_key in key, state_dict.keys()))
-        for key in except_keys:
-            del state_dict[key]
-    model.load_state_dict(state_dict, strict=strict)
-    model.eval()
+#     else:
+#         state_dict = torch.load(filename)
+#     if except_key is not None:
+#         except_keys = list(filter(lambda key: except_key in key, state_dict.keys()))
+#         for key in except_keys:
+#             del state_dict[key]
+#     model.load_state_dict(state_dict, strict=strict)
+#     model.eval()
 
 
 def save_checkpoint(path: str, epoch: int, **kwargs) -> None:

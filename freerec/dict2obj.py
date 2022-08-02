@@ -60,7 +60,7 @@ class Config(dict):
 
     def __str__(self) -> str:
         item = "[{name}: {val}] \n"
-        infos = f"[{self.__class__.__name__.upper()}] " + self.prefix + ": \n"
+        infos = f"[{self.__class__.__name__.upper()}] " + self.prefix + "\n"
         for name, val in self.items():
             infos += item.format(name=name, val=val)
         return infos
