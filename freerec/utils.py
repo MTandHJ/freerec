@@ -1,5 +1,6 @@
 
 
+from typing import Callable, Optional, Any
 import torch
 import numpy as np
 
@@ -7,6 +8,9 @@ import logging
 import time
 import random
 import os
+from freeplot.base import FreePlot
+
+
 from .dict2obj import Config
 
 
@@ -20,13 +24,18 @@ LOGGER = Config(
 )
 
 
+def _identity(value):
+    return value
 
 class AverageMeter:
 
-    def __init__(self, name: str, fmt: str = ".5f"):
+    def __init__(self, name: str, metric: Optional[Callable] = None, fmt: str = ".5f"):
         self.name = name
         self.fmt = fmt
         self.reset()
+        self.history = []
+        self.active = False
+        self.__metric = metric if metric else _identity
 
     def reset(self) -> None:
         self.val = 0.
@@ -42,13 +51,46 @@ class AverageMeter:
         elif mode == "sum":
             self.sum += val
         else:
-            raise ValueError(f"Receive mode {mode} but [mean|sum] expected ...")
+            raise ValueError(f"Receive mode {mode} but 'mean' or 'sum' expected ...")
         self.avg = self.sum / self.count
+
+    def step(self):
+        self.history.append(self.avg)
+        self.reset()
+
+    def callback(self, *args, **kwargs):
+        val = self.__metric(*args, **kwargs)
+        try:
+            return val.item # Tensor|ndarray
+        except AttributeError:
+            return val # float
+
+    def plot(self) -> None:
+        self.fp = FreePlot(
+            shape=(1, 1),
+            figsize=(2.2, 2),
+            titles=(self.name,),
+            dpi=300, latex=False
+        )
+        timeline = np.arange(1, len(self.history) + 1)
+        self.fp.lineplot(timeline, self.history, marker='')
+        self.fp.set_title(y=.98)
+    
+    def save(self, path: str, prefix: str = '') -> None:
+        filename = f"{prefix}{self.name}.png"
+        self.fp.savefig(os.path.join(path, filename))
 
     def __str__(self):
         fmtstr = "{name} Avg:{avg:{fmt}}"
         return fmtstr.format(**self.__dict__)
 
+    def __call__(self, values, *, n: int = 1, mode: str = "mean", **kwargs) -> None:
+        self.active = True
+        self.update(
+            val = self.callback(values, **kwargs),
+            n = n,
+            mode = mode
+        )
 
 class ProgressMeter:
 
@@ -62,12 +104,9 @@ class ProgressMeter:
         logger = getLogger()
         logger.info('\t'.join(entries))
 
-    def add(self, *meters: AverageMeter) -> None:
-        self.meters += list(meters)
-
     def step(self) -> None:
         for meter in self.meters:
-            meter.reset()
+            meter.step()
 
 
 def set_logger(
@@ -111,7 +150,6 @@ def timemeter(prefix=""):
         wrapper.__name__ = func.__name__
         return wrapper
     return decorator
-        
 
 def mkdirs(*paths: str) -> None:
     for path in paths:
@@ -120,50 +158,6 @@ def mkdirs(*paths: str) -> None:
         except FileExistsError:
             pass
 
-
-
-# # load model's parameters
-# def load(
-#     model: nn.Module, 
-#     path: str, 
-#     device: torch.device,
-#     filename: str,
-#     strict: bool = True, 
-#     except_key: Optional[str] = None
-# ) -> None:
-
-#     filename = os.path.join(path, filename)
-#     if str(device) == "cpu":
-#         state_dict = torch.load(filename, map_location="cpu")
-        
-#     else:
-#         state_dict = torch.load(filename)
-#     if except_key is not None:
-#         except_keys = list(filter(lambda key: except_key in key, state_dict.keys()))
-#         for key in except_keys:
-#             del state_dict[key]
-#     model.load_state_dict(state_dict, strict=strict)
-#     model.eval()
-
-
-def save_checkpoint(path: str, epoch: int, **kwargs) -> None:
-    path = os.path.join(path, "checkpoint.tar")
-    checkpoint = dict()
-    checkpoint['epoch'] = epoch
-    for key, module in kwargs.items():
-        checkpoint[key] = module.state_dict()
-    torch.save(checkpoint, path)
-
-# load the checkpoint
-def load_checkpoint(
-    path: str, **kwargs
-) -> int:
-    path = os.path.join(path, "checkpoint.tar")
-    checkpoint = torch.load(path)
-    for key, module in kwargs.items():
-        module.load_state_dict(checkpoint[key])
-    epoch = checkpoint['epoch']
-    return epoch
 
 def activate_benchmark(benchmark: bool) -> None:
     from torch.backends import cudnn

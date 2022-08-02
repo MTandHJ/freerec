@@ -5,10 +5,9 @@ from typing import Dict, Iterable, Iterator, Hashable, Union, List
 
 import torch
 import torchdata.datapipes as dp
-import pandas as pd
 from collections import defaultdict
 
-from ..features import Field, SparseField, DenseField
+from ..fields import Field, SparseField, DenseField
 from ...dict2obj import Config
 
 

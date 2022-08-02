@@ -2,15 +2,6 @@
 
 
 
-
-
-# Here are some basic settings.
-# It could be overwritten if you want to specify
-# some configs. However, please check the correspoding
-# codes in loadopts.py.
-
-
-
 import torch
 import time
 import yaml
@@ -29,8 +20,7 @@ CONFIG = Config(
     BENCHMARK = True, # activate cudnn.benchmark if True
     SEED = -1, # -1 for random
 
-    # checkpoint
-    SAVE_FREQ = 1,
+    # evaluation
     EVAL_FREQ = 5,
     EVAL_TRAIN = False,
     EVAL_VALID = True,
@@ -39,9 +29,13 @@ CONFIG = Config(
     log2file = True, 
     log2console = True,
 
-    # PATH
-    SAVED_FILENAME = "paras.pt", # the filename of saved model paramters
+    # path|file
+    SAVED_FILENAME = "model.pt", # the filename of saved model paramters
+    CHECKPOINT_FREQ = 1,
+    CHECKPOINT_MODULES = ['model', 'optimizer', 'lr_scheduler'],
+    CHECKPOINT_FILENAME = "checkpoint.tar",
     description = "RecSys"
+
 )
 
 
