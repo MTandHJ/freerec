@@ -9,7 +9,7 @@ from collections import defaultdict
 
 
 from .dict2obj import Config
-from .utils import AverageMeter, getLogger
+from .utils import AverageMeter, getLogger, timemeter
 from .metrics import *
 
 
@@ -56,7 +56,7 @@ class Coach:
 
       
     def save(self) -> None:
-        torch.save(self.model.state_dict(), os.path.join(self.cfg.INFO_PATH, self.cfg.FILENAME))
+        torch.save(self.model.state_dict(), os.path.join(self.cfg.INFO_PATH, self.cfg.SAVED_FILENAME))
 
     def save_checkpoint(self, epoch: int) -> None:
         path = os.path.join(self.cfg.INFO_PATH, self.cfg.CHECKPOINT_FILENAME)
@@ -69,14 +69,15 @@ class Coach:
     def load_checkpoint(self) -> int:
         path = os.path.join(self.cfg.INFO_PATH, self.cfg.CHECKPOINT_FILENAME)
         checkpoint = torch.load(path)
-        for module in self.CHECKPOINT_MODULES:
+        for module in self.cfg.CHECKPOINT_MODULES:
             getattr(self, module).load_state_dict(checkpoint[module])
         return checkpoint['epoch']
 
     def save_best(self, path: str, prefix: str): ...
 
     def check_best(self, results: dict): ...
-    
+
+    @timemeter("Coach/compile")
     def compile(
         self, cfg: Config, callbacks: List[str]
     ):
@@ -118,6 +119,7 @@ class Coach:
             for meter in metrics.get(metric, []):
                 meter(*values, n=n, mode=mode)
 
+    @timemeter("Coach/step")
     def step(self, epoch: int):
         for prefix, callbacks in self.meters.items():
             callbacks: defaultdict[str, List[AverageMeter]]
@@ -126,6 +128,7 @@ class Coach:
                 infos += [meter.step() for meter in meters if meter.active]
             getLogger().info('\t'.join(infos))
 
+    @timemeter("Coach/summary")
     def summary(self):
         for prefix, callbacks in self.meters.items():
             callbacks: defaultdict[str, List[AverageMeter]]
@@ -134,6 +137,7 @@ class Coach:
                     meter.plot()
                     meter.save(path=self.cfg.LOG_PATH, prefix=prefix)
 
+    @timemeter("Coach/train")
     def train(self, trainloader: Iterable):
         self.model.train()
         inputs: Dict[str, torch.Tensor]
@@ -153,7 +157,7 @@ class Coach:
 
         self.lr_scheduler.step() # TODO: step() per epoch or per mini-batch ?
 
-
+    @timemeter("Coach/evaluate")
     @torch.no_grad()
     def evaluate(self, dataloader: Iterable, prefix: str = 'valid'):
         self.model.eval()
@@ -174,11 +178,18 @@ class Coach:
             if prefix == 'valid':
                 self.callback(loss, n=targets.size(0), mode="mean", prefix=prefix, pool=['LOSS'])
 
+    @timemeter("Coach/resume")
+    def resume(self):
+        start_epoch = self.load_checkpoint() if self.cfg.resume else 0
+        getLogger().info(f"Load the recent checkpoint and train from epoch: {start_epoch}")
+        return start_epoch
 
+    @timemeter("Coach/fit")
     def fit(
         self, trainloader: Iterable, validloader: Iterable,
-        *, epochs: int, start_epoch: int = 0
+        *, epochs: int
     ):
+        start_epoch = self.resume()
         for epoch in range(start_epoch, epochs):
             if epoch % self.cfg.CHECKPOINT_FREQ == 0:
                 self.save_checkpoint(epoch)

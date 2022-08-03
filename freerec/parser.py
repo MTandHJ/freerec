@@ -2,6 +2,7 @@
 
 
 
+import argparse
 import torch
 import time
 import yaml
@@ -43,6 +44,7 @@ class Parser(Config):
 
     def __init__(self) -> None:
         super().__init__(**CONFIG)
+        self.parse()
 
     def readme(self, path: str, mode: str = "w") -> None:
         time_ = time.strftime("%Y-%m-%d-%H:%M:%S")
@@ -56,6 +58,7 @@ class Parser(Config):
         with open(filename, mode, encoding="utf8") as fh:
             fh.write(info)
 
+    @timemeter("Parser/load")
     def load(self, args: ArgumentParser):
         if hasattr(args, 'config') and args.config:
             with open(args.config, encoding="UTF-8", mode='r') as f:
@@ -70,8 +73,51 @@ class Parser(Config):
         for key, val in CONFIG.items():
             self[key] = val
 
+    @timemeter("Parser/parse")
+    def parse(self):
+
+        self.parser = argparse.ArgumentParser()
+
+        self.parser.add_argument("root", type=str, help="data")
+        self.parser.add_argument("--config", type=str, default=None, help=".yml")
+
+        # model
+        self.parser.add_argument("--optimizer", type=str, choices=("sgd", "adam"), default="sgd")
+        self.parser.add_argument("--nesterov", action="store_true", default=False, help="nesterov for SGD")
+        self.parser.add_argument("-mom", "--momentum", type=float, default=0.9, help="the momentum used for SGD")
+        self.parser.add_argument("-beta1", "--beta1", type=float, default=0.9, help="the first beta argument for Adam")
+        self.parser.add_argument("-beta2", "--beta2", type=float, default=0.999, help="the second beta argument for Adam")
+        self.parser.add_argument("-wd", "--weight_decay", type=float, default=1e-4, help="weight decay")
+        self.parser.add_argument("-lr", "--lr", "--LR", "--learning_rate", type=float, default=0.1)
+        self.parser.add_argument("-b", "--batch_size", type=int, default=128)
+        self.parser.add_argument("--epochs", type=int, default=10)
+
+        # eval
+        self.parser.add_argument("--eval-train", action="store_true", default=False, help="evaluate trainloader")
+        self.parser.add_argument("--eval-valid", action="store_false", default=True, help="evaluate validloader")
+        self.parser.add_argument("--eval-freq", type=int, default=5, help="the evaluation frequency for valid dataset only")
+
+        self.parser.add_argument("--num-workers", type=int, default=0)
+        self.parser.add_argument("--buffer-size", type=int, default=10000, help="buffer size for datapipe")
+
+        self.parser.add_argument("--seed", type=int, default=1, help="calling --seed=-1 for a random seed")
+        self.parser.add_argument("--benchmark", action="store_false", default=True, help="cudnn.benchmark == True ?")
+        self.parser.add_argument("--progress", action="store_true", default=False, help="show the progress if true")
+        self.parser.add_argument("--resume", action="store_true", default=False, help="resume the training from the recent checkpoint")
+
+        self.parser.add_argument("--fmt", type=str, default="{description}={optimizer}-{lr}-{weight_decay}={seed}")
+        self.parser.add_argument("-m", "--description", type=str, default="RecSys")
+
+    def add_argument(self, *args, **kwargs):
+        self.parser.add_argument(*args, **kwargs)
+
+    def set_defaults(self, **kwargs):
+        self.parser.set_defaults(**kwargs)
+
     @timemeter("Parser/compile")
-    def compile(self, args: ArgumentParser):
+    def compile(self):
+        args = self.parser.parse_args()
+        args.description = args.fmt.format(**args.__dict__)
         for key, val in args._get_kwargs():
             if key.upper() in self:
                 self[key.upper()] = val

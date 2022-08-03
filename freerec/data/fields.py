@@ -43,6 +43,9 @@ class Field(torch.nn.Module):
         func = _check_type if strict else _check_instance
         return filter(func, fields)
 
+    def embed(self, dim: int, **kwargs):
+        raise NotImplementedError()
+
     @property
     def name(self):
         return self.__name
@@ -128,7 +131,7 @@ class Tokenizer(torch.nn.Module):
     def __init__(self, fields: Iterable[Field]) -> None:
         super().__init__()
 
-        self.features = [field for field in fields if field.is_feature]
+        self.features: List[Field] = [field for field in fields if field.is_feature]
         self.sparse = torch.nn.ModuleList(SparseField.filter(fields, strict=True))
         self.dense = torch.nn.ModuleList(DenseField.filter(fields, strict=True))
 
@@ -150,7 +153,7 @@ class Tokenizer(torch.nn.Module):
         """
         return torch.cat([input_.flatten(1) for input_ in inputs], dim=1)
 
-    def dimension(self, features: Union[str, List] = 'all'):
+    def filter_features(self, features: Union[str, List] = 'all') -> List[Field]:
         """
         feautures:
             1. str: 'sparse'|'dense'|'all'(default)
@@ -168,5 +171,38 @@ class Tokenizer(torch.nn.Module):
         elif isinstance(features[0], str):
             features = [feature for feature in self.features if feature.name in features]
         else:
-            raise ValueError(f"features should be: \n {self.dimension.__doc__}")
-        return sum(feature.dimension for feature in features)
+            raise ValueError(f"features should be: \n {self.filter_features.__doc__}")
+        return features
+
+    def embed(self, dim: int, features: Union[str, List] = 'sparse', **kwargs):
+        """
+        dim: int
+        feautures:
+            1. str: 'sparse'(default)|'dense'|'all'
+            2. List[str]
+            3. List[Field]
+        Kwargs:
+            padding_idx (int, optional): If specified, the entries at :attr:`padding_idx` do not contribute to the gradient;
+                                        therefore, the embedding vector at :attr:`padding_idx` is not updated during training,
+                                        i.e. it remains as a fixed "pad". For a newly constructed Embedding,
+                                        the embedding vector at :attr:`padding_idx` will default to all zeros,
+                                        but can be updated to another value to be used as the padding vector.
+            max_norm (float, optional): If given, each embedding vector with norm larger than :attr:`max_norm`
+                                        is renormalized to have norm :attr:`max_norm`.
+            norm_type (float, optional): The p of the p-norm to compute for the :attr:`max_norm` option. Default ``2``.
+            scale_grad_by_freq (boolean, optional): If given, this will scale gradients by the inverse of frequency of
+                                                    the words in the mini-batch. Default ``False``.
+            sparse (bool, optional): If ``True``, gradient w.r.t. :attr:`weight` matrix will be a sparse tensor.
+                                    See Notes for more details regarding sparse gradients.
+        """
+        for feature in self.filter_features(features):
+            feature.embed(dim, **kwargs)
+
+    def calculate_dimension(self, features: Union[str, List] = 'all'):
+        """
+        feautures:
+            1. str: 'sparse'|'dense'|'all'(default)
+            2. List[str]
+            3. List[Field]
+        """
+        return sum(feature.dimension for feature in self.filter_features(features))

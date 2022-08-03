@@ -19,8 +19,8 @@ class DeepFM(RecSysArch):
     def __init__(self, tokenizer: Tokenizer) -> None:
         super().__init__(tokenizer)
 
-        sparse_dim = self.tokenizer.dimension('sparse')
-        dense_dim = self.tokenizer.dimension('dense')
+        sparse_dim = self.tokenizer.calculate_dimension('sparse')
+        dense_dim = self.tokenizer.calculate_dimension('dense')
         self.linear = nn.Linear(dense_dim, 1)
         self.fm = FM()
         self.dnn = nn.Sequential(

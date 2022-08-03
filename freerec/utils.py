@@ -33,7 +33,6 @@ class AverageMeter:
         self.fmt = fmt
         self.reset()
         self.history = []
-        self.active = False
         self.__metric = metric if metric else _unitary
 
     def reset(self) -> None:
@@ -41,6 +40,7 @@ class AverageMeter:
         self.avg = 0.
         self.sum = 0.
         self.count = 0
+        self.active = False
 
     def update(self, val: float, n: int = 1, mode: str = "mean") -> None:
         self.val = val

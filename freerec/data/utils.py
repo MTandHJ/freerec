@@ -5,7 +5,7 @@
 from typing import TypeVar, Callable
 
 import torch
-
+import tqdm
 
 
 T = TypeVar('T')
@@ -29,4 +29,13 @@ class DataLoader(torch.utils.data.DataLoader):
             batch_size=1, collate_fn=collate_fn, **kwargs
         )
 
-       
+
+class TQDMDataLoader(DataLoader):
+    def __iter__(self):
+        return iter(
+            tqdm(
+                super(TQDMDataLoader, self).__iter__(), 
+                leave=False, desc="վ'ᴗ' ի-"
+            )
+        )
+

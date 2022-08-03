@@ -17,7 +17,7 @@ setuptools.setup(
   long_description=long_description,
   long_description_content_type="text/markdown",
   license='MIT License',
-  url="https://github.com/MTandHJ/freeplot",
+  url="https://github.com/MTandHJ/freerec",
   packages=setuptools.find_packages(),
   python_requires='>=3.9',
   install_requires=requires,
