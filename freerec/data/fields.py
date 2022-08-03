@@ -2,7 +2,6 @@
 
 
 from typing import Callable, Iterable, Tuple, Union, Any, Dict, List
-from pyparsing import Optional
 
 import torch
 from sklearn.preprocessing import LabelEncoder
@@ -95,7 +94,7 @@ class DenseField(Field):
 
     is_feature: bool = True
     
-    def fit(self, lower: float, upper: float, bound: Tuple = (0., 1.)):
+    def fit(self, lower: float, upper: float, bound: Tuple[float, float] = (0., 1.)):
         """
         lower: minimum
         upper: maximum
@@ -119,7 +118,7 @@ class TagetField(DenseField):
 
     is_feature: bool = False
 
-    def fit(self, lower: float, upper: float, bound: Tuple = (0, 1)):
+    def fit(self, lower: float, upper: float, bound: Tuple[float, float] = (0, 1)):
         ...
 
     def transform(self, x: torch.Tensor) -> torch.Tensor:
