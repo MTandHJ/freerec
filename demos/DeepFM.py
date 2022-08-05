@@ -32,6 +32,9 @@ def main():
     tokenizer.embed(
         dim=cfg.embedding_dim, features='sparse'
     )
+    tokenizer.embed(
+        dim=cfg.embedding_dim, features='dense', linear=True
+    )
     model = DeepFM(tokenizer).to(cfg.DEVICE)
 
     if cfg.optimizer == 'sgd':
@@ -54,7 +57,7 @@ def main():
         lr_scheduler=lr_scheduler,
         device=cfg.DEVICE
     )
-    coach.compile(cfg, callbacks=['loss'])
+    coach.compile(cfg, callbacks=['loss', 'mse', 'mae', 'rmse', 'precision@100', 'recall@100', 'hitrate@100'])
     coach.fit(trainloader, validloader, epochs=cfg.epochs)
 
 

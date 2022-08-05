@@ -21,31 +21,34 @@ class DeepFM(RecSysArch):
 
         sparse_dim = self.tokenizer.calculate_dimension('sparse')
         dense_dim = self.tokenizer.calculate_dimension('dense')
-        self.linear = nn.Linear(dense_dim, 1)
+        self.linear = nn.Linear(sparse_dim + dense_dim, 1, bias=False)
         self.fm = FM()
         self.dnn = nn.Sequential(
-            nn.Linear(sparse_dim + dense_dim, 256),
-            # nn.BatchNorm1d(256),
+            nn.Linear(sparse_dim + dense_dim, 64),
+            # nn.BatchNorm1d(64),
             nn.ReLU(True),
             # nn.Dropout(0.)
-            nn.Linear(256, 128),
-            # nn.BatchNorm1d(128),
+            nn.Linear(64, 64),
+            # nn.BatchNorm1d(64),
             nn.ReLU(True),
             # nn.Dropout(0.)
-            nn.Linear(128, 1)
+            nn.Linear(64, 64),
+            # nn.BatchNorm1d(64),
+            nn.ReLU(True),
+            # nn.Dropout(0.)
+            nn.Linear(64, 1)
         )
-        self.bias = nn.parameter.Parameter(torch.zeros((1,)), requires_grad=True)
+
+        self.initialize()
 
     def forward(self, inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
-        sparse: List[torch.Tensor] = self.tokenizer.look_up(inputs)
-        dense: torch.Tensor = self.tokenizer.collect_dense(inputs)
+        sparse: List[torch.Tensor] = self.tokenizer.look_up(inputs, features='sparse')
+        dense: List[torch.Tensor] = self.tokenizer.look_up(inputs, features='dense')
 
-        outs_linear = self.linear(dense)
-        outs_fm = self.fm(sparse)
-        outs_dnn = self.dnn(
-            self.tokenizer.flatten_cat(sparse + [dense])
-        )
-        outs = outs_linear + outs_fm + outs_dnn + self.bias
+        outs_linear = self.linear(self.tokenizer.flatten_cat(sparse + dense))
+        outs_fm = self.fm(self.tokenizer.flatten_cat(sparse))
+        outs_dnn = self.dnn(self.tokenizer.flatten_cat(sparse + dense))
+        outs = outs_linear + outs_fm + outs_dnn
 
         return outs.sigmoid() # B x 1
 

@@ -15,25 +15,36 @@ from .metrics import *
 
 DEFAULT_METRICS = {
     'LOSS': None,
-    'NDCG': normalized_dcg,
-    'RECALL': recall,
-    'PRECISION': precision,
-    'HITRATE': hit_rate,
+    #############
     'MSE': mean_squared_error,
     'MAE': mean_abs_error,
-    'RMSE': root_mse
+    'RMSE': root_mse,
+    #############
+    'PRECISION': precision,
+    'RECALL': recall,
+    'HITRATE': hit_rate,
+    #############
+    'NDCG': normalized_dcg,
+    'MRR': mean_reciprocal_rank,
+    'MAP': mean_average_precision
 }
 
 DEFAULT_FMTS = {
     'LOSS': ".5f",
-    'NDCG': ".4f",
-    'RECALL': ".4f",
-    'PRECISION': ".3%",
-    'HITRATE': ".3%",
+    #############
     'MSE': ".4f",
     'MAE': ".4f",
-    'RMSE': ".4f"
+    'RMSE': ".4f",
+    #############
+    'PRECISION': ".3%",
+    'RECALL': ".3%",
+    'HITRATE': ".3%",
+    #############
+    'NDCG': ".4f",
+    'MRR': ".4f",
+    'MAP': ".4f",
 }
+
 
 
 class Coach:
@@ -126,7 +137,7 @@ class Coach:
             infos = [f"[Epoch: {epoch:<3d}] " + prefix.upper() + " >>> "]
             for meters in callbacks.values():
                 infos += [meter.step() for meter in meters if meter.active]
-            getLogger().info('\t'.join(infos))
+            getLogger().info(' || '.join(infos))
 
     @timemeter("Coach/summary")
     def summary(self):
@@ -163,6 +174,8 @@ class Coach:
         self.model.eval()
         inputs: Dict[str, torch.Tensor]
         targets: Dict[str, torch.Tensor]
+        running_preds: List[torch.Tensor] = []
+        running_targets: List[torch.Tensor] = []
         for inputs, targets in dataloader:
             inputs = {field: val.to(self.device) for field, val in inputs.items()}
             targets = targets.to(self.device)
@@ -170,13 +183,19 @@ class Coach:
             preds = self.model(inputs)
             loss = self.criterion(preds, targets)
 
-            self.callback(
-                preds, targets, 
-                n=targets.size(0), mode="mean", prefix=prefix,
-                pool=['NDCG', 'RECALL', 'PRECISION', 'HITRATE', 'MSE', 'MAE', 'RMSE']
-            )
+            running_preds.append(preds.detach().clone().cpu().flatten())
+            running_targets.append(targets.detach().clone().cpu().flatten())
+            
             if prefix == 'valid':
                 self.callback(loss, n=targets.size(0), mode="mean", prefix=prefix, pool=['LOSS'])
+
+        running_preds = torch.cat(running_preds)
+        running_targets = torch.cat(running_targets)
+        self.callback(
+            running_preds, running_targets, 
+            n=running_targets.size(0), mode="mean", prefix=prefix,
+            pool=['PRECISION', 'RECALL', 'HITRATE', 'MSE', 'MAE', 'RMSE']
+        )
 
     @timemeter("Coach/resume")
     def resume(self):

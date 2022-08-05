@@ -6,7 +6,6 @@ Refer to
 for formal definitions.
 """
 
-from multiprocessing import reduction
 from typing import Optional, Union, List 
 
 import torch
@@ -15,7 +14,11 @@ import torchmetrics
 from functools import partial
 
 
-__all__ = ['normalized_dcg', 'recall', 'precision', 'hit_rate', 'mean_abs_error', 'mean_squared_error', 'root_mse']
+__all__ = [
+    'mean_abs_error', 'mean_squared_error', 'root_mse',
+    'precision', 'recall', 'hit_rate', 
+    'normalized_dcg', 'mean_reciprocal_rank', 'mean_average_precision'
+]
 
 def _reduce(reduction='mean'):
     def decorator(func):
@@ -35,129 +38,7 @@ def _reduce(reduction='mean'):
     return decorator
 
 
-@_reduce('mean')
-def normalized_dcg(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tensor, k: Optional[int] = None) -> torch.Tensor:
-    """
-    Args: each row in Tensor or each element in List denotes a query
-        preds: List or Tensor
-        target: List or Tensor
-    Kwargs:
-        k: top-K
-        reduction: 'none'|'mean'(default)|'sum'
-    """
-    if isinstance(preds, torch.Tensor) and preds.ndim == 1:
-        preds = preds.unsqueeze(0)
-    if isinstance(targets, torch.Tensor) and targets.ndim == 1:
-        targets = targets.unsqueeze(0)
-
-    metric = partial(
-        torchmetrics.functional.retrieval_normalized_dcg,
-        k=k
-    )
-
-    return torch.tensor(list(map(metric, preds, targets)))
-
-@_reduce('mean')
-def recall(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tensor, k: Optional[int] = None) -> torch.Tensor:
-    """
-    Args: each row in Tensor or each element in List denotes a query
-        preds: List or Tensor
-        target: List or Tensor
-    Kwargs:
-        k: top-K
-        reduction: 'none'|'mean'(default)|'sum'
-    """
-    if isinstance(preds, torch.Tensor) and preds.ndim == 1:
-        preds = preds.unsqueeze(0)
-    if isinstance(targets, torch.Tensor) and targets.ndim == 1:
-        targets = targets.unsqueeze(0)
-
-    metric = partial(
-        torchmetrics.functional.retrieval_recall,
-        k=k
-    )
-
-    return torch.tensor(list(map(metric, preds, targets)))
-
-@_reduce('mean')
-def precision(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tensor, k: Optional[int] = None) -> torch.Tensor:
-    """
-    Args: each row in Tensor or each element in List denotes a query
-        preds: List or Tensor
-        target: List or Tensor
-    Kwargs:
-        k: top-K
-        reduction: 'none'|'mean'(default)|'sum'
-    """
-    if isinstance(preds, torch.Tensor) and preds.ndim == 1:
-        preds = preds.unsqueeze(0)
-    if isinstance(targets, torch.Tensor) and targets.ndim == 1:
-        targets = targets.unsqueeze(0)
-
-    metric = partial(
-        torchmetrics.functional.retrieval_precision,
-        k=k
-    )
-
-    return torch.tensor(list(map(metric, preds, targets)))
-
-@_reduce('mean')
-def mean_reciprocal_rank(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tensor) -> torch.Tensor:
-    """
-    Args: each row in Tensor or each element in List denotes a query
-        preds: List or Tensor
-        target: List or Tensor
-    Kwargs:
-        reduction: 'none'|'mean'(default)|'sum'
-    """
-    if isinstance(preds, torch.Tensor) and preds.ndim == 1:
-        preds = preds.unsqueeze(0)
-    if isinstance(targets, torch.Tensor) and targets.ndim == 1:
-        targets = targets.unsqueeze(0)
-
-    metric = torchmetrics.functional.retrieval_reciprocal_rank
-
-    return torch.tensor(list(map(metric, preds, targets)))
-
-@_reduce('mean')
-def mean_average_precision(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tensor) -> torch.Tensor:
-    """
-    Args: each row in Tensor or each element in List denotes a query
-        preds: List or Tensor
-        target: List or Tensor
-    Kwargs:
-        reduction: 'none'|'mean'(default)|'sum'
-    """
-    if isinstance(preds, torch.Tensor) and preds.ndim == 1:
-        preds = preds.unsqueeze(0)
-    if isinstance(targets, torch.Tensor) and targets.ndim == 1:
-        targets = targets.unsqueeze(0)
-
-    metric = torchmetrics.functional.retrieval_average_precision
-
-    return torch.tensor(list(map(metric, preds, targets)))
-
-@_reduce('mean')
-def hit_rate(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tensor, k: Optional[int] = None) -> torch.Tensor:
-    """
-    Args: each row in Tensor or each element in List denotes a query
-        preds: List or Tensor
-        target: List or Tensor
-    Kwargs:
-        k: top-K
-        reduction: 'mean'(default); formally, the definition of hit rate is set specific
-    """
-    if isinstance(preds, torch.Tensor) and preds.ndim == 1:
-        preds = preds.unsqueeze(0)
-    if isinstance(targets, torch.Tensor) and targets.ndim == 1:
-        targets = targets.unsqueeze(0)
-
-    metric = partial(
-        torchmetrics.functional.retrieval_hit_rate,
-        k=k
-    )
-
-    return torch.tensor(list(map(metric, preds, targets)))
+# quality of predictions ========================================================================
 
 @_reduce('mean')
 def mean_abs_error(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tensor) -> torch.Tensor:
@@ -218,6 +99,136 @@ def root_mse(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tens
     )
 
     return torch.tensor(list(map(metric, preds, targets)))
+
+# quality of the set of recommendations ========================================================================
+
+@_reduce('mean')
+def precision(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tensor, k: Optional[int] = None) -> torch.Tensor:
+    """
+    Args: each row in Tensor or each element in List denotes a query
+        preds: List or Tensor
+        target: List or Tensor
+    Kwargs:
+        k: top-K
+        reduction: 'none'|'mean'(default)|'sum'
+    """
+    if isinstance(preds, torch.Tensor) and preds.ndim == 1:
+        preds = preds.unsqueeze(0)
+    if isinstance(targets, torch.Tensor) and targets.ndim == 1:
+        targets = targets.unsqueeze(0)
+
+    metric = partial(
+        torchmetrics.functional.retrieval_precision,
+        k=k
+    )
+
+    return torch.tensor(list(map(metric, preds, targets)))
+
+@_reduce('mean')
+def recall(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tensor, k: Optional[int] = None) -> torch.Tensor:
+    """
+    Args: each row in Tensor or each element in List denotes a query
+        preds: List or Tensor
+        target: List or Tensor
+    Kwargs:
+        k: top-K
+        reduction: 'none'|'mean'(default)|'sum'
+    """
+    if isinstance(preds, torch.Tensor) and preds.ndim == 1:
+        preds = preds.unsqueeze(0)
+    if isinstance(targets, torch.Tensor) and targets.ndim == 1:
+        targets = targets.unsqueeze(0)
+
+    metric = partial(
+        torchmetrics.functional.retrieval_recall,
+        k=k
+    )
+
+    return torch.tensor(list(map(metric, preds, targets)))
+
+@_reduce('mean')
+def hit_rate(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tensor, k: Optional[int] = None) -> torch.Tensor:
+    """
+    Args: each row in Tensor or each element in List denotes a query
+        preds: List or Tensor
+        target: List or Tensor
+    Kwargs:
+        k: top-K
+        reduction: 'mean'(default); formally, the definition of hit rate is set specific
+    """
+    if isinstance(preds, torch.Tensor) and preds.ndim == 1:
+        preds = preds.unsqueeze(0)
+    if isinstance(targets, torch.Tensor) and targets.ndim == 1:
+        targets = targets.unsqueeze(0)
+
+    metric = partial(
+        torchmetrics.functional.retrieval_hit_rate,
+        k=k
+    )
+
+    return torch.tensor(list(map(metric, preds, targets)))
+
+
+# quality of the list of recommendations ========================================================================
+
+@_reduce('mean')
+def normalized_dcg(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tensor, k: Optional[int] = None) -> torch.Tensor:
+    """
+    Args: each row in Tensor or each element in List denotes a query
+        preds: List or Tensor
+        target: List or Tensor
+    Kwargs:
+        k: top-K
+        reduction: 'none'|'mean'(default)|'sum'
+    """
+    if isinstance(preds, torch.Tensor) and preds.ndim == 1:
+        preds = preds.unsqueeze(0)
+    if isinstance(targets, torch.Tensor) and targets.ndim == 1:
+        targets = targets.unsqueeze(0)
+
+    metric = partial(
+        torchmetrics.functional.retrieval_normalized_dcg,
+        k=k
+    )
+
+    return torch.tensor(list(map(metric, preds, targets)))
+
+@_reduce('mean')
+def mean_reciprocal_rank(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tensor) -> torch.Tensor:
+    """
+    Args: each row in Tensor or each element in List denotes a query
+        preds: List or Tensor
+        target: List or Tensor
+    Kwargs:
+        reduction: 'none'|'mean'(default)|'sum'
+    """
+    if isinstance(preds, torch.Tensor) and preds.ndim == 1:
+        preds = preds.unsqueeze(0)
+    if isinstance(targets, torch.Tensor) and targets.ndim == 1:
+        targets = targets.unsqueeze(0)
+
+    metric = torchmetrics.functional.retrieval_reciprocal_rank
+
+    return torch.tensor(list(map(metric, preds, targets)))
+
+@_reduce('mean')
+def mean_average_precision(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tensor) -> torch.Tensor:
+    """
+    Args: each row in Tensor or each element in List denotes a query
+        preds: List or Tensor
+        target: List or Tensor
+    Kwargs:
+        reduction: 'none'|'mean'(default)|'sum'
+    """
+    if isinstance(preds, torch.Tensor) and preds.ndim == 1:
+        preds = preds.unsqueeze(0)
+    if isinstance(targets, torch.Tensor) and targets.ndim == 1:
+        targets = targets.unsqueeze(0)
+
+    metric = torchmetrics.functional.retrieval_average_precision
+
+    return torch.tensor(list(map(metric, preds, targets)))
+
 
 
 if __name__ == "__main__":

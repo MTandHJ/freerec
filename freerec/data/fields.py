@@ -82,10 +82,7 @@ class SparseField(Field):
         self.embeddings = torch.nn.Embedding(self.count, dim, **kwargs)
 
     def look_up(self, x: torch.Tensor) -> torch.Tensor:
-        """
-            (B, *,) -> (B, *, d)
-        """
-        self.embeddings: torch.nn.Embedding
+        """ (B, *,) -> (B, *, d) """
         return self.embeddings(x)
 
 
@@ -105,9 +102,22 @@ class DenseField(Field):
         self.scale_ = feat_range / data_range
         self.min_ = bound[0] - lower * self.scale_
 
-
     def transform(self, x: torch.Tensor) -> torch.Tensor:
         return (x * self.scale_ + self.min_).float().view(-1, 1)
+
+    def embed(self, dim: int = 1, bias: bool = False, linear: bool = False):
+        if linear:
+            self.dimension = dim
+            self.embeddings = torch.nn.Linear(1, dim, bias=bias)
+        else:
+            self.dimension = 1
+            self.embeddings = torch.nn.Identity()
+
+    def look_up(self, x: torch.Tensor) -> torch.Tensor:
+        """ (B, *,) -> (B, *) | (B, *, d) """
+        return self.embeddings(x)
+
+
 
 
 class LabelField(SparseField): 
@@ -134,22 +144,17 @@ class Tokenizer(torch.nn.Module):
         self.sparse = torch.nn.ModuleList(SparseField.filter(fields, strict=True))
         self.dense = torch.nn.ModuleList(DenseField.filter(fields, strict=True))
 
-    def look_up(self, inputs: Dict[str, torch.Tensor]) -> List[torch.Tensor]:
+    def look_up(self, inputs: Dict[str, torch.Tensor], features: Union[str, List]) -> List[torch.Tensor]:
+        """ Dict[torch.Tensor: B x 1] -> List[torch.Tensor: B x 1 x d]
+        feautures:
+            1. str: 'sparse'|'dense'|'all'(default)
+            2. List[str]
+            3. List[Field]
         """
-        Dict[torch.Tensor: B x 1] -> List[torch.Tensor: B x 1 x d]
-        """
-        return [field.look_up(inputs[field.name]) for field in self.sparse]
-
-    def collect_dense(self, inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
-        """
-        Dict[torch.Tensor: B x 1] -> torch.Tensor: B x len(self.dense)
-        """
-        return torch.cat([inputs[field.name] for field in self.dense], dim=1)
+        return [field.look_up(inputs[field.name]) for field in self.filter_features(features)]
 
     def flatten_cat(self, inputs: List[torch.Tensor]) -> torch.Tensor:
-        """
-        List[torch.Tensor: B x k x d] -> torch.Tensor: B x (k1 x d1 + k2 x d2 + ...)
-        """
+        """ List[torch.Tensor: B x k x d] -> torch.Tensor: B x (k1 x d1 + k2 x d2 + ...)"""
         return torch.cat([input_.flatten(1) for input_ in inputs], dim=1)
 
     def filter_features(self, features: Union[str, List] = 'all') -> List[Field]:
@@ -180,7 +185,7 @@ class Tokenizer(torch.nn.Module):
             1. str: 'sparse'(default)|'dense'|'all'
             2. List[str]
             3. List[Field]
-        Kwargs:
+        'sparse': nn.Embedding
             padding_idx (int, optional): If specified, the entries at :attr:`padding_idx` do not contribute to the gradient;
                                         therefore, the embedding vector at :attr:`padding_idx` is not updated during training,
                                         i.e. it remains as a fixed "pad". For a newly constructed Embedding,
@@ -193,6 +198,9 @@ class Tokenizer(torch.nn.Module):
                                                     the words in the mini-batch. Default ``False``.
             sparse (bool, optional): If ``True``, gradient w.r.t. :attr:`weight` matrix will be a sparse tensor.
                                     See Notes for more details regarding sparse gradients.
+        'dense': nn.Linear
+            linear: bool = False
+            bias: bool = False
         """
         for feature in self.filter_features(features):
             feature.embed(dim, **kwargs)

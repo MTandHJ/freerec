@@ -13,3 +13,5 @@ class RecSysArch(nn.Module):
         super().__init__()
 
         self.tokenizer = tokenizer
+
+    def initialize(self): ... # TODO:
