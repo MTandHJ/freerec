@@ -1,31 +1,46 @@
 
 
 
-from typing import Callable, Iterable, Tuple, Union, Any, Dict, List
+from typing import Callable, Iterable, Union, Dict, List
 
 import torch
-from sklearn.preprocessing import LabelEncoder
+from functools import partial
 
 from .utils import safe_cast
+from .preprocessing import X2X, Label2Index, Binarizer, MinMaxScaler, StandardScaler
 
+
+
+TRANSFORM = {
+    "none": X2X,
+    'label2index': Label2Index,
+    'minmax': MinMaxScaler,
+    'standard': StandardScaler,
+}
 
 
 class Field(torch.nn.Module):
     
     is_feature: bool
 
-    def __init__(self, name: str, na_value: Union[str, int, float], dtype: Callable):
+    def __init__(
+        self, name: str, na_value: Union[str, int, float], dtype: Callable,
+        transformer: Union[str, Callable] = 'none'
+    ):
         """
         name: field
         na_value: fill na with na_value
-        dtype: str, int ... for safe_cast
+        dtype: str|int|float for safe_cast
+        transformer: 'none'|'label2index'|'binary'|'minmax'|'standard'
         """
         super().__init__()
 
         self.__name = name
         self.__na_value = na_value
-        self.__dtype = dtype
+        self.dtype = dtype
+        self.caster = partial(safe_cast, dest_type=dtype, default=na_value)
         self.dimension: int = 1
+        self.transformer = TRANSFORM[transformer]() if isinstance(transformer, str) else transformer
 
     @classmethod
     def filter(cls, fields: Iterable, strict: bool = False):
@@ -42,6 +57,22 @@ class Field(torch.nn.Module):
         func = _check_type if strict else _check_instance
         return filter(func, fields)
 
+    def partial_fit(self, x: Union[List[str], torch.Tensor]) -> torch.Tensor:
+        if isinstance(x, list):
+            self.transformer.partial_fit(x)
+        elif isinstance(x, torch.Tensor):
+            self.transformer.partial_fit(x.view(-1, 1))
+        else:
+            raise ValueError("x should be Union[List[str], torch.Tensor] ...")
+
+    def transform(self, x: Union[List[str], torch.Tensor]) -> torch.Tensor:
+        if isinstance(x, list):
+            return torch.from_numpy(self.transformer.transform(x)).to(self.dtype)
+        elif isinstance(x, torch.Tensor):
+            return torch.from_numpy(self.transformer.transform(x.view(-1, 1))).to(self.dtype)
+        else:
+            raise ValueError("x should be Union[List[str], torch.Tensor] ...")
+
     def embed(self, dim: int, **kwargs):
         raise NotImplementedError()
 
@@ -57,25 +88,24 @@ class Field(torch.nn.Module):
     def dtype(self):
         return self.__dtype
 
-    def __call__(self, val: Any) -> Any:
-        return safe_cast(val, self.dtype, self.na_value)
-
+    @dtype.setter
+    def dtype(self, val):
+        if val in (int, str):
+            self.__dtype = torch.long
+        elif val == float:
+            self.__dtype = torch.float32
+        else:
+            self.__dtype = val
 
 class SparseField(Field):
 
     is_feature: bool = True
 
-    def fit(self, enum: Iterable):
-        """
-        enum: all possible values (unique)
-        """
-        self.enum = enum
-        self.count = len(enum)
-        self.transformer = LabelEncoder()
-        self.transformer.fit(enum)
-
-    def transform(self, x: Iterable) -> torch.Tensor:
-        return torch.from_numpy(self.transformer.transform(x)).long().view(-1, 1)
+    def __init__(
+        self, name: str, na_value: Union[str, int, float], dtype: Callable, 
+        transformer: str = 'label2index'
+    ):
+        super().__init__(name, na_value, dtype, transformer)
 
     def embed(self, dim: int, **kwargs):
         self.dimension = dim
@@ -86,25 +116,16 @@ class SparseField(Field):
         return self.embeddings(x)
 
 
-
 class DenseField(Field):
 
     is_feature: bool = True
+
+    def __init__(
+        self, name: str, na_value: Union[str, int, float], 
+        dtype: Callable, transformer: str = 'minmax'
+    ):
+        super().__init__(name, na_value, dtype, transformer)
     
-    def fit(self, lower: float, upper: float, bound: Tuple[float, float] = (0., 1.)):
-        """
-        lower: minimum
-        upper: maximum
-        bound: the bound after scaling
-        """
-        data_range = upper - lower
-        feat_range = bound[1] - bound[0]
-        self.scale_ = feat_range / data_range
-        self.min_ = bound[0] - lower * self.scale_
-
-    def transform(self, x: torch.Tensor) -> torch.Tensor:
-        return (x * self.scale_ + self.min_).float().view(-1, 1)
-
     def embed(self, dim: int = 1, bias: bool = False, linear: bool = False):
         if linear:
             self.dimension = dim
@@ -118,8 +139,6 @@ class DenseField(Field):
         return self.embeddings(x)
 
 
-
-
 class LabelField(SparseField): 
     is_feature: bool = False
     ...
@@ -128,11 +147,11 @@ class TagetField(DenseField):
 
     is_feature: bool = False
 
-    def fit(self, lower: float, upper: float, bound: Tuple[float, float] = (0, 1)):
-        ...
-
-    def transform(self, x: torch.Tensor) -> torch.Tensor:
-        return x.float().view(-1, 1)
+    def __init__(
+        self, name: str, na_value: Union[str, int, float], 
+        dtype: Callable, transformer: str = 'none'
+    ):
+        super().__init__(name, na_value, dtype, transformer)
 
 
 class Tokenizer(torch.nn.Module):

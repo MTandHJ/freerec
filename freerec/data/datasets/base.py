@@ -41,23 +41,27 @@ class RecDataSet(dp.iter.IterDataPipe):
         return "DataSet: " + head + "\n" + cfg
 
     def summary(self):
-        data = dict(datasize=0)
-        data.update({field.name: dict(nums=defaultdict(int)) for field in SparseField.filter(self.cfg.fields)})
-        data.update({field.name: dict(min=float('inf'), max=float('-inf')) for field in DenseField.filter(self.cfg.fields)})
+        datapipe = self.batch(batch_size=1000).collate()
+        for batch in datapipe:
+            for field in self.cfg.fields:
+                field.partial_fit(batch[field.name])
+        # data = dict(datasize=0)
+        # data.update({field.name: dict(nums=defaultdict(int)) for field in SparseField.filter(self.cfg.fields)})
+        # data.update({field.name: dict(min=float('inf'), max=float('-inf')) for field in DenseField.filter(self.cfg.fields)})
 
-        for row in self:
-            data['datasize'] += 1
-            for field_name, val in row.items():
-                for key in data[field_name]:
-                    STATISTICS[key](data[field_name], val, key)
+        # for row in self:
+        #     data['datasize'] += 1
+        #     for field_name, val in row.items():
+        #         for key in data[field_name]:
+        #             STATISTICS[key](data[field_name], val, key)
 
-        self.cfg.datasize = data['datasize']
-        for field in SparseField.filter(self.cfg.fields):
-            item = data[field.name]
-            field.fit(list(sorted(item['nums'].keys())))
-        for field in DenseField.filter(self.cfg.fields):
-            item = data[field.name]
-            field.fit(lower=item['min'], upper=item['max'])
+        # self.cfg.datasize = data['datasize']
+        # for field in SparseField.filter(self.cfg.fields):
+        #     item = data[field.name]
+        #     field.fit(list(sorted(item['nums'].keys())))
+        # for field in DenseField.filter(self.cfg.fields):
+        #     item = data[field.name]
+        #     field.fit(lower=item['min'], upper=item['max'])
 
 
 @dp.functional_datapipe("sharder")

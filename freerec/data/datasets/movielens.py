@@ -1,27 +1,29 @@
 
 
-
 from typing import Iterator 
 
 import torchdata.datapipes as dp
 
 from .base import RecDataSet
-from ..fields import SparseField, DenseField, LabelField
+from ..fields import SparseField, DenseField, LabelField, Binarizer
 from ...dict2obj import Config
 
 
-
-class Criteo(RecDataSet):
+class MovieLens1M(RecDataSet):
+    """
+    MovieLens1M: (user, item, rating, timestamp)
+        https://github.com/openbenchmark/BARS/tree/master/candidate_matching/datasets
+    """
 
     cfg = Config(
-        # dataset
-        sparse = [SparseField(name=f"C{idx}", na_value='-1', dtype=str) for idx in range(1, 27)],
-        dense = [DenseField(name=f"I{idx}", na_value=0., dtype=float) for idx in range(1, 14)],
-        target = [LabelField(name='Label', na_value=None, dtype=int, transformer='none')]
+        sparse = [SparseField(name=name, na_value=0, dtype=int) for name in ('User', 'Item')],
+        dense = [DenseField(name="Timestamp", na_value=0., dtype=float, transformer='none')],
+        target = [LabelField(name='Rating', na_value=None, dtype=int, transformer='none')]
     )
-    cfg.fields = cfg.target + cfg.dense + cfg.sparse
 
-    open_kw = Config(mode='rt', delimiter=',', skip_lines=1)
+    cfg.fields = cfg.sparse + cfg.target + cfg.dense
+
+    open_kw = Config(mode='rt', delimiter='\t', skip_lines=0)
 
     def __init__(
         self, root: str, split: str = 'train', **kwargs

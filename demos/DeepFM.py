@@ -19,7 +19,8 @@ def main():
     cfg.add_argument("-eb", "--embedding_dim", type=int, default=4)
     cfg.set_defaults(
         fmt="{description}={embedding_dim}={optimizer}-{lr}-{weight_decay}={seed}",
-        description="DeepFM"
+        description="DeepFM",
+        root="../criteo"
     )
     cfg.compile()
 

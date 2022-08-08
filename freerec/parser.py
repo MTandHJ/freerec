@@ -78,7 +78,7 @@ class Parser(Config):
 
         self.parser = argparse.ArgumentParser()
 
-        self.parser.add_argument("root", type=str, help="data")
+        self.parser.add_argument("--root", type=str, default=".", help="data")
         self.parser.add_argument("--config", type=str, default=None, help=".yml")
 
         # model

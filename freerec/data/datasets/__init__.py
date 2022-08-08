@@ -1,4 +1,5 @@
 
 
 from .base import *
-from .criteo import Criteo
+from .criteo import *
+from .movielens import *
