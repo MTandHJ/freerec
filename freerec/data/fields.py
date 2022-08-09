@@ -107,6 +107,13 @@ class SparseField(Field):
     ):
         super().__init__(name, na_value, dtype, transformer)
 
+    @property
+    def count(self):
+        if isinstance(self.transformer, Label2Index):
+            return len(self.transformer.classes_)
+        else:
+            raise NotImplementedError()
+
     def embed(self, dim: int, **kwargs):
         self.dimension = dim
         self.embeddings = torch.nn.Embedding(self.count, dim, **kwargs)
@@ -114,6 +121,7 @@ class SparseField(Field):
     def look_up(self, x: torch.Tensor) -> torch.Tensor:
         """ (B, *,) -> (B, *, d) """
         return self.embeddings(x)
+
 
 
 class DenseField(Field):

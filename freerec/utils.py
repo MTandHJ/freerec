@@ -122,6 +122,12 @@ def set_logger(
 def getLogger():
     return logging.getLogger(LOGGER.name)
 
+def warnLogger(warn: str):
+    pad = ' '.join(["⚠"] * 50)
+    getLogger().info(pad)
+    getLogger().info(warn)
+    getLogger().info(pad)
+
 def timemeter(prefix=""):
     def decorator(func):
         logger = getLogger()

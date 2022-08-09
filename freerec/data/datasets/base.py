@@ -1,67 +1,82 @@
 
 
 
-from typing import Dict, Iterable, Iterator, Hashable, Tuple, Union, List
+from typing import Dict, Iterable, Iterator, Optional, Tuple, List
 
 import torch
 import torchdata.datapipes as dp
-from collections import defaultdict
 
-from ..fields import Field, SparseField, DenseField
-from ...dict2obj import Config
-
+from ..fields import Field
+from ...utils import warnLogger
 
 
 __all__ = ['RecDataSet', 'Encoder']
 
-def _count(field: defaultdict, val: Hashable, key: str = 'nums'):
-    field[key][val] += 1
-
-def _min(field: dict, val: Union[int, float], key: str = 'min'):
-    field[key] = min(val, field[key])
-
-def _max(field: dict, val: Union[int, float], key: str = 'max'):
-    field[key] = max(val, field[key])
-
-
-STATISTICS = {
-    "nums": _count, # sparse
-    "min": _min, # dense
-    "max": _max # dense
-}
-
 
 class RecDataSet(dp.iter.IterDataPipe):
+    """ RecDataSet provides a template for specific datasets.
+    All datasets inherit RecDataSet should define class variables:
+        _cfg: including fields of each column,
+        _active: True if the type of dataset has compiled ...
+    before instantiation.
+    Generally speaking, the dataset will be splited into 
+        trainset,
+        validset,
+        testset.
+    Because these three datasets share the same _cfg, compiling any one of them
+    will overwrite it ! So you should compile the trainset rather than other datasets by
+        trainset.compile() !
+    """
 
-    cfg = Config()
+    def __new__(cls, *args, **kwargs):
+        for attr in ('_cfg', '_active'):
+            if not hasattr(cls, attr):
+                raise AttributeError("_cfg, _active should be defined before instantiation ...")
+        return super().__new__(cls)
+
+    def __init__(self, root: str, split: str = 'train') -> None:
+        """
+        root: data file
+        split: train|valid|test
+        """
+        super().__init__()
+        self.root = root
+        self.split = split
+
+    @property
+    def cfg(self):
+        return self._cfg
+
+    @property
+    def active(self):
+        return self._active
+
+    @classmethod
+    def compile(cls, datapipe: dp.iter.IterDataPipe):
+        if cls._active:
+            warnLogger(
+                f"Dataset {cls.__name__} has been activated !!! Skip it ..."
+            )
+        cls._active = True
+        datapipe = datapipe.batch(batch_size=1000).collate()
+        cls._cfg.datasize = 0
+        for batch in datapipe:
+            for field in cls._cfg.fields:
+                field.partial_fit(batch[field.name])
+                batchsize = len(batch[field.name])
+            cls._cfg.datasize += batchsize
+
+    def _compile(self, refer: str = 'train'):
+        if not self.active:
+            split, self.split = self.split, refer
+            self.compile(self) # compile according to the trainset !
+            self.split = split
 
     def __str__(self) -> str:
         head = super().__str__()
         cfg = str(self.cfg)
         return "DataSet: " + head + "\n" + cfg
 
-    def summary(self):
-        datapipe = self.batch(batch_size=1000).collate()
-        for batch in datapipe:
-            for field in self.cfg.fields:
-                field.partial_fit(batch[field.name])
-        # data = dict(datasize=0)
-        # data.update({field.name: dict(nums=defaultdict(int)) for field in SparseField.filter(self.cfg.fields)})
-        # data.update({field.name: dict(min=float('inf'), max=float('-inf')) for field in DenseField.filter(self.cfg.fields)})
-
-        # for row in self:
-        #     data['datasize'] += 1
-        #     for field_name, val in row.items():
-        #         for key in data[field_name]:
-        #             STATISTICS[key](data[field_name], val, key)
-
-        # self.cfg.datasize = data['datasize']
-        # for field in SparseField.filter(self.cfg.fields):
-        #     item = data[field.name]
-        #     field.fit(list(sorted(item['nums'].keys())))
-        # for field in DenseField.filter(self.cfg.fields):
-        #     item = data[field.name]
-        #     field.fit(lower=item['min'], upper=item['max'])
 
 
 @dp.functional_datapipe("sharder")

@@ -15,26 +15,22 @@ class MovieLens1M(RecDataSet):
         https://github.com/openbenchmark/BARS/tree/master/candidate_matching/datasets
     """
 
-    cfg = Config(
+    _cfg = Config(
         sparse = [SparseField(name=name, na_value=0, dtype=int) for name in ('User', 'Item')],
         dense = [DenseField(name="Timestamp", na_value=0., dtype=float, transformer='none')],
         target = [LabelField(name='Rating', na_value=None, dtype=int, transformer='none')]
     )
 
-    cfg.fields = cfg.sparse + cfg.target + cfg.dense
+    _cfg.fields = _cfg.sparse + _cfg.target + _cfg.dense
+
+    _active = False
 
     open_kw = Config(mode='rt', delimiter='\t', skip_lines=0)
 
-    def __init__(
-        self, root: str, split: str = 'train', **kwargs
-    ) -> None:
-        super().__init__()
-
-        self.root = root
-        self.split = split
-        self.open_kw.update(**kwargs) # override some basic kwargs for loading
-
-        self.summary()
+    def __init__(self, root: str, split: str = 'train', **open_kw) -> None:
+        super().__init__(root, split)
+        self.open_kw.update(**open_kw)
+        self._compile(refer='train')
 
     def file_filter(self, filename: str):
         return self.split in filename

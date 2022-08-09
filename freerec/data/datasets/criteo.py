@@ -13,26 +13,22 @@ from ...dict2obj import Config
 
 class Criteo(RecDataSet):
 
-    cfg = Config(
+    _cfg = Config(
         # dataset
         sparse = [SparseField(name=f"C{idx}", na_value='-1', dtype=str) for idx in range(1, 27)],
         dense = [DenseField(name=f"I{idx}", na_value=0., dtype=float) for idx in range(1, 14)],
         target = [LabelField(name='Label', na_value=None, dtype=int, transformer='none')]
     )
-    cfg.fields = cfg.target + cfg.dense + cfg.sparse
+    _cfg.fields = _cfg.target + _cfg.dense + _cfg.sparse
+
+    _active = False
 
     open_kw = Config(mode='rt', delimiter=',', skip_lines=1)
 
-    def __init__(
-        self, root: str, split: str = 'train', **kwargs
-    ) -> None:
-        super().__init__()
-
-        self.root = root
-        self.split = split
-        self.open_kw.update(**kwargs) # override some basic kwargs for loading
-
-        self.summary()
+    def __init__(self, root: str, split: str = 'train', **open_kw) -> None:
+        super().__init__(root, split)
+        self.open_kw.update(**open_kw)
+        self._compile(refer='train')
 
     def file_filter(self, filename: str):
         return self.split in filename
