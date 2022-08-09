@@ -5,7 +5,8 @@ from typing import Iterator
 import torchdata.datapipes as dp
 
 from .base import RecDataSet
-from ..fields import SparseField, DenseField, LabelField, Binarizer
+from ..fields import SparseField, DenseField
+from ..tags import USER, ITEM, ID, FEATURE, TARGET
 from ...dict2obj import Config
 
 
@@ -16,9 +17,12 @@ class MovieLens1M(RecDataSet):
     """
 
     _cfg = Config(
-        sparse = [SparseField(name=name, na_value=0, dtype=int) for name in ('User', 'Item')],
-        dense = [DenseField(name="Timestamp", na_value=0., dtype=float, transformer='none')],
-        target = [LabelField(name='Rating', na_value=None, dtype=int, transformer='none')]
+        sparse = [
+            SparseField(name='UserID', na_value=0, dtype=int, tags=[USER, ID, FEATURE]),
+            SparseField(name='ItemID', na_value=0, dtype=int, tags=[ITEM, ID, FEATURE]),
+        ],
+        dense = [DenseField(name="Timestamp", na_value=0., dtype=float, transformer='none', tags=FEATURE)],
+        target = [DenseField(name='Rating', na_value=None, dtype=int, transformer='none', tags=TARGET)]
     )
 
     _cfg.fields = _cfg.sparse + _cfg.target + _cfg.dense

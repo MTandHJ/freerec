@@ -9,6 +9,7 @@ import torch.nn as nn
 from .base import RecSysArch
 
 from ..data.fields import Tokenizer
+from ..data.tags import SPARSE, DENSE, FEATURE
 from ..layers import FM
 
 
@@ -17,10 +18,11 @@ __all__ = ['DeepFM']
 class DeepFM(RecSysArch):
 
     def __init__(self, tokenizer: Tokenizer) -> None:
-        super().__init__(tokenizer)
+        super().__init__()
 
-        sparse_dim = self.tokenizer.calculate_dimension('sparse')
-        dense_dim = self.tokenizer.calculate_dimension('dense')
+        self.tokenizer = tokenizer
+        sparse_dim = self.tokenizer.calculate_dimension((FEATURE, SPARSE))
+        dense_dim = self.tokenizer.calculate_dimension((FEATURE, DENSE))
         self.linear = nn.Linear(sparse_dim + dense_dim, 1, bias=False)
         self.fm = FM()
         self.dnn = nn.Sequential(
@@ -42,8 +44,8 @@ class DeepFM(RecSysArch):
         self.initialize()
 
     def forward(self, inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
-        sparse: List[torch.Tensor] = self.tokenizer.look_up(inputs, features='sparse')
-        dense: List[torch.Tensor] = self.tokenizer.look_up(inputs, features='dense')
+        sparse: List[torch.Tensor] = self.tokenizer.look_up(inputs, (FEATURE, SPARSE))
+        dense: List[torch.Tensor] = self.tokenizer.look_up(inputs, (FEATURE, DENSE))
 
         outs_linear = self.linear(self.tokenizer.flatten_cat(sparse + dense))
         outs_fm = self.fm(self.tokenizer.flatten_cat(sparse))

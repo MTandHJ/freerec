@@ -1,12 +1,13 @@
 
 
 
-from typing import Dict, Iterable, Iterator, Optional, Tuple, List
+from typing import Dict, Iterable, Iterator, Tuple, List
 
 import torch
 import torchdata.datapipes as dp
 
 from ..fields import Field
+from ..tags import FEATURE, TARGET
 from ...utils import warnLogger
 
 
@@ -118,8 +119,8 @@ class Encoder(dp.iter.IterDataPipe):
         self.fields: List[Field] = self.source.cfg.fields
         if fields:
             self.fields = [field for field in self.fields if field.name in fields]
-        self.features = [field for field in self.fields if field.is_feature]
-        self.target = [field for field in self.fields if not field.is_feature][0] # TODO: multi-targets ?
+        self.features = [field for field in self.fields if field.match([FEATURE])]
+        self.target = [field for field in self.fields if not field.match([TARGET])][0]
 
     def fields_filter(self, row: dict) -> Dict:
         return {field.name: row[field.name] for field in self.fields}

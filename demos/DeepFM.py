@@ -9,6 +9,7 @@ from freerec.models import DeepFM
 from freerec.data.datasets import Criteo
 from freerec.data.utils import DataLoader, TQDMDataLoader
 from freerec.data.fields import Tokenizer
+from freerec.data.tags import SPARSE, DENSE, FEATURE
 from freerec.criterions import BCELoss
 
 
@@ -31,10 +32,10 @@ def main():
 
     tokenizer = Tokenizer(datapipe.fields)
     tokenizer.embed(
-        dim=cfg.embedding_dim, features='sparse'
+        dim=cfg.embedding_dim, tags=(FEATURE, SPARSE)
     )
     tokenizer.embed(
-        dim=cfg.embedding_dim, features='dense', linear=True
+        dim=cfg.embedding_dim, tags=(FEATURE, DENSE), linear=True
     )
     model = DeepFM(tokenizer).to(cfg.DEVICE)
 

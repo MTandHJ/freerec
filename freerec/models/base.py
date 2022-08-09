@@ -9,9 +9,4 @@ __all__ = ['RecSysArch']
 
 class RecSysArch(nn.Module):
 
-    def __init__(self, tokenizer: Tokenizer) -> None:
-        super().__init__()
-
-        self.tokenizer = tokenizer
-
     def initialize(self): ... # TODO:

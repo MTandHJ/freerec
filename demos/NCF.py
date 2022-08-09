@@ -5,12 +5,14 @@ import torch
 import torchdata.datapipes as dp
 
 import freerec
+from freerec.dict2obj import Config
 from freerec.parser import Parser
 from freerec.launcher import Coach
+from freerec.models import NeuCF
+from freerec.criterions import BCELoss
 from freerec.data.datasets import RecDataSet, MovieLens1M
 from freerec.data.utils import DataLoader, TQDMDataLoader
 from freerec.data.fields import Tokenizer
-from freerec.dict2obj import Config
 
 from sklearn.preprocessing import Binarizer
 
@@ -32,21 +34,10 @@ class MovieLens1M_(MovieLens1M):
     _active = False
 
 
-class Pairer(RecDataSet):
-
-    def __init__(self, positive: RecDataSet, ratio: int = 1) -> None:
-        super().__init__()
-        self.positive = positive
-        self.ratio = ratio
-        self.cfg = self.positive.cfg
-
-
-    def summary(self):
-        self.negative = defaultdict[set]
-
-
 
 def main():
+
+    import copy
 
     cfg = Parser()
     cfg.add_argument("-eb", "--embedding_dim", type=int, default=4)
@@ -57,19 +48,20 @@ def main():
     )
     cfg.compile()
 
-    datapipe = Criteo(cfg.root, split='train').encoder(batch_size=cfg.batch_size, buffer_size=cfg.buffer_size)
+    datapipe = MovieLens1M_(cfg.root, split='train').encoder(batch_size=cfg.batch_size, buffer_size=cfg.buffer_size)
     _DataLoader = TQDMDataLoader if cfg.progress else DataLoader
     trainloader = _DataLoader(datapipe, num_workers=cfg.num_workers)
     validloader = trainloader
 
-    tokenizer = Tokenizer(datapipe.fields)
-    tokenizer.embed(
+    tokenizer_mf = Tokenizer(datapipe.fields)
+    tokenizer_mf.embed(
         dim=cfg.embedding_dim, features='sparse'
     )
-    tokenizer.embed(
+    tokenizer_mf.embed(
         dim=cfg.embedding_dim, features='dense', linear=True
     )
-    model = DeepFM(tokenizer).to(cfg.DEVICE)
+    tokenizer_mlp = copy.deepcopy(tokenizer_mf)
+    model = NeuCF(tokenizer_mf, tokenizer_mlp).to(cfg.DEVICE)
 
     if cfg.optimizer == 'sgd':
         optimizer = torch.optim.SGD(

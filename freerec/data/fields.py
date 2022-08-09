@@ -1,13 +1,14 @@
 
 
 
-from typing import Callable, Iterable, Union, Dict, List
+from typing import Callable, Iterable, Tuple, Union, Dict, List
 
 import torch
-from functools import partial
+from functools import partial, lru_cache
 
 from .utils import safe_cast
 from .preprocessing import X2X, Label2Index, Binarizer, MinMaxScaler, StandardScaler
+from .tags import Tag, SPARSE, DENSE, FEATURE
 
 
 
@@ -21,11 +22,9 @@ TRANSFORM = {
 
 class Field(torch.nn.Module):
     
-    is_feature: bool
-
     def __init__(
         self, name: str, na_value: Union[str, int, float], dtype: Callable,
-        transformer: Union[str, Callable] = 'none'
+        transformer: Union[str, Callable] = 'none', tags: Union[Tag, Iterable[Tag]] = tuple()
     ):
         """
         name: field
@@ -37,25 +36,34 @@ class Field(torch.nn.Module):
 
         self.__name = name
         self.__na_value = na_value
+        self.__tags = set()
         self.dtype = dtype
         self.caster = partial(safe_cast, dest_type=dtype, default=na_value)
         self.dimension: int = 1
         self.transformer = TRANSFORM[transformer]() if isinstance(transformer, str) else transformer
+        self.add_tag(tags)
 
-    @classmethod
-    def filter(cls, fields: Iterable, strict: bool = False):
-        """
-        strict == True:
-            return fields whose class is exactly 'cls', i.e., calling 'type(field) == cls'
-        strict == False:
-            return fields inherited from 'cls', i.e., calling 'isinstance(field, cls)'
-        """
-        def _check_instance(instance):
-            return isinstance(instance, cls)
-        def _check_type(instance):
-            return type(instance) == cls
-        func = _check_type if strict else _check_instance
-        return filter(func, fields)
+    def add_tag(self, tags: Union[Tag, Iterable[Tag]]):
+        if isinstance(tags, Tag):
+            self.__tags.add(tags)
+        else:
+            self.__tags = self.__tags | set(tags)
+
+    def remove_tag(self, tags: Union[Tag, Iterable[Tag]]):
+        if isinstance(tags, Tag):
+            self.__tags.remove(tags)
+        else:
+            self.__tags = self.__tags - set(tags)
+
+    @property
+    def tags(self):
+        return self.__tags
+
+    def match(self, tags: Iterable[Tag]):
+        for tag in tags:
+            if tag not in self.tags:
+                return False
+        return True
 
     def partial_fit(self, x: Union[List[str], torch.Tensor]) -> torch.Tensor:
         if isinstance(x, list):
@@ -99,13 +107,13 @@ class Field(torch.nn.Module):
 
 class SparseField(Field):
 
-    is_feature: bool = True
-
     def __init__(
         self, name: str, na_value: Union[str, int, float], dtype: Callable, 
-        transformer: str = 'label2index'
+        transformer: Union[str, Callable] = 'label2index', 
+        tags: Union[Tag, Iterable[Tag]] = tuple()
     ):
-        super().__init__(name, na_value, dtype, transformer)
+        super().__init__(name, na_value, dtype, transformer, tags)
+        self.add_tag(SPARSE)
 
     @property
     def count(self):
@@ -123,17 +131,16 @@ class SparseField(Field):
         return self.embeddings(x)
 
 
-
 class DenseField(Field):
 
-    is_feature: bool = True
-
     def __init__(
-        self, name: str, na_value: Union[str, int, float], 
-        dtype: Callable, transformer: str = 'minmax'
+        self, name: str, na_value: Union[str, int, float], dtype: Callable, 
+        transformer: Union[str, Callable] = 'minmax', 
+        tags: Union[Tag, Iterable[Tag]] = tuple()
     ):
-        super().__init__(name, na_value, dtype, transformer)
-    
+        super().__init__(name, na_value, dtype, transformer, tags)
+        self.add_tag(DENSE)
+   
     def embed(self, dim: int = 1, bias: bool = False, linear: bool = False):
         if linear:
             self.dimension = dim
@@ -147,71 +154,52 @@ class DenseField(Field):
         return self.embeddings(x)
 
 
-class LabelField(SparseField): 
-    is_feature: bool = False
-    ...
-
-class TagetField(DenseField):
-
-    is_feature: bool = False
-
-    def __init__(
-        self, name: str, na_value: Union[str, int, float], 
-        dtype: Callable, transformer: str = 'none'
-    ):
-        super().__init__(name, na_value, dtype, transformer)
-
-
 class Tokenizer(torch.nn.Module):
 
     def __init__(self, fields: Iterable[Field]) -> None:
         super().__init__()
 
-        self.features: List[Field] = [field for field in fields if field.is_feature]
-        self.sparse = torch.nn.ModuleList(SparseField.filter(fields, strict=True))
-        self.dense = torch.nn.ModuleList(DenseField.filter(fields, strict=True))
+        self.fields = torch.nn.ModuleList(fields)
 
-    def look_up(self, inputs: Dict[str, torch.Tensor], features: Union[str, List]) -> List[torch.Tensor]:
-        """ Dict[torch.Tensor: B x 1] -> List[torch.Tensor: B x 1 x d]
-        feautures:
-            1. str: 'sparse'|'dense'|'all'(default)
-            2. List[str]
-            3. List[Field]
+    @lru_cache(maxsize=4)
+    def groupby(self, tags: Union[str, Tag, Field, Tuple] = 'all') -> List[Field]:
         """
-        return [field.look_up(inputs[field.name]) for field in self.filter_features(features)]
+        tags:
+            1. str: 'sparse'|'dense'|'all'(default)
+            2. Tag:
+            3. Tuple[Tag]
+            4. Tuple[Field]
+        """
+        if tags == 'all':
+            return self.fields
+        if not isinstance(tags, Iterable):
+            tags = (tags,)
+        if isinstance(tags[0], Field):
+            return tags
+        return [field for field in self.fields if field.match(tags)]
+
+    def look_up(self, inputs: Dict[str, torch.Tensor], tags: Union[str, Tag, Field, Tuple]) -> List[torch.Tensor]:
+        """ Dict[torch.Tensor: B x 1] -> List[torch.Tensor: B x 1 x d]
+        tags:
+            1. str: 'sparse'|'dense'|'all'(default)
+            2. Tag:
+            3. Tuple[Tag]
+            4. Tuple[Field]
+        """
+        return [field.look_up(inputs[field.name]) for field in self.groupby(tags)]
 
     def flatten_cat(self, inputs: List[torch.Tensor]) -> torch.Tensor:
         """ List[torch.Tensor: B x k x d] -> torch.Tensor: B x (k1 x d1 + k2 x d2 + ...)"""
         return torch.cat([input_.flatten(1) for input_ in inputs], dim=1)
 
-    def filter_features(self, features: Union[str, List] = 'all') -> List[Field]:
-        """
-        feautures:
-            1. str: 'sparse'|'dense'|'all'(default)
-            2. List[str]
-            3. List[Field]
-        """
-        if features == 'all':
-            features = self.features
-        elif features == 'sparse':
-            features = self.sparse
-        elif features == 'dense':
-            features = self.dense
-        elif isinstance(features[0], Field):
-            pass
-        elif isinstance(features[0], str):
-            features = [feature for feature in self.features if feature.name in features]
-        else:
-            raise ValueError(f"features should be: \n {self.filter_features.__doc__}")
-        return features
-
-    def embed(self, dim: int, features: Union[str, List] = 'sparse', **kwargs):
+    def embed(self, dim: int, tags: Union[str, Tag, Field, Tuple] = SPARSE, **kwargs):
         """
         dim: int
-        feautures:
-            1. str: 'sparse'(default)|'dense'|'all'
-            2. List[str]
-            3. List[Field]
+        tags:
+            1. str: 'sparse'|'dense'|'all'(default)
+            2. Tag:
+            3. Tuple[Tag]
+            4. Tuple[Field]
         'sparse': nn.Embedding
             padding_idx (int, optional): If specified, the entries at :attr:`padding_idx` do not contribute to the gradient;
                                         therefore, the embedding vector at :attr:`padding_idx` is not updated during training,
@@ -229,14 +217,15 @@ class Tokenizer(torch.nn.Module):
             linear: bool = False
             bias: bool = False
         """
-        for feature in self.filter_features(features):
+        for feature in self.groupby(tags):
             feature.embed(dim, **kwargs)
 
-    def calculate_dimension(self, features: Union[str, List] = 'all'):
+    def calculate_dimension(self, tags: Union[str, Tag, Field, Tuple] = 'all'):
         """
-        feautures:
+        tags:
             1. str: 'sparse'|'dense'|'all'(default)
-            2. List[str]
-            3. List[Field]
+            2. Tag:
+            3. Tuple[Tag]
+            4. Tuple[Field]
         """
-        return sum(feature.dimension for feature in self.filter_features(features))
+        return sum(feature.dimension for feature in self.groupby(tags))
