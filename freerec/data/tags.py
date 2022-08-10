@@ -3,13 +3,18 @@
 
 
 class Tag:
-    __slot__ = ()
-    ...
+    __slot__ = ('name')
 
-SPARSE = Tag()
-DENSE = Tag()
-ID = Tag()
-USER = Tag()
-ITEM = Tag()
-FEATURE = Tag()
-TARGET = Tag()
+    def __init__(self, name) -> None:
+        self.name = name
+
+    def __str__(self) -> str:
+        return self.name
+
+SPARSE = Tag('Sparse')
+DENSE = Tag('Dense')
+ID = Tag('ID')
+USER = Tag('User')
+ITEM = Tag('Item')
+FEATURE = Tag('Feature')
+TARGET = Tag('Target')

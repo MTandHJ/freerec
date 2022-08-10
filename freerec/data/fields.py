@@ -105,6 +105,10 @@ class Field(torch.nn.Module):
         else:
             self.__dtype = val
 
+    def __str__(self) -> str:
+        tags = ','.join(map(str, self.tags))
+        return f"{self.name}: [dtype: {self.dtype}, na_value: {self.na_value}, tags: {tags}]"
+
 class SparseField(Field):
 
     def __init__(

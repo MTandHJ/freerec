@@ -8,7 +8,7 @@ import torchdata.datapipes as dp
 
 from ..fields import Field
 from ..tags import FEATURE, TARGET
-from ...utils import warnLogger
+from ...utils import warnLogger, getLogger
 
 
 __all__ = ['RecDataSet', 'Encoder']
@@ -33,6 +33,7 @@ class RecDataSet(dp.iter.IterDataPipe):
         for attr in ('_cfg', '_active'):
             if not hasattr(cls, attr):
                 raise AttributeError("_cfg, _active should be defined before instantiation ...")
+        assert hasattr(cls._cfg, 'fields'), "Fields sorted by column should be given in _cfg ..."
         return super().__new__(cls)
 
     def __init__(self, root: str, split: str = 'train') -> None:
@@ -67,16 +68,17 @@ class RecDataSet(dp.iter.IterDataPipe):
                 batchsize = len(batch[field.name])
             cls._cfg.datasize += batchsize
 
+
     def _compile(self, refer: str = 'train'):
         if not self.active:
             split, self.split = self.split, refer
             self.compile(self) # compile according to the trainset !
             self.split = split
+        getLogger().info(str(self))
 
     def __str__(self) -> str:
-        head = super().__str__()
-        cfg = str(self.cfg)
-        return "DataSet: " + head + "\n" + cfg
+        cfg = '\n'.join(map(str, self.cfg.fields))
+        return f"{self.__class__.__name__} >>> \n" + cfg
 
 
 
