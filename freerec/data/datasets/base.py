@@ -1,18 +1,20 @@
 
 
 
-from typing import Dict, Iterable, Iterator, Tuple, List
+from typing import Dict, Iterable, Iterator, Tuple, List, Union
 
 import torch
 import torchdata.datapipes as dp
 
 from ..fields import Field
-from ..tags import FEATURE, TARGET
+from ..tags import Tag, FEATURE, TARGET
 from ...utils import warnLogger, getLogger
 
 
 __all__ = ['RecDataSet', 'Encoder']
 
+
+_DEFAULT_BATCH_SIZE = 1000
 
 class RecDataSet(dp.iter.IterDataPipe):
     """ RecDataSet provides a template for specific datasets.
@@ -49,6 +51,9 @@ class RecDataSet(dp.iter.IterDataPipe):
     def cfg(self):
         return self._cfg
 
+    def fields(self):
+        return self._cfg.fields
+
     @property
     def active(self):
         return self._active
@@ -60,7 +65,7 @@ class RecDataSet(dp.iter.IterDataPipe):
                 f"Dataset {cls.__name__} has been activated !!! Skip it ..."
             )
         cls._active = True
-        datapipe = datapipe.batch(batch_size=1000).collate()
+        datapipe = datapipe.batch(batch_size=_DEFAULT_BATCH_SIZE).collate()
         cls._cfg.datasize = 0
         for batch in datapipe:
             for field in cls._cfg.fields:
@@ -81,7 +86,6 @@ class RecDataSet(dp.iter.IterDataPipe):
         return f"{self.__class__.__name__} >>> \n" + cfg
 
 
-
 @dp.functional_datapipe("sharder")
 class Sharder(dp.iter.IterDataPipe):
 
@@ -100,25 +104,29 @@ class Sharder(dp.iter.IterDataPipe):
         else:
             yield from self.source
 
+class Postprocessor(dp.iter.IterDataPipe):
+
+    def __init__(self, datapipe: RecDataSet) -> None:
+        super().__init__()
+        self.source = datapipe
+        self.fields: List[Field] = self.source.fields
 
 @dp.functional_datapipe("encoder")
-class Encoder(dp.iter.IterDataPipe):
+class Encoder(Postprocessor):
 
     def __init__(
         self, datapipe: RecDataSet, batch_size: int, 
         shuffle: bool = True, buffer_size: int = 10000,
-        fields: Iterable = None
+        fields: Iterable[str] = None
     ) -> None:
-        super().__init__()
+        super().__init__(datapipe)
 
         assert buffer_size > batch_size, "buffer_size should be greater than batch_size ..."
 
-        self.source = datapipe
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.buffer_size = (buffer_size // batch_size) * batch_size
 
-        self.fields: List[Field] = self.source.cfg.fields
         if fields:
             self.fields = [field for field in self.fields if field.name in fields]
         self.features = [field for field in self.fields if field.match([FEATURE])]

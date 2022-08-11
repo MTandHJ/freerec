@@ -36,7 +36,7 @@ class Criteo(RecDataSet):
 
     def row_processer(self, row):
         return {
-            field.name: field.caster(val) for val, field in zip(row, self.cfg.fields)
+            field.name: field.caster(val) for val, field in zip(row, self.fields)
         }
 
     def __iter__(self) -> Iterator:

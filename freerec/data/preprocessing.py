@@ -1,13 +1,10 @@
 
 
 
-from typing import Any, Tuple
-
 import numpy as np
 import torch
 from sklearn.preprocessing import LabelEncoder, Binarizer, StandardScaler, MinMaxScaler, FunctionTransformer
 from sklearn.utils._encode import _unique
-from sklearn.utils.validation import column_or_1d
 
 __all__ = ['X2X', 'Label2Index', 'Binarizer', 'StandardScaler', 'MinMaxScaler']
 
@@ -18,6 +15,7 @@ class X2X(FunctionTransformer):
 
     def transform(self, x):
         return x.numpy()
+
 
 class Label2Index(LabelEncoder):
 
