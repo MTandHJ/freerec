@@ -104,18 +104,20 @@ class Sharder(dp.iter.IterDataPipe):
         else:
             yield from self.source
 
+
 class Postprocessor(dp.iter.IterDataPipe):
 
-    def __init__(self, datapipe: RecDataSet) -> None:
+    def __init__(self, datapipe: Union[RecDataSet, 'Postprocessor']) -> None:
         super().__init__()
         self.source = datapipe
         self.fields: List[Field] = self.source.fields
+
 
 @dp.functional_datapipe("encoder")
 class Encoder(Postprocessor):
 
     def __init__(
-        self, datapipe: RecDataSet, batch_size: int, 
+        self, datapipe: Union[RecDataSet, Postprocessor], batch_size: int, 
         shuffle: bool = True, buffer_size: int = 10000,
         fields: Iterable[str] = None
     ) -> None:
