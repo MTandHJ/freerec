@@ -60,11 +60,10 @@ class Field(torch.nn.Module):
     def tags(self):
         return self.__tags
 
-    def match(self, tags: Iterable[Tag]):
-        for tag in tags:
-            if tag not in self.tags:
-                return False
-        return True
+    def match(self, tags: Union[Tag, Iterable[Tag]]):
+        if isinstance(tags, Iterable):
+            return all(map(self.match, tags))
+        return tags in self.tags
 
     def partial_fit(self, x: np.array) -> np.array:
         self.transformer.partial_fit(x)

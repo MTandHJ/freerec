@@ -25,7 +25,8 @@ def main():
     )
     cfg.compile()
 
-    datapipe = Criteo(cfg.root, split='train').encoder(batch_size=cfg.batch_size, buffer_size=cfg.buffer_size)
+    basedp = Criteo(cfg.root, split='train')
+    datapipe = basedp.frame(shuffle=True).encode().chunk(batch_size=cfg.batch_size).dict().tensor()
     _DataLoader = TQDMDataLoader if cfg.progress else DataLoader
     trainloader = _DataLoader(datapipe, num_workers=cfg.num_workers)
     validloader = trainloader

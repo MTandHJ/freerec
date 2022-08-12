@@ -214,7 +214,7 @@ class ToTensor(Postprocessor):
         elif type(self.source) == Frame2List:
             self.__func = self.list2tensor
         else:
-            raise TypeError("datapipe should be Frame2Dict or Frame2List")
+            raise TypeError("datapipe should be Frame2Dict or Frame2List ...")
 
     def dict2tensor(self, batch):
         return {field.name: torch.from_numpy(batch[field.name]).view(-1, 1) for field in self.fields}
@@ -225,6 +225,22 @@ class ToTensor(Postprocessor):
     def __iter__(self) -> Iterator:
         for batch in self.source:
             yield self.__func(batch)
+
+@dp.functional_datapipe('group')
+class Grouper(Postprocessor):
+
+    def __init__(
+        self, datapipe: Postprocessor, groups: Iterable[Union[Tag, Iterable[Tag]]] = (USER, ITEM, TARGET)
+    ) -> None:
+        super().__init__(datapipe)
+        assert groups[-1] == TARGET, " ... "
+        self.groups = [[field for field in self.fields if field.match(tags)] for tags in groups]
+        self.target = self.groups.pop()[0]
+
+    def __iter__(self) -> List[Dict]:
+        for batch in self.source:
+            yield [*[{field.name: batch[field.name] for field in group} for group in self.groups], batch[self.target.name]]
+
 
 class Grapher(Postprocessor):
 

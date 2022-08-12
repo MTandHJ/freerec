@@ -7,7 +7,7 @@ import torchdata.datapipes as dp
 
 from .base import RecDataSet
 from ..fields import SparseField, DenseField
-from ..tags import FEATURE, TARGET
+from ..tags import FEATURE, TARGET, ITEM
 from ...dict2obj import Config
 
 
@@ -16,8 +16,8 @@ class Criteo(RecDataSet):
 
     _cfg = Config(
         # dataset
-        sparse = [SparseField(name=f"C{idx}", na_value='-1', dtype=str, tags=FEATURE) for idx in range(1, 27)],
-        dense = [DenseField(name=f"I{idx}", na_value=0., dtype=float, tags=FEATURE) for idx in range(1, 14)],
+        sparse = [SparseField(name=f"C{idx}", na_value='-1', dtype=str, tags=[ITEM, FEATURE]) for idx in range(1, 27)],
+        dense = [DenseField(name=f"I{idx}", na_value=0., dtype=float, tags=[ITEM, FEATURE]) for idx in range(1, 14)],
         target = [SparseField(name='Label', na_value=None, dtype=int, transformer='none', tags=TARGET)]
     )
     _cfg.fields = _cfg.target + _cfg.dense + _cfg.sparse

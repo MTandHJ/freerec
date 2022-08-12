@@ -151,13 +151,15 @@ class Coach:
     @timemeter("Coach/train")
     def train(self, trainloader: Iterable):
         self.model.train()
-        inputs: Dict[str, torch.Tensor]
+        users: Dict[str, torch.Tensor]
+        items: Dict[str, torch.Tensor]
         targets: torch.Tensor
-        for inputs, targets in trainloader:
-            inputs = {field: val.to(self.device) for field, val in inputs.items()}
+        for users, items, targets in trainloader:
+            users = {name: val.to(self.device) for name, val in users.items()}
+            items = {name: val.to(self.device) for name, val in items.items()}
             targets = targets.to(self.device)
 
-            outs = self.model(inputs)
+            outs = self.model(users, items)
             loss = self.criterion(outs, targets)
 
             self.optimizer.zero_grad()
@@ -172,15 +174,17 @@ class Coach:
     @torch.no_grad()
     def evaluate(self, dataloader: Iterable, prefix: str = 'valid'):
         self.model.eval()
-        inputs: Dict[str, torch.Tensor]
-        targets: Dict[str, torch.Tensor]
+        users: Dict[str, torch.Tensor]
+        items: Dict[str, torch.Tensor]
+        targets: torch.Tensor
         running_preds: List[torch.Tensor] = []
         running_targets: List[torch.Tensor] = []
-        for inputs, targets in dataloader:
-            inputs = {field: val.to(self.device) for field, val in inputs.items()}
+        for users, items, targets in dataloader:
+            users = {name: val.to(self.device) for name, val in users.items()}
+            items = {name: val.to(self.device) for name, val in items.items()}
             targets = targets.to(self.device)
 
-            preds = self.model(inputs)
+            preds = self.model(users, items)
             loss = self.criterion(preds, targets)
 
             running_preds.append(preds.detach().clone().cpu().flatten())
@@ -196,6 +200,7 @@ class Coach:
             n=running_targets.size(0), mode="mean", prefix=prefix,
             pool=['PRECISION', 'RECALL', 'HITRATE', 'MSE', 'MAE', 'RMSE']
         )
+
 
     @timemeter("Coach/resume")
     def resume(self):
@@ -225,3 +230,7 @@ class Coach:
         self.save()
         self.summary()
 
+
+class CoachForCTR(Coach): ...
+
+class CoachForMatching(Coach): ...
