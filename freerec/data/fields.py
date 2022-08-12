@@ -4,6 +4,7 @@
 from typing import Callable, Iterable, Tuple, Union, Dict, List
 
 import torch
+import numpy as np
 from functools import partial, lru_cache
 
 from .utils import safe_cast
@@ -65,21 +66,11 @@ class Field(torch.nn.Module):
                 return False
         return True
 
-    def partial_fit(self, x: Union[List[str], torch.Tensor]) -> torch.Tensor:
-        if isinstance(x, list):
-            self.transformer.partial_fit(x)
-        elif isinstance(x, torch.Tensor):
-            self.transformer.partial_fit(x.view(-1, 1))
-        else:
-            raise ValueError("x should be Union[List[str], torch.Tensor] ...")
+    def partial_fit(self, x: np.array) -> np.array:
+        self.transformer.partial_fit(x)
 
-    def transform(self, x: Union[List[str], torch.Tensor]) -> torch.Tensor:
-        if isinstance(x, list):
-            return torch.from_numpy(self.transformer.transform(x)).to(self.dtype)
-        elif isinstance(x, torch.Tensor):
-            return torch.from_numpy(self.transformer.transform(x.view(-1, 1))).to(self.dtype)
-        else:
-            raise ValueError("x should be Union[List[str], torch.Tensor] ...")
+    def transform(self, x: np.array) -> np.array:
+        return self.transformer.transform(x)
 
     def embed(self, dim: int, **kwargs):
         raise NotImplementedError()
@@ -99,9 +90,9 @@ class Field(torch.nn.Module):
     @dtype.setter
     def dtype(self, val):
         if val in (int, str):
-            self.__dtype = torch.long
+            self.__dtype = np.int64
         elif val == float:
-            self.__dtype = torch.float32
+            self.__dtype = np.float32
         else:
             self.__dtype = val
 

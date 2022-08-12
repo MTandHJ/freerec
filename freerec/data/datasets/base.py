@@ -1,13 +1,16 @@
 
 
 
-from typing import Dict, Iterable, Iterator, Tuple, List, Union
+import chunk
+from dataclasses import field
+from typing import Dict, Iterable, Iterator, Optional, Tuple, List, Union
 
 import torch
 import torchdata.datapipes as dp
+import pandas as pd
 
 from ..fields import Field
-from ..tags import Tag, FEATURE, TARGET
+from ..tags import Tag, FEATURE, TARGET, USER, ITEM, ID
 from ...utils import warnLogger, getLogger
 
 
@@ -51,12 +54,16 @@ class RecDataSet(dp.iter.IterDataPipe):
     def cfg(self):
         return self._cfg
 
+    @property
     def fields(self):
         return self._cfg.fields
 
     @property
     def active(self):
         return self._active
+
+    def row_processer(self, row):
+        return [field.caster(val) for val, field in zip(row, self.fields)]
 
     @classmethod
     def compile(cls, datapipe: dp.iter.IterDataPipe):
@@ -65,13 +72,14 @@ class RecDataSet(dp.iter.IterDataPipe):
                 f"Dataset {cls.__name__} has been activated !!! Skip it ..."
             )
         cls._active = True
-        datapipe = datapipe.batch(batch_size=_DEFAULT_BATCH_SIZE).collate()
+        datapipe = datapipe.batch(batch_size=_DEFAULT_BATCH_SIZE)
         cls._cfg.datasize = 0
+        columns = [field.name for field in cls._cfg.fields]
         for batch in datapipe:
+            df = pd.DataFrame(batch, columns=columns)
             for field in cls._cfg.fields:
-                field.partial_fit(batch[field.name])
-                batchsize = len(batch[field.name])
-            cls._cfg.datasize += batchsize
+                field.partial_fit(df[[field.name]])
+            cls._cfg.datasize += len(df)
 
 
     def _compile(self, refer: str = 'train'):
@@ -86,13 +94,17 @@ class RecDataSet(dp.iter.IterDataPipe):
         return f"{self.__class__.__name__} >>> \n" + cfg
 
 
-@dp.functional_datapipe("sharder")
-class Sharder(dp.iter.IterDataPipe):
 
-    def __init__(self, datapipe: dp.iter.IterDataPipe) -> None:
+class Postprocessor(dp.iter.IterDataPipe):
+
+    def __init__(self, datapipe: Union[RecDataSet, 'Postprocessor']) -> None:
         super().__init__()
-
         self.source = datapipe
+        self.fields: List[Field] = self.source.fields
+
+
+@dp.functional_datapipe("shard")
+class Sharder(Postprocessor):
 
     def __iter__(self) -> Iterator:
         worker_infos = torch.utils.data.get_worker_info()
@@ -105,53 +117,128 @@ class Sharder(dp.iter.IterDataPipe):
             yield from self.source
 
 
-class Postprocessor(dp.iter.IterDataPipe):
+@dp.functional_datapipe("frame")
+class FrameMaker(Postprocessor):
 
-    def __init__(self, datapipe: Union[RecDataSet, 'Postprocessor']) -> None:
-        super().__init__()
-        self.source = datapipe
-        self.fields: List[Field] = self.source.fields
-
-
-@dp.functional_datapipe("encoder")
-class Encoder(Postprocessor):
-
-    def __init__(
-        self, datapipe: Union[RecDataSet, Postprocessor], batch_size: int, 
-        shuffle: bool = True, buffer_size: int = 10000,
-        fields: Iterable[str] = None
-    ) -> None:
+    def __init__(self, datapipe: RecDataSet, buffer_size: int = 2560, shuffle: bool = True) -> None:
         super().__init__(datapipe)
 
-        assert buffer_size > batch_size, "buffer_size should be greater than batch_size ..."
-
-        self.batch_size = batch_size
+        self.buffer_size = buffer_size
         self.shuffle = shuffle
-        self.buffer_size = (buffer_size // batch_size) * batch_size
-
-        if fields:
-            self.fields = [field for field in self.fields if field.name in fields]
-        self.features = [field for field in self.fields if field.match([FEATURE])]
-        self.target = [field for field in self.fields if not field.match([TARGET])][0]
-
-    def fields_filter(self, row: dict) -> Dict:
-        return {field.name: row[field.name] for field in self.fields}
-
-    def batch_processor(self, batch: List) -> Tuple[Dict, torch.Tensor]:
-        features = {field.name: field.transform(batch[field.name]) for field in self.features}
-        targets = self.target.transform(batch[self.target.name])
-        return features, targets
+        self.columns = [field.name for field in self.fields]
 
     def __iter__(self) -> Iterator:
         datapipe = self.source
-        datapipe = datapipe.map(self.fields_filter)
-        if self.shuffle:
-            datapipe = datapipe.shuffle(buffer_size=self.buffer_size)
-        datapipe = datapipe.sharder()
-        datapipe = datapipe.batch(batch_size=self.batch_size)
-        datapipe = datapipe.collate()
-        datapipe = datapipe.map(self.batch_processor)
-        yield from datapipe
-        
+        for batch in datapipe.batch(self.buffer_size):
+            df = pd.DataFrame(batch, columns=self.columns)
+            if self.shuffle:
+                yield df.sample(frac=1)
+            else:
+                yield df
 
 
+@dp.functional_datapipe("subfield")
+class SubFielder(Postprocessor):
+
+    def __init__(self, datapipe: Postprocessor, fields: Optional[Iterable[str]] = None) -> None:
+        super().__init__(datapipe)
+        if fields:
+            self.fields = [field for field in self.fields if field.name in fields]
+        self.columns = [field.name for field in self.fields]
+
+    def __iter__(self) -> Iterator:
+        for df in self.source:
+            yield df[self.columns]
+
+
+@dp.functional_datapipe("encode")
+class Encoder(Postprocessor):
+
+    def __init__(self, datapipe: Postprocessor) -> None:
+        super().__init__(datapipe)
+
+        self.dtypes = {field.name: field.dtype for field in self.fields}
+
+    def __iter__(self) -> Iterator:
+        for df in self.source:
+            for field in self.fields:
+                df[field.name] = field.transform(df[[field.name]])
+            yield df.astype(self.dtypes)
+
+
+@dp.functional_datapipe("chunk")
+class Chunker(Postprocessor):
+
+    def __init__(self, datapipe: Postprocessor, batch_size: int) -> None:
+        super().__init__(datapipe)
+
+        self.batch_size = batch_size
+        self._buffer = pd.DataFrame(
+            columns=[field.name for field in self.fields]
+        ).astype({field.name: field.dtype for field in self.fields})
+
+
+    def __iter__(self) -> Iterator:
+        for df in self.source:
+            self._buffer = pd.concat((self._buffer, df))
+            for _ in range(self.batch_size, len(self._buffer) + 1, self.batch_size):
+                yield self._buffer.head(self.batch_size)
+                self._buffer = self._buffer[self.batch_size:]
+        yield self._buffer
+        self._buffer.drop(self._buffer.index, inplace=True)
+
+
+@dp.functional_datapipe("dict")
+class Frame2Dict(Postprocessor):
+
+    def __iter__(self) -> Iterator:
+        for df in self.source:
+            yield {field.name: df[field.name].values for field in self.fields}
+
+
+@dp.functional_datapipe("list")
+class Frame2List(Postprocessor):
+
+    def __iter__(self) -> Iterator:
+        for df in self.source:
+            yield [df[field.name].values for field in self.fields]
+
+
+@dp.functional_datapipe('tensor')
+class ToTensor(Postprocessor):
+
+    def __init__(self, datapipe: Union[RecDataSet, 'Postprocessor']) -> None:
+        super().__init__(datapipe)
+        if type(self.source) == Frame2Dict:
+            self.__func = self.dict2tensor
+        elif type(self.source) == Frame2List:
+            self.__func = self.list2tensor
+        else:
+            raise TypeError("datapipe should be Frame2Dict or Frame2List")
+
+    def dict2tensor(self, batch):
+        return {field.name: torch.from_numpy(batch[field.name]).view(-1, 1) for field in self.fields}
+
+    def list2tensor(self, batch):
+        return [torch.from_numpy(item).view(-1, 1) for item in batch]
+
+    def __iter__(self) -> Iterator:
+        for batch in self.source:
+            yield self.__func(batch)
+
+class Grapher(Postprocessor):
+
+    def __init__(self, datapipe: RecDataSet) -> None:
+        super().__init__(datapipe)
+
+        self.User: Field = [field for field in self.fields.match([USER, ID])][0]
+        self.Item: Field = [field for field in self.fields.match([ITEM, ID])][0]
+        self.Rating: Field = [field for field in self.fields.match([TARGET])][0]
+        self.fields = [self.User, self.Item, self.Rating]
+
+    def compile(self):
+        self.posItems = [[] for _ in range(self.User.count)]
+        for row in self.source:
+            users = row[self.User.name]
+            items = row[self.Item.name]
+            ratings = row[self.Rating.name]

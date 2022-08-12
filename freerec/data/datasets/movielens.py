@@ -39,11 +39,6 @@ class MovieLens1M(RecDataSet):
     def file_filter(self, filename: str):
         return self.split in filename
 
-    def row_processer(self, row):
-        return {
-            field.name: field.caster(val) for val, field in zip(row, self.fields)
-        }
-
     def __iter__(self) -> Iterator:
         datapipe = dp.iter.FileLister(self.root)
         datapipe = datapipe.filter(filter_fn=self.file_filter)

@@ -14,7 +14,7 @@ class X2X(FunctionTransformer):
         ...
 
     def transform(self, x):
-        return x.numpy()
+        return x
 
 
 class Label2Index(LabelEncoder):
