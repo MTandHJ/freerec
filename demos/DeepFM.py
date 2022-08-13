@@ -1,5 +1,7 @@
 
 
+
+
 import torch
 import torch.nn as nn
 
@@ -9,9 +11,8 @@ from freerec.models import DeepFM
 from freerec.data.datasets import Criteo
 from freerec.data.utils import DataLoader, TQDMDataLoader
 from freerec.data.fields import Tokenizer
-from freerec.data.tags import SPARSE, DENSE, FEATURE
+from freerec.data.tags import SPARSE, DENSE, FEATURE, TARGET
 from freerec.criterions import BCELoss
-
 
 
 def main():
@@ -26,7 +27,7 @@ def main():
     cfg.compile()
 
     basedp = Criteo(cfg.root, split='train')
-    datapipe = basedp.frame(shuffle=True).encode().chunk(batch_size=cfg.batch_size).dict().tensor()
+    datapipe = basedp.frame(shuffle=True).encode().chunk(batch_size=cfg.batch_size).dict().tensor().group()
     _DataLoader = TQDMDataLoader if cfg.progress else DataLoader
     trainloader = _DataLoader(datapipe, num_workers=cfg.num_workers)
     validloader = trainloader
@@ -70,3 +71,22 @@ if __name__ == "__main__":
 
 
 
+
+
+# from freerec.data.datasets import Criteo
+# from freerec.data.tags import FEATURE, TARGET
+
+
+
+
+# datapipe = Criteo("../criteo")
+# datapipe = datapipe.frame(buffer_size=1000, shuffle=False)
+# datapipe = datapipe.encode()
+# datapipe = datapipe.chunk(batch_size=2)
+# datapipe = datapipe.dict().tensor().group(groups=[FEATURE, TARGET])
+
+
+
+# dataset = iter(datapipe)
+
+# print(next(dataset)[1])
