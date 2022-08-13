@@ -1,8 +1,6 @@
 
 
 
-import chunk
-from dataclasses import field
 from typing import Dict, Iterable, Iterator, Optional, Tuple, List, Union
 
 import torch
@@ -78,7 +76,7 @@ class RecDataSet(dp.iter.IterDataPipe):
         for batch in datapipe:
             df = pd.DataFrame(batch, columns=columns)
             for field in cls._cfg.fields:
-                field.partial_fit(df[[field.name]])
+                field.partial_fit(df[field.name].values.reshape(-1, 1))
             cls._cfg.datasize += len(df)
 
 
@@ -119,8 +117,16 @@ class Sharder(Postprocessor):
 
 @dp.functional_datapipe("frame")
 class FrameMaker(Postprocessor):
+    """Make pandas.DataFrame
+    TODO: use torcharrow instead for efficient implements
+    Params:
+        buffer_size: int, save dataframe in memory, default: 6400 = 128 * 50;
+        shuffle: bool, shuffle by row in True
+    Return (__iter__):
+        pandas.DataFrame
+    """
 
-    def __init__(self, datapipe: RecDataSet, buffer_size: int = 2560, shuffle: bool = True) -> None:
+    def __init__(self, datapipe: RecDataSet, buffer_size: int = 6400, shuffle: bool = True) -> None:
         super().__init__(datapipe)
 
         self.buffer_size = buffer_size
@@ -139,6 +145,7 @@ class FrameMaker(Postprocessor):
 
 @dp.functional_datapipe("subfield")
 class SubFielder(Postprocessor):
+    """ Select subfields """
 
     def __init__(self, datapipe: Postprocessor, fields: Optional[Iterable[str]] = None) -> None:
         super().__init__(datapipe)
@@ -153,21 +160,18 @@ class SubFielder(Postprocessor):
 
 @dp.functional_datapipe("encode")
 class Encoder(Postprocessor):
-
-    def __init__(self, datapipe: Postprocessor) -> None:
-        super().__init__(datapipe)
-
-        self.dtypes = {field.name: field.dtype for field in self.fields}
+    """Transform int|float into required formats by column"""
 
     def __iter__(self) -> Iterator:
         for df in self.source:
             for field in self.fields:
-                df[field.name] = field.transform(df[[field.name]])
-            yield df.astype(self.dtypes)
+                df[field.name] = field.transform(df[field.name].values.reshape(len(df), -1))
+            yield df
 
 
 @dp.functional_datapipe("chunk")
 class Chunker(Postprocessor):
+    """A special batcher for dataframe only"""
 
     def __init__(self, datapipe: Postprocessor, batch_size: int) -> None:
         super().__init__(datapipe)
@@ -175,8 +179,7 @@ class Chunker(Postprocessor):
         self.batch_size = batch_size
         self._buffer = pd.DataFrame(
             columns=[field.name for field in self.fields]
-        ).astype({field.name: field.dtype for field in self.fields})
-
+        )
 
     def __iter__(self) -> Iterator:
         for df in self.source:
@@ -184,51 +187,47 @@ class Chunker(Postprocessor):
             for _ in range(self.batch_size, len(self._buffer) + 1, self.batch_size):
                 yield self._buffer.head(self.batch_size)
                 self._buffer = self._buffer[self.batch_size:]
-        yield self._buffer
-        self._buffer.drop(self._buffer.index, inplace=True)
+        if not self._buffer.empty:
+            yield self._buffer
+            self._buffer.drop(self._buffer.index, inplace=True)
 
 
 @dp.functional_datapipe("dict")
 class Frame2Dict(Postprocessor):
-
+    """Convert dataframe into Dict[str, List] """
     def __iter__(self) -> Iterator:
         for df in self.source:
-            yield {field.name: df[field.name].values for field in self.fields}
+            yield {name: df[name].values.tolist() for name in df.columns}
 
 
 @dp.functional_datapipe("list")
 class Frame2List(Postprocessor):
-
+    """Convert dataframe into List[List] """
     def __iter__(self) -> Iterator:
         for df in self.source:
-            yield [df[field.name].values for field in self.fields]
+            yield [df[field.name].values.tolist() for field in self.fields]
 
 
 @dp.functional_datapipe('tensor')
 class ToTensor(Postprocessor):
-
-    def __init__(self, datapipe: Union[RecDataSet, 'Postprocessor']) -> None:
-        super().__init__(datapipe)
-        if type(self.source) == Frame2Dict:
-            self.__func = self.dict2tensor
-        elif type(self.source) == Frame2List:
-            self.__func = self.list2tensor
-        else:
-            raise TypeError("datapipe should be Frame2Dict or Frame2List ...")
-
-    def dict2tensor(self, batch):
-        return {field.name: torch.from_numpy(batch[field.name]).view(-1, 1) for field in self.fields}
-
-    def list2tensor(self, batch):
-        return [torch.from_numpy(item).view(-1, 1) for item in batch]
+    """Convert Dict[str, List] into Dict[str, torch.Tensor]"""
+    def at_least_2d(self, val: torch.Tensor):
+        return val.unsqueeze(1) if val.ndim == 1 else val
 
     def __iter__(self) -> Iterator:
         for batch in self.source:
-            yield self.__func(batch)
+            yield {field.name: self.at_least_2d(torch.tensor(batch[field.name], dtype=field.dtype)) for field in self.fields}
+
 
 @dp.functional_datapipe('group')
 class Grouper(Postprocessor):
-
+    """Group batch into several groups
+    For example, RS generally requires
+        for users, items, targets in datapipe: ...
+    Note that we assume the last group is TARGET, which should be returned in List form.
+    So the final returns are in the form of:
+        Dict[str, torch.Tensor], Dict[str, torch.Tensor], ..., List[torch.Tensor]
+    """
     def __init__(
         self, datapipe: Postprocessor, groups: Iterable[Union[Tag, Iterable[Tag]]] = (USER, ITEM, TARGET)
     ) -> None:
@@ -237,7 +236,7 @@ class Grouper(Postprocessor):
         self.groups = [[field for field in self.fields if field.match(tags)] for tags in groups]
         self.target = self.groups.pop()[0]
 
-    def __iter__(self) -> List[Dict]:
+    def __iter__(self) -> List:
         for batch in self.source:
             yield [*[{field.name: batch[field.name] for field in group} for group in self.groups], batch[self.target.name]]
 

@@ -89,9 +89,9 @@ class Field(torch.nn.Module):
     @dtype.setter
     def dtype(self, val):
         if val in (int, str):
-            self.__dtype = np.int64
+            self.__dtype = torch.long
         elif val == float:
-            self.__dtype = np.float32
+            self.__dtype = torch.float32
         else:
             self.__dtype = val
 
