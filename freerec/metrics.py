@@ -8,6 +8,7 @@ for formal definitions.
 
 from typing import Optional, Union, List 
 
+import numpy as np
 import torch
 import torchmetrics
 
@@ -23,7 +24,7 @@ __all__ = [
 def _reduce(reduction='mean'):
     def decorator(func):
         def wrapper(*args, reduction = reduction, **kwargs):
-            results = func(*args, **kwargs)
+            results = torch.tensor(list(func(*args, **kwargs)))
             if reduction == 'none':
                 return results
             elif reduction == 'mean':
@@ -56,7 +57,7 @@ def mean_abs_error(preds: Union[List[torch.Tensor], torch.Tensor], targets: torc
 
     metric = torchmetrics.functional.mean_absolute_error
 
-    return torch.tensor(list(map(metric, preds, targets)))
+    return map(metric, preds, targets)
 
 @_reduce('mean')
 def mean_squared_error(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tensor) -> torch.Tensor:
@@ -77,7 +78,7 @@ def mean_squared_error(preds: Union[List[torch.Tensor], torch.Tensor], targets: 
         squared=True
     )
 
-    return torch.tensor(list(map(metric, preds, targets)))
+    return map(metric, preds, targets)
 
 @_reduce('mean')
 def root_mse(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tensor) -> torch.Tensor:
@@ -98,7 +99,7 @@ def root_mse(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tens
         squared=False
     )
 
-    return torch.tensor(list(map(metric, preds, targets)))
+    return map(metric, preds, targets)
 
 # quality of the set of recommendations ========================================================================
 
@@ -122,7 +123,7 @@ def precision(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Ten
         k=k
     )
 
-    return torch.tensor(list(map(metric, preds, targets)))
+    return map(metric, preds, targets)
 
 @_reduce('mean')
 def recall(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tensor, k: Optional[int] = None) -> torch.Tensor:
@@ -144,7 +145,7 @@ def recall(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tensor
         k=k
     )
 
-    return torch.tensor(list(map(metric, preds, targets)))
+    return map(metric, preds, targets)
 
 @_reduce('mean')
 def hit_rate(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tensor, k: Optional[int] = None) -> torch.Tensor:
@@ -166,7 +167,7 @@ def hit_rate(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tens
         k=k
     )
 
-    return torch.tensor(list(map(metric, preds, targets)))
+    return map(metric, preds, targets)
 
 
 # quality of the list of recommendations ========================================================================
@@ -191,7 +192,7 @@ def normalized_dcg(preds: Union[List[torch.Tensor], torch.Tensor], targets: torc
         k=k
     )
 
-    return torch.tensor(list(map(metric, preds, targets)))
+    return map(metric, preds, targets)
 
 @_reduce('mean')
 def mean_reciprocal_rank(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tensor) -> torch.Tensor:
@@ -209,7 +210,7 @@ def mean_reciprocal_rank(preds: Union[List[torch.Tensor], torch.Tensor], targets
 
     metric = torchmetrics.functional.retrieval_reciprocal_rank
 
-    return torch.tensor(list(map(metric, preds, targets)))
+    return map(metric, preds, targets)
 
 @_reduce('mean')
 def mean_average_precision(preds: Union[List[torch.Tensor], torch.Tensor], targets: torch.Tensor) -> torch.Tensor:
@@ -227,7 +228,7 @@ def mean_average_precision(preds: Union[List[torch.Tensor], torch.Tensor], targe
 
     metric = torchmetrics.functional.retrieval_average_precision
 
-    return torch.tensor(list(map(metric, preds, targets)))
+    return map(metric, preds, targets)
 
 
 

@@ -27,8 +27,6 @@ class MovieLens1M(RecDataSet):
 
     _cfg.fields = _cfg.sparse + _cfg.target + _cfg.dense
 
-    _active = False
-
     open_kw = Config(mode='rt', delimiter='\t', skip_lines=0)
 
     def __init__(self, root: str, **open_kw) -> None:

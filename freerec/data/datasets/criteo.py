@@ -22,8 +22,6 @@ class Criteo(RecDataSet):
     )
     _cfg.fields = _cfg.target + _cfg.dense + _cfg.sparse
 
-    _active = False
-
     open_kw = Config(mode='rt', delimiter=',', skip_lines=1)
 
     def __init__(self, root: str, **open_kw) -> None:

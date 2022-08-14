@@ -31,7 +31,7 @@ class Label2Index(LabelEncoder):
 
     def transform(self, y):
         y = self._flatten(y)
-        return super().transform(y).reshape(-1, 1)
+        return super().transform(y)
 
 class Binarizer(Binarizer):
 

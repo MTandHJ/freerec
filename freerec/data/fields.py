@@ -46,9 +46,10 @@ class Field(torch.nn.Module):
 
     def add_tag(self, tags: Union[Tag, Iterable[Tag]]):
         if isinstance(tags, Tag):
-            self.__tags.add(tags)
+            self.__tags.add(tags.name)
         else:
-            self.__tags = self.__tags | set(tags)
+            for tag in tags:
+                self.add_tag(tag) 
 
     def remove_tag(self, tags: Union[Tag, Iterable[Tag]]):
         if isinstance(tags, Tag):
@@ -63,7 +64,7 @@ class Field(torch.nn.Module):
     def match(self, tags: Union[Tag, Iterable[Tag]]):
         if isinstance(tags, Iterable):
             return all(map(self.match, tags))
-        return tags in self.tags
+        return tags.name in self.tags # using name for mathcing to avoid deepcopy pitfall !
 
     def partial_fit(self, x: np.array) -> np.array:
         self.transformer.partial_fit(x)
@@ -96,7 +97,7 @@ class Field(torch.nn.Module):
             self.__dtype = val
 
     def __str__(self) -> str:
-        tags = ','.join(map(str, self.tags))
+        tags = ','.join(self.tags)
         return f"{self.name}: [dtype: {self.dtype}, na_value: {self.na_value}, tags: {tags}]"
 
 class SparseField(Field):

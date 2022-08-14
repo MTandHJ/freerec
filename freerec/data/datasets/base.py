@@ -17,7 +17,7 @@ from ...utils import timemeter, warnLogger, getLogger
 __all__ = ['RecDataSet', 'Encoder']
 
 
-_DEFAULT_BATCH_SIZE = 1000
+_DEFAULT_BATCH_SIZE = 10000
 
 
 class BaseSet(dp.iter.IterDataPipe):
@@ -56,9 +56,9 @@ class RecDataSet(BaseSet):
     """
 
     def __new__(cls, *args, **kwargs):
-        for attr in ('_cfg', '_active'):
+        for attr in ('_cfg',):
             if not hasattr(cls, attr):
-                raise AttributeError("_cfg, _active should be defined before instantiation ...")
+                raise AttributeError("_cfg, should be defined before instantiation ...")
         assert hasattr(cls._cfg, 'fields'), "Fields sorted by column should be given in _cfg ..."
         return super().__new__(cls)
 
@@ -83,15 +83,25 @@ class RecDataSet(BaseSet):
     @timemeter("DataSet/compile")
     def compile(self):
         self.train()
-        datapipe = self.batch(batch_size=_DEFAULT_BATCH_SIZE)
         self._cfg.datasize = 0
         columns = [field.name for field in self._cfg.fields]
+        datapipe = self.batch(batch_size=_DEFAULT_BATCH_SIZE)
         for batch in datapipe:
             df = pd.DataFrame(batch, columns=columns)
             for field in self._cfg.fields:
-                field.partial_fit(df[field.name].values.reshape(-1, 1))
+                field.partial_fit(df[field.name].values[:, None])
             self._cfg.datasize += len(df)
+
+        self.valid()
+        datapipe = self.batch(batch_size=_DEFAULT_BATCH_SIZE)
+        for batch in datapipe:
+            df = pd.DataFrame(batch, columns=columns)
+            for field in self._cfg.fields:
+                field.partial_fit(df[field.name].values[:, None])
+            self._cfg.datasize += len(df)
+
         getLogger().info(str(self))
+
 
     def __str__(self) -> str:
         cfg = '\n'.join(map(str, self.cfg.fields))
@@ -284,6 +294,7 @@ class NegativeSamper(Postprocessor):
         self.train()
         self.posItems = [set() for _ in range(self._User.count)]
         self.allItems = set(range(self._Item.count))
+        self.negItems = []
         for df in self.source:
             df = df[[self._User.name, self._Item.name]]
             for idx, items in df.groupby(self._User.name).agg(set).iterrows():
@@ -300,10 +311,12 @@ class NegativeSamper(Postprocessor):
                     lambda row: random.sample(self.negItems[int(row[self._User.name])], k=self.num_negatives), 
                     axis=1
                 )
+                yield df
         else:
             for df in self.source:
                 df[self._Negative.name] = df.agg(
                     lambda row: self.negItems[int(row[self._User.name])], 
                     axis=1
                 ) 
+                yield df
             
