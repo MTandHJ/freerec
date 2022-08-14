@@ -1,22 +1,19 @@
 
 
-
 from typing import List, Dict
 
 import torch
-import torch.nn as nn
 
 from freerec.parser import Parser
 from freerec.launcher import Coach
 from freerec.models import DeepFM
 from freerec.data.datasets import Criteo
-from freerec.data.utils import DataLoader, TQDMDataLoader
 from freerec.data.fields import Tokenizer
 from freerec.data.tags import SPARSE, DENSE, FEATURE, TARGET
 from freerec.criterions import BCELoss
 
 
-class CoachforCTR(Coach):
+class CoachforDeepFM(Coach):
 
 
     def evaluate(self, prefix: str = 'valid'):
@@ -34,8 +31,8 @@ class CoachforCTR(Coach):
             preds = self.model(users, items)
             loss = self.criterion(preds, targets)
 
-            running_preds.append(preds.detach().clone().cpu())
-            running_targets.append(targets.detach().clone().cpu())
+            running_preds.append(preds.detach().clone().cpu().flatten())
+            running_targets.append(targets.detach().clone().cpu().flatten())
             
             self.callback(loss, n=targets.size(0), mode="mean", prefix=prefix, pool=['LOSS'])
 
@@ -60,8 +57,6 @@ def main():
 
     basepipe = Criteo(cfg.root)
     datapipe = basepipe.dataframe_(shuffle=True).encode_().chunk_(batch_size=cfg.batch_size).dict_().tensor_().group_()
-    trainloader = _DataLoader(datapipe, num_workers=cfg.num_workers)
-    validloader = trainloader
 
     tokenizer = Tokenizer(datapipe.fields)
     tokenizer.embed(
@@ -85,15 +80,16 @@ def main():
         )
     lr_scheduler=torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
-    coach = Coach(
+    coach = CoachforDeepFM(
         model=model,
+        datapipe=datapipe,
         criterion=BCELoss(),
         optimizer=optimizer,
         lr_scheduler=lr_scheduler,
         device=cfg.DEVICE
     )
     coach.compile(cfg, callbacks=['loss', 'mse', 'mae', 'rmse', 'precision@100', 'recall@100', 'hitrate@100'])
-    coach.fit(trainloader, validloader, epochs=cfg.epochs)
+    coach.fit()
 
 
 if __name__ == "__main__":

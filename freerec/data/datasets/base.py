@@ -138,7 +138,7 @@ class FrameMaker(Postprocessor):
     TODO: use torcharrow instead for efficient implements
     Params:
         buffer_size: int, save dataframe in memory, default: 6400 = 128 * 50;
-        shuffle: bool, shuffle by row in True
+        shuffle: bool, shuffle by row in True and in mode 'train'
     Return (__iter__):
         pandas.DataFrame
     """
@@ -154,7 +154,7 @@ class FrameMaker(Postprocessor):
         datapipe = self.source
         for batch in datapipe.batch(self.buffer_size):
             df = pd.DataFrame(batch, columns=self.columns)
-            if self.shuffle:
+            if self.mode == 'train' and self.shuffle:
                 yield df.sample(frac=1)
             else:
                 yield df

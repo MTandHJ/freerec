@@ -1,6 +1,6 @@
 
 
-from typing import Callable, Iterable, List, Dict, Optional
+from typing import Callable, List, Dict, Optional
 
 import torch
 import os
@@ -102,15 +102,25 @@ class Coach:
         self, cfg: Config, callbacks: List[str]
     ):
         self.cfg = cfg
-        self.meters = Config(
-            valid=defaultdict(list),
-            test=defaultdict(list)
-        )
+        # meters for train|valid|test
+        self.meters = Config()
+        self.meters['train'] = {
+            'LOSS': [
+                AverageMeter(
+                    name='LOSS', 
+                    metric=DEFAULT_METRICS['LOSS'], 
+                    fmt=DEFAULT_FMTS['LOSS']
+                )
+            ]
+        }
+        self.meters['valid'] = defaultdict(list)
+        self.meters['test'] = defaultdict(list)
+
         for name in callbacks:
             name = name.upper()
             if '@' in name:
                 callback, K = name.split('@')
-                for prefix in self.meters:
+                for prefix in ('valid', 'test'):
                     self.meters[prefix][callback].append(
                         AverageMeter(
                             name=name,
@@ -120,7 +130,7 @@ class Coach:
                     )
             else:
                 callback = name
-                for prefix in self.meters:
+                for prefix in ('valid', 'test'):
                     self.meters[prefix][callback].append(
                         AverageMeter(
                             name=name,
@@ -128,12 +138,9 @@ class Coach:
                             fmt=DEFAULT_FMTS[callback]
                         )
                     )
-        self.meters['train'] = {'LOSS': [AverageMeter(
-            name='LOSS', metric=DEFAULT_METRICS['LOSS'], fmt=DEFAULT_FMTS['LOSS']
-        )]}
 
+        # dataloader
         self.load_dataloader()
-
 
     def load_dataloader(self):
         _DataLoader = TQDMDataLoader if self.cfg.progress else DataLoader
@@ -155,7 +162,7 @@ class Coach:
     def step(self, epoch: int):
         for prefix, callbacks in self.meters.items():
             callbacks: defaultdict[str, List[AverageMeter]]
-            infos = [f"[Epoch: {epoch:<3d}] " + prefix.upper() + " >>> "]
+            infos = [f"[Epoch: {epoch:<3d}] " + f"{prefix.upper():5}" + " >>> "]
             for meters in callbacks.values():
                 infos += [meter.step() for meter in meters if meter.active]
             getLogger().info(' || '.join(infos))
@@ -194,52 +201,60 @@ class Coach:
 
     @torch.no_grad()
     def evaluate(self, prefix: str = 'valid'):
-        self.model.eval()
-        users: Dict[str, torch.Tensor]
-        items: Dict[str, torch.Tensor]
-        targets: torch.Tensor
-        for users, items, targets in self.dataloader:
-            users = {name: val.to(self.device) for name, val in users.items()}
-            items = {name: val.to(self.device) for name, val in items.items()}
-            targets = targets.to(self.device)
+        # self.model.eval()
+        # users: Dict[str, torch.Tensor]
+        # items: Dict[str, torch.Tensor]
+        # targets: torch.Tensor
+        # for users, items, targets in self.dataloader:
+        #     users = {name: val.to(self.device) for name, val in users.items()}
+        #     items = {name: val.to(self.device) for name, val in items.items()}
+        #     targets = targets.to(self.device)
 
-            preds = self.model(users, items)
-            loss = self.criterion(preds, targets)
+        #     preds = self.model(users, items)
+        #     loss = self.criterion(preds, targets)
 
-            self.callback(loss, n=targets.size(0), mode="mean", prefix=prefix, pool=['LOSS'])
-            self.callback(
-                preds.detach().clone().cpu(), targets.detach().clone().cpu(),
-                n=targets.size(0), mode="mean", prefix=prefix,
-                pool=['PRECISION', 'RECALL', 'HITRATE', 'MSE', 'MAE', 'RMSE']
-            )
+        #     self.callback(loss, n=targets.size(0), mode="mean", prefix=prefix, pool=['LOSS'])
+        #     self.callback(
+        #         preds.detach().clone().cpu(), targets.detach().clone().cpu(),
+        #         n=targets.size(0), mode="mean", prefix=prefix,
+        #         pool=['PRECISION', 'RECALL', 'HITRATE', 'MSE', 'MAE', 'RMSE']
+        #     )
+        raise NotImplementedError() # TODO: row-wise ?
 
     @timemeter("Coach/valid")
     def valid(self):
-        self.datapipe.valid()
+        self.datapipe.valid() # TODO: multiprocessing pitfall ???
+        self.model.eval()
         return self.evaluate(prefix='valid')
 
     @timemeter("Coach/test")
     def test(self):
         self.datapipe.test()
+        self.model.eval()
         return self.evaluate(prefix='test')
 
-
     @timemeter("Coach/fit")
-    def fit(self, epochs: int):
+    def fit(self):
         start_epoch = self.resume()
-        for epoch in range(start_epoch, epochs):
+        for epoch in range(start_epoch, self.cfg.epochs):
             if epoch % self.cfg.CHECKPOINT_FREQ == 0:
                 self.save_checkpoint(epoch)
             if epoch % self.cfg.EVAL_FREQ == 0:
                 if self.cfg.EVAL_VALID:
-                    results = self.valid()
-                    self.check_best(results)
+                    self.check_best(self.valid())
                 if self.cfg.EVAL_TEST:
                     self.test()
             self.train()
 
             self.step(epoch)
         self.save()
+
+        # last epoch
+        self.check_best(self.valid())
+        self.test()
+        self.step(self.cfg.epochs)
+
+        # visualization
         self.summary()
 
 
