@@ -23,8 +23,8 @@ CONFIG = Config(
 
     # evaluation
     EVAL_FREQ = 5,
-    EVAL_TRAIN = False,
     EVAL_VALID = True,
+    EVAL_TEST = False,
 
     # logger
     log2file = True, 
@@ -93,12 +93,12 @@ class Parser(Config):
         self.parser.add_argument("--epochs", type=int, default=10)
 
         # eval
-        self.parser.add_argument("--eval-train", action="store_true", default=False, help="evaluate trainloader")
-        self.parser.add_argument("--eval-valid", action="store_false", default=True, help="evaluate validloader")
-        self.parser.add_argument("--eval-freq", type=int, default=5, help="the evaluation frequency for valid dataset only")
+        self.parser.add_argument("--eval-valid", action="store_false", default=True, help="evaluate validset")
+        self.parser.add_argument("--eval-test", action="store_true", default=False, help="evaluate testset")
+        self.parser.add_argument("--eval-freq", type=int, default=5, help="the evaluation frequency")
 
         self.parser.add_argument("--num-workers", type=int, default=0)
-        self.parser.add_argument("--buffer-size", type=int, default=10000, help="buffer size for datapipe")
+        self.parser.add_argument("--buffer-size", type=int, default=6400, help="buffer size for datapipe")
 
         self.parser.add_argument("--seed", type=int, default=1, help="calling --seed=-1 for a random seed")
         self.parser.add_argument("--benchmark", action="store_false", default=True, help="cudnn.benchmark == True ?")

@@ -7,7 +7,8 @@ import os
 from functools import partial
 from collections import defaultdict
 
-
+from .data.datasets.base import BaseSet
+from .data.utils import TQDMDataLoader, DataLoader
 from .dict2obj import Config
 from .utils import AverageMeter, getLogger, timemeter
 from .metrics import *
@@ -51,12 +52,14 @@ class Coach:
     
     def __init__(
         self, model: torch.nn.Module,
+        datapipe: BaseSet,
         criterion: Callable, 
         optimizer: torch.optim.Optimizer, 
         lr_scheduler,
         device: torch.device
     ):
         self.model = model
+        self.datapipe = datapipe
         self.device = device
         self.criterion = criterion
         self.optimizer = optimizer
@@ -88,14 +91,20 @@ class Coach:
 
     def check_best(self, results: dict): ...
 
+    @timemeter("Coach/resume")
+    def resume(self):
+        start_epoch = self.load_checkpoint() if self.cfg.resume else 0
+        getLogger().info(f"Load the recent checkpoint and train from epoch: {start_epoch}")
+        return start_epoch
+
     @timemeter("Coach/compile")
     def compile(
         self, cfg: Config, callbacks: List[str]
     ):
         self.cfg = cfg
         self.meters = Config(
-            train=defaultdict(list),
-            valid=defaultdict(list)
+            valid=defaultdict(list),
+            test=defaultdict(list)
         )
         for name in callbacks:
             name = name.upper()
@@ -119,6 +128,18 @@ class Coach:
                             fmt=DEFAULT_FMTS[callback]
                         )
                     )
+        self.meters['train'] = {'LOSS': [AverageMeter(
+            name='LOSS', metric=DEFAULT_METRICS['LOSS'], fmt=DEFAULT_FMTS['LOSS']
+        )]}
+
+        self.load_dataloader()
+
+
+    def load_dataloader(self):
+        _DataLoader = TQDMDataLoader if self.cfg.progress else DataLoader
+        self.dataloader = _DataLoader(
+            datapipe=self.datapipe, num_workers=self.cfg.num_workers
+        )
 
     def callback(
         self, *values,
@@ -149,12 +170,13 @@ class Coach:
                     meter.save(path=self.cfg.LOG_PATH, prefix=prefix)
 
     @timemeter("Coach/train")
-    def train(self, trainloader: Iterable):
+    def train(self):
         self.model.train()
+        self.datapipe.train()
         users: Dict[str, torch.Tensor]
         items: Dict[str, torch.Tensor]
         targets: torch.Tensor
-        for users, items, targets in trainloader:
+        for users, items, targets in self.dataloader:
             users = {name: val.to(self.device) for name, val in users.items()}
             items = {name: val.to(self.device) for name, val in items.items()}
             targets = targets.to(self.device)
@@ -170,16 +192,13 @@ class Coach:
 
         self.lr_scheduler.step() # TODO: step() per epoch or per mini-batch ?
 
-    @timemeter("Coach/evaluate")
     @torch.no_grad()
-    def evaluate(self, dataloader: Iterable, prefix: str = 'valid'):
+    def evaluate(self, prefix: str = 'valid'):
         self.model.eval()
         users: Dict[str, torch.Tensor]
         items: Dict[str, torch.Tensor]
         targets: torch.Tensor
-        running_preds: List[torch.Tensor] = []
-        running_targets: List[torch.Tensor] = []
-        for users, items, targets in dataloader:
+        for users, items, targets in self.dataloader:
             users = {name: val.to(self.device) for name, val in users.items()}
             items = {name: val.to(self.device) for name, val in items.items()}
             targets = targets.to(self.device)
@@ -187,44 +206,37 @@ class Coach:
             preds = self.model(users, items)
             loss = self.criterion(preds, targets)
 
-            running_preds.append(preds.detach().clone().cpu().flatten())
-            running_targets.append(targets.detach().clone().cpu().flatten())
-            
-            if prefix == 'valid':
-                self.callback(loss, n=targets.size(0), mode="mean", prefix=prefix, pool=['LOSS'])
+            self.callback(loss, n=targets.size(0), mode="mean", prefix=prefix, pool=['LOSS'])
+            self.callback(
+                preds.detach().clone().cpu(), targets.detach().clone().cpu(),
+                n=targets.size(0), mode="mean", prefix=prefix,
+                pool=['PRECISION', 'RECALL', 'HITRATE', 'MSE', 'MAE', 'RMSE']
+            )
 
-        running_preds = torch.cat(running_preds)
-        running_targets = torch.cat(running_targets)
-        self.callback(
-            running_preds, running_targets, 
-            n=running_targets.size(0), mode="mean", prefix=prefix,
-            pool=['PRECISION', 'RECALL', 'HITRATE', 'MSE', 'MAE', 'RMSE']
-        )
+    @timemeter("Coach/valid")
+    def valid(self):
+        self.datapipe.valid()
+        return self.evaluate(prefix='valid')
 
+    @timemeter("Coach/test")
+    def test(self):
+        self.datapipe.test()
+        return self.evaluate(prefix='test')
 
-    @timemeter("Coach/resume")
-    def resume(self):
-        start_epoch = self.load_checkpoint() if self.cfg.resume else 0
-        getLogger().info(f"Load the recent checkpoint and train from epoch: {start_epoch}")
-        return start_epoch
 
     @timemeter("Coach/fit")
-    def fit(
-        self, trainloader: Iterable, validloader: Iterable,
-        *, epochs: int
-    ):
+    def fit(self, epochs: int):
         start_epoch = self.resume()
         for epoch in range(start_epoch, epochs):
             if epoch % self.cfg.CHECKPOINT_FREQ == 0:
                 self.save_checkpoint(epoch)
             if epoch % self.cfg.EVAL_FREQ == 0:
-                if self.cfg.EVAL_TRAIN:
-                    self.evaluate(trainloader, prefix='train')
                 if self.cfg.EVAL_VALID:
-                    results = self.evaluate(validloader, prefix='valid')
+                    results = self.valid()
                     self.check_best(results)
-            
-            self.train(trainloader)
+                if self.cfg.EVAL_TEST:
+                    self.test()
+            self.train()
 
             self.step(epoch)
         self.save()

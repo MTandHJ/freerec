@@ -1,6 +1,7 @@
 
 
 
+from typing import List, Dict
 
 import torch
 import torch.nn as nn
@@ -15,6 +16,37 @@ from freerec.data.tags import SPARSE, DENSE, FEATURE, TARGET
 from freerec.criterions import BCELoss
 
 
+class CoachforCTR(Coach):
+
+
+    def evaluate(self, prefix: str = 'valid'):
+        self.model.eval()
+        users: Dict[str, torch.Tensor]
+        items: Dict[str, torch.Tensor]
+        targets: torch.Tensor
+        running_preds: List[torch.Tensor] = []
+        running_targets: List[torch.Tensor] = []
+        for users, items, targets in self.dataloader:
+            users = {name: val.to(self.device) for name, val in users.items()}
+            items = {name: val.to(self.device) for name, val in items.items()}
+            targets = targets.to(self.device)
+
+            preds = self.model(users, items)
+            loss = self.criterion(preds, targets)
+
+            running_preds.append(preds.detach().clone().cpu())
+            running_targets.append(targets.detach().clone().cpu())
+            
+            self.callback(loss, n=targets.size(0), mode="mean", prefix=prefix, pool=['LOSS'])
+
+        running_preds = torch.cat(running_preds)
+        running_targets = torch.cat(running_targets)
+        self.callback(
+            running_preds, running_targets, 
+            n=running_targets.size(0), mode="mean", prefix=prefix,
+            pool=['PRECISION', 'RECALL', 'HITRATE', 'MSE', 'MAE', 'RMSE']
+        )
+
 def main():
 
     cfg = Parser()
@@ -26,9 +58,8 @@ def main():
     )
     cfg.compile()
 
-    basedp = Criteo(cfg.root, split='train')
-    datapipe = basedp.frame(shuffle=True).encode().chunk(batch_size=cfg.batch_size).dict().tensor().group()
-    _DataLoader = TQDMDataLoader if cfg.progress else DataLoader
+    basepipe = Criteo(cfg.root)
+    datapipe = basepipe.dataframe_(shuffle=True).encode_().chunk_(batch_size=cfg.batch_size).dict_().tensor_().group_()
     trainloader = _DataLoader(datapipe, num_workers=cfg.num_workers)
     validloader = trainloader
 
@@ -71,22 +102,3 @@ if __name__ == "__main__":
 
 
 
-
-
-# from freerec.data.datasets import Criteo
-# from freerec.data.tags import FEATURE, TARGET
-
-
-
-
-# datapipe = Criteo("../criteo")
-# datapipe = datapipe.frame(buffer_size=1000, shuffle=False)
-# datapipe = datapipe.encode()
-# datapipe = datapipe.chunk(batch_size=2)
-# datapipe = datapipe.dict().tensor().group(groups=[FEATURE, TARGET])
-
-
-
-# dataset = iter(datapipe)
-
-# print(next(dataset)[1])

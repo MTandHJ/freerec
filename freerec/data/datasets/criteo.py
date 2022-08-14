@@ -26,13 +26,13 @@ class Criteo(RecDataSet):
 
     open_kw = Config(mode='rt', delimiter=',', skip_lines=1)
 
-    def __init__(self, root: str, split: str = 'train', **open_kw) -> None:
-        super().__init__(root, split)
+    def __init__(self, root: str, **open_kw) -> None:
+        super().__init__(root)
         self.open_kw.update(**open_kw)
-        self._compile(refer='train')
+        self.compile()
 
     def file_filter(self, filename: str):
-        return self.split in filename
+        return self.mode in filename
 
     def __iter__(self) -> Iterator:
         datapipe = dp.iter.FileLister(self.root)

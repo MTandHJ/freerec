@@ -18,6 +18,7 @@ from sklearn.preprocessing import Binarizer
 
 from collections import defaultdict
 
+
 class MovieLens1M_(MovieLens1M):
     """
     MovieLens1M: (user, item, rating, timestamp)

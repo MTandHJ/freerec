@@ -1,15 +1,17 @@
 
 
 
+from dataclasses import replace
 from typing import Dict, Iterable, Iterator, Optional, Tuple, List, Union
 
 import torch
 import torchdata.datapipes as dp
 import pandas as pd
+import random
 
-from ..fields import Field
-from ..tags import Tag, FEATURE, TARGET, USER, ITEM, ID
-from ...utils import warnLogger, getLogger
+from ..fields import Field, SparseField
+from ..tags import Tag, FEATURE, TARGET, USER, ITEM, ID, NEGATIVE
+from ...utils import timemeter, warnLogger, getLogger
 
 
 __all__ = ['RecDataSet', 'Encoder']
@@ -17,7 +19,28 @@ __all__ = ['RecDataSet', 'Encoder']
 
 _DEFAULT_BATCH_SIZE = 1000
 
-class RecDataSet(dp.iter.IterDataPipe):
+
+class BaseSet(dp.iter.IterDataPipe):
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.__mode = 'train'
+        
+    @property
+    def mode(self):
+        return self.__mode
+
+    def train(self):
+        self.__mode = 'train'
+
+    def valid(self):
+        self.__mode = 'valid'
+
+    def test(self):
+        self.__mode = 'test'
+
+class RecDataSet(BaseSet):
     """ RecDataSet provides a template for specific datasets.
     All datasets inherit RecDataSet should define class variables:
         _cfg: including fields of each column,
@@ -39,14 +62,12 @@ class RecDataSet(dp.iter.IterDataPipe):
         assert hasattr(cls._cfg, 'fields'), "Fields sorted by column should be given in _cfg ..."
         return super().__new__(cls)
 
-    def __init__(self, root: str, split: str = 'train') -> None:
+    def __init__(self, root: str) -> None:
         """
         root: data file
-        split: train|valid|test
         """
         super().__init__()
         self.root = root
-        self.split = split
 
     @property
     def cfg(self):
@@ -56,35 +77,20 @@ class RecDataSet(dp.iter.IterDataPipe):
     def fields(self):
         return self._cfg.fields
 
-    @property
-    def active(self):
-        return self._active
-
     def row_processer(self, row):
         return [field.caster(val) for val, field in zip(row, self.fields)]
 
-    @classmethod
-    def compile(cls, datapipe: dp.iter.IterDataPipe):
-        if cls._active:
-            warnLogger(
-                f"Dataset {cls.__name__} has been activated !!! Skip it ..."
-            )
-        cls._active = True
-        datapipe = datapipe.batch(batch_size=_DEFAULT_BATCH_SIZE)
-        cls._cfg.datasize = 0
-        columns = [field.name for field in cls._cfg.fields]
+    @timemeter("DataSet/compile")
+    def compile(self):
+        self.train()
+        datapipe = self.batch(batch_size=_DEFAULT_BATCH_SIZE)
+        self._cfg.datasize = 0
+        columns = [field.name for field in self._cfg.fields]
         for batch in datapipe:
             df = pd.DataFrame(batch, columns=columns)
-            for field in cls._cfg.fields:
+            for field in self._cfg.fields:
                 field.partial_fit(df[field.name].values.reshape(-1, 1))
-            cls._cfg.datasize += len(df)
-
-
-    def _compile(self, refer: str = 'train'):
-        if not self.active:
-            split, self.split = self.split, refer
-            self.compile(self) # compile according to the trainset !
-            self.split = split
+            self._cfg.datasize += len(df)
         getLogger().info(str(self))
 
     def __str__(self) -> str:
@@ -93,15 +99,26 @@ class RecDataSet(dp.iter.IterDataPipe):
 
 
 
-class Postprocessor(dp.iter.IterDataPipe):
+class Postprocessor(BaseSet):
 
     def __init__(self, datapipe: Union[RecDataSet, 'Postprocessor']) -> None:
         super().__init__()
         self.source = datapipe
-        self.fields: List[Field] = self.source.fields
+        self.fields: List[Field] = self.source.fields.copy()
 
+    def train(self):
+        super().train()
+        self.source.train()
 
-@dp.functional_datapipe("shard")
+    def valid(self):
+        super().valid()
+        self.source.valid()
+
+    def test(self):
+        super().test()
+        self.source.test()
+
+@dp.functional_datapipe("shard_")
 class Sharder(Postprocessor):
 
     def __iter__(self) -> Iterator:
@@ -115,7 +132,7 @@ class Sharder(Postprocessor):
             yield from self.source
 
 
-@dp.functional_datapipe("frame")
+@dp.functional_datapipe("dataframe_")
 class FrameMaker(Postprocessor):
     """Make pandas.DataFrame
     TODO: use torcharrow instead for efficient implements
@@ -143,7 +160,7 @@ class FrameMaker(Postprocessor):
                 yield df
 
 
-@dp.functional_datapipe("subfield")
+@dp.functional_datapipe("subfield_")
 class SubFielder(Postprocessor):
     """ Select subfields """
 
@@ -158,18 +175,18 @@ class SubFielder(Postprocessor):
             yield df[self.columns]
 
 
-@dp.functional_datapipe("encode")
+@dp.functional_datapipe("encode_")
 class Encoder(Postprocessor):
     """Transform int|float into required formats by column"""
 
     def __iter__(self) -> Iterator:
         for df in self.source:
             for field in self.fields:
-                df[field.name] = field.transform(df[field.name].values.reshape(len(df), -1))
+                df[field.name] = field.transform(df[field.name].values[:, None])
             yield df
 
 
-@dp.functional_datapipe("chunk")
+@dp.functional_datapipe("chunk_")
 class Chunker(Postprocessor):
     """A special batcher for dataframe only"""
 
@@ -192,7 +209,7 @@ class Chunker(Postprocessor):
             self._buffer.drop(self._buffer.index, inplace=True)
 
 
-@dp.functional_datapipe("dict")
+@dp.functional_datapipe("dict_")
 class Frame2Dict(Postprocessor):
     """Convert dataframe into Dict[str, List] """
     def __iter__(self) -> Iterator:
@@ -200,7 +217,7 @@ class Frame2Dict(Postprocessor):
             yield {name: df[name].values.tolist() for name in df.columns}
 
 
-@dp.functional_datapipe("list")
+@dp.functional_datapipe("list_")
 class Frame2List(Postprocessor):
     """Convert dataframe into List[List] """
     def __iter__(self) -> Iterator:
@@ -208,7 +225,7 @@ class Frame2List(Postprocessor):
             yield [df[field.name].values.tolist() for field in self.fields]
 
 
-@dp.functional_datapipe('tensor')
+@dp.functional_datapipe('tensor_')
 class ToTensor(Postprocessor):
     """Convert Dict[str, List] into Dict[str, torch.Tensor]"""
     def at_least_2d(self, val: torch.Tensor):
@@ -219,7 +236,7 @@ class ToTensor(Postprocessor):
             yield {field.name: self.at_least_2d(torch.tensor(batch[field.name], dtype=field.dtype)) for field in self.fields}
 
 
-@dp.functional_datapipe('group')
+@dp.functional_datapipe('group_')
 class Grouper(Postprocessor):
     """Group batch into several groups
     For example, RS generally requires
@@ -241,19 +258,52 @@ class Grouper(Postprocessor):
             yield [*[{field.name: batch[field.name] for field in group} for group in self.groups], batch[self.target.name]]
 
 
-class Grapher(Postprocessor):
+@dp.functional_datapipe("sample_negative_")
+class NegativeSamper(Postprocessor):
 
-    def __init__(self, datapipe: RecDataSet) -> None:
+    def __init__(self, datapipe: Postprocessor, num_negatives: int = 1, pool_size: int = 99) -> None:
         super().__init__(datapipe)
+        """
+        num_negatives: for training, sampling from pool
+        pool_size: for evaluation
+        """
 
-        self.User: Field = [field for field in self.fields.match([USER, ID])][0]
-        self.Item: Field = [field for field in self.fields.match([ITEM, ID])][0]
-        self.Rating: Field = [field for field in self.fields.match([TARGET])][0]
-        self.fields = [self.User, self.Item, self.Rating]
+        self.num_negatives = num_negatives
+        self.pool_size = pool_size
+        self._User: SparseField = next(filter(lambda field: field.match([USER, ID]), self.fields))
+        self._Item: SparseField = next(filter(lambda field: field.match([ITEM, ID]), self.fields))
+        self._Negative = SparseField(
+            name=NEGATIVE.name, na_value=self._Item.na_value,
+            dtype=self._Item.dtype, transformer=self._Item.transformer,
+            tags=[NEGATIVE, ITEM, ID]
+        )
+        self.fields.append(self._Negative)
+        self.parseItems()
 
-    def compile(self):
-        self.posItems = [[] for _ in range(self.User.count)]
-        for row in self.source:
-            users = row[self.User.name]
-            items = row[self.Item.name]
-            ratings = row[self.Rating.name]
+    def parseItems(self):
+        self.train()
+        self.posItems = [set() for _ in range(self._User.count)]
+        self.allItems = set(range(self._Item.count))
+        for df in self.source:
+            df = df[[self._User.name, self._Item.name]]
+            for idx, items in df.groupby(self._User.name).agg(set).iterrows():
+                self.posItems[idx] |= set(*items)
+        for items in self.posItems:
+            negItems = list(self.allItems - items)
+            k = self.pool_size if self.pool_size <= len(negItems) else len(negItems)
+            self.negItems.append(random.sample(negItems, k = k))
+
+    def __iter__(self) -> Iterator:
+        if self.mode == 'train':
+            for df in self.source:
+                df[self._Negative.name] = df.agg(
+                    lambda row: random.sample(self.negItems[int(row[self._User.name])], k=self.num_negatives), 
+                    axis=1
+                )
+        else:
+            for df in self.source:
+                df[self._Negative.name] = df.agg(
+                    lambda row: self.negItems[int(row[self._User.name])], 
+                    axis=1
+                ) 
+            
