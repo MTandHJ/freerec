@@ -135,7 +135,7 @@ def timemeter(prefix=""):
             start = time.time()
             results = func(*args, **kwargs)
             end = time.time()
-            logger.info(f"[Wall TIME]- {prefix} takes {end-start:.6f} seconds ...")
+            logger.info(f"[Wall TIME] >>> {prefix} takes {end-start:.6f} seconds ...")
             return  results
         wrapper.__doc__ = func.__doc__
         wrapper.__name__ = func.__name__

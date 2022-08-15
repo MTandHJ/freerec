@@ -22,7 +22,7 @@ class GMF(nn.Module):
     def forward(self, inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
         sparse: List[torch.Tensor] = self.tokenizer.look_up(inputs, (FEATURE, ID))
         user_embddings, item_embeddings = sparse
-        return (user_embddings * item_embeddings).flatten(1)
+        return user_embddings * item_embeddings
 
 class MLP(nn.Module):
 
@@ -31,6 +31,8 @@ class MLP(nn.Module):
         self.tokenizer = tokenizer
         dimension = self.tokenizer.calculate_dimension((FEATURE, ID))
         self.fc = nn.Sequential(
+            # nn.Linear(dimension, 64),
+            # nn.ReLU(True),
             nn.Linear(dimension, 32),
             nn.ReLU(True),
             nn.Linear(32, 16),
@@ -42,7 +44,7 @@ class MLP(nn.Module):
     def forward(self, inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
         sparse: List[torch.Tensor] = self.tokenizer.look_up(inputs, (FEATURE, ID))
         user_embddings, item_embeddings = sparse
-        x = self.tokenizer.flatten_cat([user_embddings, item_embeddings])
+        x = torch.cat([user_embddings, item_embeddings], dim=-1)
         x = self.fc(x)
         return x
 
@@ -68,13 +70,15 @@ class NeuCF(RecSysArch):
         size = negItems.size(1) + 1
         users = users.repeat((1, size))
         items = torch.cat((items, negItems), dim=-1)
-        return {self._User: users.view(-1, 1), self._Item: items.view(-1, 1)}
+        return {self._User: users, self._Item: items}
 
     def forward(self, users: Dict[str, torch.Tensor], items: Dict[str, torch.Tensor]) -> torch.Tensor:
         inputs = self.preprocess(users, items)
         feature_mf = self.mf(inputs)
         feature_mlp = self.mlp(inputs)
         features = torch.cat([feature_mf, feature_mlp], dim=-1)
-        outs = self.linear(features)
-        return outs.sigmoid()
-
+        outs = self.linear(features).squeeze()
+        if self.training:
+            return outs
+        else:
+            return outs.sigmoid()

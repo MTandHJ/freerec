@@ -105,7 +105,7 @@ class RecDataSet(BaseSet):
 
     def __str__(self) -> str:
         cfg = '\n'.join(map(str, self.cfg.fields))
-        return f"{self.__class__.__name__} >>> \n" + cfg
+        return f"[{self.__class__.__name__}] >>> \n" + cfg
 
 
 

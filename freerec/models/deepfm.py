@@ -51,8 +51,10 @@ class DeepFM(RecSysArch):
         outs_fm = self.fm(self.tokenizer.flatten_cat(sparse))
         outs_dnn = self.dnn(self.tokenizer.flatten_cat(sparse + dense))
         outs = outs_linear + outs_fm + outs_dnn
-
-        return outs.sigmoid() # B x 1
+        if self.training:
+            return outs
+        else:
+            return outs.sigmoid()
 
 
 

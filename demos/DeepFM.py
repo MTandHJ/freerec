@@ -6,7 +6,6 @@ from typing import Dict, List
 
 import torch
 
-import freerec
 from freerec.dict2obj import Config
 from freerec.parser import Parser
 from freerec.launcher import Coach
@@ -143,20 +142,25 @@ def main():
     if cfg.optimizer == 'sgd':
         optimizer = torch.optim.SGD(
             model.parameters(), lr=cfg.lr, 
-            momentum=cfg.momentum, weight_decay=cfg.weight_decay,
+            momentum=cfg.momentum,
             nesterov=cfg.nesterov
         )
     elif cfg.optimizer == 'adam':
         optimizer = torch.optim.Adam(
             model.parameters(), lr=cfg.lr,
-            betas=(cfg.beta1, cfg.beta2), weight_decay=cfg.weight_decay
+            betas=(cfg.beta1, cfg.beta2)
         )
     lr_scheduler=torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+
+    criterion = BCELoss()
+    criterion.regulate(
+        model.parameters(), rtype='l2', weight=cfg.weight_decay
+    )
 
     coach = CoachForNCF(
         model=model,
         datapipe=datapipe,
-        criterion=BCELoss(),
+        criterion=criterion,
         optimizer=optimizer,
         lr_scheduler=lr_scheduler,
         device=cfg.DEVICE

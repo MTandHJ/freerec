@@ -94,7 +94,7 @@ class Coach:
     @timemeter("Coach/resume")
     def resume(self):
         start_epoch = self.load_checkpoint() if self.cfg.resume else 0
-        getLogger().info(f"Load the recent checkpoint and train from epoch: {start_epoch}")
+        getLogger().info(f"[Coach] >>> Load the recent checkpoint and train from epoch: {start_epoch}")
         return start_epoch
 
     @timemeter("Coach/compile")
@@ -162,7 +162,7 @@ class Coach:
     def step(self, epoch: int):
         for prefix, callbacks in self.meters.items():
             callbacks: defaultdict[str, List[AverageMeter]]
-            infos = [f"[Epoch: {epoch:<3d}] " + f"{prefix.upper():5}" + " >>> "]
+            infos = [f"[Coach] >>> {prefix.upper():5} @Epoch: {epoch:<3d} " + " >>> "]
             for meters in callbacks.values():
                 infos += [meter.step() for meter in meters if meter.active]
             getLogger().info(' || '.join(infos))
@@ -188,14 +188,16 @@ class Coach:
             items = {name: val.to(self.device) for name, val in items.items()}
             targets = targets.to(self.device)
 
-            outs = self.model(users, items)
-            loss = self.criterion(outs, targets)
+            logits = self.model(users, items)
+            m, n = logits.size()
+            targets = targets.repeat((m, n))
+            loss = self.criterion(logits, targets)
 
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
             
-            self.callback(loss.item(), n=targets.size(0), mode="mean", prefix='train', pool=['LOSS'])
+            self.callback(loss.item(), n=m * n, mode="mean", prefix='train', pool=['LOSS'])
 
         self.lr_scheduler.step() # TODO: step() per epoch or per mini-batch ?
 
