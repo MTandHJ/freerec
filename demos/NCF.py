@@ -114,7 +114,7 @@ def main():
         root="../movielens",
         epochs=20,
         batch_size=256,
-        buffer_size=1024000,
+        buffer_size=1024000, # very important for buffer_size > datasize !!!
         optimizer='adam',
         lr=1e-3,
         weight_decay=0.,
