@@ -87,9 +87,9 @@ class Parser(Config):
         self.parser.add_argument("-mom", "--momentum", type=float, default=0.9, help="the momentum used for SGD")
         self.parser.add_argument("-beta1", "--beta1", type=float, default=0.9, help="the first beta argument for Adam")
         self.parser.add_argument("-beta2", "--beta2", type=float, default=0.999, help="the second beta argument for Adam")
-        self.parser.add_argument("-wd", "--weight_decay", type=float, default=1e-4, help="weight for 'l1|l2|...' regularzation")
-        self.parser.add_argument("-lr", "--lr", "--LR", "--learning_rate", type=float, default=0.1)
-        self.parser.add_argument("-b", "--batch_size", type=int, default=128)
+        self.parser.add_argument("-wd", "--weight-decay", type=float, default=1e-4, help="weight for 'l1|l2|...' regularzation")
+        self.parser.add_argument("-lr", "--lr", "--LR", "--learning-rate", type=float, default=0.1)
+        self.parser.add_argument("-b", "--batch-size", type=int, default=128)
         self.parser.add_argument("--epochs", type=int, default=10)
 
         # eval
