@@ -165,7 +165,7 @@ class Coach:
     def step(self, epoch: int):
         for prefix, callbacks in self.meters.items():
             callbacks: defaultdict[str, List[AverageMeter]]
-            infos = [f"[Coach] >>> {prefix.upper():5} @Epoch: {epoch:<3d} " + " >>> "]
+            infos = [f"[Coach] >>> {prefix.upper():5} @Epoch: {epoch:<3d} >>> "]
             for meters in callbacks.values():
                 infos += [meter.step() for meter in meters if meter.active]
             getLogger().info(' || '.join(infos))
@@ -192,15 +192,13 @@ class Coach:
             targets = targets.to(self.device)
 
             logits = self.model(users, items)
-            m, n = logits.size()
-            targets = targets.repeat((m, n))
             loss = self.criterion(logits, targets)
 
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
             
-            self.callback(loss.item(), n=m * n, mode="mean", prefix='train', pool=['LOSS'])
+            self.callback(loss.item(), n=targets.size(0), mode="mean", prefix='train', pool=['LOSS'])
 
         self.lr_scheduler.step() # TODO: step() per epoch or per mini-batch ?
 
@@ -216,11 +214,14 @@ class Coach:
         #     targets = targets.to(self.device)
 
         #     preds = self.model(users, items)
+        #     m, n = preds.size()
+        #     targets = targets.repeat((m, n))
+        #     targets[:, 1:].fill_(0)
         #     loss = self.criterion(preds, targets)
 
-        #     self.callback(loss, n=targets.size(0), mode="mean", prefix=prefix, pool=['LOSS'])
+        #     self.callback(loss, n=m * n, mode="mean", prefix=prefix, pool=['LOSS'])
         #     self.callback(
-        #         preds.detach().clone().cpu(), targets.detach().clone().cpu(),
+        #         preds.detach().cpu(), targets.detach().cpu(),
         #         n=targets.size(0), mode="mean", prefix=prefix,
         #         pool=['PRECISION', 'RECALL', 'HITRATE', 'MSE', 'MAE', 'RMSE']
         #     )
