@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 
 from ..data.fields import Tokenizer
-from ..data.tags import USER, ITEM, ID, FEATURE, NEGATIVE
+from ..data.tags import USER, ITEM, ID, FEATURE
 from .base import RecSysArch
 
 
@@ -31,8 +31,6 @@ class MLP(nn.Module):
         self.tokenizer = tokenizer
         dimension = self.tokenizer.calculate_dimension((FEATURE, ID))
         self.fc = nn.Sequential(
-            # nn.Linear(dimension, 64),
-            # nn.ReLU(True),
             nn.Linear(dimension, 32),
             nn.ReLU(True),
             nn.Linear(32, 16),
@@ -57,7 +55,6 @@ class NeuCF(RecSysArch):
         self.mlp = MLP(tokenizer_mlp)
         self._User = tokenizer_mf.groupby((USER, ID))[0].name
         self._Item = tokenizer_mf.groupby((ITEM, ID))[0].name
-        self._Negative = NEGATIVE.name
         dimension = (
             tokenizer_mf.calculate_dimension((USER, ID)) + 
             tokenizer_mf.calculate_dimension((ITEM, ID))
@@ -66,10 +63,8 @@ class NeuCF(RecSysArch):
 
     def preprocess(self, users: Dict[str, torch.Tensor], items: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         users = users[self._User]
-        items, negItems = items[self._Item], items[self._Negative]
-        size = negItems.size(1) + 1
-        users = users.repeat((1, size))
-        items = torch.cat((items, negItems), dim=-1)
+        items = items[self._Item]
+        users = users.repeat((1, items.size(1)))
         return {self._User: users, self._Item: items}
 
     def forward(self, users: Dict[str, torch.Tensor], items: Dict[str, torch.Tensor]) -> torch.Tensor:

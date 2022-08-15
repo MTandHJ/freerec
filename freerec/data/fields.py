@@ -9,7 +9,7 @@ from functools import partial, lru_cache
 
 from .utils import safe_cast
 from .preprocessing import X2X, Label2Index, Binarizer, MinMaxScaler, StandardScaler
-from .tags import Tag, SPARSE, DENSE, FEATURE, NEGATIVE
+from .tags import Tag, SPARSE, DENSE, FEATURE
 
 
 __all__ = ['Field', 'DenseField', 'SparseField', 'Tokenizer']
@@ -156,7 +156,6 @@ class Tokenizer(torch.nn.Module):
     def __init__(self, fields: Iterable[Field]) -> None:
         super().__init__()
 
-        fields = [field for field in fields if not field.match(NEGATIVE)]
         self.fields = torch.nn.ModuleList(fields)
 
     @lru_cache(maxsize=4)

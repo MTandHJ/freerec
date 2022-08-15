@@ -1,16 +1,16 @@
 
 
 
-from dataclasses import replace
 from typing import Dict, Iterable, Iterator, Optional, Tuple, List, Union
 
 import torch
 import torchdata.datapipes as dp
+import numpy as np
 import pandas as pd
 import random
 
 from ..fields import Field, SparseField
-from ..tags import Tag, FEATURE, TARGET, USER, ITEM, ID, NEGATIVE
+from ..tags import Tag, FEATURE, TARGET, USER, ITEM, ID
 from ...utils import timemeter, warnLogger, getLogger
 
 
@@ -247,6 +247,72 @@ class ToTensor(Postprocessor):
             yield {field.name: self.at_least_2d(torch.tensor(batch[field.name], dtype=field.dtype)) for field in self.fields}
 
 
+@dp.functional_datapipe("sample_negative_")
+class NegativeSamper(Postprocessor):
+
+    def __init__(self, datapipe: Postprocessor, num_negatives: int = 1, pool_size: int = 99) -> None:
+        super().__init__(datapipe)
+        """
+        num_negatives: for training, sampling from pool
+        pool_size: for evaluation
+        """
+
+        self.num_negatives = num_negatives
+        self.pool_size = pool_size
+        self._User: SparseField = next(filter(lambda field: field.match([USER, ID]), self.fields))
+        self._Item: SparseField = next(filter(lambda field: field.match([ITEM, ID]), self.fields))
+        self.parseItems()
+
+    @timemeter("NegativeSampler/parseItems")
+    def parseItems(self):
+        self.train()
+        self.posItems = [set() for _ in range(self._User.count)]
+        self.allItems = set(range(self._Item.count))
+        self.negItems = []
+        for df in self.source:
+            df = df[[self._User.name, self._Item.name]]
+            for idx, items in df.groupby(self._User.name).agg(set).iterrows():
+                self.posItems[idx] |= set(*items)
+        for items in self.posItems:
+            negItems = list(self.allItems - items)
+            k = self.pool_size if self.pool_size <= len(negItems) else len(negItems)
+            self.negItems.append(random.sample(negItems, k = k))
+
+    def __iter__(self) -> Iterator:
+        if self.mode == 'train':
+            for df in self.source:
+                # df[self._Item.name] = df.agg(
+                #     lambda row: [row[self._Item.name]] \
+                #         + random.sample(self.negItems[int(row[self._User.name])], k=self.num_negatives), 
+                #     axis=1
+                # )
+                negs = np.stack(
+                    df.agg(
+                        lambda row: random.sample(self.negItems[int(row[self._User.name])], k=self.num_negatives),
+                        axis=1
+                    ),
+                    axis=0
+                )
+                df[self._Item.name] = np.concatenate((df[self._Item.name].values[:, None], negs), axis=1).tolist()
+                yield df
+        else:
+            for df in self.source:
+                # df[self._Item.name] = df.agg(
+                #     lambda row: [row[self._Item.name]] \
+                #         + self.negItems[int(row[self._User.name])], 
+                #     axis=1
+                # ) 
+                negs = np.stack(
+                    df.agg(
+                        lambda row: self.negItems[int(row[self._User.name])],
+                        axis=1
+                    ),
+                    axis=0
+                )
+                df[self._Item.name] = np.concatenate((df[self._Item.name].values[:, None], negs), axis=1).tolist()
+                yield df
+            
+
 @dp.functional_datapipe('group_')
 class Grouper(Postprocessor):
     """Group batch into several groups
@@ -268,56 +334,3 @@ class Grouper(Postprocessor):
         for batch in self.source:
             yield [*[{field.name: batch[field.name] for field in group} for group in self.groups], batch[self.target.name]]
 
-
-@dp.functional_datapipe("sample_negative_")
-class NegativeSamper(Postprocessor):
-
-    def __init__(self, datapipe: Postprocessor, num_negatives: int = 1, pool_size: int = 99) -> None:
-        super().__init__(datapipe)
-        """
-        num_negatives: for training, sampling from pool
-        pool_size: for evaluation
-        """
-
-        self.num_negatives = num_negatives
-        self.pool_size = pool_size
-        self._User: SparseField = next(filter(lambda field: field.match([USER, ID]), self.fields))
-        self._Item: SparseField = next(filter(lambda field: field.match([ITEM, ID]), self.fields))
-        self._Negative = SparseField(
-            name=NEGATIVE.name, na_value=self._Item.na_value,
-            dtype=self._Item.dtype, transformer=self._Item.transformer,
-            tags=[NEGATIVE, ITEM, ID]
-        )
-        self.fields.append(self._Negative)
-        self.parseItems()
-
-    def parseItems(self):
-        self.train()
-        self.posItems = [set() for _ in range(self._User.count)]
-        self.allItems = set(range(self._Item.count))
-        self.negItems = []
-        for df in self.source:
-            df = df[[self._User.name, self._Item.name]]
-            for idx, items in df.groupby(self._User.name).agg(set).iterrows():
-                self.posItems[idx] |= set(*items)
-        for items in self.posItems:
-            negItems = list(self.allItems - items)
-            k = self.pool_size if self.pool_size <= len(negItems) else len(negItems)
-            self.negItems.append(random.sample(negItems, k = k))
-
-    def __iter__(self) -> Iterator:
-        if self.mode == 'train':
-            for df in self.source:
-                df[self._Negative.name] = df.agg(
-                    lambda row: random.sample(self.negItems[int(row[self._User.name])], k=self.num_negatives), 
-                    axis=1
-                )
-                yield df
-        else:
-            for df in self.source:
-                df[self._Negative.name] = df.agg(
-                    lambda row: self.negItems[int(row[self._User.name])], 
-                    axis=1
-                ) 
-                yield df
-            
