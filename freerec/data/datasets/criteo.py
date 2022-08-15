@@ -11,6 +11,8 @@ from ..tags import FEATURE, TARGET, ITEM
 from ...dict2obj import Config
 
 
+__all__ = ['Criteo']
+
 
 class Criteo(RecDataSet):
 

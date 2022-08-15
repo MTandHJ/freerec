@@ -3,12 +3,13 @@
 
 import numpy as np
 import torch
-from sklearn.preprocessing import LabelEncoder, Binarizer, StandardScaler, MinMaxScaler, FunctionTransformer
+import sklearn.preprocessing as preprocessing # LabelEncoder, Binarizer, StandardScaler, MinMaxScaler, FunctionTransformer
 from sklearn.utils._encode import _unique
 
 __all__ = ['X2X', 'Label2Index', 'Binarizer', 'StandardScaler', 'MinMaxScaler']
 
-class X2X(FunctionTransformer):
+
+class X2X(preprocessing.FunctionTransformer):
 
     def partial_fit(self, x) -> None:
         ...
@@ -17,7 +18,7 @@ class X2X(FunctionTransformer):
         return x
 
 
-class Label2Index(LabelEncoder):
+class Label2Index(preprocessing.LabelEncoder):
 
     def _flatten(self, y):
         return np.ravel(np.asarray(y))
@@ -33,10 +34,14 @@ class Label2Index(LabelEncoder):
         y = self._flatten(y)
         return super().transform(y)
 
-class Binarizer(Binarizer):
+
+class Binarizer(preprocessing.Binarizer):
 
     def partial_fit(self, x): ...
 
+
+class StandardScaler(preprocessing.StandardScaler): ...
+class MinMaxScaler(preprocessing.MinMaxScaler): ...
 
 
 if __name__ == "__main__":

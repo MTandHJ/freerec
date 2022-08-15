@@ -10,6 +10,9 @@ from ..tags import USER, ITEM, ID, FEATURE, TARGET
 from ...dict2obj import Config
 
 
+__all__ = ['MovieLens1M']
+
+
 class MovieLens1M(RecDataSet):
     """
     MovieLens1M: (user, item, rating, timestamp)

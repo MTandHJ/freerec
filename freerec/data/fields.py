@@ -12,6 +12,7 @@ from .preprocessing import X2X, Label2Index, Binarizer, MinMaxScaler, StandardSc
 from .tags import Tag, SPARSE, DENSE, FEATURE, NEGATIVE
 
 
+__all__ = ['Field', 'DenseField', 'SparseField', 'Tokenizer']
 
 TRANSFORM = {
     "none": X2X,
@@ -99,6 +100,7 @@ class Field(torch.nn.Module):
     def __str__(self) -> str:
         tags = ','.join(self.tags)
         return f"{self.name}: [dtype: {self.dtype}, na_value: {self.na_value}, tags: {tags}]"
+
 
 class SparseField(Field):
 

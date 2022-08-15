@@ -14,6 +14,9 @@ from .utils import AverageMeter, getLogger, timemeter
 from .metrics import *
 
 
+__all__ = ['Coach']
+
+
 DEFAULT_METRICS = {
     'LOSS': None,
     #############

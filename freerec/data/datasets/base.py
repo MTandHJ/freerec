@@ -14,7 +14,7 @@ from ..tags import Tag, FEATURE, TARGET, USER, ITEM, ID, NEGATIVE
 from ...utils import timemeter, warnLogger, getLogger
 
 
-__all__ = ['RecDataSet', 'Encoder']
+__all__ = ['RecDataSet', 'Postprocessor']
 
 
 _DEFAULT_BATCH_SIZE = 10000
@@ -127,6 +127,7 @@ class Postprocessor(BaseSet):
     def test(self):
         super().test()
         self.source.test()
+
 
 @dp.functional_datapipe("shard_")
 class Sharder(Postprocessor):
