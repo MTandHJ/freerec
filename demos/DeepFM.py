@@ -6,40 +6,18 @@ from typing import Dict, List
 
 import torch
 
-from freerec.dict2obj import Config
 from freerec.parser import Parser
 from freerec.launcher import Coach
-from freerec.models import NeuCF
+from freerec.models import DeepFM
 from freerec.criterions import BCELoss
-from freerec.data.datasets import MovieLens1M
+from freerec.data.datasets import Criteo
 from freerec.data.fields import Tokenizer
-from freerec.data.tags import FEATURE, SPARSE, DENSE, USER, ITEM, ID, TARGET
-from freerec.data.fields import SparseField, DenseField
-from freerec.data.preprocessing import Binarizer
+from freerec.data.tags import FEATURE, SPARSE, DENSE
 from freerec.utils import timemeter
 
 
 
-class MovieLens1M_(MovieLens1M):
-    """
-    MovieLens1M: (user, item, rating, timestamp)
-        https://github.com/openbenchmark/BARS/tree/master/candidate_matching/datasets
-    """
-
-    _cfg = Config(
-        sparse = [
-            SparseField(name='UserID', na_value=0, dtype=int, tags=[USER, ID, FEATURE]),
-            SparseField(name='ItemID', na_value=0, dtype=int, tags=[ITEM, ID, FEATURE]),
-        ],
-        dense = [DenseField(name="Timestamp", na_value=0., dtype=float, transformer='none', tags=FEATURE)],
-        target = [DenseField(name='Rating', na_value=None, dtype=int, transformer=Binarizer(threshold=1), tags=TARGET)]
-    )
-
-    _cfg.fields = _cfg.sparse + _cfg.target + _cfg.dense
-
-
-
-class CoachForNCF(Coach):
+class CoachForDeepFM(Coach):
 
 
     @timemeter("Coach/train")
@@ -53,13 +31,8 @@ class CoachForNCF(Coach):
             users = {name: val.to(self.device) for name, val in users.items()}
             items = {name: val.to(self.device) for name, val in items.items()}
             targets = targets.to(self.device)
-            m = targets.size(0)
 
             preds = self.model(users, items)
-            n = len(preds) // m
-            preds = preds.view(m, n)
-            targets = targets.repeat((1, n))
-            targets[:, 1:].fill_(0)
             loss = self.criterion(preds, targets)
 
             self.optimizer.zero_grad()
@@ -69,7 +42,6 @@ class CoachForNCF(Coach):
             self.callback(loss.item(), n=targets.size(0), mode="mean", prefix='train', pool=['LOSS'])
 
         self.lr_scheduler.step()
-
 
 
     def evaluate(self, prefix: str = 'valid'):
@@ -83,17 +55,12 @@ class CoachForNCF(Coach):
             users = {name: val.to(self.device) for name, val in users.items()}
             items = {name: val.to(self.device) for name, val in items.items()}
             targets = targets.to(self.device)
-            m = targets.size(0)
 
             preds = self.model(users, items)
-            n = len(preds) // m
-            preds = preds.view(m, n)
-            targets = targets.repeat((1, n))
-            targets[:, 1:].fill_(0)
             loss = self.criterion(preds, targets)
 
-            running_preds.append(preds.detach().clone().cpu())
-            running_targets.append(targets.detach().clone().cpu())
+            running_preds.append(preds.detach().clone().cpu().flatten())
+            running_targets.append(targets.detach().clone().cpu().flatten())
 
             self.callback(loss, n=targets.size(0), mode="mean", prefix=prefix, pool=['LOSS'])
 
@@ -101,7 +68,7 @@ class CoachForNCF(Coach):
         running_targets = torch.cat(running_targets)
         self.callback(
             running_preds, running_targets, 
-            n=m, mode="mean", prefix=prefix,
+            n=1, mode="mean", prefix=prefix,
             pool=['NDCG', 'PRECISION', 'RECALL', 'HITRATE', 'MSE', 'MAE', 'RMSE']
         )
 
@@ -115,29 +82,27 @@ def main():
     cfg.add_argument("-eb", "--embedding_dim", type=int, default=8)
     cfg.set_defaults(
         fmt="{description}={embedding_dim}={optimizer}-{lr}-{weight_decay}={seed}",
-        description="NeuCF",
-        root="../movielens",
+        description="DeepFM",
+        root="../criteo",
         epochs=200,
-        batch_size=1024,
-        buffer_size=10240,
+        batch_size=256,
         optimizer='adam',
         lr=1e-3,
     )
     cfg.compile()
 
-    basepipe = MovieLens1M_(cfg.root)
-    datapipe = basepipe.dataframe_(buffer_size=cfg.buffer_size).encode_().sample_negative_(num_negatives=4)
+    basepipe = Criteo(cfg.root)
+    datapipe = basepipe.pin_(buffer_size=cfg.buffer_size)
     datapipe = datapipe.chunk_(batch_size=cfg.batch_size).dict_().tensor_().group_()
 
-    tokenizer_mf = Tokenizer(datapipe.fields)
-    tokenizer_mf.embed(
+    tokenizer = Tokenizer(datapipe.fields)
+    tokenizer.embed(
         dim=cfg.embedding_dim, tags=(FEATURE, SPARSE)
     )
-    tokenizer_mf.embed(
+    tokenizer.embed(
         dim=cfg.embedding_dim, tags=(FEATURE, DENSE), linear=True
     )
-    tokenizer_mlp = copy.deepcopy(tokenizer_mf)
-    model = NeuCF(tokenizer_mf, tokenizer_mlp).to(cfg.DEVICE)
+    model = DeepFM(tokenizer).to(cfg.DEVICE)
 
     if cfg.optimizer == 'sgd':
         optimizer = torch.optim.SGD(
@@ -157,7 +122,7 @@ def main():
         model.parameters(), rtype='l2', weight=cfg.weight_decay
     )
 
-    coach = CoachForNCF(
+    coach = CoachForDeepFM(
         model=model,
         datapipe=datapipe,
         criterion=criterion,

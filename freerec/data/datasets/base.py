@@ -1,13 +1,16 @@
 
 
 
+from dataclasses import replace
 from typing import Dict, Iterable, Iterator, Optional, Tuple, List, Union
 
 import torch
 import torchdata.datapipes as dp
 import numpy as np
 import pandas as pd
+import feather
 import random
+import os
 
 from ..fields import Field, SparseField
 from ..tags import Tag, FEATURE, TARGET, USER, ITEM, ID
@@ -17,7 +20,7 @@ from ...utils import timemeter, warnLogger, getLogger
 __all__ = ['RecDataSet', 'Postprocessor']
 
 
-_DEFAULT_BATCH_SIZE = 10000
+_DEFAULT_CHUNK_SIZE = 51200
 
 
 class BaseSet(dp.iter.IterDataPipe):
@@ -77,6 +80,44 @@ class RecDataSet(BaseSet):
     def fields(self):
         return self._cfg.fields
 
+    def check_feather(self):
+        path = os.path.join(self.root, 'raw2feather', self.mode)
+        if os.path.exists(path):
+            return any(True for _ in os.scandir(path))
+        else:
+            os.makedirs(path)
+            return False
+
+    def write_feather(self, dataframe: pd.DataFrame, count: int):
+        file_ = os.path.join(self.root, 'raw2feather', self.mode, f"chunk{count}.feather")
+        feather.write_dataframe(dataframe, file_)
+
+    def read_feather(self, file_: str):
+        return feather.read_dataframe(file_)
+
+    def raw2data(self) -> dp.iter.IterableWrapper:
+        raise NotImplementedError
+
+    def feather2data(self):
+        datapipe = dp.iter.FileLister(os.path.join(self.root, 'raw2feather', self.mode))
+        if self.mode == 'train':
+            datapipe.shuffle()
+        for file_ in datapipe:
+            yield self.read_feather(file_)
+
+    def raw2feather(self):
+        getLogger().info(f"[{self.__class__.__name__}] >>> Convert raw data ({self.mode}) to chunks in feather format")
+        datapipe = self.raw2data()
+        columns = [field.name for field in self.fields]
+        count = 0
+        for batch in datapipe.batch(batch_size=_DEFAULT_CHUNK_SIZE):
+            df = pd.DataFrame(batch, columns=columns)
+            for field in self.fields:
+                df[field.name] = field.transform(df[field.name].values[:, None])
+            self.write_feather(df, count)
+            count += 1
+        getLogger().info(f"[{self.__class__.__name__}] >>> {count} chunks done")
+
     def row_processer(self, row):
         return [field.caster(val) for val, field in zip(row, self.fields)]
 
@@ -85,7 +126,7 @@ class RecDataSet(BaseSet):
         self.train()
         self._cfg.datasize = 0
         columns = [field.name for field in self._cfg.fields]
-        datapipe = self.batch(batch_size=_DEFAULT_BATCH_SIZE)
+        datapipe = self.raw2data().batch(batch_size=_DEFAULT_CHUNK_SIZE)
         for batch in datapipe:
             df = pd.DataFrame(batch, columns=columns)
             for field in self._cfg.fields:
@@ -93,20 +134,33 @@ class RecDataSet(BaseSet):
             self._cfg.datasize += len(df)
 
         self.valid()
-        datapipe = self.batch(batch_size=_DEFAULT_BATCH_SIZE)
+        datapipe = self.raw2data().batch(batch_size=_DEFAULT_CHUNK_SIZE)
         for batch in datapipe:
             df = pd.DataFrame(batch, columns=columns)
             for field in self._cfg.fields:
                 field.partial_fit(df[field.name].values[:, None])
-            self._cfg.datasize += len(df)
 
         getLogger().info(str(self))
 
+        # raw2feather
+        self.train()
+        if not self.check_feather():
+            self.raw2feather()
+        self.valid()
+        if not self.check_feather():
+            self.raw2feather()
+        self.test()
+        if not self.check_feather():
+            self.raw2feather()
+        self.train()
+
+
+    def __iter__(self) -> Iterator:
+        yield from self.feather2data()
 
     def __str__(self) -> str:
         cfg = '\n'.join(map(str, self.cfg.fields))
         return f"[{self.__class__.__name__}] >>> \n" + cfg
-
 
 
 class Postprocessor(BaseSet):
@@ -142,34 +196,31 @@ class Sharder(Postprocessor):
         else:
             yield from self.source
 
+@dp.functional_datapipe("pin_")
+class PinMemory(Postprocessor):
 
-@dp.functional_datapipe("dataframe_")
-class FrameMaker(Postprocessor):
-    """Make pandas.DataFrame
-    TODO: use torcharrow instead for efficient implements
-    Params:
-        buffer_size: int, save dataframe in memory, default: 6400 = 128 * 50;
-        shuffle: bool, shuffle by row in True and in mode 'train'
-    Return (__iter__):
-        pandas.DataFrame
-    """
-
-    def __init__(self, datapipe: RecDataSet, buffer_size: int = 6400, shuffle: bool = True) -> None:
+    def __init__(self, datapipe: RecDataSet, buffer_size: Optional[int] = None, shuffle: bool = True) -> None:
         super().__init__(datapipe)
 
-        self.buffer_size = buffer_size
+        self.buffer_size = buffer_size if buffer_size else float('inf')
         self.shuffle = shuffle
-        self.columns = [field.name for field in self.fields]
 
     def __iter__(self) -> Iterator:
-        datapipe = self.source
-        for batch in datapipe.batch(self.buffer_size):
-            df = pd.DataFrame(batch, columns=self.columns)
-            if self.mode == 'train' and self.shuffle:
-                yield df.sample(frac=1)
-            else:
-                yield df
+        _buffer = None
+        for df in self.source:
+            _buffer = pd.concat((_buffer, df))
+            if len(_buffer) >= self.buffer_size:
+                if self.mode == 'train' and self.shuffle:
+                    yield _buffer.sample(frac=1)
+                else:
+                    yield _buffer
+                _buffer = None
 
+        if not _buffer.empty:
+            if self.mode == 'train' and self.shuffle:
+                yield _buffer.sample(frac=1)
+            else:
+                yield _buffer
 
 @dp.functional_datapipe("subfield_")
 class SubFielder(Postprocessor):
@@ -201,23 +252,22 @@ class Encoder(Postprocessor):
 class Chunker(Postprocessor):
     """A special batcher for dataframe only"""
 
-    def __init__(self, datapipe: Postprocessor, batch_size: int) -> None:
+    def __init__(self, datapipe: Postprocessor, batch_size: int, drop_last: bool = False) -> None:
         super().__init__(datapipe)
 
         self.batch_size = batch_size
-        self._buffer = pd.DataFrame(
-            columns=[field.name for field in self.fields]
-        )
+        self.drop_last = drop_last
 
     def __iter__(self) -> Iterator:
+        _buffer = None
         for df in self.source:
-            self._buffer = pd.concat((self._buffer, df))
-            for _ in range(self.batch_size, len(self._buffer) + 1, self.batch_size):
-                yield self._buffer.head(self.batch_size)
-                self._buffer = self._buffer[self.batch_size:]
-        if not self._buffer.empty:
-            yield self._buffer
-            self._buffer.drop(self._buffer.index, inplace=True)
+            _buffer = pd.concat((_buffer, df))
+            for _ in range(self.batch_size, len(_buffer) + 1, self.batch_size):
+                yield _buffer.head(self.batch_size)
+                _buffer = _buffer[self.batch_size:]
+
+        if not self.drop_last and not _buffer.empty:
+            yield _buffer
 
 
 @dp.functional_datapipe("dict_")

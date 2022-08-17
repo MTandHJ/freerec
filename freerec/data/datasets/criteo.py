@@ -34,13 +34,10 @@ class Criteo(RecDataSet):
     def file_filter(self, filename: str):
         return self.mode in filename
 
-    def __iter__(self) -> Iterator:
+    def raw2data(self) -> dp.iter.IterableWrapper:
         datapipe = dp.iter.FileLister(self.root)
         datapipe = datapipe.filter(filter_fn=self.file_filter)
         datapipe = datapipe.open_files(mode=self.open_kw.mode)
         datapipe = datapipe.parse_csv(delimiter=self.open_kw.delimiter, skip_lines=self.open_kw.skip_lines)
         datapipe = datapipe.map(self.row_processer)
         yield from datapipe
-
-
-    

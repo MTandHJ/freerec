@@ -10,7 +10,7 @@ requires = [
 
 setuptools.setup(
   name="freerec",
-  version="0.0.3",
+  version="0.0.4",
   author="MTandHJ",
   author_email="congxueric@gmail.com",
   description="PyTorch library for recommender systems",
@@ -19,7 +19,7 @@ setuptools.setup(
   license='MIT License',
   url="https://github.com/MTandHJ/freerec",
   packages=setuptools.find_packages(),
-  python_requires='>=3.9',
+  python_requires='>=3.7',
   install_requires=requires,
   classifiers=[
   "Programming Language :: Python :: 3",

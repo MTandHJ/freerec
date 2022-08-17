@@ -98,7 +98,7 @@ class Parser(Config):
         self.parser.add_argument("--eval-freq", type=int, default=5, help="the evaluation frequency")
 
         self.parser.add_argument("--num-workers", type=int, default=0)
-        self.parser.add_argument("--buffer-size", type=int, default=6400, help="buffer size for datapipe")
+        self.parser.add_argument("--buffer-size", type=int, default=None, help="buffer size for datapipe")
 
         self.parser.add_argument("--seed", type=int, default=1, help="calling --seed=-1 for a random seed")
         self.parser.add_argument("--benchmark", action="store_false", default=True, help="cudnn.benchmark == True ?")

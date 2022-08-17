@@ -181,26 +181,27 @@ class Coach:
 
     @timemeter("Coach/train")
     def train(self):
-        self.model.train()
-        self.datapipe.train()
-        users: Dict[str, torch.Tensor]
-        items: Dict[str, torch.Tensor]
-        targets: torch.Tensor
-        for users, items, targets in self.dataloader:
-            users = {name: val.to(self.device) for name, val in users.items()}
-            items = {name: val.to(self.device) for name, val in items.items()}
-            targets = targets.to(self.device)
+        # self.model.train()
+        # self.datapipe.train()
+        # users: Dict[str, torch.Tensor]
+        # items: Dict[str, torch.Tensor]
+        # targets: torch.Tensor
+        # for users, items, targets in self.dataloader:
+        #     users = {name: val.to(self.device) for name, val in users.items()}
+        #     items = {name: val.to(self.device) for name, val in items.items()}
+        #     targets = targets.to(self.device)
 
-            logits = self.model(users, items)
-            loss = self.criterion(logits, targets)
+        #     logits = self.model(users, items)
+        #     loss = self.criterion(logits, targets)
 
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
+        #     self.optimizer.zero_grad()
+        #     loss.backward()
+        #     self.optimizer.step()
             
-            self.callback(loss.item(), n=targets.size(0), mode="mean", prefix='train', pool=['LOSS'])
+        #     self.callback(loss.item(), n=targets.size(0), mode="mean", prefix='train', pool=['LOSS'])
 
-        self.lr_scheduler.step() # TODO: step() per epoch or per mini-batch ?
+        # self.lr_scheduler.step() # TODO: step() per epoch or per mini-batch ?
+        raise NotImplementedError()
 
     @torch.no_grad()
     def evaluate(self, prefix: str = 'valid'):

@@ -1,5 +1,7 @@
 
 
+
+
 from typing import Dict, List
 
 import torch
@@ -114,7 +116,6 @@ def main():
         root="../movielens",
         epochs=20,
         batch_size=256,
-        buffer_size=1024000, # very important for buffer_size > datasize !!!
         optimizer='adam',
         lr=1e-3,
         weight_decay=0.,
@@ -122,7 +123,7 @@ def main():
     cfg.compile()
 
     basepipe = MovieLens1M_(cfg.root)
-    datapipe = basepipe.dataframe_(buffer_size=cfg.buffer_size).encode_().sample_negative_(num_negatives=cfg.num_negs)
+    datapipe = basepipe.pin_(buffer_size=cfg.buffer_size).sample_negative_(num_negatives=cfg.num_negs)
     datapipe = datapipe.chunk_(batch_size=cfg.batch_size).dict_().tensor_().group_()
 
     tokenizer_mf = Tokenizer(datapipe.fields)
