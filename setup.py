@@ -4,6 +4,9 @@ with open("README.md", "r") as fh:
   long_description = fh.read()
 
 requires = [
+    "torchdata>=0.4.0",
+    "torchmetrics>=0.9.2",
+    "feather-format>=0.4.1",
     "tqdm>=4.64.0",
     "freeplot>=0.0.12"
 ]

@@ -123,15 +123,14 @@ class RecDataSet(BaseSet):
 
     @timemeter("DataSet/compile")
     def compile(self):
-        self.train()
-        self._cfg.datasize = 0
+        # prepare transformer
         columns = [field.name for field in self._cfg.fields]
+        self.train()
         datapipe = self.raw2data().batch(batch_size=_DEFAULT_CHUNK_SIZE)
         for batch in datapipe:
             df = pd.DataFrame(batch, columns=columns)
             for field in self._cfg.fields:
                 field.partial_fit(df[field.name].values[:, None])
-            self._cfg.datasize += len(df)
 
         self.valid()
         datapipe = self.raw2data().batch(batch_size=_DEFAULT_CHUNK_SIZE)
@@ -139,8 +138,6 @@ class RecDataSet(BaseSet):
             df = pd.DataFrame(batch, columns=columns)
             for field in self._cfg.fields:
                 field.partial_fit(df[field.name].values[:, None])
-
-        getLogger().info(str(self))
 
         # raw2feather
         self.train()
@@ -154,6 +151,7 @@ class RecDataSet(BaseSet):
             self.raw2feather()
         self.train()
 
+        getLogger().info(str(self))
 
     def __iter__(self) -> Iterator:
         yield from self.feather2data()
@@ -196,6 +194,7 @@ class Sharder(Postprocessor):
         else:
             yield from self.source
 
+
 @dp.functional_datapipe("pin_")
 class PinMemory(Postprocessor):
 
@@ -216,11 +215,12 @@ class PinMemory(Postprocessor):
                     yield _buffer
                 _buffer = None
 
-        if not _buffer.empty:
+        if _buffer and not _buffer.empty:
             if self.mode == 'train' and self.shuffle:
                 yield _buffer.sample(frac=1)
             else:
                 yield _buffer
+
 
 @dp.functional_datapipe("subfield_")
 class SubFielder(Postprocessor):
@@ -235,17 +235,6 @@ class SubFielder(Postprocessor):
     def __iter__(self) -> Iterator:
         for df in self.source:
             yield df[self.columns]
-
-
-@dp.functional_datapipe("encode_")
-class Encoder(Postprocessor):
-    """Transform int|float into required formats by column"""
-
-    def __iter__(self) -> Iterator:
-        for df in self.source:
-            for field in self.fields:
-                df[field.name] = field.transform(df[field.name].values[:, None])
-            yield df
 
 
 @dp.functional_datapipe("chunk_")
