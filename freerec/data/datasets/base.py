@@ -1,6 +1,5 @@
 
 
-
 from dataclasses import replace
 from typing import Dict, Iterable, Iterator, Optional, Tuple, List, Union
 
@@ -215,7 +214,7 @@ class PinMemory(Postprocessor):
                     yield _buffer
                 _buffer = None
 
-        if _buffer and not _buffer.empty:
+        if _buffer is not None and not _buffer.empty:
             if self.mode == 'train' and self.shuffle:
                 yield _buffer.sample(frac=1)
             else:
