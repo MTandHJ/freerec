@@ -102,7 +102,7 @@ class Coach:
 
     @timemeter("Coach/compile")
     def compile(
-        self, cfg: Config, callbacks: List[str]
+        self, cfg: Config, monitors: List[str]
     ):
         self.cfg = cfg
         # meters for train|valid|test
@@ -119,26 +119,26 @@ class Coach:
         self.meters['valid'] = defaultdict(list)
         self.meters['test'] = defaultdict(list)
 
-        for name in callbacks:
+        for name in monitors:
             name = name.upper()
             if '@' in name:
-                callback, K = name.split('@')
+                monitor, K = name.split('@')
                 for prefix in ('valid', 'test'):
-                    self.meters[prefix][callback].append(
+                    self.meters[prefix][monitor].append(
                         AverageMeter(
                             name=name,
-                            metric=partial(DEFAULT_METRICS[callback], k=int(K)),
-                            fmt=DEFAULT_FMTS[callback]
+                            metric=partial(DEFAULT_METRICS[monitor], k=int(K)),
+                            fmt=DEFAULT_FMTS[monitor]
                         )
                     )
             else:
-                callback = name
+                monitor = name
                 for prefix in ('valid', 'test'):
-                    self.meters[prefix][callback].append(
+                    self.meters[prefix][monitor].append(
                         AverageMeter(
                             name=name,
-                            metric=DEFAULT_METRICS[callback],
-                            fmt=DEFAULT_FMTS[callback]
+                            metric=DEFAULT_METRICS[monitor],
+                            fmt=DEFAULT_FMTS[monitor]
                         )
                     )
 
@@ -151,7 +151,7 @@ class Coach:
             datapipe=self.datapipe, num_workers=self.cfg.num_workers
         )
 
-    def callback(
+    def monitor(
         self, *values,
         n: int = 1, mode: str = 'mean', 
         prefix: str = 'train', pool: Optional[List] = None
@@ -163,18 +163,18 @@ class Coach:
 
     @timemeter("Coach/step")
     def step(self, epoch: int):
-        for prefix, callbacks in self.meters.items():
-            callbacks: defaultdict[str, List[AverageMeter]]
+        for prefix, monitors in self.meters.items():
+            monitors: defaultdict[str, List[AverageMeter]]
             infos = [f"[Coach] >>> {prefix.upper():5} @Epoch: {epoch:<3d} >>> "]
-            for meters in callbacks.values():
+            for meters in monitors.values():
                 infos += [meter.step() for meter in meters if meter.active]
             getLogger().info(' || '.join(infos))
 
     @timemeter("Coach/summary")
     def summary(self):
-        for prefix, callbacks in self.meters.items():
-            callbacks: defaultdict[str, List[AverageMeter]]
-            for meters in callbacks.values():
+        for prefix, monitors in self.meters.items():
+            monitors: defaultdict[str, List[AverageMeter]]
+            for meters in monitors.values():
                 for meter in meters:
                     meter.plot()
                     meter.save(path=self.cfg.LOG_PATH, prefix=prefix)
@@ -198,7 +198,7 @@ class Coach:
         #     loss.backward()
         #     self.optimizer.step()
             
-        #     self.callback(loss.item(), n=targets.size(0), mode="mean", prefix='train', pool=['LOSS'])
+        #     self.monitor(loss.item(), n=targets.size(0), mode="mean", prefix='train', pool=['LOSS'])
 
         # self.lr_scheduler.step() # TODO: step() per epoch or per mini-batch ?
         raise NotImplementedError()
@@ -220,8 +220,8 @@ class Coach:
         #     targets[:, 1:].fill_(0)
         #     loss = self.criterion(preds, targets)
 
-        #     self.callback(loss, n=m * n, mode="mean", prefix=prefix, pool=['LOSS'])
-        #     self.callback(
+        #     self.monitor(loss, n=m * n, mode="mean", prefix=prefix, pool=['LOSS'])
+        #     self.monitor(
         #         preds.detach().cpu(), targets.detach().cpu(),
         #         n=targets.size(0), mode="mean", prefix=prefix,
         #         pool=['PRECISION', 'RECALL', 'HITRATE', 'MSE', 'MAE', 'RMSE']
