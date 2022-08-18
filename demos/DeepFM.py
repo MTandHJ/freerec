@@ -39,7 +39,7 @@ class CoachForDeepFM(Coach):
             loss.backward()
             self.optimizer.step()
             
-            self.callback(loss.item(), n=targets.size(0), mode="mean", prefix='train', pool=['LOSS'])
+            self.monitor(loss.item(), n=targets.size(0), mode="mean", prefix='train', pool=['LOSS'])
 
         self.lr_scheduler.step()
 
@@ -62,11 +62,11 @@ class CoachForDeepFM(Coach):
             running_preds.append(preds.detach().clone().cpu().flatten())
             running_targets.append(targets.detach().clone().cpu().flatten())
 
-            self.callback(loss, n=targets.size(0), mode="mean", prefix=prefix, pool=['LOSS'])
+            self.monitor(loss, n=targets.size(0), mode="mean", prefix=prefix, pool=['LOSS'])
 
         running_preds = torch.cat(running_preds)
         running_targets = torch.cat(running_targets)
-        self.callback(
+        self.monitor(
             running_preds, running_targets, 
             n=1, mode="mean", prefix=prefix,
             pool=['NDCG', 'PRECISION', 'RECALL', 'HITRATE', 'MSE', 'MAE', 'RMSE']
@@ -130,7 +130,7 @@ def main():
         lr_scheduler=lr_scheduler,
         device=cfg.DEVICE
     )
-    coach.compile(cfg, callbacks=['loss', 'mse', 'mae', 'rmse', 'precision@10', 'recall@10', 'hitrate@10', 'ndcg@10'])
+    coach.compile(cfg, monitors=['loss', 'mse', 'mae', 'rmse', 'precision@10', 'recall@10', 'hitrate@10', 'ndcg@10'])
     coach.fit()
 
 if __name__ == "__main__":

@@ -65,7 +65,7 @@ class CoachForNCF(Coach):
             loss.backward()
             self.optimizer.step()
             
-            self.callback(loss.item(), n=m * n, mode="mean", prefix='train', pool=['LOSS'])
+            self.monitor(loss.item(), n=m * n, mode="mean", prefix='train', pool=['LOSS'])
 
         self.lr_scheduler.step()
 
@@ -91,11 +91,11 @@ class CoachForNCF(Coach):
             running_preds.append(preds.detach().clone().cpu())
             running_targets.append(targets.detach().clone().cpu())
 
-            self.callback(loss, n=m * n, mode="mean", prefix=prefix, pool=['LOSS'])
+            self.monitor(loss, n=m * n, mode="mean", prefix=prefix, pool=['LOSS'])
 
         running_preds = torch.cat(running_preds)
         running_targets = torch.cat(running_targets)
-        self.callback(
+        self.monitor(
             running_preds, running_targets, 
             n=m, mode="mean", prefix=prefix,
             pool=['NDCG', 'PRECISION', 'RECALL', 'HITRATE', 'MSE', 'MAE', 'RMSE']
@@ -156,7 +156,7 @@ def main():
         lr_scheduler=lr_scheduler,
         device=cfg.DEVICE
     )
-    coach.compile(cfg, callbacks=['loss', 'precision@10', 'recall@10', 'hitrate@10', 'ndcg@10', 'ndcg@20'])
+    coach.compile(cfg, monitors=['loss', 'precision@10', 'recall@10', 'hitrate@10', 'ndcg@10', 'ndcg@20'])
     coach.fit()
 
 if __name__ == "__main__":
