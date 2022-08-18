@@ -13,7 +13,7 @@ requires = [
 
 setuptools.setup(
   name="freerec",
-  version="0.0.4",
+  version="0.0.5",
   author="MTandHJ",
   author_email="congxueric@gmail.com",
   description="PyTorch library for recommender systems",
