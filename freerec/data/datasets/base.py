@@ -179,14 +179,6 @@ class Postprocessor(BaseSet):
         super().test()
         self.source.test()
 
-    def process(self) -> Iterator:
-        raise NotImplementedError()
-
-    def __iter__(self) -> Iterator:
-        if self.training_only and self.mode != 'train':
-            yield from self.source
-        else:
-            yield from self.process()
 
 @dp.functional_datapipe("shard_")
 class Sharder(Postprocessor):
