@@ -13,7 +13,7 @@ import os
 
 from ..fields import Field, SparseField
 from ..tags import Tag, FEATURE, TARGET, USER, ITEM, ID
-from ...utils import timemeter, warnLogger, getLogger
+from ...utils import timemeter, warnLogger, infoLogger
 
 
 __all__ = ['RecDataSet', 'Postprocessor']
@@ -105,7 +105,7 @@ class RecDataSet(BaseSet):
             yield self.read_feather(file_)
 
     def raw2feather(self):
-        getLogger().info(f"[{self.__class__.__name__}] >>> Convert raw data ({self.mode}) to chunks in feather format")
+        infoLogger(f"[{self.__class__.__name__}] >>> Convert raw data ({self.mode}) to chunks in feather format")
         datapipe = self.raw2data()
         columns = [field.name for field in self.fields]
         count = 0
@@ -115,7 +115,7 @@ class RecDataSet(BaseSet):
                 df[field.name] = field.transform(df[field.name].values[:, None])
             self.write_feather(df, count)
             count += 1
-        getLogger().info(f"[{self.__class__.__name__}] >>> {count} chunks done")
+        infoLogger(f"[{self.__class__.__name__}] >>> {count} chunks done")
 
     def row_processer(self, row):
         return [field.caster(val) for val, field in zip(row, self.fields)]
@@ -150,7 +150,7 @@ class RecDataSet(BaseSet):
             self.raw2feather()
         self.train()
 
-        getLogger().info(str(self))
+        infoLogger(str(self))
 
     def __iter__(self) -> Iterator:
         yield from self.feather2data()

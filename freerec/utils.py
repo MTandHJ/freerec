@@ -122,20 +122,23 @@ def set_logger(
 def getLogger():
     return logging.getLogger(LOGGER.name)
 
+def infoLogger(words: str):
+    getLogger().info(words)
+
+def debugLogger(words: str):
+    getLogger().debug(words)
+
 def warnLogger(warn: str):
-    pad = ' '.join(["⚠"] * 50)
-    getLogger().info(pad)
-    getLogger().info(warn)
-    getLogger().info(pad)
+    words = f"\033[1;31m {warn} \033[0m"
+    getLogger().info(words)
 
 def timemeter(prefix=""):
     def decorator(func):
-        logger = getLogger()
         def wrapper(*args, **kwargs):
             start = time.time()
             results = func(*args, **kwargs)
             end = time.time()
-            logger.info(f"[Wall TIME] >>> {prefix} takes {end-start:.6f} seconds ...")
+            infoLogger(f"[Wall TIME] >>> {prefix} takes {end-start:.6f} seconds ...")
             return  results
         wrapper.__doc__ = func.__doc__
         wrapper.__name__ = func.__name__
@@ -153,17 +156,16 @@ def mkdirs(*paths: str) -> None:
 def activate_benchmark(benchmark: bool) -> None:
     from torch.backends import cudnn
     if benchmark:
-        getLogger().info(f"[Seed] >>> Activate benchmark")
+        infoLogger(f"[Seed] >>> Activate benchmark")
         cudnn.benchmark, cudnn.deterministic = True, False
     else:
-        getLogger().info(f"[Seed] >>> Deactivate benchmark")
+        infoLogger(f"[Seed] >>> Deactivate benchmark")
         cudnn.benchmark, cudnn.deterministic = False, True
 
 def set_seed(seed: int) -> None:
     if seed == -1:
         seed = random.randint(0, 2048)
-        logger = getLogger()
-        logger.info(f"[Seed] >>> Set seed randomly: {seed}")
+        infoLogger(f"[Seed] >>> Set seed randomly: {seed}")
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)

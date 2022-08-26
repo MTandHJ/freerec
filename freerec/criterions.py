@@ -5,7 +5,7 @@ from typing import List
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .utils import getLogger
+from .utils import infoLogger
 
 
 __all__ = ["Regularizer", "BaseCriterion", "BCELoss", "MSELoss", "L1Loss"]
@@ -29,7 +29,7 @@ class Regularizer(nn.Module):
         assert rtype in ('l1', 'l2'), "only 'l1'|'l2' regularization are supported ..."
         self.rtype = rtype
         self.weight = weight
-        getLogger().info(f"[Regularizer] >>> Add {self.rtype} regularization with the weight of {self.weight}")
+        infoLogger(f"[Regularizer] >>> Add {self.rtype} regularization with the weight of {self.weight}")
 
     def forward(self) -> torch.Tensor:
         if self.weight == 0:
@@ -37,7 +37,7 @@ class Regularizer(nn.Module):
         if self.rtype == 'l1':
             loss = sum(enem.abs().sum() for enem in self.parameters)
         elif self.rtype == 'l2':
-            loss = sum(enem.pow(2).sum() for enem in self.parameters)
+            loss = sum(enem.pow(2).sum() for enem in self.parameters) / 2
         return loss * self.weight
 
 
@@ -48,7 +48,7 @@ class BaseCriterion(nn.Module):
 
         self.regularizers: List[Regularizer] = []
 
-        getLogger().info(f"[Criterion] >>> Employ the criterion {self.__class__.__name__}")
+        infoLogger(f"[Criterion] >>> Employ the criterion {self.__class__.__name__}")
 
     def regulate(self, parameters: List[nn.parameter.Parameter], rtype: str, weight: float = 0.):
         """add regularization for given parameters

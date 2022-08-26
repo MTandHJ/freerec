@@ -58,7 +58,4 @@ class LightGCN(RecSysArch):
     def getRatings(self) -> torch.Tensor:
         userEmbs, itemEmbs = self.roll() # M x D | N x D
         ratings = userEmbs @ itemEmbs.T
-        min_ = ratings.min()
-        x, y = self.Graph.to_dense()[:self.User.count, self.User.count:].nonzero(as_tuple=True)
-        ratings[x, y] = min_ - 1
         return ratings

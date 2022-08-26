@@ -10,7 +10,7 @@ from collections import defaultdict
 from .data.datasets.base import BaseSet
 from .data.utils import TQDMDataLoader, DataLoader
 from .dict2obj import Config
-from .utils import AverageMeter, getLogger, timemeter
+from .utils import AverageMeter, infoLogger, timemeter
 from .metrics import *
 
 
@@ -97,7 +97,7 @@ class Coach:
     @timemeter("Coach/resume")
     def resume(self):
         start_epoch = self.load_checkpoint() if self.cfg.resume else 0
-        getLogger().info(f"[Coach] >>> Load the recent checkpoint and train from epoch: {start_epoch}")
+        infoLogger(f"[Coach] >>> Load the recent checkpoint and train from epoch: {start_epoch}")
         return start_epoch
 
     @timemeter("Coach/compile")
@@ -168,7 +168,7 @@ class Coach:
             infos = [f"[Coach] >>> {prefix.upper():5} @Epoch: {epoch:<3d} >>> "]
             for meters in monitors.values():
                 infos += [meter.step() for meter in meters if meter.active]
-            getLogger().info(' || '.join(infos))
+            infoLogger(' || '.join(infos))
 
     @timemeter("Coach/summary")
     def summary(self):
