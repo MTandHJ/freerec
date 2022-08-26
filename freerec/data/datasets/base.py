@@ -191,7 +191,7 @@ class Postprocessor(BaseSet):
 @dp.functional_datapipe("shard_")
 class Sharder(Postprocessor):
 
-    def process(self) -> Iterator:
+    def __iter__(self) -> Iterator:
         worker_infos = torch.utils.data.get_worker_info()
         if worker_infos:
             id_, nums = worker_infos.id, worker_infos.num_workers
@@ -214,7 +214,7 @@ class PinMemory(Postprocessor):
         self.buffer_size = buffer_size if buffer_size else float('inf')
         self.shuffle = shuffle
 
-    def process(self) -> Iterator:
+    def __iter__(self) -> Iterator:
         _buffer = None
         for df in self.source:
             _buffer = pd.concat((_buffer, df))
@@ -245,7 +245,7 @@ class SubFielder(Postprocessor):
             self.fields = [field for field in self.fields if field.name in fields]
         self.columns = [field.name for field in self.fields]
 
-    def process(self) -> Iterator:
+    def __iter__(self) -> Iterator:
         for df in self.source:
             yield df[self.columns]
 
@@ -263,7 +263,7 @@ class Chunker(Postprocessor):
         self.batch_size = batch_size
         self.drop_last = drop_last
 
-    def process(self) -> Iterator:
+    def __iter__(self) -> Iterator:
         _buffer = None
         for df in self.source:
             _buffer = pd.concat((_buffer, df))
@@ -278,7 +278,7 @@ class Chunker(Postprocessor):
 @dp.functional_datapipe("dict_")
 class Frame2Dict(Postprocessor):
     """Convert dataframe into Dict[str, List] """
-    def process(self) -> Iterator:
+    def __iter__(self) -> Iterator:
         for df in self.source:
             yield {name: df[name].values.tolist() for name in df.columns}
 
@@ -286,7 +286,7 @@ class Frame2Dict(Postprocessor):
 @dp.functional_datapipe("list_")
 class Frame2List(Postprocessor):
     """Convert dataframe into List[List] """
-    def process(self) -> Iterator:
+    def __iter__(self) -> Iterator:
         for df in self.source:
             yield [df[field.name].values.tolist() for field in self.fields]
 
@@ -297,7 +297,7 @@ class ToTensor(Postprocessor):
     def at_least_2d(self, val: torch.Tensor):
         return val.unsqueeze(1) if val.ndim == 1 else val
 
-    def proess(self) -> Iterator:
+    def __iter__(self) -> Iterator:
         for batch in self.source:
             yield {field.name: self.at_least_2d(torch.tensor(batch[field.name], dtype=field.dtype)) for field in self.fields}
 
@@ -336,7 +336,7 @@ class NegativeSamper(Postprocessor):
             k = self.pool_size if self.pool_size <= len(negItems) else len(negItems)
             self.negItems.append(random.sample(negItems, k = k))
 
-    def process(self) -> Iterator:
+    def __iter__(self) -> Iterator:
         if self.mode == 'train':
             for df in self.source:
                 negs = np.stack(
