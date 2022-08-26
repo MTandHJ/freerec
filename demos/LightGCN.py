@@ -1,6 +1,5 @@
 
 
-
 from typing import Dict
 
 import torch
@@ -90,7 +89,7 @@ class Grapher(Postprocessor):
         assert len(indices) == len(data)
         return torch.sparse_coo_tensor(indices.T, data, (n, n)).coalesce()
 
-    def process(self):
+    def __iter__(self):
         if self.mode == 'train':
             for df in self.source:
                 negs = np.stack(
@@ -106,6 +105,20 @@ class Grapher(Postprocessor):
             for user in range(self.User.count):
                 return user, self.byrow[user]
            
+
+class Wrapper(Postprocessor):
+
+    def __init__(self, datapipe: Postprocessor, batch_size: int) -> None:
+        super().__init__(datapipe)
+        self.trainpipe = datapipe.chunk_(batch_size).dict_().tensor_().group_()
+        self.otherpipe = datapipe
+
+    def __iter__(self):
+        if self.mode == "train":
+            yield from self.trainpipe
+        else:
+            yield from self.otherpipe
+
 
 class CoachForLightGCN(Coach):
 
@@ -137,8 +150,6 @@ class CoachForLightGCN(Coach):
     def evaluate(self, prefix: str = 'valid'):
         self.model.eval()
         Ratings: torch.Tensor = self.model.getRatings() # M x N
-        User = self.model.User.name
-        Item = self.model.Item.name
         for user, items in self.dataloader:
             targets = items.to(self.device)
             preds = Ratings[user]
@@ -170,8 +181,8 @@ def main():
     cfg.compile()
 
     basepipe = GowallaM1(cfg.root)
-    datapipe = basepipe.pin_(buffer_size=cfg.buffer_size).graph_()
-    dataset = datapipe.chunk_(batch_size=cfg.batch_size, training_only=True).dict_(training_only=True).tensor_(training_only=True).group_(training_only=True)
+    datapipe = basepipe.pin_(buffer_size=cfg.buffer_size).shard_().graph_()
+    dataset = Wrapper(datapipe, batch_size=cfg.batch_size)
 
     tokenizer = Tokenizer(datapipe.fields)
     tokenizer.embed(
