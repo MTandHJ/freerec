@@ -162,10 +162,9 @@ class RecDataSet(BaseSet):
 
 class Postprocessor(BaseSet):
 
-    def __init__(self, datapipe: Union[RecDataSet, 'Postprocessor'], training_only: bool = False) -> None:
+    def __init__(self, datapipe: Union[RecDataSet, 'Postprocessor']) -> None:
         super().__init__()
         self.source = datapipe
-        self.training_only = training_only
         self.fields: List[Field] = self.source.fields.copy()
 
     def train(self):
@@ -208,10 +207,9 @@ class PinMemory(Postprocessor):
 
     def __init__(
         self, datapipe: RecDataSet,
-        buffer_size: Optional[int] = None, shuffle: bool = True,
-        training_only: bool = False
+        buffer_size: Optional[int] = None, shuffle: bool = True
     ) -> None:
-        super().__init__(datapipe, training_only)
+        super().__init__(datapipe)
 
         self.buffer_size = buffer_size if buffer_size else float('inf')
         self.shuffle = shuffle
@@ -240,10 +238,9 @@ class SubFielder(Postprocessor):
 
     def __init__(
         self, datapipe: Postprocessor,
-        fields: Optional[Iterable[str]] = None,
-        training_only: bool = False
+        fields: Optional[Iterable[str]] = None
     ) -> None:
-        super().__init__(datapipe, training_only)
+        super().__init__(datapipe)
         if fields:
             self.fields = [field for field in self.fields if field.name in fields]
         self.columns = [field.name for field in self.fields]
@@ -259,10 +256,9 @@ class Chunker(Postprocessor):
 
     def __init__(
         self, datapipe: Postprocessor, 
-        batch_size: int, drop_last: bool = False,
-        training_only: bool = False
+        batch_size: int, drop_last: bool = False
     ) -> None:
-        super().__init__(datapipe, training_only)
+        super().__init__(datapipe)
 
         self.batch_size = batch_size
         self.drop_last = drop_last
@@ -311,10 +307,9 @@ class NegativeSamper(Postprocessor):
 
     def __init__(
         self, datapipe: Postprocessor, 
-        num_negatives: int = 1, pool_size: int = 99,
-        training_only: bool = False
+        num_negatives: int = 1, pool_size: int = 99
     ) -> None:
-        super().__init__(datapipe, training_only)
+        super().__init__(datapipe)
         """
         num_negatives: for training, sampling from pool
         pool_size: for evaluation
@@ -377,10 +372,9 @@ class Grouper(Postprocessor):
     """
     def __init__(
         self, datapipe: Postprocessor, 
-        groups: Iterable[Union[Tag, Iterable[Tag]]] = (USER, ITEM, TARGET),
-        training_only: bool = False
+        groups: Iterable[Union[Tag, Iterable[Tag]]] = (USER, ITEM, TARGET)
     ) -> None:
-        super().__init__(datapipe, training_only)
+        super().__init__(datapipe)
         assert groups[-1] == TARGET, " ... "
         self.groups = [[field for field in self.fields if field.match(tags)] for tags in groups]
         self.target = self.groups.pop()[0]
