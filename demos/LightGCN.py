@@ -1,5 +1,6 @@
 
 
+from email.mime import base
 from typing import Dict
 
 import torch
@@ -60,7 +61,7 @@ class Grapher(Postprocessor):
         while True:
             negItem = np.random.randint(0, self.Item.count)
             if negItem not in posItems:
-                return user, posItem, negItem
+                return [user, [posItem, negItem]]
 
     @timemeter("Grapher/getSparseGraph")
     def getSparseGraph(self):
@@ -89,24 +90,8 @@ class Grapher(Postprocessor):
                 yield self.sample(user)
         else:
             for user in range(self.User.count):
-                yield user, self.targetItems[user], self.posItems[user]
+                yield [user, self.targetItems[user], self.posItems[user]]
            
-
-class Wrapper(Postprocessor):
-
-    def __init__(self, datapipe: Postprocessor, batch_size: int) -> None:
-        super().__init__(datapipe)
-        self.trainpipe = datapipe.batch(batch_size).collate()
-        self.otherpipe = datapipe.batch(batch_size)
-
-    def __iter__(self):
-        if self.mode == "train":
-            yield from self.trainpipe
-        else:
-            for batch in self.otherpipe:
-                users, Items, posItems =  zip(*batch)
-                yield list(users), list(Items), list(posItems)
-
 
 class CoachForLightGCN(Coach):
 
@@ -177,9 +162,9 @@ def main():
     )
     cfg.compile()
 
-    basepipe = GowallaM1(cfg.root)
-    datapipe = basepipe.graph_()
-    dataset = Wrapper(datapipe, batch_size=cfg.batch_size)
+    basepipe = GowallaM1(cfg.root).graph_()
+    User, Item = basepipe.User, basepipe.Item
+    trainpipe = basepipe.batch_(cfg.batch_size).dataframe_(columns=[User.name, Item.name]).dict_().tensor_().group_()
 
     tokenizer = Tokenizer(datapipe.fields)
     tokenizer.embed(

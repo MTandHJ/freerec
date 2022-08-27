@@ -21,6 +21,7 @@ class _Row2Pairer(dp.iter.IterDataPipe):
             for item in row[1:]:
                 yield user, item, 1
 
+
 class GowallaM1(RecDataSet):
     """
     GowallaM1: (user, items)

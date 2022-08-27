@@ -9,10 +9,10 @@ from functools import partial, lru_cache
 
 from .utils import safe_cast
 from .preprocessing import X2X, Label2Index, Binarizer, MinMaxScaler, StandardScaler
-from .tags import Tag, SPARSE, DENSE, FEATURE
+from .tags import Tag, SPARSE, DENSE
 
 
-__all__ = ['Field', 'DenseField', 'SparseField', 'Tokenizer']
+__all__ = ['Field', 'DenseField', 'SparseField', 'Token', 'SparseToken', 'DenseToken', 'Tokenizer']
 
 TRANSFORM = {
     "none": X2X,
@@ -22,7 +22,7 @@ TRANSFORM = {
 }
 
 
-class Field(torch.nn.Module):
+class Field:
     
     def __init__(
         self, name: str, na_value: Union[str, int, float], dtype: Callable,
@@ -34,14 +34,12 @@ class Field(torch.nn.Module):
         dtype: str|int|float for safe_cast
         transformer: 'none'|'label2index'|'binary'|'minmax'|'standard'
         """
-        super().__init__()
 
         self.__name = name
         self.__na_value = na_value
         self.__tags = set()
         self.dtype = dtype
         self.caster = partial(safe_cast, dest_type=dtype, default=na_value)
-        self.dimension: int = 1
         self.transformer = TRANSFORM[transformer]() if isinstance(transformer, str) else transformer
         self.add_tag(tags)
 
@@ -51,12 +49,6 @@ class Field(torch.nn.Module):
         else:
             for tag in tags:
                 self.add_tag(tag) 
-
-    def remove_tag(self, tags: Union[Tag, Iterable[Tag]]):
-        if isinstance(tags, Tag):
-            self.__tags.remove(tags)
-        else:
-            self.__tags = self.__tags - set(tags)
 
     @property
     def tags(self):
@@ -72,9 +64,6 @@ class Field(torch.nn.Module):
 
     def transform(self, x: np.array) -> np.array:
         return self.transformer.transform(x)
-
-    def embed(self, dim: int, **kwargs):
-        raise NotImplementedError()
 
     @property
     def name(self):
@@ -117,15 +106,7 @@ class SparseField(Field):
         if isinstance(self.transformer, Label2Index):
             return len(self.transformer.classes_)
         else:
-            raise NotImplementedError()
-
-    def embed(self, dim: int, **kwargs):
-        self.dimension = dim
-        self.embeddings = torch.nn.Embedding(self.count, dim, **kwargs)
-
-    def look_up(self, x: torch.Tensor) -> torch.Tensor:
-        """ (B, *,) -> (B, *, d) """
-        return self.embeddings(x)
+            return None
 
 
 class DenseField(Field):
@@ -138,6 +119,78 @@ class DenseField(Field):
         super().__init__(name, na_value, dtype, transformer, tags)
         self.add_tag(DENSE)
    
+
+class Fielder(tuple):
+
+    @lru_cache(maxsize=4)
+    def whichis(self, *tags: Tag):
+        fields = Fielder(field for field in self if field.match(tags))
+        if len(fields) == 1:
+            return fields[0]
+        elif len(fields) == 0:
+            return None
+        else:
+            return fields
+
+    def copy(self) -> 'Fielder':
+        return Fielder(self)
+
+
+class Token(torch.nn.Module):
+
+    def __init__(self, field: Field) -> None:
+        super().__init__()
+        self.__name = field.name
+        self.__tags = field.tags.copy()
+
+        self.dimension: int
+
+    @property
+    def name(self):
+        return self.__name
+
+    @property
+    def tags(self):
+        return self.__tags
+
+    def add_tag(self, tags: Union[Tag, Iterable[Tag]]):
+        if isinstance(tags, Tag):
+            self.__tags.add(tags.name)
+        else:
+            for tag in tags:
+                self.add_tag(tag) 
+
+    def match(self, tags: Union[Tag, Iterable[Tag]]):
+        if isinstance(tags, Iterable):
+            return all(map(self.match, tags))
+        return tags.name in self.tags
+
+    def embed(self, dim: int, **kwargs):
+        raise NotImplementedError()
+
+
+class SparseToken(Token):
+
+    def __init__(self, field: Field) -> None:
+        super().__init__(field)
+
+        self.__count = field.count
+
+    @property
+    def count(self):
+        return self.__count
+
+    def embed(self, dim: int, **kwargs):
+        self.dimension = dim
+        self.embeddings = torch.nn.Embedding(self.count, dim, **kwargs)
+
+    def look_up(self, x: torch.Tensor) -> torch.Tensor:
+        """ (B, *,) -> (B, *, d) """
+        return self.embeddings(x)
+
+
+class DenseToken(Token):
+
     def embed(self, dim: int = 1, bias: bool = False, linear: bool = False):
         if linear:
             self.dimension = dim
@@ -156,47 +209,31 @@ class Tokenizer(torch.nn.Module):
     def __init__(self, fields: Iterable[Field]) -> None:
         super().__init__()
 
-        self.fields = torch.nn.ModuleList(fields)
+        fields = [self.totoken(field) for field in fields]
+        self.tokens = torch.nn.ModuleList(fields)
+    
+    def totoken(self, field: Field):
+        if isinstance(field, SparseField):
+            return SparseToken(field)
+        elif isinstance(field, DenseField):
+            return DenseToken(field)
+        else:
+            raise ValueError("only Sparse|DenseField supported !")
 
     @lru_cache(maxsize=4)
-    def groupby(self, tags: Union[str, Tag, Field, Tuple] = 'all') -> List[Field]:
-        """
-        tags:
-            1. str: 'sparse'|'dense'|'all'(default)
-            2. Tag:
-            3. Tuple[Tag]
-            4. Tuple[Field]
-        """
-        if tags == 'all':
-            return self.fields
-        if not isinstance(tags, Iterable):
-            tags = (tags,)
-        if isinstance(tags[0], Field):
-            return tags
-        return [field for field in self.fields if field.match(tags)]
+    def groupby(self, *tags: Union[Tag, Tuple[Tag]]) -> list[Token]:
+        if len(tags) == 0:
+            return self.tokens
+        return [token for token in self.tokens if token.match(tags)]
 
-    def look_up(self, inputs: Dict[str, torch.Tensor], tags: Union[str, Tag, Field, Tuple]) -> List[torch.Tensor]:
-        """ Dict[torch.Tensor: B x 1] -> List[torch.Tensor: B x 1 x d]
-        tags:
-            1. str: 'sparse'|'dense'|'all'(default)
-            2. Tag:
-            3. Tuple[Tag]
-            4. Tuple[Field]
-        """
-        return [field.look_up(inputs[field.name]) for field in self.groupby(tags)]
+    def look_up(self, inputs: Dict[str, torch.Tensor], *tags: Union[Tag, Tuple[Tag]]) -> List[torch.Tensor]:
+        """ Dict[torch.Tensor: B x 1] -> List[torch.Tensor: B x 1 x d]"""
+        return [token.look_up(inputs[token.name]) for token in self.groupby(*tags)]
 
-    def flatten_cat(self, inputs: List[torch.Tensor]) -> torch.Tensor:
-        """ List[torch.Tensor: B x k x d] -> torch.Tensor: B x (k1 x d1 + k2 x d2 + ...)"""
-        return torch.cat([input_.flatten(1) for input_ in inputs], dim=1)
-
-    def embed(self, dim: int, tags: Union[str, Tag, Field, Tuple] = SPARSE, **kwargs):
+    def embed(self, dim: int, *tags: Union[Tag, Tuple[Tag]], **kwargs):
         """
         dim: int
-        tags:
-            1. str: 'sparse'|'dense'|'all'(default)
-            2. Tag:
-            3. Tuple[Tag]
-            4. Tuple[Field]
+        tags: Tag|Tuple[Tag]
         'sparse': nn.Embedding
             padding_idx (int, optional): If specified, the entries at :attr:`padding_idx` do not contribute to the gradient;
                                         therefore, the embedding vector at :attr:`padding_idx` is not updated during training,
@@ -214,15 +251,8 @@ class Tokenizer(torch.nn.Module):
             linear: bool = False
             bias: bool = False
         """
-        for feature in self.groupby(tags):
+        for feature in self.groupby(*tags):
             feature.embed(dim, **kwargs)
 
-    def calculate_dimension(self, tags: Union[str, Tag, Field, Tuple] = 'all'):
-        """
-        tags:
-            1. str: 'sparse'|'dense'|'all'(default)
-            2. Tag:
-            3. Tuple[Tag]
-            4. Tuple[Field]
-        """
-        return sum(feature.dimension for feature in self.groupby(tags))
+    def calculate_dimension(self, *tags: Union[Tag, Tuple[Tag]]):
+        return sum(feature.dimension for feature in self.groupby(*tags))

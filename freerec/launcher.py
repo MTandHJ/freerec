@@ -1,6 +1,6 @@
 
 
-from typing import Callable, List, Dict, Optional
+from typing import Callable, List, Dict, Optional, Tuple, Union
 
 import torch
 import os
@@ -8,7 +8,8 @@ from functools import partial
 from collections import defaultdict
 
 from .data.datasets.base import BaseSet
-from .data.fields import Field
+from .data.fields import Field, Fielder
+from .data.tags import Tag
 from .data.utils import TQDMDataLoader, DataLoader
 from .dict2obj import Config
 from .utils import AverageMeter, infoLogger, timemeter
@@ -64,15 +65,11 @@ class Coach:
     ):
         self.model = model
         self.datapipe = datapipe
-        self.fields: List[Field] = self.datapipe.fields
+        self.fields: Fielder[Field] = self.datapipe.fields
         self.device = device
         self.criterion = criterion
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler
-
-        self._best = 0.
-        self.steps = 0
-
       
     def save(self) -> None:
         torch.save(self.model.state_dict(), os.path.join(self.cfg.INFO_PATH, self.cfg.SAVED_FILENAME))

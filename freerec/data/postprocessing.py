@@ -1,6 +1,7 @@
 
 
 
+from token import OP
 from typing import Callable, Iterable, Iterator, Optional, List, Union
 
 import torch
@@ -10,7 +11,7 @@ import pandas as pd
 import random
 
 from .datasets import BaseSet, RecDataSet
-from .fields import Field, SparseField
+from .fields import Field, SparseField, Fielder
 from .tags import Tag, FEATURE, TARGET, USER, ITEM, ID
 from ..utils import timemeter
 
@@ -21,7 +22,7 @@ class Postprocessor(BaseSet):
     def __init__(self, datapipe: Union[RecDataSet, 'Postprocessor']) -> None:
         super().__init__()
         self.source = datapipe
-        self.fields: List[Field] = self.source.fields.copy()
+        self.fields = self.source.fields
 
     def train(self):
         super().train()
@@ -181,19 +182,19 @@ class NegativeSamper(Postprocessor):
 
         self.num_negatives = num_negatives
         self.pool_size = pool_size
-        self._User: SparseField = next(filter(lambda field: field.match([USER, ID]), self.fields))
-        self._Item: SparseField = next(filter(lambda field: field.match([ITEM, ID]), self.fields))
+        self.User: SparseField = self.fields.whichis(USER, ID)
+        self.Item: SparseField = self.fields.whichis(ITEM, ID)
         self.parseItems()
 
     @timemeter("NegativeSampler/parseItems")
     def parseItems(self):
         self.train()
-        self.posItems = [set() for _ in range(self._User.count)]
-        self.allItems = set(range(self._Item.count))
+        self.posItems = [set() for _ in range(self.User.count)]
+        self.allItems = set(range(self.Item.count))
         self.negItems = []
         for df in self.source:
-            df = df[[self._User.name, self._Item.name]]
-            for idx, items in df.groupby(self._User.name).agg(set).iterrows():
+            df = df[[self.User.name, self.Item.name]]
+            for idx, items in df.groupby(self.User.name).agg(set).iterrows():
                 self.posItems[idx] |= set(*items)
         for items in self.posItems:
             negItems = list(self.allItems - items)
@@ -205,23 +206,23 @@ class NegativeSamper(Postprocessor):
             for df in self.source:
                 negs = np.stack(
                     df.agg(
-                        lambda row: random.sample(self.negItems[int(row[self._User.name])], k=self.num_negatives),
+                        lambda row: random.sample(self.negItems[int(row[self.User.name])], k=self.num_negatives),
                         axis=1
                     ),
                     axis=0
                 )
-                df[self._Item.name] = np.concatenate((df[self._Item.name].values[:, None], negs), axis=1).tolist()
+                df[self.Item.name] = np.concatenate((df[self.Item.name].values[:, None], negs), axis=1).tolist()
                 yield df
         else:
             for df in self.source:
                 negs = np.stack(
                     df.agg(
-                        lambda row: self.negItems[int(row[self._User.name])],
+                        lambda row: self.negItems[int(row[self.User.name])],
                         axis=1
                     ),
                     axis=0
                 )
-                df[self._Item.name] = np.concatenate((df[self._Item.name].values[:, None], negs), axis=1).tolist()
+                df[self.Item.name] = np.concatenate((df[self.Item.name].values[:, None], negs), axis=1).tolist()
                 yield df
             
 
@@ -239,14 +240,53 @@ class Grouper(Postprocessor):
         groups: Iterable[Union[Tag, Iterable[Tag]]] = (USER, ITEM, TARGET)
     ) -> None:
         super().__init__(datapipe)
-        assert groups[-1] == TARGET, " ... "
         self.groups = [[field for field in self.fields if field.match(tags)] for tags in groups]
-        self.target = self.groups.pop()[0]
 
     def __iter__(self) -> List:
         for batch in self.source:
-            yield [*[{field.name: batch[field.name] for field in group} for group in self.groups], batch[self.target.name]]
+            yield [{field.name: batch[field.name] for field in group} for group in self.groups]
 
+
+@dp.functional_datapipe("wrap_")
+class Wrapper(Postprocessor):
+
+    def __init__(
+        self, datapipe: Postprocessor,
+        validpipe: Optional[Postprocessor] = None,
+        testpipe: Optional[Postprocessor] = None,
+    ) -> None:
+        """
+        Args:
+            datapipe: trainpipe
+        Kwargs:
+            validpipe: validpipe <- trainpipe if validpipe is None
+            testpipe: testpipe <- validpipe if testpipe is None
+        """
+        super().__init__(datapipe)
+        self.validpipe = datapipe if validpipe is None else validpipe
+        self.testpipe = self.validpipe if testpipe is None else testpipe
+
+    def train(self):
+        super().train()
+        self.source.train()
+
+    def valid(self):
+        super().valid()
+        self.validpipe.valid()
+
+    def test(self):
+        super().test()
+        self.testpipe.test()
+
+    def __iter__(self) -> Iterator:
+        if self.mode == 'train':
+            yield from self.source
+        elif self.mode == 'valid':
+            yield from self.validpipe
+        else:
+            yield from self.testpipe
+
+# rename
 
 @dp.functional_datapipe("batch_")
 class Batcher(Postprocessor):

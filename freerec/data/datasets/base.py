@@ -7,6 +7,7 @@ import pandas as pd
 import feather
 import os
 
+from ..fields import Field, Fielder
 from ...utils import timemeter, infoLogger
 
 
@@ -22,6 +23,14 @@ class BaseSet(dp.iter.IterDataPipe):
         super().__init__()
 
         self.__mode = 'train'
+
+    @property
+    def fields(self):
+        return self.__fields
+
+    @fields.setter
+    def fields(self, vals) -> Fielder[Field]:
+        self.__fields = Fielder(vals)
         
     @property
     def mode(self):
@@ -35,6 +44,7 @@ class BaseSet(dp.iter.IterDataPipe):
 
     def test(self):
         self.__mode = 'test'
+
 
 class RecDataSet(BaseSet):
     """ RecDataSet provides a template for specific datasets.
@@ -64,14 +74,11 @@ class RecDataSet(BaseSet):
         """
         super().__init__()
         self.root = root
+        self.fields = self._cfg.fields
 
     @property
     def cfg(self):
         return self._cfg
-
-    @property
-    def fields(self):
-        return self._cfg.fields
 
     def check_feather(self):
         path = os.path.join(self.root, f"{self.__class__.__name__}2feather", self.mode)
@@ -131,6 +138,8 @@ class RecDataSet(BaseSet):
             df = pd.DataFrame(batch, columns=columns)
             for field in self._cfg.fields:
                 field.partial_fit(df[field.name].values[:, None])
+
+        # TODO: save transformer ...
 
         # raw2feather
         self.train()
