@@ -107,8 +107,6 @@ class CoachForLightGCN(Coach):
         self.model.train()
         self.dataset.train()
         for users, posItems, negItems in self.dataloader:
-            users = {'UserID': users.view(-1, 1)}
-            items = {'ItemID': torch.stack([posItems, negItems], dim=1)}
             users = {name: val.to(self.device) for name, val in users.items()}
             items = {name: val.to(self.device) for name, val in items.items()}
 
@@ -163,7 +161,7 @@ def main():
 
     basepipe = GowallaM1(cfg.root).graph_()
     User, Item = basepipe.User, basepipe.Item
-    trainpipe = basepipe.batch_(cfg.batch_size).dataframe_(columns=[User.name, Item.name]).dict_().tensor_().group_()
+    trainpipe = basepipe.batch_(cfg.batch_size).dataframe_(columns=[User.name, Item.name]).dict_().tensor_().group_((USER, ITEM))
     validpipe = basepipe.batch_(cfg.batch_size).dataframe_().list_()
     dataset = trainpipe.wrap_(validpipe)
 
