@@ -43,13 +43,18 @@ class DeepFM(RecSysArch):
 
         self.initialize()
 
+    
+    def flatten_cat(self, inputs: List[torch.Tensor]) -> torch.Tensor:
+        """ List[torch.Tensor: B x k x d] -> torch.Tensor: B x (k1 x d1 + k2 x d2 + ...)"""
+        return torch.cat([input_.flatten(1) for input_ in inputs], dim=1)
+
     def forward(self, users: Dict[str, torch.Tensor], items: Dict[str, torch.Tensor]) -> torch.Tensor:
         sparse: List[torch.Tensor] = self.tokenizer.look_up(items, (FEATURE, SPARSE))
         dense: List[torch.Tensor] = self.tokenizer.look_up(items, (FEATURE, DENSE))
 
-        outs_linear = self.linear(self.tokenizer.flatten_cat(sparse + dense))
-        outs_fm = self.fm(self.tokenizer.flatten_cat(sparse))
-        outs_dnn = self.dnn(self.tokenizer.flatten_cat(sparse + dense))
+        outs_linear = self.linear(self.flatten_cat(sparse + dense))
+        outs_fm = self.fm(self.flatten_cat(sparse))
+        outs_dnn = self.dnn(self.flatten_cat(sparse + dense))
         outs = outs_linear + outs_fm + outs_dnn
         if self.training:
             return outs
