@@ -1,8 +1,6 @@
 
 
-
-
-from typing import Dict, List
+from typing import List
 
 import torch
 
@@ -47,13 +45,11 @@ class CoachForNCF(Coach):
     def train(self):
         self.model.train()
         self.datapipe.train()
-        users: Dict[str, torch.Tensor]
-        items: Dict[str, torch.Tensor]
-        targets: torch.Tensor
+        Target = self.fields.whichis(TARGET)
         for users, items, targets in self.dataloader:
             users = {name: val.to(self.device) for name, val in users.items()}
             items = {name: val.to(self.device) for name, val in items.items()}
-            targets = targets.to(self.device)
+            targets = targets[Target.name].to(self.device)
 
             preds = self.model(users, items)
             m, n = preds.size()
@@ -72,15 +68,13 @@ class CoachForNCF(Coach):
 
     def evaluate(self, prefix: str = 'valid'):
         self.model.eval()
-        users: Dict[str, torch.Tensor]
-        items: Dict[str, torch.Tensor]
-        targets: torch.Tensor
         running_preds: List[torch.Tensor] = []
         running_targets: List[torch.Tensor] = []
+        Target = self.fields.whichis(TARGET)
         for users, items, targets in self.dataloader:
             users = {name: val.to(self.device) for name, val in users.items()}
             items = {name: val.to(self.device) for name, val in items.items()}
-            targets = targets.to(self.device)
+            targets = targets[Target.name].to(self.device)
 
             preds = self.model(users, items)
             m, n = preds.size()
@@ -123,12 +117,12 @@ def main():
     cfg.compile()
 
     basepipe = MovieLens1M_(cfg.root)
-    datapipe = basepipe.pin_(buffer_size=cfg.buffer_size).sample_negative_(num_negatives=cfg.num_negs)
+    datapipe = basepipe.pin_(buffer_size=cfg.buffer_size).shard_().sample_negative_(num_negatives=cfg.num_negs)
     datapipe = datapipe.chunk_(batch_size=cfg.batch_size).dict_().tensor_().group_()
 
-    tokenizer_mf = Tokenizer(datapipe.fields)
+    tokenizer_mf = Tokenizer(basepipe.fields)
     tokenizer_mf.embed(
-        dim=cfg.embedding_dim, tags=(FEATURE, SPARSE)
+        cfg.embedding_dim, (FEATURE, SPARSE)
     )
     tokenizer_mlp = copy.deepcopy(tokenizer_mf)
     model = NeuCF(tokenizer_mf, tokenizer_mlp).to(cfg.DEVICE)
