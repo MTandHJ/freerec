@@ -106,7 +106,7 @@ class CoachForLightGCN(Coach):
     def train(self):
         self.model.train()
         self.dataset.train()
-        for users, posItems, negItems in self.dataloader:
+        for users, items in self.dataloader:
             users = {name: val.to(self.device) for name, val in users.items()}
             items = {name: val.to(self.device) for name, val in items.items()}
 
