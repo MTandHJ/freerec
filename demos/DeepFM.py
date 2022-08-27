@@ -13,15 +13,13 @@ from freerec.criterions import BCELoss
 from freerec.data.datasets import Criteo
 from freerec.data.fields import Tokenizer
 from freerec.data.tags import FEATURE, SPARSE, DENSE
-from freerec.utils import timemeter
 
 
 
 class CoachForDeepFM(Coach):
 
 
-    @timemeter("Coach/train")
-    def train(self):
+    def train_per_epoch(self):
         self.model.train()
         self.dataset.train()
         users: Dict[str, torch.Tensor]

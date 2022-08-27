@@ -265,6 +265,7 @@ class Wrapper(Postprocessor):
         super().__init__(datapipe)
         self.validpipe = datapipe if validpipe is None else validpipe
         self.testpipe = self.validpipe if testpipe is None else testpipe
+        self.train()
 
     def train(self):
         super().train()

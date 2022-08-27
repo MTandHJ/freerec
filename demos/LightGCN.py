@@ -102,8 +102,7 @@ class CoachForLightGCN(Coach):
         loss = loss / userEmbeds.size(0)
         return loss / 2
 
-    @timemeter("Coach/train")
-    def train(self):
+    def train_per_epoch(self):
         self.model.train()
         self.dataset.train()
         for users, items in self.dataloader:
@@ -148,7 +147,7 @@ def main():
     cfg.add_argument("--layers", type=int, default=3)
     cfg.set_defaults(
         fmt="{description}={embedding_dim}={optimizer}-{lr}-{weight_decay}={seed}",
-        description="NeuCF",
+        description="LightGCN",
         root="../gowalla",
         epochs=1000,
         batch_size=2048,
@@ -161,6 +160,7 @@ def main():
 
     basepipe = GowallaM1(cfg.root).graph_()
     User, Item = basepipe.User, basepipe.Item
+    basepipe.fields = basepipe.fields.whichis(ID)
     trainpipe = basepipe.batch_(cfg.batch_size).dataframe_(columns=[User.name, Item.name]).dict_().tensor_().group_((USER, ITEM))
     validpipe = basepipe.batch_(cfg.batch_size).dataframe_().list_()
     dataset = trainpipe.wrap_(validpipe)

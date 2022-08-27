@@ -177,21 +177,29 @@ class Coach:
                     meter.plot()
                     meter.save(path=self.cfg.LOG_PATH, prefix=prefix)
 
-    @timemeter("Coach/train")
-    def train(self):
+
+    def train_per_epoch(self):
         raise NotImplementedError()
 
-    @torch.no_grad()
     def evaluate(self, prefix: str = 'valid'):
         raise NotImplementedError()
 
+
+    @timemeter("Coach/train")
+    def train(self):
+        self.dataset.train()
+        self.model.train()
+        return self.train_per_epoch()
+
     @timemeter("Coach/valid")
+    @torch.no_grad()
     def valid(self):
         self.dataset.valid() # TODO: multiprocessing pitfall ???
         self.model.eval()
         return self.evaluate(prefix='valid')
 
     @timemeter("Coach/test")
+    @torch.no_grad()
     def test(self):
         self.dataset.test()
         self.model.eval()

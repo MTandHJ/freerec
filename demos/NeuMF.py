@@ -14,7 +14,6 @@ from freerec.data.fields import Tokenizer
 from freerec.data.tags import FEATURE, SPARSE, DENSE, USER, ITEM, ID, TARGET
 from freerec.data.fields import SparseField, DenseField
 from freerec.data.preprocessing import Binarizer
-from freerec.utils import timemeter
 
 
 
@@ -41,8 +40,7 @@ class MovieLens1M_(MovieLens1M):
 class CoachForNCF(Coach):
 
 
-    @timemeter("Coach/train")
-    def train(self):
+    def train_per_epoch(self):
         self.model.train()
         self.dataset.train()
         Target = self.fields.whichis(TARGET)

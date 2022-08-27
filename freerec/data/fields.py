@@ -221,7 +221,7 @@ class Tokenizer(torch.nn.Module):
             raise ValueError("only Sparse|DenseField supported !")
 
     @lru_cache(maxsize=4)
-    def groupby(self, *tags: Union[Tag, Tuple[Tag]]) -> list[Token]:
+    def groupby(self, *tags: Union[Tag, Tuple[Tag]]) -> List[Token]:
         if len(tags) == 0:
             return self.tokens
         return [token for token in self.tokens if token.match(tags)]

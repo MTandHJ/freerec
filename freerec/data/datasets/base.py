@@ -29,7 +29,7 @@ class BaseSet(dp.iter.IterDataPipe):
         return self.__fields
 
     @fields.setter
-    def fields(self, vals) -> Fielder[Field]:
+    def fields(self, vals) -> Fielder:
         self.__fields = Fielder(vals)
         
     @property
