@@ -9,7 +9,6 @@ from collections import defaultdict
 
 from .data.datasets.base import BaseSet
 from .data.fields import Field, Fielder
-from .data.tags import Tag
 from .data.utils import TQDMDataLoader, DataLoader
 from .dict2obj import Config
 from .utils import AverageMeter, infoLogger, timemeter
@@ -57,15 +56,15 @@ class Coach:
     
     def __init__(
         self, model: torch.nn.Module,
-        datapipe: BaseSet,
+        dataset: BaseSet,
         criterion: Callable, 
         optimizer: torch.optim.Optimizer, 
         lr_scheduler,
         device: torch.device
     ):
         self.model = model
-        self.datapipe = datapipe
-        self.fields: Fielder[Field] = self.datapipe.fields
+        self.dataset = dataset
+        self.fields: Fielder[Field] = self.dataset.fields
         self.device = device
         self.criterion = criterion
         self.optimizer = optimizer
@@ -147,7 +146,7 @@ class Coach:
     def load_dataloader(self):
         _DataLoader = TQDMDataLoader if self.cfg.progress else DataLoader
         self.dataloader = _DataLoader(
-            datapipe=self.datapipe, num_workers=self.cfg.num_workers
+            dataset=self.dataset, num_workers=self.cfg.num_workers
         )
 
     def monitor(
@@ -180,62 +179,21 @@ class Coach:
 
     @timemeter("Coach/train")
     def train(self):
-        # self.model.train()
-        # self.datapipe.train()
-        # users: Dict[str, torch.Tensor]
-        # items: Dict[str, torch.Tensor]
-        # targets: torch.Tensor
-        # for users, items, targets in self.dataloader:
-        #     users = {name: val.to(self.device) for name, val in users.items()}
-        #     items = {name: val.to(self.device) for name, val in items.items()}
-        #     targets = targets.to(self.device)
-
-        #     logits = self.model(users, items)
-        #     loss = self.criterion(logits, targets)
-
-        #     self.optimizer.zero_grad()
-        #     loss.backward()
-        #     self.optimizer.step()
-            
-        #     self.monitor(loss.item(), n=targets.size(0), mode="mean", prefix='train', pool=['LOSS'])
-
-        # self.lr_scheduler.step() # TODO: step() per epoch or per mini-batch ?
         raise NotImplementedError()
 
     @torch.no_grad()
     def evaluate(self, prefix: str = 'valid'):
-        # self.model.eval()
-        # users: Dict[str, torch.Tensor]
-        # items: Dict[str, torch.Tensor]
-        # targets: torch.Tensor
-        # for users, items, targets in self.dataloader:
-        #     users = {name: val.to(self.device) for name, val in users.items()}
-        #     items = {name: val.to(self.device) for name, val in items.items()}
-        #     targets = targets.to(self.device)
-
-        #     preds = self.model(users, items)
-        #     m, n = preds.size()
-        #     targets = targets.repeat((m, n))
-        #     targets[:, 1:].fill_(0)
-        #     loss = self.criterion(preds, targets)
-
-        #     self.monitor(loss, n=m * n, mode="mean", prefix=prefix, pool=['LOSS'])
-        #     self.monitor(
-        #         preds.detach().cpu(), targets.detach().cpu(),
-        #         n=targets.size(0), mode="mean", prefix=prefix,
-        #         pool=['PRECISION', 'RECALL', 'HITRATE', 'MSE', 'MAE', 'RMSE']
-        #     )
-        raise NotImplementedError() # TODO: row-wise ?
+        raise NotImplementedError()
 
     @timemeter("Coach/valid")
     def valid(self):
-        self.datapipe.valid() # TODO: multiprocessing pitfall ???
+        self.dataset.valid() # TODO: multiprocessing pitfall ???
         self.model.eval()
         return self.evaluate(prefix='valid')
 
     @timemeter("Coach/test")
     def test(self):
-        self.datapipe.test()
+        self.dataset.test()
         self.model.eval()
         return self.evaluate(prefix='test')
 

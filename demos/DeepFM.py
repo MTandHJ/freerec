@@ -97,10 +97,10 @@ def main():
 
     tokenizer = Tokenizer(datapipe.fields)
     tokenizer.embed(
-        dim=cfg.embedding_dim, tags=(FEATURE, SPARSE)
+        cfg.embedding_dim, (FEATURE, SPARSE)
     )
     tokenizer.embed(
-        dim=cfg.embedding_dim, tags=(FEATURE, DENSE), linear=True
+        cfg.embedding_dim, (FEATURE, DENSE), linear=True
     )
     model = DeepFM(tokenizer).to(cfg.DEVICE)
 
@@ -124,7 +124,7 @@ def main():
 
     coach = CoachForDeepFM(
         model=model,
-        datapipe=datapipe,
+        dataset=datapipe,
         criterion=criterion,
         optimizer=optimizer,
         lr_scheduler=lr_scheduler,

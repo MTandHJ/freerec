@@ -144,7 +144,7 @@ def main():
 
     coach = CoachForNCF(
         model=model,
-        datapipe=datapipe,
+        dataset=datapipe,
         criterion=criterion,
         optimizer=optimizer,
         lr_scheduler=lr_scheduler,

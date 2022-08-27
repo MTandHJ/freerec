@@ -1,23 +1,23 @@
 
 
-from email.mime import base
-from typing import Dict
 
 import torch
 import torchdata.datapipes as dp
 import numpy as np
 import scipy.sparse as sp
-import random
 
 from freerec.parser import Parser
 from freerec.launcher import Coach
 from freerec.models import LightGCN
 from freerec.criterions import BPRLoss
-from freerec.data.datasets import GowallaM1, Postprocessor
+from freerec.data.datasets import GowallaM1
+from freerec.data.preprocessing import Binarizer
+from freerec.data.postprocessing import Postprocessor
 from freerec.data.sparse import get_lil_matrix, sparse_matrix_to_tensor
 from freerec.data.fields import Tokenizer
 from freerec.data.tags import FEATURE, SPARSE, TARGET, USER, ITEM, ID
 from freerec.utils import timemeter
+
 
 
 
@@ -29,9 +29,9 @@ class Grapher(Postprocessor):
     def __init__(self, datapipe: Postprocessor) -> None:
         super().__init__(datapipe)
 
-        self.User = next(filter(lambda field: field.match([USER, ID]), self.fields))
-        self.Item = next(filter(lambda field: field.match([ITEM, ID]), self.fields))
-        self.Val = next(filter(lambda field: field.match(TARGET), self.fields))
+        self.User = self.fields.whichis(USER, ID)
+        self.Item = self.fields.whichis(ITEM, ID)
+        self.Val = self.fields.whichis(TARGET)
         self.parseItems()
 
     @timemeter("Grapher/parseItems")
@@ -143,7 +143,6 @@ class CoachForLightGCN(Coach):
 
 
 
-
 def main():
 
     cfg = Parser()
@@ -165,12 +164,14 @@ def main():
     basepipe = GowallaM1(cfg.root).graph_()
     User, Item = basepipe.User, basepipe.Item
     trainpipe = basepipe.batch_(cfg.batch_size).dataframe_(columns=[User.name, Item.name]).dict_().tensor_().group_()
+    validpipe = basepipe.batch_(cfg.batch_size).dataframe_().list_()
+    dataset = trainpipe.wrap_(validpipe)
 
-    tokenizer = Tokenizer(datapipe.fields)
+    tokenizer = Tokenizer(basepipe.fields)
     tokenizer.embed(
-        dim=cfg.embedding_dim, tags=(FEATURE, SPARSE)
+        cfg.embedding_dim, (FEATURE, SPARSE)
     )
-    model = LightGCN(tokenizer, datapipe).to(cfg.DEVICE)
+    model = LightGCN(tokenizer, basepipe).to(cfg.DEVICE)
 
     if cfg.optimizer == 'sgd':
         optimizer = torch.optim.SGD(
@@ -188,13 +189,13 @@ def main():
 
     coach = CoachForLightGCN(
         model=model,
-        datapipe=dataset,
+        dataset=dataset,
         criterion=criterion,
         optimizer=optimizer,
         lr_scheduler=lr_scheduler,
         device=cfg.DEVICE
     )
-    coach.compile(cfg, monitors=['loss', 'precision@10', 'recall@10', 'hitrate@10', 'ndcg@10', 'ndcg@20'])
+    coach.compile(cfg, monitors=['loss', 'recall@10', 'recall@20', 'ndcg@10', 'ndcg@20'])
     coach.fit()
 
 
