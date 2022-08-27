@@ -23,7 +23,7 @@ class CoachForDeepFM(Coach):
     @timemeter("Coach/train")
     def train(self):
         self.model.train()
-        self.datapipe.train()
+        self.dataset.train()
         users: Dict[str, torch.Tensor]
         items: Dict[str, torch.Tensor]
         targets: torch.Tensor

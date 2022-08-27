@@ -105,7 +105,7 @@ class CoachForLightGCN(Coach):
     @timemeter("Coach/train")
     def train(self):
         self.model.train()
-        self.datapipe.train()
+        self.dataset.train()
         for users, posItems, negItems in self.dataloader:
             users = {'UserID': users.view(-1, 1)}
             items = {'ItemID': torch.stack([posItems, negItems], dim=1)}

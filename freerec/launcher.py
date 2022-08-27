@@ -146,7 +146,7 @@ class Coach:
     def load_dataloader(self):
         _DataLoader = TQDMDataLoader if self.cfg.progress else DataLoader
         self.dataloader = _DataLoader(
-            dataset=self.dataset, num_workers=self.cfg.num_workers
+            datapipe=self.dataset, num_workers=self.cfg.num_workers
         )
 
     def monitor(

@@ -44,7 +44,7 @@ class CoachForNCF(Coach):
     @timemeter("Coach/train")
     def train(self):
         self.model.train()
-        self.datapipe.train()
+        self.dataset.train()
         Target = self.fields.whichis(TARGET)
         for users, items, targets in self.dataloader:
             users = {name: val.to(self.device) for name, val in users.items()}
