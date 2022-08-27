@@ -8,6 +8,7 @@ from functools import partial
 from collections import defaultdict
 
 from .data.datasets.base import BaseSet
+from .data.fields import Field
 from .data.utils import TQDMDataLoader, DataLoader
 from .dict2obj import Config
 from .utils import AverageMeter, infoLogger, timemeter
@@ -63,6 +64,7 @@ class Coach:
     ):
         self.model = model
         self.datapipe = datapipe
+        self.fields: List[Field] = self.datapipe.fields
         self.device = device
         self.criterion = criterion
         self.optimizer = optimizer

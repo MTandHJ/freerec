@@ -19,6 +19,8 @@ from freerec.data.tags import FEATURE, SPARSE, TARGET, USER, ITEM, ID
 from freerec.utils import timemeter
 
 
+
+
 @dp.functional_datapipe("graph_")
 class Grapher(Postprocessor):
 
@@ -42,6 +44,8 @@ class Grapher(Postprocessor):
             df = df[[self.User.name, self.Item.name]]
             for idx, items in df.groupby(self.User.name).agg(set).iterrows():
                 self.posItems[idx] |= set(*items)
+        self.posItems = [list(items) for items in self.posItems]
+        self.sizes = [len(items) for items in self.posItems]
 
         self.test()
         for df in self.source:
@@ -52,15 +56,11 @@ class Grapher(Postprocessor):
 
     def sample(self, user: int):
         posItems = self.posItems[user]
+        posItem = posItems[np.random.randint(0, self.sizes[user])]
         while True:
-            negItem = random.randint(0, self.Item.count - 1)
+            negItem = np.random.randint(0, self.Item.count)
             if negItem not in posItems:
-                return [negItem]
-
-    def byrow(self, user: int):
-        labels = torch.zeros(self.Item.count, dtype=torch.long)
-        labels[self.targetItems[user]] = 1
-        return labels
+                return user, posItem, negItem
 
     @timemeter("Grapher/getSparseGraph")
     def getSparseGraph(self):
@@ -85,26 +85,18 @@ class Grapher(Postprocessor):
 
     def __iter__(self):
         if self.mode == 'train':
-            for df in self.source:
-                negs = np.stack(
-                    df.agg(
-                        lambda row: self.sample(int(row[self.User.name])),
-                        axis=1
-                    ),
-                    axis=0
-                )
-                df[self.Item.name] = np.concatenate((df[self.Item.name].values[:, None], negs), axis=1).tolist()
-                yield df
+            for user in np.random.randint(0, self.User.count, sum(self.sizes)):
+                yield self.sample(user)
         else:
             for user in range(self.User.count):
-                yield user, self.byrow(user), torch.tensor(list(self.posItems[user]))
+                yield user, self.targetItems[user], self.posItems[user]
            
 
 class Wrapper(Postprocessor):
 
     def __init__(self, datapipe: Postprocessor, batch_size: int) -> None:
         super().__init__(datapipe)
-        self.trainpipe = datapipe.chunk_(batch_size).dict_().tensor_().group_()
+        self.trainpipe = datapipe.batch(batch_size).collate()
         self.otherpipe = datapipe.batch(batch_size)
 
     def __iter__(self):
@@ -112,29 +104,32 @@ class Wrapper(Postprocessor):
             yield from self.trainpipe
         else:
             for batch in self.otherpipe:
-                users = torch.tensor([data[0] for data in batch], dtype=torch.long)
-                items = torch.stack([data[1] for data in batch], axis=0)
-                posItems = [data[2] for data in batch]
-                yield users, items, posItems
+                users, Items, posItems =  zip(*batch)
+                yield list(users), list(Items), list(posItems)
 
 
 class CoachForLightGCN(Coach):
 
 
+    def reg_loss(self, users, items):
+        userEmbeds, itemEmbeds = self.model.oriEmbeddings(users, items)
+        loss = userEmbeds.pow(2).sum() + itemEmbeds.pow(2).sum() * 2
+        loss = loss / userEmbeds.size(0)
+        return loss / 2
+
     @timemeter("Coach/train")
     def train(self):
         self.model.train()
         self.datapipe.train()
-        users: Dict[str, torch.Tensor]
-        items: Dict[str, torch.Tensor]
-        targets: torch.Tensor
-        for users, items, targets in self.dataloader:
+        for users, posItems, negItems in self.dataloader:
+            users = {'UserID': users.view(-1, 1)}
+            items = {'ItemID': torch.stack([posItems, negItems], dim=1)}
             users = {name: val.to(self.device) for name, val in users.items()}
             items = {name: val.to(self.device) for name, val in items.items()}
 
             preds = self.model(users, items)
             pos, neg = preds[:, 0], preds[:, 1]
-            loss = self.criterion(pos, neg)
+            loss = self.criterion(pos, neg) + self.reg_loss(users, items) * self.cfg.weight_decay
 
             self.optimizer.zero_grad()
             loss.backward()
@@ -144,21 +139,23 @@ class CoachForLightGCN(Coach):
 
         self.lr_scheduler.step()
 
-
     def evaluate(self, prefix: str = 'valid'):
         self.model.eval()
         Ratings: torch.Tensor = self.model.getRatings() # M x N
         for users, items, posItems in self.dataloader:
-            targets = items.to(self.device)
-            preds = Ratings[users.to(self.device)]
-            for k, pos in enumerate(posItems):
-                preds[k][pos] = -1e10
+            preds = Ratings[users]
+            targets = torch.zeros_like(preds)
+            n = len(users)
+            for k in range(n):
+                targets[k][items[k]] = 1
+                preds[k][posItems[k]] = -1e10
 
             self.monitor(
                 preds, targets,
-                n=users.size(0), mode="mean", prefix=prefix,
+                n=len(users), mode="mean", prefix=prefix,
                 pool=['NDCG', 'PRECISION', 'RECALL', 'HITRATE', 'MSE', 'MAE', 'RMSE']
             )
+
 
 
 
@@ -171,8 +168,8 @@ def main():
         fmt="{description}={embedding_dim}={optimizer}-{lr}-{weight_decay}={seed}",
         description="NeuCF",
         root="../gowalla",
-        epochs=20,
-        batch_size=256,
+        epochs=1000,
+        batch_size=2048,
         optimizer='adam',
         lr=1e-3,
         weight_decay=1e-4,
@@ -181,7 +178,7 @@ def main():
     cfg.compile()
 
     basepipe = GowallaM1(cfg.root)
-    datapipe = basepipe.pin_(buffer_size=cfg.buffer_size).shard_().graph_()
+    datapipe = basepipe.graph_()
     dataset = Wrapper(datapipe, batch_size=cfg.batch_size)
 
     tokenizer = Tokenizer(datapipe.fields)
@@ -203,7 +200,6 @@ def main():
         )
     lr_scheduler=torch.optim.lr_scheduler.StepLR(optimizer, step_size=1000, gamma=0.1)
     criterion = BPRLoss()
-    criterion.regulate(tokenizer.parameters(), rtype='l2', weight=cfg.weight_decay)
 
     coach = CoachForLightGCN(
         model=model,
@@ -215,6 +211,8 @@ def main():
     )
     coach.compile(cfg, monitors=['loss', 'precision@10', 'recall@10', 'hitrate@10', 'ndcg@10', 'ndcg@20'])
     coach.fit()
+
+
 
 if __name__ == "__main__":
     main()

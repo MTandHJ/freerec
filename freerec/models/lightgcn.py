@@ -8,7 +8,7 @@ from .base import RecSysArch
 
 from ..data.fields import Tokenizer, SparseField
 from ..data.tags import ID, ITEM, SPARSE, DENSE, FEATURE, USER
-from ..data.datasets import Postprocessor
+from ..data.postprocessing import Postprocessor
 
 
 __all__ = ['LightGCN']
@@ -34,6 +34,12 @@ class LightGCN(RecSysArch):
         m, n = items.size()
         users = users.repeat((1, n))
         return users, items
+
+    def oriEmbeddings(self, users: Dict[str, torch.Tensor], items: Dict[str, torch.Tensor]):
+        users, items = self.preprocess(users, items)
+        userEmbs = self.User.look_up(users).flatten(end_dim=-2) # B x 2 x D 
+        itemEmbs = self.Item.look_up(items).flatten(end_dim=-2) # B x 2 x D
+        return userEmbs, itemEmbs
 
     def roll(self):
         userEmbs = self.User.look_up(torch.arange(0, self.User.count).to(self.device))
