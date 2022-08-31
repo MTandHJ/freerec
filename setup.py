@@ -9,7 +9,8 @@ requires = [
     "torchmetrics>=0.9.2",
     "feather-format>=0.4.1",
     "tqdm>=4.64.0",
-    "freeplot>=0.0.12"
+    "freeplot>=0.0.12",
+    "PyYAML>=6.0"
 ]
 
 

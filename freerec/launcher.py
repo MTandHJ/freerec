@@ -6,10 +6,11 @@ import torch
 import os
 from functools import partial
 from collections import defaultdict
+from tqdm import tqdm
 
 from .data.datasets.base import BaseSet
 from .data.fields import Field, Fielder
-from .data.dataloader import TQDMDataLoader, DataLoader
+from .data.dataloader import DataLoader
 from .dict2obj import Config
 from .utils import AverageMeter, infoLogger, timemeter
 from .metrics import *
@@ -144,10 +145,19 @@ class Coach:
         self.load_dataloader()
 
     def load_dataloader(self):
-        _DataLoader = TQDMDataLoader if self.cfg.verbose else DataLoader
-        self.dataloader = _DataLoader(
+        self.__dataloader = DataLoader(
             datapipe=self.dataset, num_workers=self.cfg.num_workers
         )
+    
+    @property
+    def dataloader(self):
+        if self.cfg.verbose:
+            return tqdm(
+                self.__dataloader,
+                leave=False, desc="վ'ᴗ' ի-"
+            )
+        else:
+            return self.__dataloader
 
     def monitor(
         self, *values,
