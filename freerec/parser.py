@@ -79,18 +79,18 @@ class Parser(Config):
         self.parser = argparse.ArgumentParser()
 
         self.parser.add_argument("--root", type=str, default=".", help="data")
-        self.parser.add_argument("--config", type=str, default=None, help=".yml")
+        self.parser.add_argument("--config", type=str, default=None, help="config.yml")
 
         # model
-        self.parser.add_argument("--optimizer", type=str, choices=("sgd", "adam"), default="sgd")
+        self.parser.add_argument("--optimizer", type=str, choices=("sgd", "adam"), default="adam")
         self.parser.add_argument("--nesterov", action="store_true", default=False, help="nesterov for SGD")
         self.parser.add_argument("-mom", "--momentum", type=float, default=0.9, help="the momentum used for SGD")
         self.parser.add_argument("-beta1", "--beta1", type=float, default=0.9, help="the first beta argument for Adam")
         self.parser.add_argument("-beta2", "--beta2", type=float, default=0.999, help="the second beta argument for Adam")
         self.parser.add_argument("-wd", "--weight-decay", type=float, default=1e-4, help="weight for 'l1|l2|...' regularzation")
-        self.parser.add_argument("-lr", "--lr", "--LR", "--learning-rate", type=float, default=0.1)
-        self.parser.add_argument("-b", "--batch-size", type=int, default=128)
-        self.parser.add_argument("--epochs", type=int, default=10)
+        self.parser.add_argument("-lr", "--lr", "--LR", "--learning-rate", type=float, default=0.001)
+        self.parser.add_argument("-b", "--batch-size", type=int, default=256)
+        self.parser.add_argument("--epochs", type=int, default=1000)
 
         # eval
         self.parser.add_argument("--eval-valid", action="store_false", default=True, help="evaluate validset")
@@ -102,7 +102,7 @@ class Parser(Config):
 
         self.parser.add_argument("--seed", type=int, default=1, help="calling --seed=-1 for a random seed")
         self.parser.add_argument("--benchmark", action="store_false", default=True, help="cudnn.benchmark == True ?")
-        self.parser.add_argument("--progress", action="store_true", default=False, help="show the progress if true")
+        self.parser.add_argument("--verbose", action="store_true", default=False, help="show the progress bar if true")
         self.parser.add_argument("--resume", action="store_true", default=False, help="resume the training from the recent checkpoint")
 
         self.parser.add_argument("--fmt", type=str, default="{description}={optimizer}-{lr}-{weight_decay}={seed}")

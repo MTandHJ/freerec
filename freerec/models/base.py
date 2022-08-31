@@ -9,6 +9,7 @@ from ..data.fields import Tokenizer
 
 __all__ = ['RecSysArch']
 
+
 class RecSysArch(nn.Module):
 
     def to(
@@ -24,6 +25,7 @@ class RecSysArch(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.xavier_normal_(m.weight)
-                nn.init.constant_(m.bias, 0.)
+                if m.bias:
+                    nn.init.constant_(m.bias, 0.)
             elif isinstance(m, nn.Embedding):
                 nn.init.xavier_normal_(m.weight)

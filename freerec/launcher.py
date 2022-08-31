@@ -9,7 +9,7 @@ from collections import defaultdict
 
 from .data.datasets.base import BaseSet
 from .data.fields import Field, Fielder
-from .data.utils import TQDMDataLoader, DataLoader
+from .data.dataloader import TQDMDataLoader, DataLoader
 from .dict2obj import Config
 from .utils import AverageMeter, infoLogger, timemeter
 from .metrics import *
@@ -144,7 +144,7 @@ class Coach:
         self.load_dataloader()
 
     def load_dataloader(self):
-        _DataLoader = TQDMDataLoader if self.cfg.progress else DataLoader
+        _DataLoader = TQDMDataLoader if self.cfg.verbose else DataLoader
         self.dataloader = _DataLoader(
             datapipe=self.dataset, num_workers=self.cfg.num_workers
         )

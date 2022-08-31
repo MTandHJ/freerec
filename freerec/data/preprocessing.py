@@ -6,6 +6,7 @@ import torch
 import sklearn.preprocessing as preprocessing # LabelEncoder, Binarizer, StandardScaler, MinMaxScaler, FunctionTransformer
 from sklearn.utils._encode import _unique
 
+
 __all__ = ['X2X', 'Label2Index', 'Binarizer', 'StandardScaler', 'MinMaxScaler']
 
 
