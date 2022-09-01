@@ -66,20 +66,32 @@ class AverageMeter:
         except AttributeError:
             return val # float
 
-    def plot(self) -> None:
+    def plot(self, freq: int = 1) -> None:
         self.fp = FreePlot(
             shape=(1, 1),
             figsize=(2.2, 2),
             titles=(self.name,),
             dpi=300, latex=False
         )
-        timeline = np.arange(1, len(self.history) + 1)
+        timeline = np.arange(len(self.history)) * freq
         self.fp.lineplot(timeline, self.history, marker='')
         self.fp.set_title(y=.98)
+
+    def argbest(self, caster: Callable, freq: int = 1):
+        if len(self.history) == 0:
+            return '-', '-'
+        indices = np.argsort(self.history)
+        if caster is min:
+            return indices[0] * freq, self.history[indices[0]]
+        elif caster is max:
+            return indices[-1] * freq, self.history[indices[-1]]
+        else:
+            raise ValueError("caster should be min or max ...")
     
     def save(self, path: str, prefix: str = '') -> None:
         filename = f"{prefix}{self.name}.png"
         self.fp.savefig(os.path.join(path, filename))
+        return filename
 
     def __str__(self):
         fmtstr = "{name} Avg: {avg:{fmt}}"

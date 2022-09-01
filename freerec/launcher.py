@@ -1,6 +1,6 @@
 
 
-from typing import Callable, List, Dict, Optional, Tuple, Union
+from typing import Callable, List, Dict, Optional
 
 import torch
 import os
@@ -51,25 +51,53 @@ DEFAULT_FMTS = {
     'MAP': ".4f",
 }
 
+DEFAULT_BEST_CASTER = {
+    'LOSS': min,
+    #############
+    'MSE': min,
+    'MAE': min,
+    'RMSE': min,
+    #############
+    'PRECISION': max,
+    'RECALL': max,
+    'HITRATE': max,
+    #############
+    'NDCG': max,
+    'MRR': max,
+    'MAP': max,
+}
+
+class _DummyModule(torch.nn.Module):
+
+    def forward(self, *args, **kwargs):
+        raise NotImplementedError("No available model is provided for Coach ...")
+
+    def step(self, *args, **kwargs):
+        raise NotImplementedError("No available optimizer or lr scheduler is provided for Coach ...")
+
+    def backward(self, *args, **kwargs):
+        raise NotImplementedError("No available optimizer is provided for Coach ...")
 
 
 class Coach:
     
     def __init__(
-        self, model: torch.nn.Module,
+        self, 
         dataset: BaseSet,
-        criterion: Callable, 
-        optimizer: torch.optim.Optimizer, 
-        lr_scheduler,
+        criterion: Callable,
+        model: Optional[torch.nn.Module],
+        optimizer: Optional[torch.optim.Optimizer],
+        lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler],
         device: torch.device
     ):
-        self.model = model
         self.dataset = dataset
         self.fields: Fielder[Field] = self.dataset.fields
         self.device = device
         self.criterion = criterion
-        self.optimizer = optimizer
-        self.lr_scheduler = lr_scheduler
+        self.model = model if model else _DummyModule()
+        self.optimizer = optimizer if optimizer else _DummyModule()
+        self.lr_scheduler = lr_scheduler if lr_scheduler else _DummyModule()
+
       
     def save(self) -> None:
         torch.save(self.model.state_dict(), os.path.join(self.cfg.INFO_PATH, self.cfg.SAVED_FILENAME))
@@ -91,7 +119,7 @@ class Coach:
 
     def save_best(self, path: str, prefix: str): ...
 
-    def check_best(self, results: dict): ...
+    def check_best(self, val: Optional[float]): ...
 
     @timemeter("Coach/resume")
     def resume(self):
@@ -180,12 +208,27 @@ class Coach:
 
     @timemeter("Coach/summary")
     def summary(self):
+        file_ = os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_FILENAME)
+        s = "|  {prefix}  |   {metric}   |   {val:.5f}   |   {epoch}   |   {img}   |\n"
+        info = ""
+        info += "|  Prefix  |   Metric   |   Value   |   Epoch   |   Img   |\n"
+        info += "| :-------: | :-------: | :-------: | :-------: | :-------: |\n"
+
         for prefix, monitors in self.meters.items():
             monitors: defaultdict[str, List[AverageMeter]]
-            for meters in monitors.values():
+            freq = 1 if prefix == 'train' else self.cfg.EVAL_FREQ
+            for METRIC, meters in monitors.items():
                 for meter in meters:
-                    meter.plot()
-                    meter.save(path=self.cfg.LOG_PATH, prefix=prefix)
+                    meter.plot(freq=freq)
+                    imgname = meter.save(path=self.cfg.LOG_PATH, prefix=prefix)
+                    epoch, val = meter.argbest(DEFAULT_BEST_CASTER[METRIC], freq)
+                    info += s.format(
+                        prefix=prefix, metric=meter.name,
+                        val=val, epoch=epoch, img=f"![]({imgname})"
+                    )
+
+        with open(file_, "w", encoding="utf8") as fh:
+            fh.write(info)
 
 
     def train_per_epoch(self):

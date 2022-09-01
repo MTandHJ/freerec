@@ -2,6 +2,7 @@
 
 
 
+import os
 import argparse
 import torch
 import time
@@ -35,6 +36,7 @@ CONFIG = Config(
     CHECKPOINT_FREQ = 1,
     CHECKPOINT_MODULES = ['model', 'optimizer', 'lr_scheduler'],
     CHECKPOINT_FILENAME = "checkpoint.tar",
+    SUMMARY_FILENAME = "SUMMARY.md",
     description = "RecSys"
 
 )
@@ -48,14 +50,14 @@ class Parser(Config):
 
     def readme(self, path: str, mode: str = "w") -> None:
         time_ = time.strftime("%Y-%m-%d-%H:%M:%S")
-        filename = path + "/README.md"
+        file_ = os.path.join(path, "README.md")
         s = "|  {key}  |   {val}    |\n"
         info = "\n## {0} \n\n\n".format(time_)
         info += "|  Attribute   |   Value   |\n"
         info += "| :-------------: | :-----------: |\n"
         for key, val in self.items():
             info += s.format(key=key, val=val)
-        with open(filename, mode, encoding="utf8") as fh:
+        with open(file_, mode, encoding="utf8") as fh:
             fh.write(info)
 
     @timemeter("Parser/load")
