@@ -7,6 +7,7 @@ import os
 from functools import partial
 from collections import defaultdict
 from tqdm import tqdm
+import pandas as pd
 
 from .data.datasets.base import BaseSet
 from .data.fields import Field, Fielder
@@ -201,7 +202,7 @@ class Coach:
     def step(self, epoch: int):
         for prefix, monitors in self.meters.items():
             monitors: defaultdict[str, List[AverageMeter]]
-            infos = [f"[Coach] >>> {prefix.upper():5} @Epoch: {epoch:<3d} >>> "]
+            infos = [f"[Coach] >>> {prefix.upper():5} @Epoch: {epoch:<4d} >>> "]
             for meters in monitors.values():
                 infos += [meter.step() for meter in meters if meter.active]
             infoLogger(' || '.join(infos))
@@ -211,8 +212,9 @@ class Coach:
         file_ = os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_FILENAME)
         s = "|  {prefix}  |   {metric}   |   {val:.5f}   |   {epoch}   |   {img}   |\n"
         info = ""
-        info += "|  Prefix  |   Metric   |   Value   |   Epoch   |   Img   |\n"
+        info += "|  Prefix  |   Metric   |   Best   |   @Epoch   |   Img   |\n"
         info += "| :-------: | :-------: | :-------: | :-------: | :-------: |\n"
+        data = []
 
         for prefix, monitors in self.meters.items():
             monitors: defaultdict[str, List[AverageMeter]]
@@ -226,9 +228,13 @@ class Coach:
                         prefix=prefix, metric=meter.name,
                         val=val, epoch=epoch, img=f"![]({imgname})"
                     )
+                    data.append([prefix, meter.name, val, epoch])
 
         with open(file_, "w", encoding="utf8") as fh:
             fh.write(info)
+
+        df = pd.DataFrame(data, columns=['Prefix', 'Metric', 'Best', '@Epoch'])
+        infoLogger(str(df))
 
 
     def train_per_epoch(self):
