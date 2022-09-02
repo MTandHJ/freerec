@@ -216,7 +216,7 @@ class NegativeSamper(Postprocessor):
             for df in self.source:
                 negs = np.stack(
                     df.agg(
-                        lambda row: self.negItems[int(row[self.User.name])],
+                        lambda row: self.negItems[int(row[self.User.name])], # TODO: negItems including positives of testset
                         axis=1
                     ),
                     axis=0
