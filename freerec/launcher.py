@@ -109,6 +109,12 @@ class Coach:
         checkpoint['epoch'] = epoch
         for module in self.cfg.CHECKPOINT_MODULES:
             checkpoint[module] = getattr(self, module).state_dict()
+        # save monitors
+        monitors_state_dict = defaultdict(dict)
+        for prefix, monitors in self.meters.items():
+            for metric, meters in monitors.items():
+                monitors_state_dict[prefix][metric] = [meter.state_dict() for meter in meters]
+        checkpoint['monitors'] = monitors_state_dict
         torch.save(checkpoint, path)
 
     def load_checkpoint(self) -> int:
@@ -116,6 +122,12 @@ class Coach:
         checkpoint = torch.load(path)
         for module in self.cfg.CHECKPOINT_MODULES:
             getattr(self, module).load_state_dict(checkpoint[module])
+        monitors_state_dict = checkpoint['monitors']
+        # load monitors
+        for prefix, monitors in self.meters.items():
+            for metric, meters in monitors.items():
+                for k, history in enumerate(monitors_state_dict[prefix][metric]):
+                    meters[k].load_state_dict(history, strict=True)
         return checkpoint['epoch']
 
     def save_best(self, path: str, prefix: str): ...

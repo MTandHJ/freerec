@@ -1,6 +1,6 @@
 
 
-from typing import Callable, Optional, Any
+from typing import Callable, Optional, Dict
 import torch
 import numpy as np
 
@@ -52,6 +52,14 @@ class AverageMeter:
         else:
             raise ValueError(f"Receive mode {mode} but 'mean' or 'sum' expected ...")
         self.avg = self.sum / self.count
+
+    def state_dict(self) -> Dict:
+        return {self.name: self.history}
+
+    def load_state_dict(self, state_dict: Dict, strict: bool = True):
+        if strict and self.name not in state_dict:
+            raise KeyError(f"No '{self.name}' in state_dict ...")
+        self.history = state_dict.get(self.name, self.history)
 
     def step(self) -> str:
         self.history.append(self.avg)
