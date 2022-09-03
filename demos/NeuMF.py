@@ -25,8 +25,8 @@ class MovieLens1M_(MovieLens1M):
 
     _cfg = Config(
         sparse = [
-            SparseField(name='UserID', na_value=0, dtype=int, tags=[USER, ID, FEATURE]),
-            SparseField(name='ItemID', na_value=0, dtype=int, tags=[ITEM, ID, FEATURE]),
+            SparseField(name='UserID', na_value=0, dtype=int, tags=[USER, ID]),
+            SparseField(name='ItemID', na_value=0, dtype=int, tags=[ITEM, ID]),
         ],
         dense = [DenseField(name="Timestamp", na_value=0., dtype=float, transformer='none', tags=FEATURE)],
         # target: 0|1
@@ -120,7 +120,7 @@ def main():
 
     tokenizer_mf = Tokenizer(basepipe.fields)
     tokenizer_mf.embed(
-        cfg.embedding_dim, (FEATURE, SPARSE)
+        cfg.embedding_dim, ID
     )
     tokenizer_mlp = copy.deepcopy(tokenizer_mf)
     model = NeuCF(tokenizer_mf, tokenizer_mlp).to(cfg.DEVICE)

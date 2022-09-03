@@ -167,7 +167,7 @@ def main():
 
     tokenizer = Tokenizer(basepipe.fields)
     tokenizer.embed(
-        cfg.embedding_dim, (FEATURE, SPARSE)
+        cfg.embedding_dim, ID
     )
     model = LightGCN(tokenizer, basepipe).to(cfg.DEVICE)
 
