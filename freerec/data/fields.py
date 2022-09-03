@@ -132,6 +132,16 @@ class Fielder(tuple):
         else:
             return fields
 
+    @lru_cache(maxsize=4)
+    def whichisnot(self, *tags: Tag):
+        fields = Fielder(field for field in self if not field.match(tags))
+        if len(fields) == 1:
+            return fields[0]
+        elif len(fields) == 0:
+            return None
+        else:
+            return fields
+
     def copy(self) -> 'Fielder':
         return Fielder(self)
 
