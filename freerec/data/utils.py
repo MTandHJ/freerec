@@ -4,10 +4,6 @@
 
 from typing import TypeVar, Callable
 
-import torch
-import tqdm
-
-
 T = TypeVar('T')
 
 def safe_cast(val: T, dest_type: Callable[[T], T], default: T) -> T:
