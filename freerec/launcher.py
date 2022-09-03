@@ -43,9 +43,9 @@ DEFAULT_FMTS = {
     'MAE': ".4f",
     'RMSE': ".4f",
     #############
-    'PRECISION': ".3%",
-    'RECALL': ".3%",
-    'HITRATE': ".3%",
+    'PRECISION': ".4f",
+    'RECALL': ".4f",
+    'HITRATE': ".4f",
     #############
     'NDCG': ".4f",
     'MRR': ".4f",
