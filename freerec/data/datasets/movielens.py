@@ -21,8 +21,8 @@ class MovieLens1M(RecDataSet):
 
     _cfg = Config(
         sparse = [
-            SparseField(name='UserID', na_value=0, dtype=int, tags=[USER, ID, FEATURE]),
-            SparseField(name='ItemID', na_value=0, dtype=int, tags=[ITEM, ID, FEATURE]),
+            SparseField(name='UserID', na_value=0, dtype=int, tags=[USER, ID]),
+            SparseField(name='ItemID', na_value=0, dtype=int, tags=[ITEM, ID]),
         ],
         dense = [DenseField(name="Timestamp", na_value=0., dtype=float, transformer='none', tags=FEATURE)],
         target = [DenseField(name='Rating', na_value=None, dtype=int, transformer='none', tags=TARGET)]
