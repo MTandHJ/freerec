@@ -1,6 +1,6 @@
 
 
-from typing import Callable, Optional, Dict
+from typing import Callable, Optional, Dict, List
 import torch
 import numpy as np
 
@@ -8,7 +8,9 @@ import logging
 import time
 import random
 import os
+from collections import defaultdict
 from freeplot.base import FreePlot
+from freeplot.utils import export_pickle
 
 from .dict2obj import Config
 
@@ -32,8 +34,16 @@ class AverageMeter:
         self.name = name
         self.fmt = fmt
         self.reset()
-        self.history = []
+        self.__history = []
         self.__metric = metric if metric else _unitary
+
+    @property
+    def history(self):
+        return self.__history
+
+    @history.setter
+    def history(self, val: List):
+        self.__history = val.copy()
 
     def reset(self) -> None:
         self.val = 0.
@@ -52,14 +62,6 @@ class AverageMeter:
         else:
             raise ValueError(f"Receive mode {mode} but 'mean' or 'sum' expected ...")
         self.avg = self.sum / self.count
-
-    def state_dict(self) -> Dict:
-        return {self.name: self.history}
-
-    def load_state_dict(self, state_dict: Dict, strict: bool = True):
-        if strict and self.name not in state_dict:
-            raise KeyError(f"No '{self.name}' in state_dict ...")
-        self.history = state_dict.get(self.name, self.history)
 
     def step(self) -> str:
         self.history.append(self.avg)
@@ -112,6 +114,30 @@ class AverageMeter:
             n = n,
             mode = mode
         )
+
+
+class Monitor(Config):
+
+    def state_dict(self) -> Dict:
+        state_dict = defaultdict(defaultdict(dict))
+        monitors: Dict[str, List[AverageMeter]]
+        for prefix, monitors in self:
+            for metric, meters in monitors.items():
+                for meter in meters:
+                    state_dict[prefix][metric][meter.name] = meter.history
+        return state_dict
+
+    def load_state_dict(self, state_dict: Dict, strict: bool = False):
+        monitors: Dict[str, List[AverageMeter]]
+        for prefix, monitors in self:
+            for metric, meters in monitors.items():
+                for meter in meters:
+                    meter.history = state_dict[prefix][metric].get(meter.name, meter.history)
+
+    
+    def save(self, path: str, filename: str = 'monitors.pickle'):
+        file_ = os.path.join(path, filename)
+        export_pickle(self.state_dict, file_)
 
 
 def set_logger(

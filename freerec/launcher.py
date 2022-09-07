@@ -13,7 +13,7 @@ from .data.datasets.base import BaseSet
 from .data.fields import Field, Fielder
 from .data.dataloader import DataLoader
 from .dict2obj import Config
-from .utils import AverageMeter, infoLogger, timemeter
+from .utils import AverageMeter, Monitor, timemeter, infoLogger
 from .metrics import *
 
 
@@ -109,12 +109,7 @@ class Coach:
         checkpoint['epoch'] = epoch
         for module in self.cfg.CHECKPOINT_MODULES:
             checkpoint[module] = getattr(self, module).state_dict()
-        # save monitors
-        monitors_state_dict = defaultdict(dict)
-        for prefix, monitors in self.meters.items():
-            for metric, meters in monitors.items():
-                monitors_state_dict[prefix][metric] = [meter.state_dict() for meter in meters]
-        checkpoint['monitors'] = monitors_state_dict
+        checkpoint['monitors'] = self.monitors.state_dict()
         torch.save(checkpoint, path)
 
     def load_checkpoint(self) -> int:
@@ -122,12 +117,7 @@ class Coach:
         checkpoint = torch.load(path)
         for module in self.cfg.CHECKPOINT_MODULES:
             getattr(self, module).load_state_dict(checkpoint[module])
-        monitors_state_dict = checkpoint['monitors']
-        # load monitors
-        for prefix, monitors in self.meters.items():
-            for metric, meters in monitors.items():
-                for k, history in enumerate(monitors_state_dict[prefix][metric]):
-                    meters[k].load_state_dict(history, strict=True)
+        self.monitors.load_state_dict(checkpoint['monitors'])
         return checkpoint['epoch']
 
     def save_best(self, path: str, prefix: str): ...
@@ -146,7 +136,7 @@ class Coach:
     ):
         self.cfg = cfg
         # meters for train|valid|test
-        self.meters = Config()
+        self.meters = Monitor()
         self.meters['train'] = {
             'LOSS': [
                 AverageMeter(
@@ -243,10 +233,12 @@ class Coach:
                     data.append([prefix, meter.name, val, epoch])
 
         with open(file_, "w", encoding="utf8") as fh:
-            fh.write(info)
+            fh.write(info) # Summary.md
 
         df = pd.DataFrame(data, columns=['Prefix', 'Metric', 'Best', '@Epoch'])
-        infoLogger(str(df))
+        infoLogger(str(df)) # print final metrics
+        # save corresponding data for next analysis
+        self.monitors.save(self.cfg.LOG_PATH, self.cfg.MONITOR_FILENAME)
 
 
     def train_per_epoch(self):
@@ -297,7 +289,6 @@ class Coach:
         self.test()
         self.step(self.cfg.epochs)
 
-        # visualization
         self.summary()
 
 

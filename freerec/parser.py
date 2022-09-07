@@ -35,6 +35,7 @@ CONFIG = Config(
     CHECKPOINT_MODULES = ['model', 'optimizer', 'lr_scheduler'],
     CHECKPOINT_FILENAME = "checkpoint.tar",
     SUMMARY_FILENAME = "SUMMARY.md",
+    MONITOR_FILENAME = "monitors.pickle",
     description = "RecSys"
 
 )
