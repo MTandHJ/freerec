@@ -134,7 +134,7 @@ class Chunker(Postprocessor):
                 yield _buffer.head(self.batch_size)
                 _buffer = _buffer[self.batch_size:]
 
-        if not self.drop_last and not _buffer.empty:
+        if not self.drop_last and _buffer is not None and not _buffer.empty:
             yield _buffer
 
 

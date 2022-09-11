@@ -138,7 +138,7 @@ class Monitor(Config):
     
     def save(self, path: str, filename: str = 'monitors.pickle'):
         file_ = os.path.join(path, filename)
-        export_pickle(self.state_dict, file_)
+        export_pickle(self.state_dict(), file_)
 
 
 def set_logger(
