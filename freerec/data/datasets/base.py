@@ -1,11 +1,12 @@
 
 
-from typing import Iterator
+from typing import Iterator, Dict
 
 import torchdata.datapipes as dp
 import pandas as pd
 import feather
 import os
+from freeplot.utils import import_pickle, export_pickle
 
 from ..fields import Field, Fielder
 from ...utils import timemeter, infoLogger
@@ -14,6 +15,9 @@ from ...utils import timemeter, infoLogger
 __all__ = ['BaseSet', 'RecDataSet']
 
 
+_DEFAULT_FEATHER_FMT = "{0}2feather"
+_DEFAULT_TRANSFORM_FILENAME = "transforms.pickle"
+_DEFAULT_CHUNK_FMT = "chunk{0}.feather"
 _DEFAULT_CHUNK_SIZE = 51200
 
 
@@ -80,8 +84,41 @@ class RecDataSet(BaseSet):
     def cfg(self):
         return self._cfg
 
+    def check_transforms(self):
+        file_ = os.path.join(
+            self.root, 
+            _DEFAULT_FEATHER_FMT.format(self.__class__.__name__), 
+            _DEFAULT_TRANSFORM_FILENAME
+        )
+        if os.path.isfile(file_):
+            return True
+        else:
+            return False
+
+    def save_transforms(self):
+        infoLogger(f"[{self.__class__.__name__}] >>> Save transformers ...")
+        state_dict = self.fields.state_dict()
+        file_ = os.path.join(
+            self.root, 
+            _DEFAULT_FEATHER_FMT.format(self.__class__.__name__), 
+            _DEFAULT_TRANSFORM_FILENAME
+        )
+        export_pickle(state_dict, file_)
+
+    def load_transforms(self):
+        file_ = os.path.join(
+            self.root, 
+            _DEFAULT_FEATHER_FMT.format(self.__class__.__name__), 
+            _DEFAULT_TRANSFORM_FILENAME
+        )
+        self.fields.load_state_dict(import_pickle(file_), strict=False)
+
     def check_feather(self):
-        path = os.path.join(self.root, f"{self.__class__.__name__}2feather", self.mode)
+        path = os.path.join(
+            self.root, 
+            _DEFAULT_FEATHER_FMT.format(self.__class__.__name__), 
+            self.mode
+        )
         if os.path.exists(path):
             return any(True for _ in os.scandir(path))
         else:
@@ -89,7 +126,11 @@ class RecDataSet(BaseSet):
             return False
 
     def write_feather(self, dataframe: pd.DataFrame, count: int):
-        file_ = os.path.join(self.root, f"{self.__class__.__name__}2feather", self.mode, f"chunk{count}.feather")
+        file_ = os.path.join(
+            self.root, 
+            _DEFAULT_FEATHER_FMT.format(self.__class__.__name__),
+            self.mode, _DEFAULT_CHUNK_FMT.format(count)
+        )
         feather.write_dataframe(dataframe, file_)
 
     def read_feather(self, file_: str):
@@ -99,7 +140,13 @@ class RecDataSet(BaseSet):
         raise NotImplementedError
 
     def feather2data(self):
-        datapipe = dp.iter.FileLister(os.path.join(self.root, f"{self.__class__.__name__}2feather", self.mode))
+        datapipe = dp.iter.FileLister(
+            os.path.join(
+                self.root, 
+                _DEFAULT_FEATHER_FMT.format(self.__class__.__name__),
+                self.mode
+            )
+        )
         if self.mode == 'train':
             datapipe.shuffle()
         for file_ in datapipe:
@@ -124,23 +171,26 @@ class RecDataSet(BaseSet):
     @timemeter("DataSet/compile")
     def compile(self):
         # prepare transformer
-        columns = [field.name for field in self._cfg.fields]
-        self.train()
-        datapipe = self.raw2data().batch(batch_size=_DEFAULT_CHUNK_SIZE)
-        for batch in datapipe:
-            df = pd.DataFrame(batch, columns=columns)
-            for field in self._cfg.fields:
-                field.partial_fit(df[field.name].values[:, None])
+        if self.check_transforms():
+            self.load_transforms()
+        else:
+            columns = [field.name for field in self._cfg.fields]
+            self.train()
+            datapipe = self.raw2data().batch(batch_size=_DEFAULT_CHUNK_SIZE)
+            for batch in datapipe:
+                df = pd.DataFrame(batch, columns=columns)
+                for field in self._cfg.fields:
+                    field.partial_fit(df[field.name].values[:, None])
 
-        self.valid()
-        datapipe = self.raw2data().batch(batch_size=_DEFAULT_CHUNK_SIZE)
-        for batch in datapipe:
-            df = pd.DataFrame(batch, columns=columns)
-            for field in self._cfg.fields:
-                field.partial_fit(df[field.name].values[:, None])
+            self.valid()
+            datapipe = self.raw2data().batch(batch_size=_DEFAULT_CHUNK_SIZE)
+            for batch in datapipe:
+                df = pd.DataFrame(batch, columns=columns)
+                for field in self._cfg.fields:
+                    field.partial_fit(df[field.name].values[:, None])
 
-        # TODO: save transformer ...
-
+            self.save_transforms()
+            
         # raw2feather
         self.train()
         if not self.check_feather():

@@ -141,6 +141,13 @@ class Fielder(tuple):
         else:
             return fields
 
+    def state_dict(self) -> Dict:
+        return {field.name: field.transformer for field in self}
+
+    def load_state_dict(self, state_dict: Dict, strict: bool = False):
+        for field in self:
+            field.transformer = state_dict.get(field.name, field.transformer)
+
     def copy(self) -> 'Fielder':
         return Fielder(self)
 
