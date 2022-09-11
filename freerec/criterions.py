@@ -48,7 +48,7 @@ class BaseCriterion(nn.Module):
 
         self.regularizers: List[Regularizer] = []
 
-        infoLogger(f"[Criterion] >>> Employ the criterion {self.__class__.__name__}")
+        infoLogger(f"[Criterion] >>> Employ the criterion of {self.__class__.__name__}")
 
     def regulate(self, parameters: List[nn.parameter.Parameter], rtype: str, weight: float = 0.):
         """add regularization for given parameters
