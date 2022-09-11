@@ -82,6 +82,8 @@ class Parser(Config):
         self.parser.add_argument("--root", type=str, default=".", help="data")
         self.parser.add_argument("--config", type=str, default=None, help="config.yml")
 
+        self.parser.add_argument("--device", type=str, default=CONFIG.DEVICE, help="device")
+
         # model
         self.parser.add_argument("--optimizer", type=str, choices=("sgd", "adam"), default="adam")
         self.parser.add_argument("--nesterov", action="store_true", default=False, help="nesterov for SGD")

@@ -109,7 +109,7 @@ class Coach:
         checkpoint['epoch'] = epoch
         for module in self.cfg.CHECKPOINT_MODULES:
             checkpoint[module] = getattr(self, module).state_dict()
-        checkpoint['meters'] = self.meters.state_dict()
+        checkpoint['monitors'] = self.monitors.state_dict()
         torch.save(checkpoint, path)
 
     def load_checkpoint(self) -> int:
@@ -117,7 +117,7 @@ class Coach:
         checkpoint = torch.load(path)
         for module in self.cfg.CHECKPOINT_MODULES:
             getattr(self, module).load_state_dict(checkpoint[module])
-        self.meters.load_state_dict(checkpoint['meters'])
+        self.monitors.load_state_dict(checkpoint['monitors'])
         return checkpoint['epoch']
 
     def save_best(self, path: str, prefix: str): ...
@@ -130,14 +130,21 @@ class Coach:
         infoLogger(f"[Coach] >>> Load the recent checkpoint and train from epoch: {start_epoch}")
         return start_epoch
 
+    @property
+    def monitors(self) -> Monitor:
+        """Dict[str, Dict[str, List]]
+        Monitor[prefix: str, Dict[metric: str, meters: List]]
+        """
+        return self.__monitors
+
     @timemeter("Coach/compile")
     def compile(
         self, cfg: Config, monitors: List[str]
     ):
         self.cfg = cfg
         # meters for train|valid|test
-        self.meters = Monitor()
-        self.meters['train'] = {
+        self.__monitors = Monitor()
+        self.__monitors['train'] = {
             'LOSS': [
                 AverageMeter(
                     name='LOSS', 
@@ -146,29 +153,29 @@ class Coach:
                 )
             ]
         }
-        self.meters['valid'] = defaultdict(list)
-        self.meters['test'] = defaultdict(list)
+        self.__monitors['valid'] = defaultdict(list)
+        self.__monitors['test'] = defaultdict(list)
 
         for name in monitors:
             name = name.upper()
             if '@' in name:
-                monitor, K = name.split('@')
+                metric, K = name.split('@')
                 for prefix in ('valid', 'test'):
-                    self.meters[prefix][monitor].append(
+                    self.__monitors[prefix][metric].append(
                         AverageMeter(
                             name=name,
-                            metric=partial(DEFAULT_METRICS[monitor], k=int(K)),
-                            fmt=DEFAULT_FMTS[monitor]
+                            metric=partial(DEFAULT_METRICS[metric], k=int(K)),
+                            fmt=DEFAULT_FMTS[metric]
                         )
                     )
             else:
-                monitor = name
+                metric = name
                 for prefix in ('valid', 'test'):
-                    self.meters[prefix][monitor].append(
+                    self.__monitors[prefix][metric].append(
                         AverageMeter(
                             name=name,
-                            metric=DEFAULT_METRICS[monitor],
-                            fmt=DEFAULT_FMTS[monitor]
+                            metric=DEFAULT_METRICS[metric],
+                            fmt=DEFAULT_FMTS[metric]
                         )
                     )
 
@@ -195,17 +202,16 @@ class Coach:
         n: int = 1, mode: str = 'mean', 
         prefix: str = 'train', pool: Optional[List] = None
     ):
-        metrics: Dict[List] = self.meters[prefix]
+        metrics: Dict[List] = self.monitors[prefix]
         for metric in pool:
             for meter in metrics.get(metric, []):
                 meter(*values, n=n, mode=mode)
 
-    @timemeter("Coach/step")
     def step(self, epoch: int):
-        for prefix, monitors in self.meters.items():
-            monitors: defaultdict[str, List[AverageMeter]]
+        for prefix, metrics in self.monitors.items():
+            metrics: Dict[str, List[AverageMeter]]
             infos = [f"[Coach] >>> {prefix.upper():5} @Epoch: {epoch:<4d} >>> "]
-            for meters in monitors.values():
+            for meters in metrics.values():
                 infos += [meter.step() for meter in meters if meter.active]
             infoLogger(' || '.join(infos))
 
@@ -218,10 +224,10 @@ class Coach:
         info += "| :-------: | :-------: | :-------: | :-------: | :-------: |\n"
         data = []
 
-        for prefix, monitors in self.meters.items():
-            monitors: defaultdict[str, List[AverageMeter]]
+        for prefix, metrics in self.monitors.items():
+            metrics: defaultdict[str, List[AverageMeter]]
             freq = 1 if prefix == 'train' else self.cfg.EVAL_FREQ
-            for METRIC, meters in monitors.items():
+            for METRIC, meters in metrics.items():
                 for meter in meters:
                     meter.plot(freq=freq)
                     imgname = meter.save(path=self.cfg.LOG_PATH, prefix=prefix)
@@ -238,7 +244,7 @@ class Coach:
         df = pd.DataFrame(data, columns=['Prefix', 'Metric', 'Best', '@Epoch'])
         infoLogger(str(df)) # print final metrics
         # save corresponding data for next analysis
-        self.meters.save(self.cfg.LOG_PATH, self.cfg.MONITOR_FILENAME)
+        self.monitors.save(self.cfg.LOG_PATH, self.cfg.MONITOR_FILENAME)
 
 
     def train_per_epoch(self):
