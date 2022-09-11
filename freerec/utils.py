@@ -119,17 +119,18 @@ class AverageMeter:
 class Monitor(Config):
 
     def state_dict(self) -> Dict:
-        state_dict = defaultdict(defaultdict(dict))
+        state_dict = defaultdict(dict)
         monitors: Dict[str, List[AverageMeter]]
-        for prefix, monitors in self:
+        for prefix, monitors in self.items():
             for metric, meters in monitors.items():
+                state_dict[prefix][metric] = dict()
                 for meter in meters:
                     state_dict[prefix][metric][meter.name] = meter.history
         return state_dict
 
     def load_state_dict(self, state_dict: Dict, strict: bool = False):
         monitors: Dict[str, List[AverageMeter]]
-        for prefix, monitors in self:
+        for prefix, monitors in self.items():
             for metric, meters in monitors.items():
                 for meter in meters:
                     meter.history = state_dict[prefix][metric].get(meter.name, meter.history)

@@ -18,7 +18,7 @@ class GMF(nn.Module):
         self.tokenizer = tokenizer
 
     def forward(self, inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
-        userEmbeds, itemEmbeds = self.tokenizer.look_up(inputs, (FEATURE, ID))
+        userEmbeds, itemEmbeds = self.tokenizer.look_up(inputs, ID)
         return userEmbeds * itemEmbeds
 
 class MLP(nn.Module):
@@ -26,7 +26,7 @@ class MLP(nn.Module):
     def __init__(self, tokenizer: Tokenizer) -> None:
         super().__init__()
         self.tokenizer = tokenizer
-        dimension = self.tokenizer.calculate_dimension(FEATURE, ID)
+        dimension = self.tokenizer.calculate_dimension(ID)
         self.fc = nn.Sequential(
             nn.Linear(dimension, 32),
             nn.ReLU(True),
@@ -37,7 +37,7 @@ class MLP(nn.Module):
         )
 
     def forward(self, inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
-        userEmbeds, itemEmbeds = self.tokenizer.look_up(inputs, (FEATURE, ID))
+        userEmbeds, itemEmbeds = self.tokenizer.look_up(inputs, ID)
         x = torch.cat([userEmbeds, itemEmbeds], dim=-1)
         x = self.fc(x)
         return x

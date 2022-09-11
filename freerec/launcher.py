@@ -109,7 +109,7 @@ class Coach:
         checkpoint['epoch'] = epoch
         for module in self.cfg.CHECKPOINT_MODULES:
             checkpoint[module] = getattr(self, module).state_dict()
-        checkpoint['monitors'] = self.monitors.state_dict()
+        checkpoint['meters'] = self.meters.state_dict()
         torch.save(checkpoint, path)
 
     def load_checkpoint(self) -> int:
@@ -117,7 +117,7 @@ class Coach:
         checkpoint = torch.load(path)
         for module in self.cfg.CHECKPOINT_MODULES:
             getattr(self, module).load_state_dict(checkpoint[module])
-        self.monitors.load_state_dict(checkpoint['monitors'])
+        self.meters.load_state_dict(checkpoint['meters'])
         return checkpoint['epoch']
 
     def save_best(self, path: str, prefix: str): ...
@@ -238,7 +238,7 @@ class Coach:
         df = pd.DataFrame(data, columns=['Prefix', 'Metric', 'Best', '@Epoch'])
         infoLogger(str(df)) # print final metrics
         # save corresponding data for next analysis
-        self.monitors.save(self.cfg.LOG_PATH, self.cfg.MONITOR_FILENAME)
+        self.meters.save(self.cfg.LOG_PATH, self.cfg.MONITOR_FILENAME)
 
 
     def train_per_epoch(self):
