@@ -95,7 +95,7 @@ class Coach:
         self.fields: Fielder[Field] = self.dataset.fields
         self.device = device
         self.criterion = criterion
-        self.model = model if model else _DummyModule()
+        self.model = model.to(self.device) if model else _DummyModule()
         self.optimizer = optimizer if optimizer else _DummyModule()
         self.lr_scheduler = lr_scheduler if lr_scheduler else _DummyModule()
 

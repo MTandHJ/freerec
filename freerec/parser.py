@@ -108,7 +108,7 @@ class Parser(Config):
         self.parser.add_argument("--verbose", action="store_true", default=False, help="show the progress bar if true")
         self.parser.add_argument("--resume", action="store_true", default=False, help="resume the training from the recent checkpoint")
 
-        self.parser.add_argument("--fmt", type=str, default="{description}={optimizer}-{lr}-{weight_decay}={seed}")
+        self.parser.add_argument("--fmt", type=str, default="{description}={optimizer}-{lr:.4f}-{weight_decay:.4f}={seed}")
         self.parser.add_argument("-m", "--description", type=str, default="RecSys")
 
     def add_argument(self, *args, **kwargs):
