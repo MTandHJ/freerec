@@ -9,7 +9,7 @@ import os
 from freeplot.utils import import_pickle, export_pickle
 
 from ..fields import Field, Fielder
-from ...utils import timemeter, infoLogger
+from ...utils import timemeter, infoLogger, mkdirs
 
 
 __all__ = ['BaseSet', 'RecDataSet']
@@ -93,6 +93,10 @@ class RecDataSet(BaseSet):
         if os.path.isfile(file_):
             return True
         else:
+            mkdirs(os.path.join(
+                self.root,
+                _DEFAULT_FEATHER_FMT.format(self.__class__.__name__)
+            ))
             return False
 
     def save_transforms(self):

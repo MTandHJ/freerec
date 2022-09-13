@@ -11,9 +11,10 @@ from .dict2obj import Config
 from .utils import mkdirs, set_logger, set_seed, activate_benchmark, timemeter
 
 
-INFO_PATH = "./infos/{description}"
-LOG_PATH = "./logs/{description}-{TIME}"
-TIME = "%m%d%H"
+INFO_PATH = "./infos/{description}/{id}"
+LOG_PATH = "./logs/{description}/{id}"
+CORE_PATH = "./logs/{description}/core"
+TIME = "%m%d%H%M"
 
 CONFIG = Config(
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu",
@@ -36,6 +37,7 @@ CONFIG = Config(
     CHECKPOINT_FILENAME = "checkpoint.tar",
     SUMMARY_FILENAME = "SUMMARY.md",
     MONITOR_FILENAME = "monitors.pickle",
+    MONITOR_BEST_FILENAME = "best.pickle",
     description = "RecSys"
 
 )
@@ -108,10 +110,11 @@ class Parser(Config):
         self.parser.add_argument("--verbose", action="store_true", default=False, help="show the progress bar if true")
         self.parser.add_argument("--resume", action="store_true", default=False, help="resume the training from the recent checkpoint")
 
-        self.parser.add_argument("--fmt", type=str, default="{description}={optimizer}-{lr:.4f}-{weight_decay:.4f}={seed}")
+        self.parser.add_argument("--id", type=str, default=time.strftime(TIME))
         self.parser.add_argument("-m", "--description", type=str, default="RecSys")
 
-    def add_argument(self, *args, **kwargs):
+    def add_argument(self, *args: str, **kwargs):
+        args = (arg.replace('_', '-') for arg in args) # user '-' instead of '_'
         self.parser.add_argument(*args, **kwargs)
 
     def set_defaults(self, **kwargs):
@@ -120,7 +123,6 @@ class Parser(Config):
     @timemeter("Parser/compile")
     def compile(self):
         args = self.parser.parse_args()
-        args.description = args.fmt.format(**args.__dict__)
         for key, val in args._get_kwargs():
             if key.upper() in self:
                 self[key.upper()] = val
@@ -128,7 +130,6 @@ class Parser(Config):
                 self[key] = val
         self.load(args) # loading config (.yaml) ...
         
-        self['TIME'] = time.strftime(TIME)
         self['INFO_PATH'] = INFO_PATH.format(**self)
         self['LOG_PATH'] = LOG_PATH.format(**self)
         mkdirs(self.INFO_PATH, self.LOG_PATH)
@@ -140,3 +141,33 @@ class Parser(Config):
 
         self.readme(self.INFO_PATH) # generate README.md
         self.readme(self.LOG_PATH)
+
+
+class CoreParser(Parser):
+
+    @timemeter("CoreParser/parse")
+    def parse(self):
+
+        self.parser = argparse.ArgumentParser()
+
+        self.parser.add_argument("-m", "--description", type=str, default="RecSys")
+        self.parser.add_argument("--config", type=str, default=None, help="config.yml")
+
+    @timemeter("CoreParser/compile")
+    def compile(self):
+        args = self.parser.parse_args()
+        for key, val in args._get_kwargs():
+            if key.upper() in self:
+                self[key.upper()] = val
+            else:
+                self[key] = val
+        self.load(args) # loading config (.yaml) ...
+        
+        self['INFO_PATH'] = INFO_PATH
+        self['LOG_PATH'] = LOG_PATH
+        self['CORE_PATH'] = CORE_PATH.format(**self)
+        mkdirs(self.CORE_PATH)
+        set_logger(path=self.CORE_PATH, log2file=self.log2file, log2console=self.log2console)
+
+        self.readme(self.CORE_PATH)
+

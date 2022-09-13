@@ -3,6 +3,8 @@
 from typing import Callable, Optional, Dict, List
 import torch
 import numpy as np
+import pandas as pd
+from torch.utils.tensorboard import SummaryWriter
 
 import logging
 import time
@@ -139,6 +141,20 @@ class Monitor(Config):
     def save(self, path: str, filename: str = 'monitors.pickle'):
         file_ = os.path.join(path, filename)
         export_pickle(self.state_dict(), file_)
+
+    def write(self, path: str):
+        with SummaryWriter(path) as writer:
+            monitors: Dict[str, List[AverageMeter]]
+            for prefix, monitors in self.items():
+                for metric, meters in monitors.items():
+                    for meter in meters:
+                        for t, val in enumerate(meter.history):
+                            writer.add_scalar(
+                                '/'.join([prefix, meter.name]),
+                                val,
+                                t
+                            )
+
 
 
 def set_logger(

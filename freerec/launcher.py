@@ -1,20 +1,25 @@
 
 
-from typing import Callable, List, Dict, Optional
+from typing import Any, Callable, Iterable, List, Dict, Optional
 
 import torch
 import os
+import time
+import pandas as pd
+from torch.utils.tensorboard import SummaryWriter
 from functools import partial
+from itertools import product
 from collections import defaultdict
 from tqdm import tqdm
-import pandas as pd
+from freeplot.utils import import_pickle, export_pickle
 
 from .data.datasets.base import BaseSet
 from .data.fields import Field, Fielder
 from .data.dataloader import DataLoader
 from .dict2obj import Config
-from .utils import AverageMeter, Monitor, timemeter, infoLogger
+from .utils import AverageMeter, Monitor, timemeter, infoLogger, warnLogger
 from .metrics import *
+from .parser import LOG_PATH, CORE_PATH, TIME
 
 
 __all__ = ['Coach']
@@ -223,6 +228,7 @@ class Coach:
         info += "|  Prefix  |   Metric   |   Best   |   @Epoch   |   Img   |\n"
         info += "| :-------: | :-------: | :-------: | :-------: | :-------: |\n"
         data = []
+        best = defaultdict(dict)
 
         for prefix, metrics in self.monitors.items():
             metrics: defaultdict[str, List[AverageMeter]]
@@ -237,6 +243,7 @@ class Coach:
                         val=val, epoch=epoch, img=f"![]({imgname})"
                     )
                     data.append([prefix, meter.name, val, epoch])
+                    best[prefix][meter.name] = val
 
         with open(file_, "w", encoding="utf8") as fh:
             fh.write(info) # Summary.md
@@ -244,8 +251,9 @@ class Coach:
         df = pd.DataFrame(data, columns=['Prefix', 'Metric', 'Best', '@Epoch'])
         infoLogger(str(df)) # print final metrics
         # save corresponding data for next analysis
+        self.monitors.write(self.cfg.LOG_PATH) # tensorboard
         self.monitors.save(self.cfg.LOG_PATH, self.cfg.MONITOR_FILENAME)
-
+        export_pickle(best, os.path.join(self.cfg.LOG_PATH, self.cfg.MONITOR_BEST_FILENAME))
 
     def train_per_epoch(self):
         raise NotImplementedError()
@@ -301,3 +309,78 @@ class Coach:
 class CoachForCTR(Coach): ...
 
 class CoachForMatching(Coach): ...
+
+
+class Adapter:
+
+    def __init__(self, baseCMD: str, description: str) -> None:
+        self.description = description
+        self.baseCMD = baseCMD + self.get_option('description', description)
+        self.params = []
+        self.values = []
+
+    def add_param(self, key: str, vals: Iterable):
+        self.params.append(key)
+        self.values.append(vals)
+
+    def get_option(self, key: str, val: Any):
+        return f" --{key.replace('_', '-')}={val}"
+
+    def get_log_path(self):
+        id = self.id
+        path = self.cfg.LOG_PATH.format(
+            description=self.description, id=id
+        )
+        return path, id
+
+    @property
+    def id(self):
+        return time.strftime(TIME)
+
+    def one_by_one(self):
+        for key, vals in self.params:
+            for val in vals:
+                yield {key: val}
+
+    def one_for_all(self):
+        for vals in product(*self.values):
+            yield {option:val for option, val in zip(self.params, vals)}
+
+    def compile(self, cfg: Config, params: Dict):
+        self.cfg = cfg
+        for key, vals in params:
+            self.add_param(key, vals)
+
+    def load_best(self, log_path: str):
+        file_ = os.path.join(log_path, self.cfg.MONITOR_BEST_FILENAME)
+        return import_pickle(file_)
+
+    def write(self, data: Dict, params: Dict, id: str):
+        path = os.path.join(self.cfg.CORE_PATH, id)
+        with SummaryWriter(log_dir=path) as writer:
+            metrics = dict()
+            for prefix, best in data.items():
+                for metric, val in best.items():
+                    metrics['/'.join([prefix, metric])] = val
+            writer.add_hparams(
+                params, metrics,
+            )
+
+    def run(self, command: str, params: Dict):
+        log_path, id = self.get_log_path()
+        command = command + self.get_option('id', id)
+        warnLogger(command)
+        os.system(command) # TODO: subprocess.Popen
+        self.write(
+            self.load_best(log_path),
+            params, id
+        )
+
+    @timemeter("Adapter/grid_search")
+    def grid_search(self, exclusive: bool = False):
+        source = self.one_by_one() if exclusive else self.one_for_all()
+        for params in source:
+            command = self.baseCMD
+            for key, val in params.items():
+                command += self.get_option(key, val)
+            self.run(command, params)
