@@ -1,6 +1,6 @@
 
 
-from typing import List
+from typing import Iterable, List
 
 import torch
 import torch.nn as nn
@@ -14,7 +14,7 @@ __all__ = ["Regularizer", "BaseCriterion", "BCELoss", "MSELoss", "L1Loss"]
 class Regularizer(nn.Module):
 
     def __init__(
-        self, parameters: List[nn.parameter.Parameter],
+        self, parameters: Iterable[nn.parameter.Parameter],
         rtype: str = 'l2', weight: float = 0.
     ) -> None:
         """
@@ -25,7 +25,7 @@ class Regularizer(nn.Module):
             weight: float
         """
         super().__init__()
-        self.parameters = parameters
+        self.parameters = list(parameters)
         assert rtype in ('l1', 'l2'), "only 'l1'|'l2' regularization are supported ..."
         self.rtype = rtype
         self.weight = weight
@@ -50,7 +50,7 @@ class BaseCriterion(nn.Module):
 
         infoLogger(f"[Criterion] >>> Employ the criterion of {self.__class__.__name__}")
 
-    def regulate(self, parameters: List[nn.parameter.Parameter], rtype: str, weight: float = 0.):
+    def regulate(self, parameters: Iterable[nn.parameter.Parameter], rtype: str, weight: float = 0.):
         """add regularization for given parameters
         Args:
             parameters: list of parameters for regularization;
