@@ -106,19 +106,18 @@ def main():
         optimizer = torch.optim.SGD(
             model.parameters(), lr=cfg.lr, 
             momentum=cfg.momentum,
-            nesterov=cfg.nesterov
+            nesterov=cfg.nesterov,
+            weight_decay=cfg.weight_decay
         )
     elif cfg.optimizer == 'adam':
         optimizer = torch.optim.Adam(
             model.parameters(), lr=cfg.lr,
-            betas=(cfg.beta1, cfg.beta2)
+            betas=(cfg.beta1, cfg.beta2),
+            weight_decay=cfg.weight_decay
         )
     lr_scheduler=torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
     criterion = BCELoss()
-    criterion.regulate(
-        model.parameters(), rtype='l2', weight=cfg.weight_decay
-    )
 
     coach = CoachForDeepFM(
         model=model,

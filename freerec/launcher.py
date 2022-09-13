@@ -19,10 +19,10 @@ from .data.dataloader import DataLoader
 from .dict2obj import Config
 from .utils import AverageMeter, Monitor, timemeter, infoLogger, warnLogger
 from .metrics import *
-from .parser import LOG_PATH, CORE_PATH, TIME
+from .parser import TIME
 
 
-__all__ = ['Coach']
+__all__ = ['Coach', 'Adapter']
 
 
 DEFAULT_METRICS = {
@@ -348,7 +348,7 @@ class Adapter:
 
     def compile(self, cfg: Config, params: Dict):
         self.cfg = cfg
-        for key, vals in params:
+        for key, vals in params.items():
             self.add_param(key, vals)
 
     def load_best(self, log_path: str):
