@@ -373,7 +373,7 @@ class Adapter:
         self.description = envs.pop('description', self.description)
         self.baseCMD = self.cfg.get('command', self.__baseCMD)
         for key, val in envs.items():
-            self.baseCMD += self.get_option(key, val)
+            self.__baseCMD += self.get_option(key, val)
         for key, vals in params.items():
             if isinstance(vals, str):
                 vals = (vals, )
