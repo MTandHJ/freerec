@@ -151,17 +151,35 @@ class CoreParser(Parser):
         self.parser = argparse.ArgumentParser()
 
         self.parser.add_argument("config", type=str, help="config.yml")
-
-        self.parser.add_argument("-m", "--description", type=str, default=None)
         self.parser.add_argument("--exclusive", action="store_true", default=False, help="one by one or one for all")
+
+        self.parser.add_argument("--root", type=str, default=None, help="data")
+        self.parser.add_argument("--device", type=str, default=None, help="device")
+
+        self.parser.add_argument("--eval-freq", type=int, default=None, help="the evaluation frequency")
+
+        self.parser.add_argument("--num-workers", type=int, default=None)
+        self.parser.add_argument("--buffer-size", type=int, default=None, help="buffer size for datapipe")
+
+        self.parser.add_argument("--seed", type=int, default=None, help="calling --seed=-1 for a random seed")
+        self.parser.add_argument("-m", "--description", type=str, default=None)
+
 
     @timemeter("Parser/load")
     def load(self, args: ArgumentParser):
         with open(args.config, encoding="UTF-8", mode='r') as f:
-            domains = yaml.full_load(f)
-        if args.description is not None:
-            domains['description'] = args.description
-        return domains
+            config = yaml.full_load(f)
+        envs = config.get('envs', None)
+        envs = envs if envs else dict()
+        params = config.get('params', dict())
+        for key, val in args._get_kwargs():
+            if key in ('config', 'exclusive') or val is None:
+                continue
+            else:
+                envs[key] = val
+        self['envs'], self['params'] = envs, params
+        if 'command' in config:
+            self['command'] = config['command']
 
     @timemeter("CoreParser/compile")
     def compile(self):
@@ -171,7 +189,7 @@ class CoreParser(Parser):
                 self[key.upper()] = val
             else:
                 self[key] = val
-        self['domains'] = self.load(args)
+        self.load(args)
         
         self['INFO_PATH'] = INFO_PATH
         self['LOG_PATH'] = LOG_PATH

@@ -80,6 +80,9 @@ class RecDataSet(BaseSet):
         self.root = root
         self.fields = self._cfg.fields
 
+        if not os.path.exists(self.root) or not any(True for _ in os.scandir(self.root)):
+            raise FileNotFoundError(f"No such root of {self.root} or this dir is empty ...")
+
     @property
     def cfg(self):
         return self._cfg

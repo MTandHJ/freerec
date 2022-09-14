@@ -368,10 +368,13 @@ class Adapter:
                 except ValueError:
                     continue
         self.cfg = cfg
-        domains = self.cfg.domains
-        self.description = domains.pop('description', self.description)
-        self.baseCMD = domains.pop('baseCMD', self.__baseCMD)
-        for key, vals in domains.items():
+        envs = self.cfg.envs
+        params = self.cfg.params
+        self.description = envs.pop('description', self.description)
+        self.baseCMD = self.cfg.get('command', self.__baseCMD)
+        for key, val in envs.items():
+            self.baseCMD += self.get_option(key, val)
+        for key, vals in params.items():
             if isinstance(vals, str):
                 vals = (vals, )
             self.add_param(key, safe_cast(vals))
