@@ -3,9 +3,10 @@
 from typing import Any, Callable, Iterable, List, Dict, Optional
 
 import torch
+import pandas as pd
+import yaml
 import os
 import time
-import pandas as pd
 from torch.utils.tensorboard import SummaryWriter
 from functools import partial
 from itertools import product
@@ -313,11 +314,36 @@ class CoachForMatching(Coach): ...
 
 class Adapter:
 
-    def __init__(self, baseCMD: str, description: str) -> None:
+    def __init__(self, baseCMD: str = '', description: str = 'RecSys') -> None:
+        """
+        Args:
+            baseCMD: for calling
+            description: for naming
+        """
         self.description = description
-        self.baseCMD = baseCMD + self.get_option('description', description)
+        self.baseCMD = baseCMD
         self.params = []
         self.values = []
+
+    @property
+    def description(self):
+        return self.__description
+    
+    @description.setter
+    def description(self, description: str):
+        self.__description = description
+
+    @property
+    def baseCMD(self):
+        return self.__baseCMD + self.get_option('description', self.description)
+    
+    @baseCMD.setter
+    def baseCMD(self, command: str):
+        self.__baseCMD = command
+
+    @property
+    def id(self):
+        return time.strftime(TIME)
 
     def add_param(self, key: str, vals: Iterable):
         self.params.append(key)
@@ -333,23 +359,22 @@ class Adapter:
         )
         return path, id
 
-    @property
-    def id(self):
-        return time.strftime(TIME)
-
-    def one_by_one(self):
-        for key, vals in self.params:
-            for val in vals:
-                yield {key: val}
-
-    def one_for_all(self):
-        for vals in product(*self.values):
-            yield {option:val for option, val in zip(self.params, vals)}
-
-    def compile(self, cfg: Config, params: Dict):
+    @timemeter("Adapter/compile")
+    def compile(self, cfg: Config):
+        def safe_cast(vals):
+            for caster in (int, float, str):
+                try:
+                    return list(map(caster, vals))
+                except ValueError:
+                    continue
         self.cfg = cfg
-        for key, vals in params.items():
-            self.add_param(key, vals)
+        domains = self.cfg.domains
+        self.description = domains.pop('description', self.description)
+        self.baseCMD = domains.pop('baseCMD', self.__baseCMD)
+        for key, vals in domains.items():
+            if isinstance(vals, str):
+                vals = (vals, )
+            self.add_param(key, safe_cast(vals))
 
     def load_best(self, log_path: str):
         file_ = os.path.join(log_path, self.cfg.MONITOR_BEST_FILENAME)
@@ -365,6 +390,15 @@ class Adapter:
             writer.add_hparams(
                 params, metrics,
             )
+
+    def one_by_one(self):
+        for key, vals in self.params:
+            for val in vals:
+                yield {key: val}
+
+    def one_for_all(self):
+        for vals in product(*self.values):
+            yield {option:val for option, val in zip(self.params, vals)}
 
     def run(self, command: str, params: Dict):
         log_path, id = self.get_log_path()

@@ -150,8 +150,18 @@ class CoreParser(Parser):
 
         self.parser = argparse.ArgumentParser()
 
-        self.parser.add_argument("-m", "--description", type=str, default="RecSys")
-        self.parser.add_argument("--config", type=str, default=None, help="config.yml")
+        self.parser.add_argument("config", type=str, help="config.yml")
+
+        self.parser.add_argument("-m", "--description", type=str, default=None)
+        self.parser.add_argument("--exclusive", action="store_true", default=False, help="one by one or one for all")
+
+    @timemeter("Parser/load")
+    def load(self, args: ArgumentParser):
+        with open(args.config, encoding="UTF-8", mode='r') as f:
+            domains = yaml.full_load(f)
+        if args.description is not None:
+            domains['description'] = args.description
+        return domains
 
     @timemeter("CoreParser/compile")
     def compile(self):
@@ -161,7 +171,7 @@ class CoreParser(Parser):
                 self[key.upper()] = val
             else:
                 self[key] = val
-        self.load(args) # loading config (.yaml) ...
+        self['domains'] = self.load(args)
         
         self['INFO_PATH'] = INFO_PATH
         self['LOG_PATH'] = LOG_PATH
