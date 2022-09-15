@@ -98,7 +98,7 @@ class Coach:
     ):
         self.dataset = dataset
         self.fields: Fielder[Field] = self.dataset.fields
-        self.device = device
+        self.device = torch.device(device)
         self.criterion = criterion
         self.model = model.to(self.device) if model else _DummyModule()
         self.optimizer = optimizer if optimizer else _DummyModule()
@@ -313,50 +313,20 @@ class CoachForMatching(Coach): ...
 
 class Adapter:
 
-    def __init__(self, baseCMD: str = '', description: str = 'RecSys') -> None:
-        """
-        Args:
-            baseCMD: for calling
-            description: for naming
-        """
-        self.description = description
-        self.baseCMD = baseCMD
+    def __init__(self) -> None:
         self.params = []
         self.values = []
 
     @property
-    def description(self):
-        return self.__description
-    
-    @description.setter
-    def description(self, description: str):
-        self.__description = description
+    def COMMAND(self):
+        return self.cfg.COMMAND + self.get_option('id', self.cfg.ENVS.id)
 
     @property
-    def baseCMD(self):
-        return self.__baseCMD + self.get_option('description', self.description)
-    
-    @baseCMD.setter
-    def baseCMD(self, command: str):
-        self.__baseCMD = command
+    def logPath(self):
+        return self.cfg.LOG_PATH.format(**self.cfg.ENVS)
 
-    @property
-    def id(self):
-        return time.strftime(TIME)
-
-    def add_param(self, key: str, vals: Iterable):
-        self.params.append(key)
-        self.values.append(vals)
-
-    def get_option(self, key: str, val: Any):
-        return f" --{key.replace('_', '-')}={val}"
-
-    def get_log_path(self):
-        id = self.id
-        path = self.cfg.LOG_PATH.format(
-            description=self.description, id=id
-        )
-        return path, id
+    def register_id(self):
+        self.cfg.ENVS['id'] = time.strftime(TIME)
 
     @timemeter("Adapter/compile")
     def compile(self, cfg: Config):
@@ -367,23 +337,26 @@ class Adapter:
                 except ValueError:
                     continue
         self.cfg = cfg
-        envs = self.cfg.envs
-        params = self.cfg.params
-        self.description = envs.pop('description', self.description)
-        self.baseCMD = self.cfg.get('command', self.__baseCMD)
-        for key, val in envs.items():
-            self.__baseCMD += self.get_option(key, val)
-        for key, vals in params.items():
-            if isinstance(vals, str):
+        for key, val in self.cfg.ENVS.items():
+            self.cfg.COMMAND += self.get_option(key, val)
+        for key, vals in self.cfg.PARAMS.items():
+            if isinstance(vals, (str, int, float)):
                 vals = (vals, )
-            self.add_param(key, safe_cast(vals))
+            self.deploy_params(key, safe_cast(vals))
 
-    def load_best(self, log_path: str):
-        file_ = os.path.join(log_path, self.cfg.MONITOR_BEST_FILENAME)
+    def deploy_params(self, key: str, vals: Iterable):
+        self.params.append(key)
+        self.values.append(vals)
+
+    def get_option(self, key: str, val: Any):
+        return f" --{key.replace('_', '-')}={val}"
+
+    def load_best(self):
+        file_ = os.path.join(self.logPath, self.cfg.MONITOR_BEST_FILENAME)
         return import_pickle(file_)
 
-    def write(self, data: Dict, params: Dict, id: str):
-        path = os.path.join(self.cfg.CORE_PATH, id)
+    def write(self, data: Dict, params: Dict):
+        path = os.path.join(self.cfg.CORE_PATH, self.cfg.ENVS.id)
         with SummaryWriter(log_dir=path) as writer:
             metrics = dict()
             for prefix, best in data.items():
@@ -403,20 +376,16 @@ class Adapter:
             yield {option:val for option, val in zip(self.params, vals)}
 
     def run(self, command: str, params: Dict):
-        log_path, id = self.get_log_path()
-        command = command + self.get_option('id', id)
         warnLogger(command)
         os.system(command) # TODO: subprocess.Popen
-        self.write(
-            self.load_best(log_path),
-            params, id
-        )
+        self.write(self.load_best(), params)
 
     @timemeter("Adapter/grid_search")
     def grid_search(self, exclusive: bool = False):
         source = self.one_by_one() if exclusive else self.one_for_all()
         for params in source:
-            command = self.baseCMD
-            for key, val in params.items():
-                command += self.get_option(key, val)
+            self.register_id()
+            command = self.COMMAND
+            for option, val in params.items():
+                command += self.get_option(option, val)
             self.run(command, params)
