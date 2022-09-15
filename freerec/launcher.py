@@ -4,7 +4,6 @@ from typing import Any, Callable, Iterable, List, Dict, Optional
 
 import torch
 import pandas as pd
-import yaml
 import os
 import time
 from torch.utils.tensorboard import SummaryWriter
@@ -224,7 +223,7 @@ class Coach:
     @timemeter("Coach/summary")
     def summary(self):
         file_ = os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_FILENAME)
-        s = "|  {prefix}  |   {metric}   |   {val:.5f}   |   {epoch}   |   {img}   |\n"
+        s = "|  {prefix}  |   {metric}   |   {val}   |   {epoch}   |   {img}   |\n"
         info = ""
         info += "|  Prefix  |   Metric   |   Best   |   @Epoch   |   Img   |\n"
         info += "| :-------: | :-------: | :-------: | :-------: | :-------: |\n"

@@ -13,7 +13,7 @@ from freerec.criterions import BPRLoss
 from freerec.data.datasets import GowallaM1
 from freerec.data.preprocessing import Binarizer
 from freerec.data.postprocessing import Postprocessor
-from freerec.data.sparse import get_lil_matrix, sparse_matrix_to_tensor
+from freerec.data.sparse import get_lil_matrix, sparse_matrix_to_coo_tensor
 from freerec.data.fields import Tokenizer
 from freerec.data.tags import FEATURE, SPARSE, TARGET, USER, ITEM, ID
 from freerec.utils import timemeter
@@ -82,7 +82,7 @@ class Grapher(Postprocessor):
         D = D.reshape(-1, 1) # n x 1
         A = D * A
         A = A * D.T
-        return sparse_matrix_to_tensor(A)
+        return sparse_matrix_to_coo_tensor(A)
 
     def __iter__(self):
         if self.mode == 'train':
@@ -175,14 +175,12 @@ def main():
         optimizer = torch.optim.SGD(
             model.parameters(), lr=cfg.lr, 
             momentum=cfg.momentum,
-            nesterov=cfg.nesterov,
-            weight_decay=cfg.weight_decay
+            nesterov=cfg.nesterov
         )
     elif cfg.optimizer == 'adam':
         optimizer = torch.optim.Adam(
             model.parameters(), lr=cfg.lr,
-            betas=(cfg.beta1, cfg.beta2),
-            weight_decay=cfg.weight_decay
+            betas=(cfg.beta1, cfg.beta2)
         )
     lr_scheduler=torch.optim.lr_scheduler.StepLR(optimizer, step_size=1000, gamma=0.1)
     criterion = BPRLoss()
