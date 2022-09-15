@@ -13,9 +13,10 @@ from .utils import mkdirs, set_logger, set_seed, activate_benchmark, timemeter, 
 
 DATA_DIR = 'data'
 SUMMARY_DIR = 'summary'
-INFO_PATH = "./infos/{description}/{dataset}/{device}"
+CHECKPOINT_PATH = "./infos/{description}/{dataset}/{device}"
 LOG_PATH = "./logs/{description}/{dataset}/{device}-{id}"
-CORE_PATH = "./logs/{description}/core"
+CORE_CHECKPOINT_PATH = "./infos/{description}/core"
+CORE_LOG_PATH = "./logs/{description}/core"
 TIME = "%m%d%H%M%S"
 
 CONFIG = Config(
@@ -28,7 +29,7 @@ CONFIG = Config(
     EVAL_TEST = False,
 
     # logger
-    log2file = True, 
+    log2file = True,
     log2console = True,
 
     # path|file
@@ -44,6 +45,7 @@ CONFIG = Config(
 
 CORE_CONFIG = Config(
     MONITOR_BEST_FILENAME = CONFIG.MONITOR_BEST_FILENAME,
+    CHECKPOINT_FILENAME = CONFIG.CHECKPOINT_FILENAME,
     EXCLUSIVE = False,
     COMMAND = None,
     ENVS = dict(),
@@ -151,10 +153,10 @@ class Parser(Config):
         
         self['DATA_DIR'] = DATA_DIR
         self['SUMMARY_DIR'] = SUMMARY_DIR
-        self['INFO_PATH'] = INFO_PATH.format(**self)
+        self['CHECKPOINT_PATH'] = CHECKPOINT_PATH.format(**self)
         self['LOG_PATH'] = LOG_PATH.format(**self)
         mkdirs(
-            self.INFO_PATH, self.LOG_PATH,
+            self.CHECKPOINT_PATH, self.LOG_PATH,
             os.path.join(self.LOG_PATH, self.DATA_DIR),
             os.path.join(self.LOG_PATH, self.SUMMARY_DIR)
         )
@@ -163,7 +165,7 @@ class Parser(Config):
         activate_benchmark(self.BENCHMARK)
         set_seed(self.SEED)
 
-        self.readme(self.INFO_PATH) # generate README.md
+        self.readme(self.CHECKPOINT_PATH) # generate README.md
         self.readme(self.LOG_PATH)
 
 
@@ -193,6 +195,8 @@ class CoreParser(Config):
 
         self.parser.add_argument("--num-workers", type=int, default=None)
         self.parser.add_argument("--buffer-size", type=int, default=None, help="buffer size for datapipe")
+
+        self.parser.add_argument("--resume", action="store_true", default=False, help="resume the search from the recent checkpoint")
 
 
     def check(self):
@@ -235,6 +239,7 @@ class CoreParser(Config):
             config = {key.upper(): vals for key, vals in yaml.full_load(f).items()}
             self.update(**config)
         self.EXCLUSIVE = args.exclusive
+        self.resume = args.resume
         for key, val in args._get_kwargs():
             if key in self.ALL_ENVS and val is not None:
                 self.ENVS[key] = val
@@ -247,13 +252,14 @@ class CoreParser(Config):
 
         self['DATA_DIR'] = DATA_DIR
         self['SUMMARY_DIR'] = SUMMARY_DIR
-        self['INFO_PATH'] = INFO_PATH
+        self['CHECKPOINT_PATH'] = CHECKPOINT_PATH
         self['LOG_PATH'] = LOG_PATH
-        self['CORE_PATH'] = CORE_PATH.format(**self.ENVS)
-        mkdirs(self.CORE_PATH)
-        set_logger(path=self.CORE_PATH, log2file=self.log2file, log2console=self.log2console)
+        self['CORE_CHECKPOINT_PATH'] = CORE_CHECKPOINT_PATH.format(**self.ENVS)
+        self['CORE_LOG_PATH'] = CORE_LOG_PATH.format(**self.ENVS)
+        mkdirs(self.CORE_CHECKPOINT_PATH, self.CORE_LOG_PATH)
+        set_logger(path=self.CORE_LOG_PATH, log2file=self.log2file, log2console=self.log2console)
 
-        self.readme(self.CORE_PATH)
+        self.readme(self.CORE_LOG_PATH)
 
     def readme(self, path: str, mode: str = "w") -> None:
         time_ = time.strftime("%Y-%m-%d-%H:%M:%S")

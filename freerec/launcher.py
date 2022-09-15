@@ -109,7 +109,7 @@ class Coach:
         torch.save(self.model.state_dict(), os.path.join(self.cfg.LOG_PATH, self.cfg.SAVED_FILENAME))
 
     def save_checkpoint(self, epoch: int) -> None:
-        path = os.path.join(self.cfg.INFO_PATH, self.cfg.CHECKPOINT_FILENAME)
+        path = os.path.join(self.cfg.CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
         checkpoint = dict()
         checkpoint['epoch'] = epoch
         for module in self.cfg.CHECKPOINT_MODULES:
@@ -118,7 +118,7 @@ class Coach:
         torch.save(checkpoint, path)
 
     def load_checkpoint(self) -> int:
-        path = os.path.join(self.cfg.INFO_PATH, self.cfg.CHECKPOINT_FILENAME)
+        path = os.path.join(self.cfg.CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
         checkpoint = torch.load(path)
         for module in self.cfg.CHECKPOINT_MODULES:
             getattr(self, module).load_state_dict(checkpoint[module])
@@ -356,7 +356,7 @@ class Adapter:
         return import_pickle(file_)
 
     def write(self, data: Dict, params: Dict):
-        path = os.path.join(self.cfg.CORE_PATH, self.cfg.ENVS.id)
+        path = os.path.join(self.cfg.CORE_LOG_PATH, self.cfg.ENVS.id)
         with SummaryWriter(log_dir=path) as writer:
             metrics = dict()
             for prefix, best in data.items():
@@ -366,12 +366,12 @@ class Adapter:
                 params, metrics,
             )
 
-    def one_by_one(self):
+    def each_grid(self):
         for key, vals in self.params:
             for val in vals:
                 yield {key: val}
 
-    def one_for_all(self):
+    def product_grid(self):
         for vals in product(*self.values):
             yield {option:val for option, val in zip(self.params, vals)}
 
@@ -380,12 +380,33 @@ class Adapter:
         os.system(command) # TODO: subprocess.Popen
         self.write(self.load_best(), params)
 
-    @timemeter("Adapter/grid_search")
-    def grid_search(self, exclusive: bool = False):
-        source = self.one_by_one() if exclusive else self.one_for_all()
-        for params in source:
+    def save_checkpoint(self) -> None:
+        path = os.path.join(self.cfg.CORE_CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
+        checkpoint = dict()
+        checkpoint['source'] = self.source
+        torch.save(checkpoint, path)
+
+    def load_checkpoint(self) -> int:
+        path = os.path.join(self.cfg.CORE_CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
+        checkpoint = torch.load(path)
+        return checkpoint['source']
+
+    @timemeter("Coach/resume")
+    def resume(self):
+        source = self.each_grid() if self.cfg.EXCLUSIVE else self.product_grid()
+        source = list(source)[::-1]
+        source = self.load_checkpoint() if self.cfg.resume else source
+        infoLogger(f"[Coach] >>> Load the recent checkpoint ...")
+        return source
+
+    @timemeter("Adapter/fit")
+    def fit(self):
+        self.source = self.resume()
+        while self.source:
+            params = self.source.pop()
             self.register_id()
             command = self.COMMAND
             for option, val in params.items():
                 command += self.get_option(option, val)
             self.run(command, params)
+            self.save_checkpoint()

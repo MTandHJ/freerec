@@ -169,7 +169,7 @@ def main():
     tokenizer.embed(
         cfg.embedding_dim, ID
     )
-    model = LightGCN(tokenizer, basepipe).to(cfg.DEVICE)
+    model = LightGCN(tokenizer, basepipe).to(cfg.device)
 
     if cfg.optimizer == 'sgd':
         optimizer = torch.optim.SGD(
@@ -191,7 +191,7 @@ def main():
         criterion=criterion,
         optimizer=optimizer,
         lr_scheduler=lr_scheduler,
-        device=cfg.DEVICE
+        device=cfg.device
     )
     coach.compile(cfg, monitors=['loss', 'recall@10', 'recall@20', 'ndcg@10', 'ndcg@20'])
     coach.fit()

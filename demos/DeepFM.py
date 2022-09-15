@@ -100,7 +100,7 @@ def main():
     tokenizer.embed(
         cfg.embedding_dim, (FEATURE, DENSE), linear=True
     )
-    model = DeepFM(tokenizer).to(cfg.DEVICE)
+    model = DeepFM(tokenizer).to(cfg.device)
 
     if cfg.optimizer == 'sgd':
         optimizer = torch.optim.SGD(
@@ -125,7 +125,7 @@ def main():
         criterion=criterion,
         optimizer=optimizer,
         lr_scheduler=lr_scheduler,
-        device=cfg.DEVICE
+        device=cfg.device
     )
     coach.compile(cfg, monitors=['loss', 'mse', 'mae', 'rmse', 'precision@10', 'recall@10', 'hitrate@10', 'ndcg@10'])
     coach.fit()
