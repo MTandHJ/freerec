@@ -9,7 +9,7 @@ import os
 from freeplot.utils import import_pickle, export_pickle
 
 from ..fields import Field, Fielder
-from ...utils import timemeter, infoLogger, warnLogger, mkdirs
+from ...utils import timemeter, infoLogger, errorLogger, mkdirs
 
 
 __all__ = ['BaseSet', 'RecDataSet']
@@ -68,10 +68,9 @@ class RecDataSet(BaseSet):
     def __new__(cls, *args, **kwargs):
         for attr in ('_cfg',):
             if not hasattr(cls, attr):
-                raise AttributeError(
-                    warnLogger("_cfg, should be defined before instantiation ...")
-                )
-        assert hasattr(cls._cfg, 'fields'), warnLogger("Fields sorted by column should be given in _cfg ...")
+                errorLogger("_cfg, should be defined before instantiation ...", AttributeError)
+        if not hasattr(cls._cfg, 'fields'):
+            errorLogger("Fields sorted by column should be given in _cfg ...", AssertionError)
         return super().__new__(cls)
 
     def __init__(self, root: str) -> None:
@@ -83,8 +82,9 @@ class RecDataSet(BaseSet):
         self.fields = self._cfg.fields
 
         if not os.path.exists(self.root) or not any(True for _ in os.scandir(self.root)):
-            raise FileNotFoundError(
-                warnLogger(f"No such root of {self.root} or this dir is empty ...")
+            errorLogger(
+                f"No such root of {self.root} or this dir is empty ...",
+                FileNotFoundError
             )
 
     @property
@@ -148,7 +148,10 @@ class RecDataSet(BaseSet):
         return feather.read_dataframe(file_)
 
     def raw2data(self) -> dp.iter.IterableWrapper:
-        raise NotImplementedError(warnLogger("raw2data method should be specified ..."))
+        errorLogger(
+            "raw2data method should be specified ...",
+            NotImplementedError
+        )
 
     def feather2data(self):
         datapipe = dp.iter.FileLister(

@@ -11,7 +11,7 @@ import random
 from .datasets import BaseSet, RecDataSet
 from .fields import SparseField
 from .tags import Tag, FEATURE, TARGET, USER, ITEM, ID
-from ..utils import timemeter, warnLogger
+from ..utils import timemeter
 
 
 

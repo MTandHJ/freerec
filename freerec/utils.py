@@ -198,6 +198,11 @@ def warnLogger(warn: str):
     getLogger().info(words)
     return words
 
+def errorLogger(error: str, exception = Exception):
+    words = f"\033[1;31m {error} \033[0m"
+    getLogger().debug(words)
+    raise exception(words)
+
 def timemeter(prefix=""):
     def decorator(func):
         def wrapper(*args, **kwargs):

@@ -9,7 +9,7 @@ from functools import partial, lru_cache
 from .utils import safe_cast
 from .preprocessing import X2X, Label2Index, Binarizer, MinMaxScaler, StandardScaler
 from .tags import Tag, SPARSE, DENSE
-from ..utils import warnLogger
+from ..utils import errorLogger
 
 
 __all__ = ['Field', 'DenseField', 'SparseField', 'Token', 'SparseToken', 'DenseToken', 'Tokenizer']
@@ -183,7 +183,7 @@ class Token(torch.nn.Module):
         return tags.name in self.tags
 
     def embed(self, dim: int, **kwargs):
-        raise NotImplementedError(warnLogger("embed method should be specified ..."))
+        errorLogger("embed method should be specified ...", NotImplementedError)
 
 
 class SparseToken(Token):
@@ -235,7 +235,7 @@ class Tokenizer(torch.nn.Module):
         elif isinstance(field, DenseField):
             return DenseToken(field)
         else:
-            raise ValueError(warnLogger("only Sparse|DenseField supported !"))
+            errorLogger("only Sparse|DenseField supported !", ValueError)
 
     @lru_cache(maxsize=4)
     def groupby(self, *tags: Union[Tag, Tuple[Tag]]) -> List[Token]:

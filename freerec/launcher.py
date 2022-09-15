@@ -17,7 +17,7 @@ from .data.datasets.base import BaseSet
 from .data.fields import Field, Fielder
 from .data.dataloader import DataLoader
 from .dict2obj import Config
-from .utils import AverageMeter, Monitor, timemeter, infoLogger, warnLogger
+from .utils import AverageMeter, Monitor, timemeter, infoLogger, warnLogger, errorLogger
 from .metrics import *
 from .parser import TIME
 
@@ -76,13 +76,13 @@ DEFAULT_BEST_CASTER = {
 class _DummyModule(torch.nn.Module):
 
     def forward(self, *args, **kwargs):
-        raise NotImplementedError(warnLogger("No available model is provided for Coach ..."))
+        errorLogger("No available model is provided for Coach ...", NotImplementedError)
 
     def step(self, *args, **kwargs):
-        raise NotImplementedError(warnLogger("No available optimizer or lr scheduler is provided for Coach ..."))
+        errorLogger("No available optimizer or lr scheduler is provided for Coach ...", NotImplementedError)
 
     def backward(self, *args, **kwargs):
-        raise NotImplementedError(warnLogger("No available optimizer is provided for Coach ..."))
+        errorLogger("No available optimizer is provided for Coach ...", NotImplementedError)
 
 
 class Coach:
@@ -256,10 +256,10 @@ class Coach:
         export_pickle(best, os.path.join(self.cfg.LOG_PATH, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME))
 
     def train_per_epoch(self):
-        raise NotImplementedError(warnLogger("train_per_epoch should be specified ..."))
+        errorLogger("train_per_epoch should be specified ...", NotImplementedError)
 
     def evaluate(self, prefix: str = 'valid'):
-        raise NotImplementedError(warnLogger("evaluate should be specified ..."))
+        errorLogger("evaluate should be specified ...", NotImplementedError)
 
 
     @timemeter("Coach/train")
