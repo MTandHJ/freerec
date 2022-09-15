@@ -11,6 +11,8 @@ from .dict2obj import Config
 from .utils import mkdirs, set_logger, set_seed, activate_benchmark, timemeter, warnLogger
 
 
+DATA_DIR = 'data'
+SUMMARY_DIR = 'summary'
 INFO_PATH = "./infos/{description}/{dataset}/{device}"
 LOG_PATH = "./logs/{description}/{dataset}/{device}-{id}"
 CORE_PATH = "./logs/{description}/core"
@@ -147,9 +149,15 @@ class Parser(Config):
         if self.dataset is None:
             self.dataset = _root2dataset(self.root)
         
+        self['DATA_DIR'] = DATA_DIR
+        self['SUMMARY_DIR'] = SUMMARY_DIR
         self['INFO_PATH'] = INFO_PATH.format(**self)
         self['LOG_PATH'] = LOG_PATH.format(**self)
-        mkdirs(self.INFO_PATH, self.LOG_PATH)
+        mkdirs(
+            self.INFO_PATH, self.LOG_PATH,
+            os.path.join(self.LOG_PATH, self.DATA_DIR),
+            os.path.join(self.LOG_PATH, self.SUMMARY_DIR)
+        )
         set_logger(path=self.LOG_PATH, log2file=self.log2file, log2console=self.log2console)
 
         activate_benchmark(self.BENCHMARK)
@@ -237,6 +245,8 @@ class CoreParser(Config):
         self.load(args)
         self.check()
 
+        self['DATA_DIR'] = DATA_DIR
+        self['SUMMARY_DIR'] = SUMMARY_DIR
         self['INFO_PATH'] = INFO_PATH
         self['LOG_PATH'] = LOG_PATH
         self['CORE_PATH'] = CORE_PATH.format(**self.ENVS)

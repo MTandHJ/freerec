@@ -106,7 +106,7 @@ class Coach:
 
       
     def save(self) -> None:
-        torch.save(self.model.state_dict(), os.path.join(self.cfg.INFO_PATH, self.cfg.SAVED_FILENAME))
+        torch.save(self.model.state_dict(), os.path.join(self.cfg.LOG_PATH, self.cfg.SAVED_FILENAME))
 
     def save_checkpoint(self, epoch: int) -> None:
         path = os.path.join(self.cfg.INFO_PATH, self.cfg.CHECKPOINT_FILENAME)
@@ -222,7 +222,7 @@ class Coach:
 
     @timemeter("Coach/summary")
     def summary(self):
-        file_ = os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_FILENAME)
+        file_ = os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR, self.cfg.SUMMARY_FILENAME)
         s = "|  {prefix}  |   {metric}   |   {val}   |   {epoch}   |   {img}   |\n"
         info = ""
         info += "|  Prefix  |   Metric   |   Best   |   @Epoch   |   Img   |\n"
@@ -236,7 +236,7 @@ class Coach:
             for METRIC, meters in metrics.items():
                 for meter in meters:
                     meter.plot(freq=freq)
-                    imgname = meter.save(path=self.cfg.LOG_PATH, prefix=prefix)
+                    imgname = meter.save(path=os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR), prefix=prefix)
                     epoch, val = meter.argbest(DEFAULT_BEST_CASTER[METRIC], freq)
                     info += s.format(
                         prefix=prefix, metric=meter.name,
@@ -251,9 +251,9 @@ class Coach:
         df = pd.DataFrame(data, columns=['Prefix', 'Metric', 'Best', '@Epoch'])
         infoLogger(str(df)) # print final metrics
         # save corresponding data for next analysis
-        self.monitors.write(self.cfg.LOG_PATH) # tensorboard
-        self.monitors.save(self.cfg.LOG_PATH, self.cfg.MONITOR_FILENAME)
-        export_pickle(best, os.path.join(self.cfg.LOG_PATH, self.cfg.MONITOR_BEST_FILENAME))
+        self.monitors.write(os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR)) # tensorboard
+        self.monitors.save(os.path.join(self.cfg.LOG_PATH, self.cfg.DATA_DIR), self.cfg.MONITOR_FILENAME)
+        export_pickle(best, os.path.join(self.cfg.LOG_PATH, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME))
 
     def train_per_epoch(self):
         raise NotImplementedError(warnLogger("train_per_epoch should be specified ..."))
@@ -352,7 +352,7 @@ class Adapter:
         return f" --{key.replace('_', '-')}={val}"
 
     def load_best(self):
-        file_ = os.path.join(self.logPath, self.cfg.MONITOR_BEST_FILENAME)
+        file_ = os.path.join(self.logPath, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME)
         return import_pickle(file_)
 
     def write(self, data: Dict, params: Dict):
