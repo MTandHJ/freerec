@@ -76,13 +76,13 @@ DEFAULT_BEST_CASTER = {
 class _DummyModule(torch.nn.Module):
 
     def forward(self, *args, **kwargs):
-        raise NotImplementedError("No available model is provided for Coach ...")
+        raise NotImplementedError(warnLogger("No available model is provided for Coach ..."))
 
     def step(self, *args, **kwargs):
-        raise NotImplementedError("No available optimizer or lr scheduler is provided for Coach ...")
+        raise NotImplementedError(warnLogger("No available optimizer or lr scheduler is provided for Coach ..."))
 
     def backward(self, *args, **kwargs):
-        raise NotImplementedError("No available optimizer is provided for Coach ...")
+        raise NotImplementedError(warnLogger("No available optimizer is provided for Coach ..."))
 
 
 class Coach:
@@ -256,10 +256,10 @@ class Coach:
         export_pickle(best, os.path.join(self.cfg.LOG_PATH, self.cfg.MONITOR_BEST_FILENAME))
 
     def train_per_epoch(self):
-        raise NotImplementedError()
+        raise NotImplementedError(warnLogger("train_per_epoch should be specified ..."))
 
     def evaluate(self, prefix: str = 'valid'):
-        raise NotImplementedError()
+        raise NotImplementedError(warnLogger("evaluate should be specified ..."))
 
 
     @timemeter("Coach/train")

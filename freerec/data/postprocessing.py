@@ -9,9 +9,9 @@ import pandas as pd
 import random
 
 from .datasets import BaseSet, RecDataSet
-from .fields import Field, SparseField, Fielder
+from .fields import SparseField
 from .tags import Tag, FEATURE, TARGET, USER, ITEM, ID
-from ..utils import timemeter
+from ..utils import timemeter, warnLogger
 
 
 

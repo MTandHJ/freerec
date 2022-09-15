@@ -187,13 +187,16 @@ def getLogger():
 
 def infoLogger(words: str):
     getLogger().info(words)
+    return words
 
 def debugLogger(words: str):
     getLogger().debug(words)
+    return words
 
 def warnLogger(warn: str):
     words = f"\033[1;31m {warn} \033[0m"
     getLogger().info(words)
+    return words
 
 def timemeter(prefix=""):
     def decorator(func):

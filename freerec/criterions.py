@@ -6,6 +6,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from .utils import warnLogger
+
 
 __all__ = ["BaseCriterion", "BCELoss", "MSELoss", "L1Loss"]
 
@@ -29,7 +31,7 @@ class BaseCriterion(nn.Module):
         elif self.rtype == 'l2':
             return sum(param.pow(2).sum() for param in params) / 2
         else:
-            raise NotImplementedError(f"{rtype} regularization is not supported ...")
+            raise NotImplementedError(warnLogger(f"{rtype} regularization is not supported ..."))
 
 
 class BCELoss(BaseCriterion):

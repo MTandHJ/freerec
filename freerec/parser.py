@@ -11,8 +11,8 @@ from .dict2obj import Config
 from .utils import mkdirs, set_logger, set_seed, activate_benchmark, timemeter
 
 
-INFO_PATH = "./infos/{description}/{id}"
-LOG_PATH = "./logs/{description}/{id}"
+INFO_PATH = "./infos/{description}/{dataset}/{DEVICE}-{seed}"
+LOG_PATH = "./logs/{description}/{dataset}/{DEVICE}-{seed}-{id}"
 CORE_PATH = "./logs/{description}/core"
 TIME = "%m%d%H%M"
 
@@ -82,6 +82,7 @@ class Parser(Config):
         self.parser = argparse.ArgumentParser()
 
         self.parser.add_argument("--root", type=str, default=".", help="data")
+        self.parser.add_argument("--dataset", type=str, default=None, help="data")
         self.parser.add_argument("--config", type=str, default=None, help="config.yml")
 
         self.parser.add_argument("--device", type=str, default=CONFIG.DEVICE, help="device")
@@ -129,6 +130,9 @@ class Parser(Config):
             else:
                 self[key] = val
         self.load(args) # loading config (.yaml) ...
+
+        if self.dataset is None:
+            self.dataset = self.root.split('/')[-1]
         
         self['INFO_PATH'] = INFO_PATH.format(**self)
         self['LOG_PATH'] = LOG_PATH.format(**self)
