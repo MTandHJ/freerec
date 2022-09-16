@@ -169,7 +169,7 @@ def main():
     tokenizer.embed(
         cfg.embedding_dim, ID
     )
-    model = LightGCN(tokenizer, basepipe).to(cfg.device)
+    model = LightGCN(tokenizer, basepipe)
 
     if cfg.optimizer == 'sgd':
         optimizer = torch.optim.SGD(

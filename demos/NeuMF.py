@@ -123,7 +123,7 @@ def main():
         cfg.embedding_dim, ID
     )
     tokenizer_mlp = copy.deepcopy(tokenizer_mf)
-    model = NeuCF(tokenizer_mf, tokenizer_mlp).to(cfg.device)
+    model = NeuCF(tokenizer_mf, tokenizer_mlp)
 
     if cfg.optimizer == 'sgd':
         optimizer = torch.optim.SGD(

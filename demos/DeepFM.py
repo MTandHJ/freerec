@@ -100,7 +100,7 @@ def main():
     tokenizer.embed(
         cfg.embedding_dim, (FEATURE, DENSE), linear=True
     )
-    model = DeepFM(tokenizer).to(cfg.device)
+    model = DeepFM(tokenizer)
 
     if cfg.optimizer == 'sgd':
         optimizer = torch.optim.SGD(
