@@ -1,11 +1,10 @@
 
 
-from typing import Any, Callable, Iterable, List, Dict, Optional
+from typing import Any, Callable, Iterable, List, Dict, Optional, Tuple, Union
 
 import torch
 import pandas as pd
-import os
-import time
+import os, subprocess, shlex, time
 from torch.utils.tensorboard import SummaryWriter
 from functools import partial
 from itertools import product
@@ -94,7 +93,7 @@ class Coach:
         model: Optional[torch.nn.Module],
         optimizer: Optional[torch.optim.Optimizer],
         lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler],
-        device: torch.device
+        device: Union[torch.device, str, int]
     ):
         self.dataset = dataset
         self.fields: Fielder[Field] = self.dataset.fields
@@ -316,17 +315,22 @@ class Adapter:
     def __init__(self) -> None:
         self.params = []
         self.values = []
+        self.__devices = []
 
     @property
     def COMMAND(self):
-        return self.cfg.COMMAND + self.get_option('id', self.cfg.ENVS.id)
+        return self.cfg.COMMAND
 
     @property
-    def logPath(self):
-        return self.cfg.LOG_PATH.format(**self.cfg.ENVS)
+    def devices(self):
+        return self.__devices.copy()
 
-    def register_id(self):
+    def register(self, device: str) -> Tuple[str, str]:
         self.cfg.ENVS['id'] = time.strftime(TIME)
+        self.cfg.ENVS['device'] = device
+        command = self.COMMAND + self.get_option('id', self.cfg.ENVS.id)
+        command += self.get_option('device', self.cfg.ENVS.device)
+        return command, self.cfg.ENVS.id, self.cfg.LOG_PATH.format(**self.cfg.ENVS)
 
     @timemeter("Adapter/compile")
     def compile(self, cfg: Config):
@@ -338,7 +342,10 @@ class Adapter:
                     continue
         self.cfg = cfg
         for key, val in self.cfg.ENVS.items():
-            self.cfg.COMMAND += self.get_option(key, val)
+            if key == 'device':
+                self.__devices = list(val.split(','))
+            else:
+                self.cfg.COMMAND += self.get_option(key, val)
         for key, vals in self.cfg.PARAMS.items():
             if isinstance(vals, (str, int, float)):
                 vals = (vals, )
@@ -351,12 +358,13 @@ class Adapter:
     def get_option(self, key: str, val: Any):
         return f" --{key.replace('_', '-')}={val}"
 
-    def load_best(self):
-        file_ = os.path.join(self.logPath, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME)
+    def load_best(self, logPath: str):
+        file_ = os.path.join(logPath, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME)
         return import_pickle(file_)
 
-    def write(self, data: Dict, params: Dict):
-        path = os.path.join(self.cfg.CORE_LOG_PATH, self.cfg.ENVS.id)
+    def write(self, id_: str, logPath: str, params: Dict):
+        data = self.load_best(logPath)
+        path = os.path.join(self.cfg.CORE_LOG_PATH, id_)
         with SummaryWriter(log_dir=path) as writer:
             metrics = dict()
             for prefix, best in data.items():
@@ -374,11 +382,6 @@ class Adapter:
     def product_grid(self):
         for vals in product(*self.values):
             yield {option:val for option, val in zip(self.params, vals)}
-
-    def run(self, command: str, params: Dict):
-        warnLogger(command)
-        os.system(command) # TODO: subprocess.Popen
-        self.write(self.load_best(), params)
 
     def save_checkpoint(self) -> None:
         path = os.path.join(self.cfg.CORE_CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
@@ -399,14 +402,30 @@ class Adapter:
         infoLogger(f"[Coach] >>> Load the recent checkpoint ...")
         return source
 
+    def run(self, command: str, params: Dict):
+        for option, val in params.items():
+            command += self.get_option(option, val)
+        warnLogger(command)
+        return subprocess.Popen(shlex.split(command))
+
+    def wait(self, tasks):
+        for process_, id_, logPath, params in tasks:
+            process_.wait()
+            self.write(id_, logPath, params)
+        self.save_checkpoint()
+
     @timemeter("Adapter/fit")
     def fit(self):
         self.source = self.resume()
+        tasks = []
+        devices = []
         while self.source:
+            if len(devices) == 0:
+                self.wait(tasks)
+                tasks = []
+                devices = self.devices
             params = self.source.pop()
-            self.register_id()
-            command = self.COMMAND
-            for option, val in params.items():
-                command += self.get_option(option, val)
-            self.run(command, params)
-            self.save_checkpoint()
+            command, id_, logPath = self.register(devices.pop())
+            process_ = self.run(command, params)
+            tasks.append((process_, id_, logPath, params))
+        self.wait(tasks)

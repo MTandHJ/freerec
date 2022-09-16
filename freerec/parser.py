@@ -1,14 +1,11 @@
 
 
-import os
-import argparse
 import torch
-import time
-import yaml
+import os, argparse, time, yaml
 from argparse import ArgumentParser
 
 from .dict2obj import Config
-from .utils import mkdirs, set_logger, set_seed, activate_benchmark, timemeter, warnLogger
+from .utils import mkdirs, set_logger, set_color, set_seed, activate_benchmark, timemeter, warnLogger
 
 
 DATA_DIR = 'data'
@@ -102,7 +99,7 @@ class Parser(Config):
         self.parser.add_argument("--dataset", type=str, default=None, help="useless if no need to automatically select a dataset")
         self.parser.add_argument("--config", type=str, default=None, help="config.yml")
 
-        self.parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu", help="device")
+        self.parser.add_argument("--device", type=int, default=torch.cuda.current_device() if torch.cuda.is_available() else 'cpu', help="device")
 
         # model
         self.parser.add_argument("--optimizer", type=str, choices=("sgd", "adam"), default="adam")
@@ -160,6 +157,7 @@ class Parser(Config):
             os.path.join(self.LOG_PATH, self.DATA_DIR),
             os.path.join(self.LOG_PATH, self.SUMMARY_DIR)
         )
+        set_color(self.device)
         set_logger(path=self.LOG_PATH, log2file=self.log2file, log2console=self.log2console)
 
         activate_benchmark(self.BENCHMARK)
@@ -207,7 +205,7 @@ class CoreParser(Config):
         envs:
             root: ../../data
             dataset: MovieLens1M
-            device: cuda:0
+            device: 0,1,2,3
             eval_freq: 5
             num_workers: 0
             buffer_size: 51200

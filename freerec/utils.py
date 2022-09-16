@@ -1,6 +1,6 @@
 
 
-from typing import Callable, Optional, Dict, List
+from typing import Callable, Optional, Dict, List, Union
 import torch
 import numpy as np
 import pandas as pd
@@ -25,6 +25,17 @@ LOGGER = Config(
         consolehandler=logging.Formatter('%(message)s')
     )
 )
+
+COLOR = {
+    'current': "{0}",
+    'cpu': "{0}",
+    0: "{0}",
+    1: "\033[1;35m{0}\033[0m",
+    2: "\033[1;34m{0}\033[0m",
+    3: "\033[1;33m{0}\033[0m",
+    4: "\033[1;38m{0}\033[0m",
+    5: "\033[1;32m{0}\033[0m"
+}
 
 
 def _unitary(value):
@@ -182,10 +193,17 @@ def set_logger(
     logger.debug("========================================================================")
     return logger
 
+def set_color(device: Union[int, str]):
+    try:
+        COLOR['current'] = COLOR[device]
+    except KeyError:
+        pass
+
 def getLogger():
     return logging.getLogger(LOGGER.name)
 
 def infoLogger(words: str):
+    words = COLOR['current'].format(words)
     getLogger().info(words)
     return words
 
