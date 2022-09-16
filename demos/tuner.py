@@ -12,11 +12,12 @@ def main():
     tuner = Adapter()
     tuner.compile(cfg)
 
-    tuner.grid_search()
+    tuner.fit()
 
 
 if __name__ == "__main__":
     main()
+
 
 
 

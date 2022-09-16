@@ -123,7 +123,7 @@ def main():
         cfg.embedding_dim, ID
     )
     tokenizer_mlp = copy.deepcopy(tokenizer_mf)
-    model = NeuCF(tokenizer_mf, tokenizer_mlp).to(cfg.DEVICE)
+    model = NeuCF(tokenizer_mf, tokenizer_mlp).to(cfg.device)
 
     if cfg.optimizer == 'sgd':
         optimizer = torch.optim.SGD(
@@ -147,7 +147,7 @@ def main():
         criterion=criterion,
         optimizer=optimizer,
         lr_scheduler=lr_scheduler,
-        device=cfg.DEVICE
+        device=cfg.device
     )
     coach.compile(cfg, monitors=['loss', 'precision@10', 'recall@10', 'hitrate@10', 'ndcg@10', 'ndcg@20'])
     coach.fit()

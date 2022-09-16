@@ -47,9 +47,14 @@ class Config(dict):
         
         self.prefix = prefix
 
+    def __setattr__(self, name: str, value: Any) -> None:
+        super(Config, self).__setattr__(name, value)
+        if name in self:
+            super(Config, self).__setitem__(name, value)
+
     def __setitem__(self, key: str, value: Any) -> None:
         super(Config, self).__setitem__(key, value)
-        self.__setattr__(key, value)
+        super(Config, self).__setattr__(key, value)
 
     def update(self, **kwargs) -> None:
         # Note that, we only update the keys and 
