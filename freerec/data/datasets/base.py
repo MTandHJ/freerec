@@ -1,11 +1,10 @@
 
 
-from typing import Iterator, Dict
+from typing import Iterator
 
 import torchdata.datapipes as dp
 import pandas as pd
-import feather
-import os
+import feather, os
 from freeplot.utils import import_pickle, export_pickle
 
 from ..fields import Field, Fielder

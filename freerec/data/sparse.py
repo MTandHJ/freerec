@@ -4,7 +4,6 @@ from typing import Optional, Tuple
 
 import torch
 import torchdata.datapipes as dp
-import numpy as np
 import scipy.sparse as sp
 import pandas as pd
 

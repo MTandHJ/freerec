@@ -3,13 +3,9 @@
 from typing import Callable, Optional, Dict, List, Union
 import torch
 import numpy as np
-import pandas as pd
 from torch.utils.tensorboard import SummaryWriter
 
-import logging
-import time
-import random
-import os
+import logging, time, random, os
 from collections import defaultdict
 from freeplot.base import FreePlot
 from freeplot.utils import export_pickle
