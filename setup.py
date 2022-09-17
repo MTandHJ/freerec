@@ -10,7 +10,8 @@ requires = [
     "feather-format>=0.4.1",
     "tqdm>=4.64.0",
     "freeplot>=0.0.12",
-    "PyYAML>=6.0"
+    "PyYAML>=6.0",
+    "tensorboard>=2.10.0",
 ]
 
 
