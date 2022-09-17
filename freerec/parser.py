@@ -99,7 +99,7 @@ class Parser(Config):
         self.parser.add_argument("--dataset", type=str, default=None, help="useless if no need to automatically select a dataset")
         self.parser.add_argument("--config", type=str, default=None, help="config.yml")
 
-        self.parser.add_argument("--device", type=int, default=torch.cuda.current_device() if torch.cuda.is_available() else 'cpu', help="device")
+        self.parser.add_argument("--device", default=torch.cuda.current_device() if torch.cuda.is_available() else 'cpu', help="device")
 
         # model
         self.parser.add_argument("--optimizer", type=str, choices=("sgd", "adam"), default="adam")

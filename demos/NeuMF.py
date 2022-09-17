@@ -115,15 +115,17 @@ def main():
     cfg.compile()
 
     basepipe = MovieLens1M_(cfg.root)
-    datapipe = basepipe.pin_(buffer_size=cfg.buffer_size).shard_().sample_negative_(num_negatives=cfg.num_negs)
-    datapipe = datapipe.chunk_(batch_size=cfg.batch_size).dict_().tensor_().group_()
+    datapipe = basepipe.pin_(buffer_size=cfg.buffer_size).shard_()
+    trainpipe = datapipe.negatives_for_train_(num_negatives=cfg.num_negs)
+    validpipe = datapipe.negatives_for_eval_(num_negatives=99) # 1:99
+    dataset = trainpipe.wrap_(validpipe).chunk_(cfg.batch_size).dict_().tensor_().group_()
 
     tokenizer_mf = Tokenizer(basepipe.fields)
     tokenizer_mf.embed(
         cfg.embedding_dim, ID
     )
     tokenizer_mlp = copy.deepcopy(tokenizer_mf)
-    model = NeuCF(tokenizer_mf, tokenizer_mlp)
+    model = NeuCF(tokenizer_mf, tokenizer_mlp).to(cfg.device)
 
     if cfg.optimizer == 'sgd':
         optimizer = torch.optim.SGD(
@@ -143,7 +145,7 @@ def main():
 
     coach = CoachForNCF(
         model=model,
-        dataset=datapipe,
+        dataset=dataset,
         criterion=criterion,
         optimizer=optimizer,
         lr_scheduler=lr_scheduler,
