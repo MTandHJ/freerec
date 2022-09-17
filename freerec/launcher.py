@@ -420,7 +420,7 @@ class Adapter:
 
     def each_grid(self):
         """Grid search for each kind of param"""
-        for key, vals in self.params:
+        for key, vals in zip(self.params, self.values):
             for val in vals:
                 yield {key: val}
 
