@@ -411,6 +411,7 @@ class Adapter:
 
     def poll(self, tasks: Dict):
         buffer_source = []
+        time.sleep(1) # for unique id
         while len(self.devices) == 0:
             time.sleep(7)
             for device, (process_, id_, logPath, params) in tasks.items():
