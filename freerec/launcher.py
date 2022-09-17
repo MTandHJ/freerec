@@ -315,15 +315,11 @@ class Adapter:
     def __init__(self) -> None:
         self.params = []
         self.values = []
-        self.__devices = []
+        self.devices = []
 
     @property
     def COMMAND(self):
         return self.cfg.COMMAND
-
-    @property
-    def devices(self):
-        return self.__devices.copy()
 
     def register(self, device: str) -> Tuple[str, str]:
         self.cfg.ENVS['id'] = time.strftime(TIME)
@@ -343,7 +339,7 @@ class Adapter:
         self.cfg = cfg
         for key, val in self.cfg.ENVS.items():
             if key == 'device':
-                self.__devices = list(val.split(','))
+                self.devices = list(val.split(','))
             else:
                 self.cfg.COMMAND += self.get_option(key, val)
         for key, vals in self.cfg.PARAMS.items():
@@ -383,10 +379,10 @@ class Adapter:
         for vals in product(*self.values):
             yield {option:val for option, val in zip(self.params, vals)}
 
-    def save_checkpoint(self) -> None:
+    def save_checkpoint(self, source: List) -> None:
         path = os.path.join(self.cfg.CORE_CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
         checkpoint = dict()
-        checkpoint['source'] = self.source
+        checkpoint['source'] = source
         torch.save(checkpoint, path)
 
     def load_checkpoint(self) -> int:
@@ -408,24 +404,32 @@ class Adapter:
         warnLogger(command)
         return subprocess.Popen(shlex.split(command))
 
-    def wait(self, tasks):
-        for process_, id_, logPath, params in tasks:
+    def wait(self, tasks: Dict):
+        for process_, id_, logPath, params in tasks.values():
             process_.wait()
             self.write(id_, logPath, params)
-        self.save_checkpoint()
+
+    def poll(self, tasks: Dict):
+        buffer_source = []
+        while len(self.devices) == 0:
+            time.sleep(7)
+            for device, (process_, id_, logPath, params) in tasks.items():
+                if process_.poll() is not None:
+                    self.write(id_, logPath, params)
+                    self.devices.append(device)
+                else:
+                    buffer_source.append(params)
+        self.save_checkpoint(self.source + buffer_source)
 
     @timemeter("Adapter/fit")
     def fit(self):
         self.source = self.resume()
-        tasks = []
-        devices = []
+        tasks = dict()
         while self.source:
-            if len(devices) == 0:
-                self.wait(tasks)
-                tasks = []
-                devices = self.devices
+            self.poll(tasks)
             params = self.source.pop()
-            command, id_, logPath = self.register(devices.pop())
+            device = self.devices.pop()
+            command, id_, logPath = self.register(device)
             process_ = self.run(command, params)
-            tasks.append((process_, id_, logPath, params))
+            tasks[device] = (process_, id_, logPath, params)
         self.wait(tasks)
