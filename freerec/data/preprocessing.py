@@ -10,6 +10,7 @@ __all__ = ['X2X', 'Label2Index', 'Binarizer', 'StandardScaler', 'MinMaxScaler']
 
 
 class X2X(preprocessing.FunctionTransformer):
+    """Identity transformation."""
 
     def partial_fit(self, x) -> None:
         ...
@@ -19,6 +20,7 @@ class X2X(preprocessing.FunctionTransformer):
 
 
 class Label2Index(preprocessing.LabelEncoder):
+    """Convert labels to indices."""
 
     def _flatten(self, y):
         return np.ravel(np.asarray(y))

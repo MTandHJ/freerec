@@ -13,6 +13,7 @@ __all__ = ["BaseCriterion", "BCELoss", "MSELoss", "L1Loss"]
 
 
 class BaseCriterion(nn.Module):
+    """Criterion."""
 
     def __init__(self, reduction: str = 'mean') -> None:
         super().__init__()
@@ -35,6 +36,7 @@ class BaseCriterion(nn.Module):
 
 
 class BCELoss(BaseCriterion):
+    """Binary Cross Entropy"""
 
     def forward(self, inputs: torch.Tensor, targets: torch.Tensor):
         return F.binary_cross_entropy_with_logits(inputs, targets.to(inputs.dtype), reduction=self.reduction)
@@ -53,6 +55,7 @@ class BPRLoss(BaseCriterion):
 
 
 class MSELoss(BaseCriterion):
+    """Mean Square Loss"""
 
     def forward(self, inputs: torch.Tensor, targets: torch.Tensor):
         return F.mse_loss(inputs, targets, reduction=self.reduction)

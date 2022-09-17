@@ -17,6 +17,7 @@ __all__ = [
 
 @dp.functional_datapipe("dataframe_")
 class DataFrame(Postprocessor):
+    """Make pd.DataFrame from source data."""
 
     def __init__(
         self, datapipe: Union[RecDataSet, Postprocessor],
@@ -32,6 +33,7 @@ class DataFrame(Postprocessor):
 
 @dp.functional_datapipe("shard_")
 class Sharder(Postprocessor):
+    """For num_workers != 0."""
 
     def __iter__(self) -> Iterator:
         worker_infos = torch.utils.data.get_worker_info()
@@ -46,6 +48,7 @@ class Sharder(Postprocessor):
 
 @dp.functional_datapipe("pin_")
 class PinMemory(Postprocessor):
+    """Pin buffer_size data into memory for efficiency."""
 
     def __init__(
         self, datapipe: RecDataSet,
@@ -76,7 +79,7 @@ class PinMemory(Postprocessor):
 
 @dp.functional_datapipe("subfield_")
 class SubFielder(Postprocessor):
-    """ Select subfields """
+    """Select subfields."""
 
     def __init__(
         self, datapipe: Postprocessor,
@@ -119,7 +122,7 @@ class Chunker(Postprocessor):
 
 @dp.functional_datapipe("dict_")
 class Frame2Dict(Postprocessor):
-    """Convert dataframe into Dict[str, List] """
+    """Convert dataframe into Dict[str, List]."""
     def __iter__(self) -> Iterator:
         for df in self.source:
             yield {name: df[name].values.tolist() for name in df.columns}
@@ -127,7 +130,7 @@ class Frame2Dict(Postprocessor):
 
 @dp.functional_datapipe("list_")
 class Frame2List(Postprocessor):
-    """Convert dataframe into List[List] """
+    """Convert dataframe into List[List]."""
     def __iter__(self) -> Iterator:
         for df in self.source:
             yield [df[name].values.tolist() for name in df.columns]
@@ -135,7 +138,7 @@ class Frame2List(Postprocessor):
 
 @dp.functional_datapipe("tensor_")
 class ToTensor(Postprocessor):
-    """Convert Dict[str, List] into Dict[str, torch.Tensor]"""
+    """Convert Dict[str, List] into Dict[str, torch.Tensor]."""
     def at_least_2d(self, val: torch.Tensor):
         return val.unsqueeze(1) if val.ndim == 1 else val
 

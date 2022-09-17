@@ -51,6 +51,7 @@ class BaseSet(dp.iter.IterDataPipe):
 
 class RecDataSet(BaseSet):
     """ RecDataSet provides a template for specific datasets.
+
     All datasets inherit RecDataSet should define class variables:
         _cfg: including fields of each column,
         _active: True if the type of dataset has compiled ...
@@ -88,9 +89,11 @@ class RecDataSet(BaseSet):
 
     @property
     def cfg(self):
+        """Return the config of the dataset"""
         return self._cfg
 
     def check_transforms(self):
+        """Check if the transformations exist."""
         file_ = os.path.join(
             self.root, 
             _DEFAULT_FEATHER_FMT.format(self.__class__.__name__), 
@@ -124,6 +127,7 @@ class RecDataSet(BaseSet):
         self.fields.load_state_dict(import_pickle(file_), strict=False)
 
     def check_feather(self):
+        """Check if the dataset has been converted into feather format."""
         path = os.path.join(
             self.root, 
             _DEFAULT_FEATHER_FMT.format(self.__class__.__name__), 
@@ -136,6 +140,7 @@ class RecDataSet(BaseSet):
             return False
 
     def write_feather(self, dataframe: pd.DataFrame, count: int):
+        """Save feather format data."""
         file_ = os.path.join(
             self.root, 
             _DEFAULT_FEATHER_FMT.format(self.__class__.__name__),
@@ -144,6 +149,7 @@ class RecDataSet(BaseSet):
         feather.write_dataframe(dataframe, file_)
 
     def read_feather(self, file_: str):
+        """Load feather format data."""
         return feather.read_dataframe(file_)
 
     def raw2data(self) -> dp.iter.IterableWrapper:
@@ -152,20 +158,12 @@ class RecDataSet(BaseSet):
             NotImplementedError
         )
 
-    def feather2data(self):
-        datapipe = dp.iter.FileLister(
-            os.path.join(
-                self.root, 
-                _DEFAULT_FEATHER_FMT.format(self.__class__.__name__),
-                self.mode
-            )
-        )
-        if self.mode == 'train':
-            datapipe.shuffle()
-        for file_ in datapipe:
-            yield self.read_feather(file_)
+    def row_processer(self, row):
+        """Row processer for raw data."""
+        return [field.caster(val) for val, field in zip(row, self.fields)]
 
     def raw2feather(self):
+        """Convert raw data into feather format."""
         infoLogger(f"[{self.__class__.__name__}] >>> Convert raw data ({self.mode}) to chunks in feather format")
         datapipe = self.raw2data()
         columns = [field.name for field in self.fields]
@@ -178,11 +176,23 @@ class RecDataSet(BaseSet):
             count += 1
         infoLogger(f"[{self.__class__.__name__}] >>> {count} chunks done")
 
-    def row_processer(self, row):
-        return [field.caster(val) for val, field in zip(row, self.fields)]
+    def feather2data(self):
+        """Read feather data in chunks."""
+        datapipe = dp.iter.FileLister(
+            os.path.join(
+                self.root, 
+                _DEFAULT_FEATHER_FMT.format(self.__class__.__name__),
+                self.mode
+            )
+        )
+        if self.mode == 'train':
+            datapipe.shuffle()
+        for file_ in datapipe:
+            yield self.read_feather(file_)
 
     @timemeter("DataSet/compile")
     def compile(self):
+        """Check current dataset and transformations."""
         # prepare transformer
         if self.check_transforms():
             self.load_transforms()

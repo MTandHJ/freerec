@@ -34,6 +34,7 @@ class Grouper(Postprocessor):
 
 @dp.functional_datapipe("wrap_")
 class Wrapper(Postprocessor):
+    """Wrap trainpipe, validpipe and testpipe together."""
 
     def __init__(
         self, datapipe: Postprocessor,

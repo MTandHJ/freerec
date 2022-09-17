@@ -147,6 +147,10 @@ class Parser(Config):
 
         if self.dataset is None:
             self.dataset = _root2dataset(self.root)
+        try:
+            self.device = int(self.device)
+        except ValueError:
+            ...
         
         self['DATA_DIR'] = DATA_DIR
         self['SUMMARY_DIR'] = SUMMARY_DIR

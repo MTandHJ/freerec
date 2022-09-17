@@ -17,6 +17,7 @@ __all__ = ['NegativesForTrain', 'NegativesForEval']
 
 @dp.functional_datapipe("negatives_for_train_")
 class NegativesForTrain(Postprocessor):
+    """Sampling negatives for trainpipe."""
 
     def __init__(
         self, datapipe: Postprocessor, num_negatives: int = 1
@@ -61,6 +62,7 @@ class NegativesForTrain(Postprocessor):
 
 @dp.functional_datapipe("negatives_for_eval_")
 class NegativesForEval(NegativesForTrain):
+    """Sampling negatives for valid|testpipe."""
 
     @timemeter("NegativeForEval/sample_negatives")
     def sample_negatives(self):

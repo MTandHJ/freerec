@@ -40,6 +40,13 @@ def _unitary(value):
 class AverageMeter:
 
     def __init__(self, name: str, metric: Optional[Callable] = None, fmt: str = ".5f"):
+        """
+        Args:
+            name: the name of the meter
+            metric: metrics from freerec.metrics
+        Kwargs: 
+            fmt: output format (default: ".5f")
+        """
         self.name = name
         self.fmt = fmt
         self.reset()
@@ -48,6 +55,7 @@ class AverageMeter:
 
     @property
     def history(self):
+        """Return historical results."""
         return self.__history
 
     @history.setter
@@ -62,6 +70,13 @@ class AverageMeter:
         self.active = False
 
     def update(self, val: float, n: int = 1, mode: str = "mean") -> None:
+        """Update accumulatively.
+
+        Args:
+            val: value
+            n: batch size in general
+            mode: 'sum'|'mean'(default)
+        """
         self.val = val
         self.count += n
         if mode == "mean":
@@ -73,6 +88,7 @@ class AverageMeter:
         self.avg = self.sum / self.count
 
     def step(self) -> str:
+        """Move current value into the queue and reset the state."""
         self.history.append(self.avg)
         info = str(self)
         self.reset()
@@ -86,6 +102,7 @@ class AverageMeter:
             return val # float
 
     def plot(self, freq: int = 1) -> None:
+        """Plot lines according to historical results."""
         self.fp = FreePlot(
             shape=(1, 1),
             figsize=(2.2, 2),
@@ -96,7 +113,23 @@ class AverageMeter:
         self.fp.lineplot(timeline, self.history, marker='')
         self.fp.set_title(y=.98)
 
+    def save(self, path: str, prefix: str = '') -> None:
+        """Save the curves."""
+        filename = f"{prefix}{self.name}.png"
+        self.fp.savefig(os.path.join(path, filename))
+        return filename
+
     def argbest(self, caster: Callable, freq: int = 1):
+        """Return (whichisbest, best) in history.
+
+        Args:
+            caster: min or max, depending on whchi is better for the metric
+        Kwargs:
+            freq: EVAL_FREQ for T * EVAL_FREQ
+        Returns:
+            index: the index of best result
+            value: the best result
+        """
         if len(self.history) == 0:
             return '-', '-'
         indices = np.argsort(self.history)
@@ -106,11 +139,6 @@ class AverageMeter:
             return indices[-1] * freq, self.history[indices[-1]]
         else:
             raise ValueError("caster should be min or max ...")
-    
-    def save(self, path: str, prefix: str = '') -> None:
-        filename = f"{prefix}{self.name}.png"
-        self.fp.savefig(os.path.join(path, filename))
-        return filename
 
     def __str__(self):
         fmtstr = "{name} Avg: {avg:{fmt}}"
@@ -128,6 +156,7 @@ class AverageMeter:
 class Monitor(Config):
 
     def state_dict(self) -> Dict:
+        """Return the state dict of monitors."""
         state_dict = defaultdict(dict)
         monitors: Dict[str, List[AverageMeter]]
         for prefix, monitors in self.items():
@@ -144,12 +173,13 @@ class Monitor(Config):
                 for meter in meters:
                     meter.history = state_dict[prefix][metric].get(meter.name, meter.history)
 
-    
     def save(self, path: str, filename: str = 'monitors.pickle'):
+        """Save current state."""
         file_ = os.path.join(path, filename)
         export_pickle(self.state_dict(), file_)
 
     def write(self, path: str):
+        """Write to tensorboard."""
         with SummaryWriter(path) as writer:
             monitors: Dict[str, List[AverageMeter]]
             for prefix, monitors in self.items():
@@ -190,6 +220,7 @@ def set_logger(
     return logger
 
 def set_color(device: Union[int, str]):
+    """Set a color for current device."""
     try:
         COLOR['current'] = COLOR[device]
     except KeyError:
@@ -236,7 +267,6 @@ def mkdirs(*paths: str) -> None:
             os.makedirs(path)
         except FileExistsError:
             pass
-
 
 def activate_benchmark(benchmark: bool) -> None:
     from torch.backends import cudnn

@@ -85,6 +85,8 @@ class _DummyModule(torch.nn.Module):
 
 
 class Coach:
+
+    """The framework for training."""
     
     def __init__(
         self, 
@@ -105,9 +107,11 @@ class Coach:
 
       
     def save(self) -> None:
+        """Save the model"""
         torch.save(self.model.state_dict(), os.path.join(self.cfg.LOG_PATH, self.cfg.SAVED_FILENAME))
 
     def save_checkpoint(self, epoch: int) -> None:
+        """Save current checkpoint at epoch X."""
         path = os.path.join(self.cfg.CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
         checkpoint = dict()
         checkpoint['epoch'] = epoch
@@ -117,6 +121,11 @@ class Coach:
         torch.save(checkpoint, path)
 
     def load_checkpoint(self) -> int:
+        """Load last saved checkpoint.
+
+        Returns:
+            The epoch.
+        """
         path = os.path.join(self.cfg.CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
         checkpoint = torch.load(path)
         for module in self.cfg.CHECKPOINT_MODULES:
@@ -130,14 +139,15 @@ class Coach:
 
     @timemeter("Coach/resume")
     def resume(self):
+        """Resume from last checkpoint."""
         start_epoch = self.load_checkpoint() if self.cfg.resume else 0
         infoLogger(f"[Coach] >>> Load the recent checkpoint and train from epoch: {start_epoch}")
         return start_epoch
 
     @property
     def monitors(self) -> Monitor:
-        """Dict[str, Dict[str, List]]
-        Monitor[prefix: str, Dict[metric: str, meters: List]]
+        """Return Dict[str, Dict[str, List]], specifically,
+        Monitor[prefix: str, Dict[metric: str, meters: List]].
         """
         return self.__monitors
 
@@ -145,6 +155,7 @@ class Coach:
     def compile(
         self, cfg: Config, monitors: List[str]
     ):
+        """Load config and set monitors."""
         self.cfg = cfg
         # meters for train|valid|test
         self.__monitors = Monitor()
@@ -206,12 +217,23 @@ class Coach:
         n: int = 1, mode: str = 'mean', 
         prefix: str = 'train', pool: Optional[List] = None
     ):
+        """Log some values to given monitors.
+
+        Args:
+            values: data
+        Kwargs:
+            n: batch size in general
+            mode: 'sum'|'mean' (default)
+            prefix: the mode those values belonging to
+            pool: given monitors
+        """
         metrics: Dict[List] = self.monitors[prefix]
         for metric in pool:
             for meter in metrics.get(metric, []):
                 meter(*values, n=n, mode=mode)
 
     def step(self, epoch: int):
+        """Print information and reset them."""
         for prefix, metrics in self.monitors.items():
             metrics: Dict[str, List[AverageMeter]]
             infos = [f"[Coach] >>> {prefix.upper():5} @Epoch: {epoch:<4d} >>> "]
@@ -221,6 +243,12 @@ class Coach:
 
     @timemeter("Coach/summary")
     def summary(self):
+        """Summary the whole training process.
+        The following information will be saved:
+            1. historical evaluation saved in monitors;
+            2. best historical results;
+            3. curves of historical results.
+        """
         file_ = os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR, self.cfg.SUMMARY_FILENAME)
         s = "|  {prefix}  |   {metric}   |   {val}   |   {epoch}   |   {img}   |\n"
         info = ""
@@ -283,6 +311,7 @@ class Coach:
 
     @timemeter("Coach/fit")
     def fit(self):
+        """Start the training and log some useful information."""
         start_epoch = self.resume()
         for epoch in range(start_epoch, self.cfg.epochs):
             if epoch % self.cfg.CHECKPOINT_FREQ == 0:
@@ -311,6 +340,22 @@ class CoachForMatching(Coach): ...
 
 
 class Adapter:
+    """ Params tuner.
+
+    It proceeds as follows:
+    1. compile -> get config: command, envs and params for training;
+    2. allocate devices for various params
+        - register id, logPath, device first
+        - run it
+        - collect information from logPath and output to tensorbaord
+        - save checkpoint
+        - release corresponding device
+    You can use it in the manner below:
+    >>> cfg = {'command': 'python xxx.py', 'params': {'optimizer': ['sgd', 'adam']}}
+    >>> tuner = Adapter()
+    >>> tuner.compile(cfg)
+    >>> tuner.fit()
+    """
 
     def __init__(self) -> None:
         self.params = []
@@ -352,13 +397,16 @@ class Adapter:
         self.values.append(vals)
 
     def get_option(self, key: str, val: Any):
+        """Convert (key, val) to '--key=val'."""
         return f" --{key.replace('_', '-')}={val}"
 
     def load_best(self, logPath: str):
+        """load best.pickle from logPath of corresponding """
         file_ = os.path.join(logPath, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME)
         return import_pickle(file_)
 
     def write(self, id_: str, logPath: str, params: Dict):
+        """Write results to tensorboard"""
         data = self.load_best(logPath)
         path = os.path.join(self.cfg.CORE_LOG_PATH, id_)
         with SummaryWriter(log_dir=path) as writer:
@@ -371,27 +419,32 @@ class Adapter:
             )
 
     def each_grid(self):
+        """Grid search for each kind of param"""
         for key, vals in self.params:
             for val in vals:
                 yield {key: val}
 
     def product_grid(self):
+        """Grid search across all combination of params"""
         for vals in product(*self.values):
             yield {option:val for option, val in zip(self.params, vals)}
 
     def save_checkpoint(self, source: List) -> None:
+        """Save the rest of params"""
         path = os.path.join(self.cfg.CORE_CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
         checkpoint = dict()
         checkpoint['source'] = source
         torch.save(checkpoint, path)
 
     def load_checkpoint(self) -> int:
+        """Load the rest of params"""
         path = os.path.join(self.cfg.CORE_CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
         checkpoint = torch.load(path)
         return checkpoint['source']
 
     @timemeter("Coach/resume")
     def resume(self):
+        """Resume from last checkpoint"""
         source = self.each_grid() if self.cfg.EXCLUSIVE else self.product_grid()
         source = list(source)[::-1]
         source = self.load_checkpoint() if self.cfg.resume else source
@@ -399,17 +452,20 @@ class Adapter:
         return source
 
     def run(self, command: str, params: Dict):
+        """Start a new subprocess"""
         for option, val in params.items():
             command += self.get_option(option, val)
         warnLogger(command)
         return subprocess.Popen(shlex.split(command))
 
     def wait(self, tasks: Dict):
+        """Wait util all processes terminate"""
         for process_, id_, logPath, params in tasks.values():
             process_.wait()
             self.write(id_, logPath, params)
 
     def poll(self, tasks: Dict):
+        """Wait util any one of processes terminate"""
         buffer_source = []
         time.sleep(1) # for unique id
         while len(self.devices) == 0:
@@ -424,6 +480,7 @@ class Adapter:
 
     @timemeter("Adapter/fit")
     def fit(self):
+        """Grid search."""
         self.source = self.resume()
         tasks = dict()
         while self.source:
