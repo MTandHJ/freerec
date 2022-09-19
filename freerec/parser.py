@@ -47,6 +47,7 @@ CORE_CONFIG = Config(
     COMMAND = None,
     ENVS = dict(),
     PARAMS = dict(),
+    DEFAULTS = dict(),
 
     log2file = True,
     log2console = True,
@@ -58,12 +59,14 @@ def _root2dataset(root: str):
 
 
 class Parser(Config):
+    """ArgumentParser wrapper."""
 
     def __init__(self) -> None:
         super().__init__(**CONFIG)
         self.parse()
 
     def readme(self, path: str, mode: str = "w") -> None:
+        """Add README.md to the path."""
         time_ = time.strftime("%Y-%m-%d-%H:%M:%S")
         file_ = os.path.join(path, "README.md")
         s = "|  {key}  |   {val}    |\n"
@@ -77,6 +80,7 @@ class Parser(Config):
 
     @timemeter("Parser/load")
     def load(self, args: ArgumentParser):
+        """Load config.yaml."""
         if hasattr(args, 'config') and args.config:
             with open(args.config, encoding="UTF-8", mode='r') as f:
                 for key, val in yaml.full_load(f).items():
@@ -202,6 +206,7 @@ class CoreParser(Config):
 
 
     def check(self):
+        """Check the validity of the given config."""
         template = """
         Please make sure the configuration file follows the template below:
 
@@ -218,10 +223,18 @@ class CoreParser(Config):
             learning_rate: [1e-3, 1e-2, 1e-1]
             weight_decay: [0, 1e-4, 2e-4, 5e-4]
             batch_size: [128, 256, 512, 1024]
+        defaults:
+            optimizer: adam
+            learning_rate: 1e-3
+            weight_decay: 0
+            batch_size: 256
             epochs: 100
             seed: 1
 
-        where 'command' is necessary but 'envs' and 'params' are optional ...
+        where 'command' is necessary but 'envs', 'params' and 'defaults' are optional ...
+
+        Notes: when calling '--exclusive' for grid search one by one, 
+            'defaults' is required for clear comparsions in tensorbaord.
         """
         if self.COMMAND is None:
             raise NotImplementedError(warnLogger(template))
@@ -237,6 +250,7 @@ class CoreParser(Config):
 
     @timemeter("Parser/load")
     def load(self, args: ArgumentParser):
+        """Load config."""
         with open(args.config, encoding="UTF-8", mode='r') as f:
             config = {key.upper(): vals for key, vals in yaml.full_load(f).items()}
             self.update(**config)
@@ -264,6 +278,7 @@ class CoreParser(Config):
         self.readme(self.CORE_LOG_PATH)
 
     def readme(self, path: str, mode: str = "w") -> None:
+        """Add README.md to the path."""
         time_ = time.strftime("%Y-%m-%d-%H:%M:%S")
         file_ = os.path.join(path, "README.md")
         s = "|  {key}  |   {val}    |\n"
@@ -274,5 +289,7 @@ class CoreParser(Config):
             info += s.format(key=key, val=val)
         for key, val in self.PARAMS.items():
             info += s.format(key=key, val=val)
+        for key, val in self.DEFAULTS.items():
+            info += s.format(key=f"{key} (default)", val=val)
         with open(file_, mode, encoding="utf8") as fh:
             fh.write(info)

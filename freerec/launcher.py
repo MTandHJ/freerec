@@ -391,6 +391,8 @@ class Adapter:
             if isinstance(vals, (str, int, float)):
                 vals = (vals, )
             self.deploy_params(key, safe_cast(vals))
+        for key, val in self.cfg.DEFAULTS.items():
+            self.cfg.DEFAULTS[key] = safe_cast([val])[0]
 
     def deploy_params(self, key: str, vals: Iterable):
         self.params.append(key)
@@ -422,12 +424,12 @@ class Adapter:
         """Grid search for each kind of param"""
         for key, vals in zip(self.params, self.values):
             for val in vals:
-                yield {key: val}
+                yield self.cfg.DEFAULTS | {key: val}
 
     def product_grid(self):
         """Grid search across all combination of params"""
         for vals in product(*self.values):
-            yield {option:val for option, val in zip(self.params, vals)}
+            yield self.cfg.DEFAULTS | {option:val for option, val in zip(self.params, vals)}
 
     def save_checkpoint(self, source: List) -> None:
         """Save the rest of params"""
