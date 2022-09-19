@@ -20,13 +20,14 @@ class BaseCriterion(nn.Module):
         assert reduction in ('none', 'sum', 'mean'), f"Invalid reduction of {reduction} got ..."
         self.reduction = reduction
 
-    def regulate(self, params: Union[torch.Tensor, Iterable[torch.Tensor]], rtype: str = 'l2'):
-        """add regularization for given parameters
+    def regularize(self, params: Union[torch.Tensor, Iterable[torch.Tensor]], rtype: str = 'l2'):
+        """Add regularization for given parameters.
         Args:
             params: list of parameters for regularization;
         Kwargs: 
             rtype: some kind of regularization including 'l1'|'l2'(default)
         """
+        params = [params] if isinstance(params, torch.Tensor) else params
         if self.rtype == 'l1':
             return sum(param.abs().sum() for param in params)
         elif self.rtype == 'l2':
