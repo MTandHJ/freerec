@@ -7,6 +7,8 @@ import pandas as pd
 import feather, os
 from freeplot.utils import import_pickle, export_pickle
 
+from freerec.data.tags import SPARSE
+
 from ..fields import Field, Fielder
 from ...utils import timemeter, infoLogger, errorLogger, mkdirs
 
@@ -17,7 +19,6 @@ __all__ = ['BaseSet', 'RecDataSet']
 _DEFAULT_FEATHER_FMT = "{0}2feather"
 _DEFAULT_TRANSFORM_FILENAME = "transforms.pickle"
 _DEFAULT_CHUNK_FMT = "chunk{0}.feather"
-_DEFAULT_CHUNK_SIZE = 51200
 
 
 class BaseSet(dp.iter.IterDataPipe):
@@ -64,6 +65,8 @@ class RecDataSet(BaseSet):
     will overwrite it ! So you should compile the trainset rather than other datasets by
         trainset.compile() !
     """
+
+    _DEFAULT_CHUNK_SIZE = 51200 # chunk size
 
     def __new__(cls, *args, **kwargs):
         for attr in ('_cfg',):
@@ -168,7 +171,7 @@ class RecDataSet(BaseSet):
         datapipe = self.raw2data()
         columns = [field.name for field in self.fields]
         count = 0
-        for batch in datapipe.batch(batch_size=_DEFAULT_CHUNK_SIZE):
+        for batch in datapipe.batch(batch_size=self._DEFAULT_CHUNK_SIZE):
             df = pd.DataFrame(batch, columns=columns)
             for field in self.fields:
                 df[field.name] = field.transform(df[field.name].values[:, None])
@@ -191,26 +194,31 @@ class RecDataSet(BaseSet):
             yield self.read_feather(file_)
 
     @timemeter("DataSet/compile")
-    def compile(self):
-        """Check current dataset and transformations."""
+    def compile(self, fit_test: bool = False):
+        """Check current dataset and transformations.
+        Kwargs:
+            fit_test: if testset includes unseen 
+        """
         # prepare transformer
+        def fit_transform(fields):
+            datapipe = self.raw2data().batch(batch_size=self._DEFAULT_CHUNK_SIZE)
+            for batch in datapipe:
+                df = pd.DataFrame(batch, columns=columns)
+                for field in fields:
+                    field.partial_fit(df[field.name].values[:, None])
+
         if self.check_transforms():
             self.load_transforms()
         else:
             columns = [field.name for field in self._cfg.fields]
             self.train()
-            datapipe = self.raw2data().batch(batch_size=_DEFAULT_CHUNK_SIZE)
-            for batch in datapipe:
-                df = pd.DataFrame(batch, columns=columns)
-                for field in self._cfg.fields:
-                    field.partial_fit(df[field.name].values[:, None])
+            fit_transform(self.fields)
 
+            # avoid unseen tokens not included in trainset
             self.valid()
-            datapipe = self.raw2data().batch(batch_size=_DEFAULT_CHUNK_SIZE)
-            for batch in datapipe:
-                df = pd.DataFrame(batch, columns=columns)
-                for field in self._cfg.fields:
-                    field.partial_fit(df[field.name].values[:, None])
+            fit_transform(self.fields.whichis(SPARSE))
+            self.test()
+            fit_transform(self.fields.whichis(SPARSE))
 
             self.save_transforms()
             
