@@ -6,33 +6,35 @@ import torchdata.datapipes as dp
 import random
 
 from .base import RecDataSet
-from ..fields import SparseField, DenseField
+from ..fields import SparseField
 from ..tags import FEATURE, TARGET, ITEM
 from ...dict2obj import Config
 
 
-__all__ = ['Criteo_x1']
+__all__ = ['Avazu_x1']
 
 
-class Criteo_x1(RecDataSet):
-    """A Kaggle challenge for Criteo (7:2:1) display advertising.
+class Avazu_x1(RecDataSet):
+    """A Kaggle challenge dataset for Avazu CTR prediction.
     |     Dataset      |   Total    |   #Train   | #Validation |   #Test   |
     | :--------------: | :--------: | :--------: | :---------: | :-------: |
-    |    Criteo_x1     | 45,840,617 | 33,003,326 |  8,250,124  | 4,587,167 |
+    | Avazu_x1 (7:1:2) | 40,428,967 | 28,300,276 |  4,042,897  | 8,085,794 |
 
-    The Criteo dataset is a widely-used benchmark dataset for CTR prediction, 
-    which contains about one week of click-through data for display advertising. 
-    It has 13 numerical feature fields and 26 categorical feature fields.
-    See https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/datasets/Criteo for details.
+    This dataset contains about 10 days of labeled click-through data on mobile advertisements. 
+    It has 22 feature fields including user features and advertisement attributes. 
+    Fields by columns are:
+        Label: click or not
+        Hour + C1 - C21,
+    in total of 22 features and one target.
+    See https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/datasets/Avazu for details.
     """
 
     _cfg = Config(
-        # dataset
-        sparse = [SparseField(name=f"C{idx}", na_value='-1', dtype=str, tags=[ITEM, FEATURE]) for idx in range(1, 27)],
-        dense = [DenseField(name=f"I{idx}", na_value=0., dtype=float, tags=[ITEM, FEATURE]) for idx in range(1, 14)],
-        target = [SparseField(name='Label', na_value=None, dtype=int, transformer='none', tags=TARGET)]
+        target = [SparseField('Label', na_value=None, dtype=int, transformer='none', tags=TARGET)],
+        features = [SparseField(f"Feat{k}", na_value=-1, dtype=int, tags=[ITEM, FEATURE]) for k in range(1, 23)]
     )
-    _cfg.fields = _cfg.target + _cfg.dense + _cfg.sparse
+
+    _cfg.fields = _cfg.target + _cfg.features
 
     open_kw = Config(mode='rt', delimiter=',', skip_lines=1)
 
@@ -55,3 +57,4 @@ class Criteo_x1(RecDataSet):
         #     random.shuffle(data)
         # datapipe = dp.iter.IterableWrapper(data)
         return datapipe
+
