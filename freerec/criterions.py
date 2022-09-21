@@ -37,7 +37,7 @@ class BaseCriterion(nn.Module):
 
 
 class BCELoss(BaseCriterion):
-    """Binary Cross Entropy"""
+    """Binary Cross Entropy with logits !!!"""
 
     def forward(self, inputs: torch.Tensor, targets: torch.Tensor):
         return F.binary_cross_entropy_with_logits(inputs, targets.to(inputs.dtype), reduction=self.reduction)
