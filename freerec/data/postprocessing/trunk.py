@@ -1,17 +1,17 @@
 
-from typing import Callable, Iterable, Iterator, Optional, Union, Dict
+from typing import Callable, Iterator, Optional, Union, Dict
 
 import torch
 import torchdata.datapipes as dp
 import numpy as np
-import pandas as pd
 
 from .base import Postprocessor
 from ..datasets import RecDataSet
 
 
 __all__ = [
-    "Sharder", "Shuffle", "SubFielder", "Chunker", "ToTensor"
+    "Sharder", "Shuffle", "SubFielder", "Chunker", 
+    "ToTensor"
 ]
 
 

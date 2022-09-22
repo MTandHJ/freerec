@@ -30,23 +30,24 @@ class NegativesForTrain(Postprocessor):
         self.num_negatives = num_negatives
         self.User: SparseField = self.fields.whichis(USER, ID)
         self.Item: SparseField = self.fields.whichis(ITEM, ID)
-        self.sample_negatives()
+        self.prepare()
 
-    @timemeter("NegativeForTrain/sample_negatives")
-    def sample_negatives(self):
+    @timemeter("NegativeForTrain/prepare")
+    def prepare(self):
         self.train()
         posItems = [set() for _ in range(self.User.count)]
         allItems = set(range(self.Item.count))
         self.negItems = []
 
         for chunk in self.source:
-            map(
-                lambda x, y: posItems[x.item()].add(y), 
+            list(map(
+                lambda row: posItems[row[0].item()].add(row[1].item()),
                 zip(chunk[self.User.name], chunk[self.Item.name])
-            )
+            ))
         for items in posItems:
             negItems = list(allItems - items)
             self.negItems.append(negItems)
+        
 
     def sample(self, x):
         return random.sample(self.negItems[x.item()], k=self.num_negatives)
@@ -65,18 +66,18 @@ class NegativesForTrain(Postprocessor):
 class NegativesForEval(NegativesForTrain):
     """Sampling negatives for valid|testpipe."""
 
-    @timemeter("NegativeForEval/sample_negatives")
-    def sample_negatives(self):
+    @timemeter("NegativeForEval/prepare")
+    def prepare(self):
         self.train()
         posItems = [set() for _ in range(self.User.count)]
         allItems = set(range(self.Item.count))
         self.negItems = []
 
         for chunk in self.source:
-            map(
-                lambda x, y: posItems[x.item()].add(y), 
+            list(map(
+                lambda row: posItems[row[0].item()].add(row[1].item()),
                 zip(chunk[self.User.name], chunk[self.Item.name])
-            )
+            ))
         for items in posItems:
             negItems = list(allItems - items)
             self.negItems.append(random.sample(negItems, k=self.num_negatives))

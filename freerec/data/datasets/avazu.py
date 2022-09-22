@@ -1,9 +1,6 @@
 
 
-from typing import Iterator 
-
 import torchdata.datapipes as dp
-import random
 
 from .base import RecDataSet
 from ..fields import SparseField
