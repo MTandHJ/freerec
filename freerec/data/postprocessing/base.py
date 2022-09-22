@@ -1,6 +1,8 @@
 
 
-from typing import Union
+from typing import Union, Dict
+
+import numpy as np
 
 from ..datasets import BaseSet, RecDataSet
 
@@ -27,5 +29,8 @@ class Postprocessor(BaseSet):
         super().test()
         self.source.test()
 
+    def at_least_2d(self, array: np.array):
+        return array[:, None] if array.ndim == 1 else array
 
 class ModeError(Exception): ...
+

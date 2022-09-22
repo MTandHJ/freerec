@@ -1,24 +1,26 @@
 
 
-from typing import Iterator
+from typing import Iterator, List, Dict
 
 import torchdata.datapipes as dp
+import numpy as np
 import pandas as pd
-import feather, os
+import os
 from freeplot.utils import import_pickle, export_pickle
 
 from freerec.data.tags import SPARSE
 
 from ..fields import Field, Fielder
+from ..utils import collate_dict
 from ...utils import timemeter, infoLogger, errorLogger, mkdirs
 
 
 __all__ = ['BaseSet', 'RecDataSet']
 
 
-_DEFAULT_FEATHER_FMT = "{0}2feather"
+_DEFAULT_PICKLE_FMT = "{0}2pickle"
 _DEFAULT_TRANSFORM_FILENAME = "transforms.pickle"
-_DEFAULT_CHUNK_FMT = "chunk{0}.feather"
+_DEFAULT_CHUNK_FMT = "chunk{0}.pickle"
 
 
 class BaseSet(dp.iter.IterDataPipe):
@@ -99,7 +101,7 @@ class RecDataSet(BaseSet):
         """Check if the transformations exist."""
         file_ = os.path.join(
             self.root, 
-            _DEFAULT_FEATHER_FMT.format(self.__class__.__name__), 
+            _DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
             _DEFAULT_TRANSFORM_FILENAME
         )
         if os.path.isfile(file_):
@@ -107,7 +109,7 @@ class RecDataSet(BaseSet):
         else:
             mkdirs(os.path.join(
                 self.root,
-                _DEFAULT_FEATHER_FMT.format(self.__class__.__name__)
+                _DEFAULT_PICKLE_FMT.format(self.__class__.__name__)
             ))
             return False
 
@@ -116,7 +118,7 @@ class RecDataSet(BaseSet):
         state_dict = self.fields.state_dict()
         file_ = os.path.join(
             self.root, 
-            _DEFAULT_FEATHER_FMT.format(self.__class__.__name__), 
+            _DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
             _DEFAULT_TRANSFORM_FILENAME
         )
         export_pickle(state_dict, file_)
@@ -124,16 +126,16 @@ class RecDataSet(BaseSet):
     def load_transforms(self):
         file_ = os.path.join(
             self.root, 
-            _DEFAULT_FEATHER_FMT.format(self.__class__.__name__), 
+            _DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
             _DEFAULT_TRANSFORM_FILENAME
         )
         self.fields.load_state_dict(import_pickle(file_), strict=False)
 
-    def check_feather(self):
+    def check_pickle(self):
         """Check if the dataset has been converted into feather format."""
         path = os.path.join(
             self.root, 
-            _DEFAULT_FEATHER_FMT.format(self.__class__.__name__), 
+            _DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
             self.mode
         )
         if os.path.exists(path):
@@ -142,18 +144,18 @@ class RecDataSet(BaseSet):
             os.makedirs(path)
             return False
 
-    def write_feather(self, dataframe: pd.DataFrame, count: int):
-        """Save feather format data."""
+    def write_pickle(self, data: Dict, count: int):
+        """Save pickle format data."""
         file_ = os.path.join(
             self.root, 
-            _DEFAULT_FEATHER_FMT.format(self.__class__.__name__),
+            _DEFAULT_PICKLE_FMT.format(self.__class__.__name__),
             self.mode, _DEFAULT_CHUNK_FMT.format(count)
         )
-        feather.write_dataframe(dataframe, file_)
+        export_pickle(data, file_)
 
-    def read_feather(self, file_: str):
-        """Load feather format data."""
-        return feather.read_dataframe(file_)
+    def read_pickle(self, file_: str):
+        """Load pickle format data."""
+        return import_pickle(file_)
 
     def raw2data(self) -> dp.iter.IterableWrapper:
         errorLogger(
@@ -163,54 +165,47 @@ class RecDataSet(BaseSet):
 
     def row_processer(self, row):
         """Row processer for raw data."""
-        return [field.caster(val) for val, field in zip(row, self.fields)]
+        return {field.name: field.caster(val) for val, field in zip(row, self.fields)}
 
-    def raw2feather(self):
-        """Convert raw data into feather format."""
-        infoLogger(f"[{self.__class__.__name__}] >>> Convert raw data ({self.mode}) to chunks in feather format")
+    def raw2pickle(self):
+        """Convert raw data into pickle format."""
+        infoLogger(f"[{self.__class__.__name__}] >>> Convert raw data ({self.mode}) to chunks in pickle format")
         datapipe = self.raw2data()
-        columns = [field.name for field in self.fields]
         count = 0
-        for batch in datapipe.batch(batch_size=self._DEFAULT_CHUNK_SIZE):
-            df = pd.DataFrame(batch, columns=columns)
+        for chunk in datapipe.batch(batch_size=self._DEFAULT_CHUNK_SIZE).collate(collate_dict):
             for field in self.fields:
-                df[field.name] = field.transform(df[field.name].values[:, None])
-            self.write_feather(df, count)
+                chunk[field.name] = field.transform(chunk[field.name][:, None]).ravel()[:, None] # N x 1
+            self.write_pickle(chunk, count)
             count += 1
         infoLogger(f"[{self.__class__.__name__}] >>> {count} chunks done")
 
-    def feather2data(self):
-        """Read feather data in chunks."""
+    def pickle2data(self):
+        """Read pickle data in chunks."""
         datapipe = dp.iter.FileLister(
             os.path.join(
                 self.root, 
-                _DEFAULT_FEATHER_FMT.format(self.__class__.__name__),
+                _DEFAULT_PICKLE_FMT.format(self.__class__.__name__),
                 self.mode
             )
         )
         if self.mode == 'train':
             datapipe.shuffle()
         for file_ in datapipe:
-            yield self.read_feather(file_)
+            yield self.read_pickle(file_)
 
     @timemeter("DataSet/compile")
-    def compile(self, fit_test: bool = False):
-        """Check current dataset and transformations.
-        Kwargs:
-            fit_test: if testset includes unseen 
-        """
-        # prepare transformer
+    def compile(self):
+        """Check current dataset and transformations."""
+
         def fit_transform(fields):
-            datapipe = self.raw2data().batch(batch_size=self._DEFAULT_CHUNK_SIZE)
+            datapipe = self.raw2data().batch(batch_size=self._DEFAULT_CHUNK_SIZE).collate(collate_dict)
             for batch in datapipe:
-                df = pd.DataFrame(batch, columns=columns)
                 for field in fields:
-                    field.partial_fit(df[field.name].values[:, None])
+                    field.partial_fit(batch[field.name][:, None])
 
         if self.check_transforms():
             self.load_transforms()
         else:
-            columns = [field.name for field in self._cfg.fields]
             self.train()
             fit_transform(self.fields)
 
@@ -222,22 +217,22 @@ class RecDataSet(BaseSet):
 
             self.save_transforms()
             
-        # raw2feather
+        # raw2pickle
         self.train()
-        if not self.check_feather():
-            self.raw2feather()
+        if not self.check_pickle():
+            self.raw2pickle()
         self.valid()
-        if not self.check_feather():
-            self.raw2feather()
+        if not self.check_pickle():
+            self.raw2pickle()
         self.test()
-        if not self.check_feather():
-            self.raw2feather()
+        if not self.check_pickle():
+            self.raw2pickle()
         self.train()
 
         infoLogger(str(self))
 
     def __iter__(self) -> Iterator:
-        yield from self.feather2data()
+        yield from self.pickle2data()
 
     def __str__(self) -> str:
         cfg = '\n'.join(map(str, self.cfg.fields))

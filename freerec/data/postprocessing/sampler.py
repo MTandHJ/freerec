@@ -1,6 +1,7 @@
 
 
-from typing import Iterator
+from turtle import pos
+from typing import Iterator, Dict
 
 import torchdata.datapipes as dp
 import numpy as np
@@ -37,25 +38,25 @@ class NegativesForTrain(Postprocessor):
         posItems = [set() for _ in range(self.User.count)]
         allItems = set(range(self.Item.count))
         self.negItems = []
-        for df in self.source:
-            df = df[[self.User.name, self.Item.name]]
-            for idx, items in df.groupby(self.User.name).agg(set).iterrows():
-                posItems[idx] |= set(*items)
+
+        for chunk in self.source:
+            map(
+                lambda x, y: posItems[x.item()].add(y), 
+                zip(chunk[self.User.name], chunk[self.Item.name])
+            )
         for items in posItems:
-            self.negItems.append(list(allItems - items))
+            negItems = list(allItems - items)
+            self.negItems.append(negItems)
+
+    def sample(self, x):
+        return random.sample(self.negItems[x.item()], k=self.num_negatives)
 
     def __iter__(self) -> Iterator:
         if self.mode == 'train':
-            for df in self.source:
-                negs = np.stack(
-                    df.agg(
-                        lambda row: random.sample(self.negItems[int(row[self.User.name])], k=self.num_negatives),
-                        axis=1
-                    ),
-                    axis=0
-                )
-                df[self.Item.name] = np.concatenate((df[self.Item.name].values[:, None], negs), axis=1).tolist()
-                yield df
+            for chunk in self.source:
+                negatives = self.at_least_2d(np.apply_along_axis(self.sample, 1, chunk[self.User.name]))
+                chunk[self.Item.name] = np.concatenate([chunk[self.Item.name], negatives], axis=1)
+                yield chunk
         else:    
             raise ModeError(errorLogger("for training only ..."))
         
@@ -70,25 +71,24 @@ class NegativesForEval(NegativesForTrain):
         posItems = [set() for _ in range(self.User.count)]
         allItems = set(range(self.Item.count))
         self.negItems = []
-        for df in self.source:
-            df = df[[self.User.name, self.Item.name]]
-            for idx, items in df.groupby(self.User.name).agg(set).iterrows():
-                posItems[idx] |= set(*items)
+
+        for chunk in self.source:
+            map(
+                lambda x, y: posItems[x.item()].add(y), 
+                zip(chunk[self.User.name], chunk[self.Item.name])
+            )
         for items in posItems:
             negItems = list(allItems - items)
-            self.negItems.append(random.sample(negItems, k = self.num_negatives))
+            self.negItems.append(random.sample(negItems, k=self.num_negatives))
+
+    def sample(self, x):
+        return self.negItems[x.item()]
 
     def __iter__(self) -> Iterator:
         if self.mode in ('valid', 'test'):
-            for df in self.source:
-                negs = np.stack(
-                    df.agg(
-                        lambda row: self.negItems[int(row[self.User.name])],
-                        axis=1
-                    ),
-                    axis=0
-                )
-                df[self.Item.name] = np.concatenate((df[self.Item.name].values[:, None], negs), axis=1).tolist()
-                yield df
+            for chunk in self.source:
+                negatives = self.at_least_2d(np.apply_along_axis(self.sample, 1, chunk[self.User.name]))
+                chunk[self.Item.name] = np.concatenate([chunk[self.Item.name], negatives], axis=1)
+                yield chunk
         else:
             raise ModeError(errorLogger("for evaluation only ..."))
