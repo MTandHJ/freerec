@@ -63,9 +63,29 @@ class SubFielder(Postprocessor):
             yield {field.name: chunk[field.name] for field in self.fields}
 
 
+@dp.functional_datapipe("tensor_")
+class ToTensor(Postprocessor):
+    """Convert Dict[str, List] into Dict[str, torch.Tensor].
+    
+    Returns:
+        Dict[field, torch.Tensor],
+    """
+    def at_least_2d(self, vals: torch.Tensor):
+        return vals.unsqueeze(1) if vals.ndim == 1 else vals
+
+    def __iter__(self) -> Iterator:
+        for batch in self.source:
+            yield {field.name: self.at_least_2d(torch.tensor(batch[field.name], dtype=field.dtype)) for field in self.fields}
+
+
 @dp.functional_datapipe("chunk_")
 class Chunker(Postprocessor):
-    """A special batcher for dataframe only"""
+    """A special batcher for Dict[str, Tensor] only.
+    
+    NOTE: If the given batch size is not evenly divisible by _DEFAULT_CHUNK_SIZE,
+    minor chunk will yielded frequently. Fortunately, _DEFAULT_CHUNK_SIZE=51200 satisfies
+    almost all popular batch sizes. For example, 128, 1024 ... 
+    """
 
     def __init__(
         self, datapipe: Postprocessor, batch_size: int
@@ -84,19 +104,4 @@ class Chunker(Postprocessor):
                     k += 1
             except IndexError:
                 pass
-
-
-@dp.functional_datapipe("tensor_")
-class ToTensor(Postprocessor):
-    """Convert Dict[str, List] into Dict[str, torch.Tensor].
-    
-    Returns:
-        Dict[field, torch.Tensor],
-    """
-    def at_least_2d(self, vals: torch.Tensor):
-        return vals.unsqueeze(1) if vals.ndim == 1 else vals
-
-    def __iter__(self) -> Iterator:
-        for batch in self.source:
-            yield {field.name: self.at_least_2d(torch.tensor(batch[field.name], dtype=field.dtype)) for field in self.fields}
 

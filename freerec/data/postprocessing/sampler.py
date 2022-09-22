@@ -1,6 +1,5 @@
 
 
-from turtle import pos
 from typing import Iterator, Dict
 
 import torchdata.datapipes as dp

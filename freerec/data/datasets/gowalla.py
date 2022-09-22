@@ -23,9 +23,9 @@ class _Row2Pairer(dp.iter.IterDataPipe):
 
 
 class GowallaM1(RecDataSet):
-    """
-    GowallaM1: (user, items)
-        https://github.com/kuandeng/LightGCN/tree/master/Data/gowalla
+    """ GowallaM1: (user, items).
+    
+    See https://github.com/kuandeng/LightGCN/tree/master/Data/gowalla for details.
     """
 
     _cfg = Config(
