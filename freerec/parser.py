@@ -122,7 +122,6 @@ class Parser(Config):
         self.parser.add_argument("--eval-freq", type=int, default=CONFIG.EVAL_FREQ, help="the evaluation frequency")
 
         self.parser.add_argument("--num-workers", type=int, default=0)
-        self.parser.add_argument("--buffer-size", type=int, default=None, help="buffer size for datapipe")
 
         self.parser.add_argument("--seed", type=int, default=CONFIG.SEED, help="calling --seed=-1 for a random seed")
         self.parser.add_argument("--benchmark", action="store_false", default=True, help="cudnn.benchmark == True ?")
@@ -177,7 +176,7 @@ class Parser(Config):
 
 class CoreParser(Config):
     ALL_ENVS = (
-        'description', 'root', 'device', 'eval_freq', 'num_workers', 'buffer_size'
+        'description', 'root', 'device', 'eval_freq', 'num_workers'
     )
 
     def __init__(self) -> None:
@@ -200,7 +199,6 @@ class CoreParser(Config):
         self.parser.add_argument("--eval-freq", type=int, default=None, help="the evaluation frequency")
 
         self.parser.add_argument("--num-workers", type=int, default=None)
-        self.parser.add_argument("--buffer-size", type=int, default=None, help="buffer size for datapipe")
 
         self.parser.add_argument("--resume", action="store_true", default=False, help="resume the search from the recent checkpoint")
 
@@ -217,7 +215,6 @@ class CoreParser(Config):
             device: 0,1,2,3
             eval_freq: 5
             num_workers: 0
-            buffer_size: 51200
         params:
             optimizer: [adam, sgd]
             learning_rate: [1e-3, 1e-2, 1e-1]

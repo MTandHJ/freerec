@@ -1,5 +1,5 @@
 
-from typing import Callable, Iterator, Optional, Union, Dict
+from typing import Callable, Iterator, Optional, Dict
 
 import torch
 import torchdata.datapipes as dp
@@ -10,8 +10,7 @@ from ..datasets import RecDataSet
 
 
 __all__ = [
-    "Sharder", "Shuffle", "SubFielder", "Chunker", 
-    "ToTensor"
+    "Sharder", "Shuffle", "SubFielder", "Chunker", "ToTensor"
 ]
 
 
