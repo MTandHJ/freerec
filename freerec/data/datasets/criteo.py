@@ -20,7 +20,21 @@ class Criteo_x1(RecDataSet):
     The Criteo dataset is a widely-used benchmark dataset for CTR prediction, 
     which contains about one week of click-through data for display advertising. 
     It has 13 numerical feature fields and 26 categorical feature fields.
-    See https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/datasets/Criteo for details.
+    See [here](https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/datasets/Criteo) for details.
+
+    Attributes:
+    ---
+
+    _cfg: Config
+        - sparse: SparseField
+        - dense: DenseField
+            Note that all dense features will be normalized by MinMaxScaler in default.
+        - target: SparseField
+            Label
+    open_kw: Config
+        - mode: 'rt'
+        - delimiter: ','
+        - skip_lines: 1
     """
 
     _cfg = Config(

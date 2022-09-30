@@ -24,8 +24,21 @@ class _Row2Pairer(dp.iter.IterDataPipe):
 
 class GowallaM1(RecDataSet):
     """ GowallaM1: (user, items).
-    
-    See https://github.com/kuandeng/LightGCN/tree/master/Data/gowalla for details.
+    See [here](https://github.com/kuandeng/LightGCN/tree/master/Data/gowalla) for details.
+
+    Attributes:
+    ---
+
+    _cfg: Config
+        - sparse: SparseField
+            UserID + ItemID
+        - target: SparseField
+            Rating
+    open_kw: Config
+        - mode: 'rt'
+        - delimiter: ' '
+        - skip_lines: 0
+
     """
 
     _cfg = Config(

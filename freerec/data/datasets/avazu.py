@@ -19,11 +19,20 @@ class Avazu_x1(RecDataSet):
 
     This dataset contains about 10 days of labeled click-through data on mobile advertisements. 
     It has 22 feature fields including user features and advertisement attributes. 
-    Fields by columns are:
-        Label: click or not
-        Hour + C1 - C21,
-    in total of 22 features and one target.
-    See https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/datasets/Avazu for details.
+    See [here](https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/datasets/Avazu) for details.
+
+    Attributes:
+    ---
+
+    _cfg: Config
+        - target: SparseField
+            Label
+        - features: SparseField
+            Hour + C1 - C21, in total of 22 features. 
+    open_kw: Config
+        - mode: 'rt'
+        - delimiter: ','
+        - skip_lines: 1
     """
 
     _cfg = Config(

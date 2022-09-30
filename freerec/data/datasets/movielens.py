@@ -13,9 +13,24 @@ __all__ = ['MovieLens1M']
 
 
 class MovieLens1M(RecDataSet):
-    """
-    MovieLens1M: (user, item, rating, timestamp)
-        https://github.com/openbenchmark/BARS/tree/master/candidate_matching/datasets
+    """ MovieLens1M: (user, item, rating, timestamp)
+    See [here](https://github.com/openbenchmark/BARS/tree/master/candidate_matching/datasets) for details.
+
+    Attritbutes:
+    ---
+
+    _cfg: Config
+        - sparse: SparseField
+            UserID + ItemID
+        - dense: DenseField
+            Timestamp
+        - target: SparseField
+            Rating
+    open_kw: Config
+        - mode: 'rt'
+        - delimiter: '\\t'
+        - skip_lines: 0
+
     """
 
     _cfg = Config(

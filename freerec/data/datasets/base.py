@@ -53,17 +53,24 @@ class BaseSet(dp.iter.IterDataPipe):
 class RecDataSet(BaseSet):
     """ RecDataSet provides a template for specific datasets.
 
-    All datasets inherit RecDataSet should define class variables:
-        _cfg: including fields of each column,
-        _active: True if the type of dataset has compiled ...
-    before instantiation.
+    Attributes:
+    ---
+
+    _cfg: Config[str, Field]
+        Includes fields of each column.
+    _DEFAULT_CHUNK_SIZE: int, defalut 51200
+        Chunk size for saving.
+
+    Notes:
+    ---
+
+    All datasets inherit RecDataSet should define the class variable of `_cfg` before instantiation.
     Generally speaking, the dataset will be splited into 
-        trainset,
-        validset,
-        testset.
-    Because these three datasets share the same _cfg, compiling any one of them
-    will overwrite it ! So you should compile the trainset rather than other datasets by
-        trainset.compile() !
+        - trainset
+        - validset
+        - testset
+
+    Because these three datasets share the same _cfg, compiling any one of them will overwrite it ! 
     """
 
     _DEFAULT_CHUNK_SIZE = 51200 # chunk size
@@ -78,7 +85,10 @@ class RecDataSet(BaseSet):
 
     def __init__(self, root: str) -> None:
         """
-        root: data file
+        Parameters:
+        ---
+
+        root: Data path.
         """
         super().__init__()
         self.root = root
@@ -92,7 +102,7 @@ class RecDataSet(BaseSet):
 
     @property
     def cfg(self):
-        """Return the config of the dataset"""
+        """Return the config of the dataset."""
         return self._cfg
 
     def check_transforms(self):
@@ -193,7 +203,21 @@ class RecDataSet(BaseSet):
 
     @timemeter("DataSet/compile")
     def compile(self):
-        """Check current dataset and transformations."""
+        """Check current dataset and transformations.
+
+        Notes:
+        ---
+
+        It includes two steps:
+
+        1. Check whether the transformation has been fitted:
+            - `True`: Skip.
+            - `False`: Fit the total trainset and the `SPARSE` fields in valid|testset
+                to avoid unseen features. This operation will not cause information leakage.
+            
+        2. Convert each set into pickle format for fast loading.
+
+        """
 
         def fit_transform(fields):
             datapipe = self.raw2data().batch(batch_size=self._DEFAULT_CHUNK_SIZE).collate(collate_dict)
