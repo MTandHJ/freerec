@@ -4,7 +4,7 @@ from typing import Any, Callable, Iterable, List, Dict, Optional, Tuple, Union
 
 import torch
 import pandas as pd
-import os, subprocess, shlex, time
+import os, subprocess, shlex, time, sys
 from torch.utils.tensorboard import SummaryWriter
 from functools import partial
 from itertools import product
@@ -75,13 +75,13 @@ DEFAULT_BEST_CASTER = {
 class _DummyModule(torch.nn.Module):
 
     def forward(self, *args, **kwargs):
-        errorLogger("No available model is provided for Coach ...", NotImplementedError)
+        errorLogger("No model available for Coach ...", NotImplementedError)
 
     def step(self, *args, **kwargs):
-        errorLogger("No available optimizer or lr scheduler is provided for Coach ...", NotImplementedError)
+        errorLogger("No optimizer or lr scheduler available for Coach ...", NotImplementedError)
 
     def backward(self, *args, **kwargs):
-        errorLogger("No available optimizer is provided for Coach ...", NotImplementedError)
+        errorLogger("No optimizer available for Coach ...", NotImplementedError)
 
 
 class Coach:
@@ -350,7 +350,10 @@ class Adapter:
         - collect information from logPath and output to tensorbaord
         - save checkpoint
         - release corresponding device
-    You can use it in the manner below:
+
+    Examples:
+    ---
+
     >>> cfg = {'command': 'python xxx.py', 'params': {'optimizer': ['sgd', 'adam']}}
     >>> tuner = Adapter()
     >>> tuner.compile(cfg)
@@ -483,13 +486,18 @@ class Adapter:
     @timemeter("Adapter/fit")
     def fit(self):
         """Grid search."""
-        self.source = self.resume()
-        tasks = dict()
-        while self.source:
-            self.poll(tasks)
-            params = self.source.pop()
-            device = self.devices.pop()
-            command, id_, logPath = self.register(device)
-            process_ = self.run(command, params)
-            tasks[device] = (process_, id_, logPath, params)
-        self.wait(tasks)
+        try:
+            self.source = self.resume()
+            tasks = dict()
+            while self.source:
+                self.poll(tasks)
+                params = self.source.pop()
+                device = self.devices.pop()
+                command, id_, logPath = self.register(device)
+                process_ = self.run(command, params)
+                tasks[device] = (process_, id_, logPath, params)
+            self.wait(tasks)
+        except Exception as e:
+            print(e)
+        finally:
+            sys.exit()

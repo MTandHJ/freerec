@@ -24,7 +24,7 @@ class RecSysArch(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.xavier_normal_(m.weight)
-                if m.bias:
+                if m.bias is not None:
                     nn.init.constant_(m.bias, 0.)
             elif isinstance(m, nn.Embedding):
                 nn.init.xavier_normal_(m.weight)

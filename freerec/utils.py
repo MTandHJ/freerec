@@ -41,11 +41,12 @@ class AverageMeter:
 
     def __init__(self, name: str, metric: Optional[Callable] = None, fmt: str = ".5f"):
         """
-        Args:
-            name: the name of the meter
-            metric: metrics from freerec.metrics
-        Kwargs: 
-            fmt: output format (default: ".5f")
+        Paramters:
+        ---
+
+        name: The name of the meter.
+        metric: Metrics from freerec.metrics.
+        fmt: Output format (default: ".5f").
         """
         self.name = name
         self.fmt = fmt
@@ -72,10 +73,12 @@ class AverageMeter:
     def update(self, val: float, n: int = 1, mode: str = "mean") -> None:
         """Update accumulatively.
 
-        Args:
-            val: value
-            n: batch size in general
-            mode: 'sum'|'mean'(default)
+        Parameters:
+        ---
+
+        val: Value.
+        n: Batch size in general.
+        mode: 'sum'|'mean'(default).
         """
         self.val = val
         self.count += n
@@ -122,13 +125,18 @@ class AverageMeter:
     def argbest(self, caster: Callable, freq: int = 1):
         """Return (whichisbest, best) in history.
 
-        Args:
-            caster: min or max, depending on whchi is better for the metric
-        Kwargs:
-            freq: EVAL_FREQ for T * EVAL_FREQ
+        Paramters:
+        ---
+
+        caster: min or max 
+            Depends on which indicates better performance for this metric.
+        freq: EVAL_FREQ for T * EVAL_FREQ.
+
         Returns:
-            index: the index of best result
-            value: the best result
+        ---
+
+        index: The index of best result.
+        value: The best result.
         """
         if len(self.history) == 0:
             return '-', '-'

@@ -22,10 +22,12 @@ class BaseCriterion(nn.Module):
 
     def regularize(self, params: Union[torch.Tensor, Iterable[torch.Tensor]], rtype: str = 'l2'):
         """Add regularization for given parameters.
-        Args:
-            params: list of parameters for regularization;
-        Kwargs: 
-            rtype: some kind of regularization including 'l1'|'l2'(default)
+
+        Parameters:
+        ---
+
+        params: List of parameters for regularization.
+        rtype: Some kind of regularization including 'l1'|'l2'.
         """
         params = [params] if isinstance(params, torch.Tensor) else params
         if self.rtype == 'l1':

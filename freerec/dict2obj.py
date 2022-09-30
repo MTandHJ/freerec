@@ -6,6 +6,9 @@ from typing import Any
 class Config(dict):
     '''Convert the dict to a object.
 
+    Examples:
+    ---
+
     >>> cfg = Config({1:2}, a=3)
     Traceback (most recent call last):
     ...
