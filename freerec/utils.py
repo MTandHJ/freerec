@@ -285,7 +285,17 @@ def activate_benchmark(benchmark: bool) -> None:
         infoLogger(f"[Seed] >>> Deactivate benchmark")
         cudnn.benchmark, cudnn.deterministic = False, True
 
-def set_seed(seed: int) -> None:
+def set_seed(seed: int) -> int:
+    """Set seed.
+
+    Parameters:
+    seed: int
+        - `-1`: Set a seed from 0 to 2048 randomly.
+        - `int`: Set a seed of `int`.
+
+    Returns:
+    seed: int
+    """
     if seed == -1:
         seed = random.randint(0, 2048)
         infoLogger(f"[Seed] >>> Set seed randomly: {seed}")

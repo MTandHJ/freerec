@@ -140,6 +140,21 @@ class Parser(Config):
 
     @timemeter("Parser/compile")
     def compile(self):
+        """Generate config file according to settings.
+
+        Flows:
+        ---
+
+        1. Load (default) settings from parsed args (ArgumentParser).
+        2. Load settings from xxx.yaml if --config has been activated. 
+        Note that this step might override the settings above.
+        3. Generate basic paths:
+            - CHECKPOINT_PATH: saving checkpoints
+            - LOG_PATH: collecting training infomation
+
+        4. Set Logger, and then you can log information by info|debug|warn|errorLogger ...
+        5. Finally, READMD.md will be added under CHECKPOINT_PATH and LOG_PATH both.
+        """
         args = self.parser.parse_args()
         for key, val in args._get_kwargs():
             if key.upper() in self:
@@ -260,6 +275,22 @@ class CoreParser(Config):
 
     @timemeter("CoreParser/compile")
     def compile(self):
+        """Generate config file according to settings.
+
+        Flows:
+        ---
+
+        1. Load settings from xxx.yaml which provides parameters for grid searching.
+        2. Load settings of the execution environment from parsed args (ArgumentParser).
+        3. Generate basic paths:
+            - CHECKPOINT_PATH: subprocess
+            - LOG_PATH: subprocess
+            - CORE_CHECKPOINT_PATH: saving checkpoints of the rest of params
+            - CORE_LOG_PATH: saving best results of each subprocess for comparison
+
+        4. Set Logger, and then you can log information by info|debug|warn|errorLogger ...
+        5. Finally, READMD.md will be added under CHECKPOINT_PATH and LOG_PATH both.
+        """
         args = self.parser.parse_args()
         self.load(args)
         self.check()
