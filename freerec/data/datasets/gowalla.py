@@ -22,7 +22,7 @@ class _Row2Pairer(dp.iter.IterDataPipe):
                 yield user, item, 1
 
 
-class owallaM1(RecDataSet):
+class GowallaM1(RecDataSet):
     """ GowallaM1: (user, items).
     See [here](https://github.com/kuandeng/LightGCN/tree/master/Data/gowalla) for details.
 

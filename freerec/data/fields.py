@@ -404,7 +404,7 @@ class Tokenizer(torch.nn.Module):
         Examples:
         ---
 
-        >>> from freerec.data import MovieLens1M
+        >>> from freerec.data.datasets import MovieLens1M
         >>> basepipe = MovieLens1M("../data/MovieLens1M")
         >>> fields = basepipe.fields
         >>> tokenizer = Tokenizer(fields)

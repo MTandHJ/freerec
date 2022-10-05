@@ -36,5 +36,8 @@ class Postprocessor(BaseSet):
     def datasize(self):
         return self.source.datasize
 
+    def __len__(self):
+        return len(self.source)
+
 class ModeError(Exception): ...
 

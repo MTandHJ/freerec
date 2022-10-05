@@ -5,6 +5,7 @@ from typing import Iterator, List, Dict, Union
 import torchdata.datapipes as dp
 import os
 from freeplot.utils import import_pickle, export_pickle
+from math import ceil
 
 
 from ..tags import SPARSE
@@ -279,6 +280,9 @@ class RecDataSet(BaseSet):
             return self.validsize
         else:
             return self.testsize
+
+    def __len__(self):
+        return ceil(self.datasize / self._DEFAULT_CHUNK_SIZE)
 
     def __iter__(self) -> Iterator:
         yield from self.pickle2data()

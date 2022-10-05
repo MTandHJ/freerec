@@ -4,6 +4,7 @@ from typing import Callable, Iterator, Optional, Dict
 import torch
 import torchdata.datapipes as dp
 import numpy as np
+from math import ceil
 
 from .base import Postprocessor
 from ..datasets import RecDataSet
@@ -93,6 +94,9 @@ class Chunker(Postprocessor):
         super().__init__(datapipe)
 
         self.batch_size = batch_size
+
+    def __len__(self): # TODO: Not correct all the time.
+        return ceil(self.datasize / self.batch_size)
 
     def __iter__(self) -> Iterator:
         for chunk in self.source:

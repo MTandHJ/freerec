@@ -6,6 +6,7 @@ import torch
 import torchdata.datapipes as dp
 import numpy as np
 import random
+from math import ceil
 
 from .base import Postprocessor, ModeError
 from ..fields import SparseField
@@ -123,7 +124,7 @@ class UniformSampler(Postprocessor):
 
         self.posItems = [list(items) for items in self.posItems]
 
-    def sample_for_train(self, user):
+    def sample(self, user):
         user = user.item()
         posItems = self.posItems[user]
         posItem = random.choice(posItems)
@@ -132,11 +133,13 @@ class UniformSampler(Postprocessor):
             negItem = random.randint(0, self.Item.count - 1)
         return [posItem, negItem]
 
+    def __len__(self):
+        return 1
 
     def __iter__(self):
         if self.mode == 'train':
             users = np.random.randint(0, self.User.count, self.datasize)
-            negatives = np.apply_along_axis(self.sample_for_train, 1, users[:, None])
+            negatives = np.apply_along_axis(self.sample, 1, users[:, None])
             yield {self.User.name: self.at_least_2d(users), self.Item.name: negatives}
         else:
             raise ModeError(errorLogger("for training only ..."))
@@ -179,7 +182,7 @@ class TriSampler(Postprocessor):
         self.seen = [list(elem) for elem in self.seen]
         self.posItems = [list(elem) for elem in self.posItems]
 
-    def get_one(self, user):
+    def sample(self, user):
         user = user.item()
         seen = self.seen[user]
         posItems = self.posItems[user]
@@ -188,15 +191,17 @@ class TriSampler(Postprocessor):
         items[posItems] = 1
         return items
 
+    def __len__(self):
+        return ceil(self.User.count / self.batch_size)
+
     def __iter__(self):
         if self.mode == 'train':
             raise ModeError(errorLogger("for evaluation only ..."))
         else:
-            for node in range(self.batch_size, self.User.count + 1, self.batch_size):
-                users = np.arange(node - self.batch_size, node)[:, None]
-                items = np.apply_along_axis(self.get_one, 1, users)
-                yield {self.User.name: users, self.Item.name: items}
-            if node < self.User.count:
-                users = np.arange(node, self.User.count)[:, None]
-                items = np.apply_along_axis(self.get_one, 1, users)
+            allUsers = np.arange(self.User.count)[:, None]
+            for k in range(len(self)):
+                start = k * self.batch_size
+                end = (k + 1) * self.batch_size
+                users = allUsers[start:end]
+                items = np.apply_along_axis(self.sample, 1, users)
                 yield {self.User.name: users, self.Item.name: items}
