@@ -1,6 +1,6 @@
 
 
-from typing import Iterator, List, Dict
+from typing import Iterator, List, Dict, Union
 
 import torchdata.datapipes as dp
 import os
@@ -8,7 +8,7 @@ from freeplot.utils import import_pickle, export_pickle
 
 
 from ..tags import SPARSE
-from ..fields import Field, Fielder
+from ..fields import Field, Fielder, SparseField
 from ..utils import collate_dict
 from ...utils import timemeter, infoLogger, errorLogger, mkdirs
 
@@ -48,6 +48,9 @@ class BaseSet(dp.iter.IterDataPipe):
 
     def test(self):
         self.__mode = 'test'
+
+    def __len__(self):
+        raise NotImplementedError()
 
 
 class RecDataSet(BaseSet):
@@ -93,6 +96,9 @@ class RecDataSet(BaseSet):
         super().__init__()
         self.root = root
         self.fields = self._cfg.fields
+        self.trainsize: int = 0
+        self.validsize: int = 0
+        self.testsize: int = 0
 
         if not os.path.exists(self.root) or not any(True for _ in os.scandir(self.root)):
             errorLogger(
@@ -124,6 +130,9 @@ class RecDataSet(BaseSet):
     def save_transforms(self):
         infoLogger(f"[{self.__class__.__name__}] >>> Save transformers ...")
         state_dict = self.fields.state_dict()
+        state_dict['trainsize'] = self.trainsize
+        state_dict['validsize'] = self.validsize
+        state_dict['testsize'] = self.testsize
         file_ = os.path.join(
             self.root, 
             _DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
@@ -137,7 +146,11 @@ class RecDataSet(BaseSet):
             _DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
             _DEFAULT_TRANSFORM_FILENAME
         )
-        self.fields.load_state_dict(import_pickle(file_), strict=False)
+        state_dict = import_pickle(file_)
+        self.trainsize = state_dict['trainsize']
+        self.validsize = state_dict['validsize']
+        self.testsize = state_dict['testsize']
+        self.fields.load_state_dict(state_dict, strict=False)
 
     def check_pickle(self):
         """Check if the dataset has been converted into feather format."""
@@ -201,14 +214,13 @@ class RecDataSet(BaseSet):
         for file_ in datapipe:
             yield self.read_pickle(file_)
 
+
     @timemeter("DataSet/compile")
     def compile(self):
         """Check current dataset and transformations.
 
-        Notes:
+        Flows:
         ---
-
-        It includes two steps:
 
         1. Check whether the transformation has been fitted:
             - `True`: Skip.
@@ -221,21 +233,27 @@ class RecDataSet(BaseSet):
 
         def fit_transform(fields):
             datapipe = self.raw2data().batch(batch_size=self._DEFAULT_CHUNK_SIZE).collate(collate_dict)
-            for batch in datapipe:
-                for field in fields:
-                    field.partial_fit(batch[field.name][:, None])
+            datasize = 0
+            try:
+                for batch in datapipe:
+                    for field in fields:
+                        field.partial_fit(batch[field.name][:, None])
+                    datasize += len(batch[field.name])
+            except NameError as e:
+                errorLogger(e, NameError)
+            return datasize
 
         if self.check_transforms():
             self.load_transforms()
         else:
             self.train()
-            fit_transform(self.fields)
+            self.trainsize = fit_transform(self.fields)
 
             # avoid unseen tokens not included in trainset
             self.valid()
-            fit_transform(self.fields.whichis(SPARSE))
+            self.validsize = fit_transform(self.fields.whichis(SPARSE))
             self.test()
-            fit_transform(self.fields.whichis(SPARSE))
+            self.testsize = fit_transform(self.fields.whichis(SPARSE))
 
             self.save_transforms()
             
@@ -252,6 +270,15 @@ class RecDataSet(BaseSet):
         self.train()
 
         infoLogger(str(self))
+
+    @property
+    def datasize(self):
+        if self.mode == 'train':
+            return self.trainsize
+        elif self.mode == 'valid':
+            return self.validsize
+        else:
+            return self.testsize
 
     def __iter__(self) -> Iterator:
         yield from self.pickle2data()

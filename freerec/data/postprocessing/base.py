@@ -32,5 +32,9 @@ class Postprocessor(BaseSet):
     def at_least_2d(self, array: np.array):
         return array[:, None] if array.ndim == 1 else array
 
+    @property
+    def datasize(self):
+        return self.source.datasize
+
 class ModeError(Exception): ...
 

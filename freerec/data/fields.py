@@ -1,7 +1,6 @@
 
 
 from typing import Callable, Iterable, Tuple, Union, Dict, List
-from pyparsing import Optional
 
 import torch
 import numpy as np
@@ -45,13 +44,25 @@ class Field:
         transformer: Union[str, Callable] = 'none', tags: Union[FieldTags, Iterable[FieldTags]] = tuple()
     ):
         """
-        Args:
-            name: the name of the field
-            na_value: fill 'na' with na_value
-            dtype: str|int|float for safe_cast
-        Kwargs:
-            transformer: 'none'|'label2index'|'binary'|'minmax'|'standard'
-            tags: tags for quick search
+        Parameters:
+        ---
+
+        name: str 
+            The name of the field.
+        na_value: str, int or float
+            Fill 'na' with na_value.
+        dtype: str|int|float for safe_cast
+        transformer: 'none'|'label2index'|'binary'|'minmax'|'standard'
+        tags: Union[FieldTags, Iterable[FieldTags]]
+            For quick retrieve.
+
+        Examples:
+        ---
+
+        >>> from freerec.data.tags import USER, ITEM, ID, TARGET
+        >>> User = SparseField('User', -1, int, tags=(USER, ID))
+        >>> Item = SparseField('Item', -1, int, tags=(ITEM, ID))
+        >>> Target = SparseField('Label', -1, int, transformer='none', tags=TARGET)
         """
 
         self.__name = name
@@ -386,17 +397,18 @@ class Tokenizer(torch.nn.Module):
 
     tokens: nn.ModuleList
 
-    Examples:
-    ---
-
-    >>> from freerec.data import MovieLens1M
-    >>> basepipe = MovieLens1M("../data/MovieLens1M")
-    >>> fields = basepipe.fields
-    >>> tokenizer = Tokenizer(fields)
-
     """
 
     def __init__(self, fields: Iterable[Union[Field, Token]]) -> None:
+        """
+        Examples:
+        ---
+
+        >>> from freerec.data import MovieLens1M
+        >>> basepipe = MovieLens1M("../data/MovieLens1M")
+        >>> fields = basepipe.fields
+        >>> tokenizer = Tokenizer(fields)
+        """
         super().__init__()
 
         fields = [self.totoken(field) for field in fields]

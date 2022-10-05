@@ -170,7 +170,6 @@ class Parser(Config):
         except ValueError:
             ...
 
-
         activate_benchmark(self.BENCHMARK)
         self.SEED = set_seed(self.SEED)
         

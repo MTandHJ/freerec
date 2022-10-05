@@ -13,7 +13,7 @@ from ..tags import USER, ITEM, ID
 from ...utils import errorLogger, timemeter
 
 
-__all__ = ['NegativesForTrain', 'NegativesForEval']
+__all__ = ['NegativesForTrain', 'NegativesForEval', 'UniformSampler', 'TriSampler']
 
 
 @dp.functional_datapipe("negatives_for_train_")
@@ -107,6 +107,7 @@ class UniformSampler(Postprocessor):
         self.num_negatives = num_negatives
         self.User: SparseField = self.fields.whichis(USER, ID)
         self.Item: SparseField = self.fields.whichis(ITEM, ID)
+        self.fields = self.fields.whichis(ID)
         self.prepare()
 
     @timemeter("NegativeForEval/prepare")
@@ -121,9 +122,9 @@ class UniformSampler(Postprocessor):
             ))
 
         self.posItems = [list(items) for items in self.posItems]
-        self.datasize = sum(map(len, self.posItems))
 
-    def sample_for_train(self, user: int):
+    def sample_for_train(self, user):
+        user = user.item()
         posItems = self.posItems[user]
         posItem = random.choice(posItems)
         negItem = posItems[0]
@@ -134,7 +135,7 @@ class UniformSampler(Postprocessor):
 
     def __iter__(self):
         if self.mode == 'train':
-            users = np.random.randint(0, self.User.count, sum(self.sizes))
+            users = np.random.randint(0, self.User.count, self.datasize)
             negatives = np.apply_along_axis(self.sample_for_train, 1, users[:, None])
             yield {self.User.name: self.at_least_2d(users), self.Item.name: negatives}
         else:
@@ -154,6 +155,7 @@ class TriSampler(Postprocessor):
         self.batch_size = batch_size
         self.User: SparseField = self.fields.whichis(USER, ID)
         self.Item: SparseField = self.fields.whichis(ITEM, ID)
+        self.fields = self.fields.whichis(ID)
         self.prepare()
 
     @timemeter("NegativeForEval/prepare")
@@ -174,10 +176,13 @@ class TriSampler(Postprocessor):
                 lambda row: self.posItems[row[0].item()].add(row[1].item()),
                 zip(chunk[self.User.name], chunk[self.Item.name])
             ))
+        self.seen = [list(elem) for elem in self.seen]
+        self.posItems = [list(elem) for elem in self.posItems]
 
-    def get_one(self, user: int):
+    def get_one(self, user):
+        user = user.item()
         seen = self.seen[user]
-        posItems = self.posItems(user)
+        posItems = self.posItems[user]
         items = np.zeros((self.Item.count,))
         items[seen] = -1
         items[posItems] = 1
@@ -191,7 +196,7 @@ class TriSampler(Postprocessor):
                 users = np.arange(node - self.batch_size, node)[:, None]
                 items = np.apply_along_axis(self.get_one, 1, users)
                 yield {self.User.name: users, self.Item.name: items}
-            if node < self.count:
-                users = np.arange(node, self.count)[:, None]
+            if node < self.User.count:
+                users = np.arange(node, self.User.count)[:, None]
                 items = np.apply_along_axis(self.get_one, 1, users)
                 yield {self.User.name: users, self.Item.name: items}
