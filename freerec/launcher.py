@@ -85,7 +85,6 @@ class _DummyModule(torch.nn.Module):
 
 
 class Coach:
-
     """The framework for training."""
     
     def __init__(
@@ -97,6 +96,27 @@ class Coach:
         lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler],
         device: Union[torch.device, str, int]
     ):
+        """
+        Parameters:
+        ---
+
+        dataset: RecDataSet for training, validation and test
+        criterion: Callable
+            Loss funcion.
+        model: nn.Module or None
+            - `None`: Using _DummyModule instead, by which `forward` should not be called.
+        
+        optimizer: torch.optim.Optimizer or None
+            - `None`: Using _DummyModule instead, by which `step` and `backward` should not be called.
+
+        lr_scheduler: Callable or None
+            - `None`: Using _DummyModule instead, by which `step` should not be called.
+
+        device: torch.device, str or int
+            - `torch.device`
+            - `str`: Like `cpu`, `cuda:0`.
+            - `int`: Using cuda:`int`.
+        """
         self.dataset = dataset
         self.fields: Fielder[Field] = self.dataset.fields
         self.device = torch.device(device)
@@ -287,7 +307,6 @@ class Coach:
 
     def evaluate(self, prefix: str = 'valid'):
         errorLogger("evaluate should be specified ...", NotImplementedError)
-
 
     @timemeter("Coach/train")
     def train(self):
