@@ -49,8 +49,8 @@ class NeuCF(RecSysArch):
 
         self.mf = GMF(tokenizer_mf)
         self.mlp = MLP(tokenizer_mlp)
-        self.User = tokenizer_mf.groupby(USER, ID)[0]
-        self.Item = tokenizer_mf.groupby(ITEM, ID)[0]
+        self.User = tokenizer_mf[USER, ID]
+        self.Item = tokenizer_mf[ITEM, ID]
         dimension = (self.User.dimension + self.Item.dimension) // 2 + 8
         self.linear = nn.Linear(dimension, 1)
 

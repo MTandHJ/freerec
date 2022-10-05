@@ -5,7 +5,7 @@ from typing import Iterator, Iterable, Union, List, Optional
 import torchdata.datapipes as dp
 
 from .base import Postprocessor
-from ..tags import Tag, USER, ITEM, TARGET
+from ..tags import FieldTags, USER, ITEM, TARGET
 
 
 __all__ = ['Grouper', 'Wrapper']
@@ -22,7 +22,7 @@ class Grouper(Postprocessor):
     """
     def __init__(
         self, datapipe: Postprocessor, 
-        groups: Iterable[Union[Tag, Iterable[Tag]]] = (USER, ITEM, TARGET)
+        groups: Iterable[Union[FieldTags, Iterable[FieldTags]]] = (USER, ITEM, TARGET)
     ) -> None:
         super().__init__(datapipe)
         self.groups = [[field for field in self.fields if field.match(tags)] for tags in groups]

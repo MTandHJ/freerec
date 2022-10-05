@@ -1,6 +1,7 @@
 
 
 from typing import Callable, Iterable, Tuple, Union, Dict, List
+from pyparsing import Optional
 
 import torch
 import numpy as np
@@ -8,8 +9,8 @@ from functools import partial, lru_cache
 
 from .utils import safe_cast
 from .preprocessing import X2X, Label2Index, Binarizer, MinMaxScaler, StandardScaler
-from .tags import Tag, SPARSE, DENSE
-from ..utils import errorLogger
+from .tags import FieldTags, SPARSE, DENSE
+from ..utils import errorLogger, warnLogger
 
 
 __all__ = ['Field', 'DenseField', 'SparseField', 'Token', 'SparseToken', 'DenseToken', 'Tokenizer']
@@ -23,10 +24,25 @@ TRANSFORM = {
 
 
 class Field:
+    """Fielding data by column.
+    
+    Attributes:
+    ---
+
+    name: str
+        Name of this field.
+    tags: set
+        A set of FieldTags.
+    dtype: torch.long|torch.float32
+    caster: Callable
+        Convert elements to specified dtype (int, float or str) with na_value.
+    transformer: Callable
+        Transformation.
+    """
     
     def __init__(
         self, name: str, na_value: Union[str, int, float], dtype: Callable,
-        transformer: Union[str, Callable] = 'none', tags: Union[Tag, Iterable[Tag]] = tuple()
+        transformer: Union[str, Callable] = 'none', tags: Union[FieldTags, Iterable[FieldTags]] = tuple()
     ):
         """
         Args:
@@ -44,29 +60,71 @@ class Field:
         self.dtype = dtype
         self.caster = partial(safe_cast, dest_type=dtype, default=na_value)
         self.transformer = TRANSFORM[transformer]() if isinstance(transformer, str) else transformer
-        self.add_tag(tags)
-
-    def add_tag(self, tags: Union[Tag, Iterable[Tag]]):
-        if isinstance(tags, Tag):
-            self.__tags.add(tags.name)
+        if isinstance(tags, FieldTags):
+            self.add_tag(tags)
         else:
-            for tag in tags:
-                self.add_tag(tag) 
+            self.add_tag(*tags)
+
+    def add_tag(self, *tags: FieldTags):
+        """Add some tags.
+
+        Parameters:
+        ---
+        *tags: FieldTags
+
+        Examples:
+        ---
+
+        >>> from freerec.data.tags import ID
+        >>> User = SparseField('User', -1, int)
+        >>> User.add_tag(ID)
+
+        """
+        for tag in tags:
+            if not isinstance(tag, FieldTags):
+                warnLogger(f"[Warning] FieldTags is expected but {type(tags)} received ...")
+            self.__tags.add(tag)
 
     @property
     def tags(self):
         return self.__tags
 
-    def match(self, tags: Union[Tag, Iterable[Tag]]):
-        """If current field matches the given tags, return True."""
-        if isinstance(tags, Iterable):
-            return all(map(self.match, tags))
-        return tags.name in self.tags # using name for mathcing to avoid deepcopy pitfall !
+    def match(self, *tags: FieldTags):
+        """If current field matches the given tags, return True.
+        
+        Parameters:
+        ---
+        *tags: FieldTags
+
+
+        Returns:
+        ---
+
+        - `True`: If all given tags are matched.
+        - 'False': If any tag is not matched.
+
+        Examples:
+        ---
+
+        >>> from freerec.data.tags import ID
+        >>> User = SparseField('User', -1, int)
+        >>> User.add_tag(ID)
+        >>> User.match(ID)
+        True
+        >>> User.match(ID, Feature)
+        False
+        >>> User.match(Feature)
+        False
+
+        """
+        return all(tag in self.__tags for tag in tags)
 
     def partial_fit(self, x: np.array) -> np.array:
+        """Partially fit some data."""
         self.transformer.partial_fit(x)
 
     def transform(self, x: np.array) -> np.array:
+        """Transform data."""
         return self.transformer.transform(x)
 
     @property
@@ -91,7 +149,7 @@ class Field:
             self.__dtype = val
 
     def __str__(self) -> str:
-        tags = ','.join(self.tags)
+        tags = ','.join(map(str, self.tags))
         return f"{self.name}: [dtype: {self.dtype}, na_value: {self.na_value}, tags: {tags}]"
 
 
@@ -100,7 +158,7 @@ class SparseField(Field):
     def __init__(
         self, name: str, na_value: Union[str, int, float], dtype: Callable, 
         transformer: Union[str, Callable] = 'label2index', 
-        tags: Union[Tag, Iterable[Tag]] = tuple()
+        tags: Union[FieldTags, Iterable[FieldTags]] = tuple()
     ):
         super().__init__(name, na_value, dtype, transformer, tags)
         self.add_tag(SPARSE)
@@ -119,7 +177,7 @@ class DenseField(Field):
     def __init__(
         self, name: str, na_value: Union[str, int, float], dtype: Callable, 
         transformer: Union[str, Callable] = 'minmax', 
-        tags: Union[Tag, Iterable[Tag]] = tuple()
+        tags: Union[FieldTags, Iterable[FieldTags]] = tuple()
     ):
         super().__init__(name, na_value, dtype, transformer, tags)
         self.add_tag(DENSE)
@@ -128,9 +186,17 @@ class DenseField(Field):
 class Fielder(tuple):
 
     @lru_cache(maxsize=4)
-    def whichis(self, *tags: Tag):
-        """Return those fields matching given tags."""
-        fields = Fielder(field for field in self if field.match(tags))
+    def whichis(self, *tags: FieldTags) -> Union[FieldTags, None, 'Fielder']:
+        """Return those fields matching given tags.
+        
+        Returns:
+        ---
+
+        - `Field`: If only one field matches given tags.
+        - `None`: If none of fields matches given tags.
+        - `Fielder`: If more than one fields match given tags.
+        """
+        fields = Fielder(field for field in self if field.match(*tags))
         if len(fields) == 1:
             return fields[0]
         elif len(fields) == 0:
@@ -139,9 +205,17 @@ class Fielder(tuple):
             return fields
 
     @lru_cache(maxsize=4)
-    def whichisnot(self, *tags: Tag):
-        """Return those fields not matching given tags."""
-        fields = Fielder(field for field in self if not field.match(tags))
+    def whichisnot(self, *tags: FieldTags) -> Union[FieldTags, None, 'Fielder']:
+        """Return those fields not matching given tags.
+
+        Returns:
+        ---
+
+        - `Field`: If only one field does not match given tags.
+        - `None`: If all fields match given tags.
+        - `Fielder`: If more than one fields does not match given tags.
+        """
+        fields = Fielder(field for field in self if not field.match(*tags))
         if len(fields) == 1:
             return fields[0]
         elif len(fields) == 0:
@@ -169,6 +243,7 @@ class Token(torch.nn.Module):
         self.__tags = field.tags.copy()
 
         self.dimension: int
+        self.embeddings: Union[torch.nn.Embedding, torch.nn.Linear, torch.nn.Identity]
 
     @property
     def name(self):
@@ -178,18 +253,55 @@ class Token(torch.nn.Module):
     def tags(self):
         return self.__tags
 
-    def add_tag(self, tags: Union[Tag, Iterable[Tag]]):
-        if isinstance(tags, Tag):
-            self.__tags.add(tags.name)
-        else:
-            for tag in tags:
-                self.add_tag(tag) 
+    def add_tag(self, *tags: FieldTags):
+        """Add some tags.
 
-    def match(self, tags: Union[Tag, Iterable[Tag]]):
-        """If current token matches the given tags, return True."""
-        if isinstance(tags, Iterable):
-            return all(map(self.match, tags))
-        return tags.name in self.tags
+        Parameters:
+        ---
+        *tags: FieldTags
+
+        Examples:
+        ---
+
+        >>> from freerec.data.tags import ID
+        >>> User = SparseField('User', -1, int)
+        >>> User.add_tag(ID)
+
+        """
+        for tag in tags:
+            if not isinstance(tag, FieldTags):
+                warnLogger(f"[Warning] FieldTags is expected but {type(tags)} received ...")
+            self.__tags.add(tag)
+
+    def match(self, *tags: FieldTags):
+        """If current field matches the given tags, return True.
+        
+        Parameters:
+        ---
+        *tags: FieldTags
+
+
+        Returns:
+        ---
+
+        - `True`: If all given tags are matched.
+        - 'False': If any tag is not matched.
+
+        Examples:
+        ---
+
+        >>> from freerec.data.tags import ID
+        >>> User = SparseField('User', -1, int)
+        >>> User.add_tag(ID)
+        >>> User.match(ID)
+        True
+        >>> User.match(ID, Feature)
+        False
+        >>> User.match(Feature)
+        False
+
+        """
+        return all(tag in self.__tags for tag in tags)
 
     def embed(self, dim: int, **kwargs):
         errorLogger("embed method should be specified ...", NotImplementedError)
@@ -208,6 +320,22 @@ class SparseToken(Token):
         return self.__count
 
     def embed(self, dim: int, **kwargs):
+        """Create nn.Embedding.
+
+        Parameters:
+        ---
+
+        dim: int
+            Dimension.
+        **kwargs: other kwargs for nn.Embedding
+
+        Examples:
+        ---
+
+        >>> token = SparseToken(field)
+        >>> token.embed(8)
+        """
+
         self.dimension = dim
         self.embeddings = torch.nn.Embedding(self.count, dim, **kwargs)
 
@@ -219,6 +347,25 @@ class SparseToken(Token):
 class DenseToken(Token):
 
     def embed(self, dim: int = 1, bias: bool = False, linear: bool = False):
+        """Create Embedding in nn.Linear manner.
+
+        Parameters:
+        ---
+
+        dim: int
+            Dimension.
+        bias: bool
+            Add bias or not.
+        linear: bool
+            - `True`: nn.Linear.
+            - `False`: using nn.Identity instead.
+
+        Examples:
+        ---
+
+        >>> token = DenseToken(field)
+        >>> token.embed(8, bias=True, linear=False)
+        """
         if linear:
             self.dimension = dim
             self.embeddings = torch.nn.Linear(1, dim, bias=bias)
@@ -232,9 +379,24 @@ class DenseToken(Token):
 
 
 class Tokenizer(torch.nn.Module):
-    """A collection of tokens."""
+    """A collection of tokens.
+    
+    Attributes:
+    ---
 
-    def __init__(self, fields: Iterable[Field]) -> None:
+    tokens: nn.ModuleList
+
+    Examples:
+    ---
+
+    >>> from freerec.data import MovieLens1M
+    >>> basepipe = MovieLens1M("../data/MovieLens1M")
+    >>> fields = basepipe.fields
+    >>> tokenizer = Tokenizer(fields)
+
+    """
+
+    def __init__(self, fields: Iterable[Union[Field, Token]]) -> None:
         super().__init__()
 
         fields = [self.totoken(field) for field in fields]
@@ -242,50 +404,126 @@ class Tokenizer(torch.nn.Module):
     
     def totoken(self, field: Field):
         """Field to Token."""
-        if isinstance(field, SparseField):
+        if isinstance(field, Token):
+            return field
+        elif isinstance(field, SparseField):
             return SparseToken(field)
         elif isinstance(field, DenseField):
             return DenseToken(field)
         else:
-            errorLogger("only Sparse|DenseField supported !", ValueError)
+            errorLogger("Only Sparse|DenseField supported !")
 
     @lru_cache(maxsize=4)
-    def groupby(self, *tags: Union[Tag, Tuple[Tag]]) -> List[Token]:
-        """Group by given tags and return list of tokens matched."""
-        if len(tags) == 0:
-            return self.tokens
-        return [token for token in self.tokens if token.match(tags)]
+    def groupby(self, *tags: FieldTags) -> List[Token]:
+        """Group by given tags and return list of tokens matched.
+        
+        Examples:
+        ---
+        >>> from freerec.data.tags import USER, ID
+        >>> User = tokenizer.groupby(USER, ID)
+        >>> isinstance(User, List)
+        True
+        >>> Item = tokenizer.groupby(ITEM, ID)[0]
+        >>> Item.match(ITEM)
+        True
+        >>> Item.match(ID)
+        True
+        >>> Item.match(User)
+        False
 
-    def look_up(self, inputs: Dict[str, torch.Tensor], *tags: Union[Tag, Tuple[Tag]]) -> List[torch.Tensor]:
-        """Dict[torch.Tensor: B x 1] -> List[torch.Tensor: B x 1 x d]"""
-        return [token.look_up(inputs[token.name]) for token in self.groupby(*tags)]
-
-    def embed(self, dim: int, *tags: Union[Tag, Tuple[Tag]], **kwargs):
         """
-        Args:
-            dim: int
-            tags: Tag|Tuple[Tag]
-                'sparse': nn.Embedding
-                    padding_idx (int, optional): If specified, the entries at :attr:`padding_idx` do not contribute to the gradient;
-                                                therefore, the embedding vector at :attr:`padding_idx` is not updated during training,
-                                                i.e. it remains as a fixed "pad". For a newly constructed Embedding,
-                                                the embedding vector at :attr:`padding_idx` will default to all zeros,
-                                                but can be updated to another value to be used as the padding vector.
-                    max_norm (float, optional): If given, each embedding vector with norm larger than :attr:`max_norm`
-                                                is renormalized to have norm :attr:`max_norm`.
-                    norm_type (float, optional): The p of the p-norm to compute for the :attr:`max_norm` option. Default ``2``.
-                    scale_grad_by_freq (boolean, optional): If given, this will scale gradients by the inverse of frequency of
-                                                            the words in the mini-batch. Default ``False``.
-                    sparse (bool, optional): If ``True``, gradient w.r.t. :attr:`weight` matrix will be a sparse tensor.
-                                            See Notes for more details regarding sparse gradients.
-                'dense': nn.Linear
-                    linear: bool = False
-                    bias: bool = False
-        Kwargs: kwargs for nn.Linear
+        return [token for token in self.tokens if token.match(*tags)]
+
+    def embed(self, dim: int, *tags: FieldTags, **kwargs):
+        """Create embeddings.
+
+        Parameters:
+        ---
+        dim: int
+            Dimension.
+        *tags: FieldTags
+        **kwargs: kwargs for nn.Linear
+
+        Examples:
+        ---
+
+        >>> from freerec.data.tags import DENSE, SPARSE
+        >>> tokenizer.embed(8, SPARSE) # nn.Embedding(count, 8)
+        >>> tokenizer.embed(8, DENSE, bias=False) # nn.Linear(1, 8, bias=False)
         """
         for feature in self.groupby(*tags):
             feature.embed(dim, **kwargs)
 
-    def calculate_dimension(self, *tags: Union[Tag, Tuple[Tag]]):
+    def look_up(self, inputs: Dict[str, torch.Tensor], *tags: FieldTags) -> List[torch.Tensor]:
+        """Dict[torch.Tensor: B x 1] -> List[torch.Tensor: B x 1 x d]
+        
+        Parameters:
+        ---
+
+        inputs: Dict[str, torch.Tensor]
+            A dict of inputs.
+
+        Returns:
+        ---
+
+        A list of torch.Tensor.
+
+        Examples:
+        ---
+
+        >>> from freerec.data.tags import User, ID
+        >>> userEmbds = tokenizer.look_up(users, USER, ID)
+        >>> isinstance(userEmbds, List)
+        True
+
+        """
+        return [token.look_up(inputs[token.name]) for token in self.groupby(*tags)]
+
+    def calculate_dimension(self, *tags: FieldTags):
         """Return the total dimension of tokens matching tiven tags."""
         return sum(feature.dimension for feature in self.groupby(*tags))
+
+    def __len__(self):
+        return len(self.tokens)
+
+    def __getitem__(self, index: Union[int, FieldTags, Iterable[FieldTags]]) -> Union[Token, None, 'Tokenizer']:
+        """Get tokens by index.
+
+        Parameters:
+        ---
+
+        index: Union[int, FieldTags, Iterable[FieldTags]]
+            - `int`: Return the token at position `int`.
+            - `FieldTags`: Return the tokens matching `FieldTags`.
+            - `Iterable[FieldTags]`: Return the tokens matching `Iterable[FieldTags]`.
+        
+        Returns:
+        ---
+
+        - `Token`: If only one token matches given tags.
+        - `None`: If none of tokens matches given tags.
+        - `Tokenizer`: If more than one tokens match given tags.
+
+        Examples:
+        ---
+
+        >>> from freerec.data.tags import USER
+        >>> tokenizer[0];
+        >>> user = tokenizer[USER]
+        >>> isinstance(user, Token)
+        True
+        >>> isinstance(tokenizer[ID], Tokenizer)
+        True
+        """
+        if isinstance(index, int):
+            tokens = [self.tokens[index]]
+        elif isinstance(index, FieldTags):
+            tokens =  self.groupby(index)
+        else:
+            tokens = self.groupby(*index)
+        if len(tokens) == 1:
+            return tokens[0]
+        elif len(tokens) == 0:
+            return None # for a safety purpose
+        else:
+            return Tokenizer(tokens)

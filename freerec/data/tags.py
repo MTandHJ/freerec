@@ -1,18 +1,22 @@
 
 
-class Tag:
-    __slot__ = ('name')
+from enum import Enum
 
-    def __init__(self, name) -> None:
-        self.name = name
 
-    def __str__(self) -> str:
-        return self.name
+class FieldTags(Enum):
+    Sparse = 'Sparse'
+    Dense = 'Dense'
+    ID = 'ID'
+    User = 'User'
+    Item = 'Item'
+    Feature = 'Feature'
+    Target = 'Target'
 
-SPARSE = Tag('Sparse')
-DENSE = Tag('Dense')
-ID = Tag('ID')
-USER = Tag('User')
-ITEM = Tag('Item')
-FEATURE = Tag('Feature')
-TARGET = Tag('Target')
+
+SPARSE = FieldTags('Sparse')
+DENSE = FieldTags('Dense')
+ID = FieldTags('ID')
+USER = FieldTags('User')
+ITEM = FieldTags('Item')
+FEATURE = FieldTags('Feature')
+TARGET = FieldTags('Target')

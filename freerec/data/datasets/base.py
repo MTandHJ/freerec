@@ -6,8 +6,8 @@ import torchdata.datapipes as dp
 import os
 from freeplot.utils import import_pickle, export_pickle
 
-from freerec.data.tags import SPARSE
 
+from ..tags import SPARSE
 from ..fields import Field, Fielder
 from ..utils import collate_dict
 from ...utils import timemeter, infoLogger, errorLogger, mkdirs

@@ -70,7 +70,7 @@ class NegativesForEval(NegativesForTrain):
         self.train()
         posItems = [set() for _ in range(self.User.count)]
         allItems = set(range(self.Item.count))
-        self.negitems = []
+        self.negItems = []
 
         for chunk in self.source:
             list(map(
@@ -94,7 +94,7 @@ class NegativesForEval(NegativesForTrain):
             raise ModeError(errorLogger("for evaluation only ..."))
 
 
-@dp.functional_datapipe("uniform_sample_")
+@dp.functional_datapipe("uniform_sampling_")
 class UniformSampler(Postprocessor):
 
     def __init__(
