@@ -24,10 +24,16 @@ class NegativesForTrain(Postprocessor):
     def __init__(
         self, datapipe: Postprocessor, num_negatives: int = 1
     ) -> None:
+        """
+        Parameters:
+        ---
+
+        datapipe: RecDataSet or Postprocessor
+            Yielding dict of np.array.
+        num_negatives: int
+            Sampling `num_negatives` for every piece of data.
+        """
         super().__init__(datapipe)
-        """
-        num_negatives: for training, sampling from all negative items
-        """
         self.num_negatives = num_negatives
         self.User: SparseField = self.fields.whichis(USER, ID)
         self.Item: SparseField = self.fields.whichis(ITEM, ID)
@@ -66,6 +72,20 @@ class NegativesForTrain(Postprocessor):
 class NegativesForEval(NegativesForTrain):
     """Sampling negatives for valid|testpipe."""
 
+    def __init__(self, datapipe: Postprocessor, num_negatives: int = 1) -> None:
+        """
+        Parameters:
+        ---
+
+        datapipe: RecDataSet or Postprocessor
+            Yielding dict of np.array.
+        num_negatives: int
+            `num_negatives` negatives will be sampled for every user in advance, 
+            and then they will be yieled following their users. 
+            Note that all negatives will be frozen once sampled.
+        """
+        super().__init__(datapipe, num_negatives)
+
     @timemeter("NegativeForEval/prepare")
     def prepare(self):
         self.train()
@@ -97,14 +117,21 @@ class NegativesForEval(NegativesForTrain):
 
 @dp.functional_datapipe("uniform_sampling_")
 class UniformSampler(Postprocessor):
+    """Uniformly sampling users and their negatives."""
 
     def __init__(
         self, datapipe: Postprocessor, num_negatives: int = 1
     ) -> None:
+        """
+        Parameters:
+        ---
+
+        datapipe: RecDataSet or Postprocessor
+            Yielding dict of np.array.
+        num_negatives: int
+            Sampling `num_negatives` for every piece of data.
+        """
         super().__init__(datapipe)
-        """
-        num_negatives: for training, sampling from all negative items
-        """
         self.num_negatives = num_negatives
         self.User: SparseField = self.fields.whichis(USER, ID)
         self.Item: SparseField = self.fields.whichis(ITEM, ID)
@@ -147,14 +174,25 @@ class UniformSampler(Postprocessor):
 
 @dp.functional_datapipe("trisample_")
 class TriSampler(Postprocessor):
+    """Yielding users with all items.
+    The items are trinary including -1, 0, 1:
+        - `-1`: This item has been used in trainset;
+        - `0`: A negative item.
+        - `1`: A positive item has not used in trainset.
+    """
 
     def __init__(
         self, datapipe: Postprocessor, batch_size: int
     ) -> None:
+        """
+        Parameters:
+        ---
+
+        datapipe: RecDataSet or Postprocessor
+            Yielding dict of np.array.
+        batch_size: int
+        """
         super().__init__(datapipe)
-        """
-        num_negatives: for training, sampling from all negative items
-        """
         self.batch_size = batch_size
         self.User: SparseField = self.fields.whichis(USER, ID)
         self.Item: SparseField = self.fields.whichis(ITEM, ID)

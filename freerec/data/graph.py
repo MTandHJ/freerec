@@ -14,7 +14,8 @@ from ..utils import timemeter
 def dict2graph(
     datapipe: RecDataSet, 
     src: Union[SparseField, SparseToken], 
-    dst: Union[SparseField, SparseToken]
+    dst: Union[SparseField, SparseToken],
+    mode: str = 'train'
 ):
     """Convert dict flows to a homogeneous graph.
 
@@ -27,6 +28,8 @@ def dict2graph(
         Srouce Node.
     dst: SparseField or SparseToken
         Destination Node.
+    mode: 'train' (default) |'valid'|'test'
+        Graph from trainset or validset or testset
 
     Notes:
     ---
@@ -44,6 +47,7 @@ def dict2graph(
     >>> Item = basepipe.fields.whichis(Item, ID)
     >>> g = dict2graph(basepipe, USER, ITEM)
     """
+    getattr(datapipe, mode)()
     data = {src.name: np.empty((0, 1), dtype=np.int32), dst.name: np.empty((0, 1), dtype=np.int32)}
     for chunk in datapipe:
         for key, vals in data.items():

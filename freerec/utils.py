@@ -110,7 +110,6 @@ class AverageMeter:
         """Plot lines according to historical results."""
         self.fp = FreePlot(
             shape=(1, 1),
-            figsize=(2.2, 2),
             titles=(self.name,),
             dpi=300, latex=False
         )

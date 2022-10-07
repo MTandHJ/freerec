@@ -1,6 +1,6 @@
 
 
-from typing import Iterator, List, Dict, Union
+from typing import Iterator, Dict
 
 import torchdata.datapipes as dp
 import os
@@ -9,7 +9,7 @@ from math import ceil
 
 
 from ..tags import SPARSE
-from ..fields import Field, Fielder, SparseField
+from ..fields import Fielder
 from ..utils import collate_dict
 from ...utils import timemeter, infoLogger, errorLogger, mkdirs
 

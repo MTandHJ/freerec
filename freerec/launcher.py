@@ -144,7 +144,9 @@ class Coach:
         """Load last saved checkpoint.
 
         Returns:
-            The epoch.
+        ---
+
+        epoch: int
         """
         path = os.path.join(self.cfg.CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
         checkpoint = torch.load(path)
@@ -239,13 +241,17 @@ class Coach:
     ):
         """Log some values to given monitors.
 
-        Args:
-            values: data
-        Kwargs:
-            n: batch size in general
-            mode: 'sum'|'mean' (default)
-            prefix: the mode those values belonging to
-            pool: given monitors
+        Parameters:
+        ---
+
+        *values: data
+        n: int
+            Batch size in general
+        mode: 'sum'|'mean' (default)
+        prefix: str, 'train'|'test'|'valid'
+            The mode values belonging to.
+        pool: List[str]
+            Given monitors.
         """
         metrics: Dict[List] = self.monitors[prefix]
         for metric in pool:
@@ -361,8 +367,10 @@ class CoachForMatching(Coach): ...
 class Adapter:
     """ Params tuner.
 
-    It proceeds as follows:
-    1. compile -> get config: command, envs and params for training;
+    Flows:
+    ---
+
+    1. compile: get command, envs and params for training;
     2. allocate devices for various params
         - register id, logPath, device first
         - run it
@@ -397,6 +405,21 @@ class Adapter:
 
     @timemeter("Adapter/compile")
     def compile(self, cfg: Config):
+        """
+        Parameters:
+        ---
+
+        cfg: Config
+            Including command, envs, params, defaults.
+        
+        Flows:
+        ---
+
+        1. Add environmental parameters to basic `command`;
+        2. Register all available devices;
+        3. Convert all parameters from `cfg.PARAMS`;
+        4. Convert all defaults from `cfg.DEFAULTS`.
+        """
         def safe_cast(vals):
             for caster in (int, float, str):
                 try:
@@ -420,17 +443,55 @@ class Adapter:
         self.params.append(key)
         self.values.append(vals)
 
-    def get_option(self, key: str, val: Any):
-        """Convert (key, val) to '--key=val'."""
+    @staticmethod
+    def get_option(key: str, val: Any):
+        """Convert (key, val) to '--key=val'.
+
+        Parameters:
+        ---
+
+        key: str
+        val: Any
+
+        Notes:
+        ---
+
+        All '_' in key will be replaced by '-'.
+        
+        Examples:
+        ---
+
+        >>> Adapter.get_option('lr', '1e-3')
+        --lr=1e-3
+        >>> Adapter.get_option('learning_rate', '1e-3')
+        --learning-rate=1e-3
+        """
         return f" --{key.replace('_', '-')}={val}"
 
     def load_best(self, logPath: str):
-        """load best.pickle from logPath of corresponding """
+        """Load best.pickle from logPath of corresponding."""
         file_ = os.path.join(logPath, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME)
         return import_pickle(file_)
 
     def write(self, id_: str, logPath: str, params: Dict):
-        """Write results to tensorboard"""
+        """Write results to tensorboard.
+        
+        Parameters:
+        ---
+
+        id_: str
+            The experiment id.
+        logPath: str
+            The log path of this experiment.
+        params: Dict
+            Parameter config of this experiemnt.
+        
+        Flows:
+        ---
+
+        1. Load best data from the `logPath`.
+        2. Write best data to tensorboard with `params`.
+        """
         data = self.load_best(logPath)
         path = os.path.join(self.cfg.CORE_LOG_PATH, id_)
         with SummaryWriter(log_dir=path) as writer:
@@ -443,7 +504,7 @@ class Adapter:
             )
 
     def each_grid(self):
-        """Grid search for each kind of param"""
+        """Grid search for each kind of param."""
         for key, vals in zip(self.params, self.values):
             for val in vals:
                 yield self.cfg.DEFAULTS | {key: val}
@@ -454,21 +515,21 @@ class Adapter:
             yield self.cfg.DEFAULTS | {option:val for option, val in zip(self.params, vals)}
 
     def save_checkpoint(self, source: List) -> None:
-        """Save the rest of params"""
+        """Save the rest of params."""
         path = os.path.join(self.cfg.CORE_CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
         checkpoint = dict()
         checkpoint['source'] = source
         torch.save(checkpoint, path)
 
     def load_checkpoint(self) -> int:
-        """Load the rest of params"""
+        """Load the rest of params."""
         path = os.path.join(self.cfg.CORE_CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
         checkpoint = torch.load(path)
         return checkpoint['source']
 
     @timemeter("Coach/resume")
     def resume(self):
-        """Resume from last checkpoint"""
+        """Resume from the recent checkpoint."""
         source = self.each_grid() if self.cfg.EXCLUSIVE else self.product_grid()
         source = list(source)[::-1]
         source = self.load_checkpoint() if self.cfg.resume else source
@@ -483,13 +544,13 @@ class Adapter:
         return subprocess.Popen(shlex.split(command))
 
     def wait(self, tasks: Dict):
-        """Wait util all processes terminate"""
+        """Wait util all processes terminate."""
         for process_, id_, logPath, params in tasks.values():
             process_.wait()
             self.write(id_, logPath, params)
 
     def poll(self, tasks: Dict):
-        """Wait util any one of processes terminate"""
+        """Wait util any process terminates."""
         buffer_source = []
         time.sleep(1) # for unique id
         while len(self.devices) == 0:

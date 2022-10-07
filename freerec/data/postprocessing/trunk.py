@@ -4,10 +4,10 @@ from typing import Callable, Iterator, Optional, Dict
 import torch
 import torchdata.datapipes as dp
 import numpy as np
-from math import ceil
+
+from freerec.utils import errorLogger
 
 from .base import Postprocessor
-from ..datasets import RecDataSet
 
 
 __all__ = [
@@ -32,6 +32,7 @@ class Sharder(Postprocessor):
 
 @dp.functional_datapipe("shuffle_")
 class Shuffle(Postprocessor):
+    """Shuffling the datapipe."""
 
     def shuffle(self, chunk: Dict):
         indices = None
@@ -66,11 +67,8 @@ class SubFielder(Postprocessor):
 
 @dp.functional_datapipe("tensor_")
 class ToTensor(Postprocessor):
-    """Convert Dict[str, List] into Dict[str, torch.Tensor].
-    
-    Returns:
-        Dict[field, torch.Tensor],
-    """
+    """Convert Dict[str, List] into Dict[str, torch.Tensor]."""
+
     def at_least_2d(self, vals: torch.Tensor):
         return vals.unsqueeze(1) if vals.ndim == 1 else vals
 
@@ -81,22 +79,28 @@ class ToTensor(Postprocessor):
 
 @dp.functional_datapipe("chunk_")
 class Chunker(Postprocessor):
-    """A special batcher for Dict[str, Tensor] only.
-    
-    NOTE: If the given batch size is not evenly divisible by _DEFAULT_CHUNK_SIZE,
-    minor chunk will yielded frequently. Fortunately, _DEFAULT_CHUNK_SIZE=51200 satisfies
-    almost all popular batch sizes. For example, 128, 1024 ... 
-    """
+    """A special batcher for Dict[str, Tensor] only."""
 
     def __init__(
         self, datapipe: Postprocessor, batch_size: int
     ) -> None:
+        """
+        Parameters:
+        ---
+
+        datapipe: Postprocessor
+            It must yield tensors !
+        batch_size: int
+            If the given batch size is not evenly divisible by _DEFAULT_CHUNK_SIZE,
+            minor chunk will yielded frequently. Fortunately, _DEFAULT_CHUNK_SIZE=51200 satisfies
+            almost all popular batch sizes. For example, 128, 1024 ... 
+        """
         super().__init__(datapipe)
 
         self.batch_size = batch_size
 
-    def __len__(self): # TODO: Not correct all the time.
-        return ceil(self.datasize / self.batch_size)
+    def __len__(self):
+        raise errorLogger("Chunker has no `__len__` method ...", NotImplementedError)
 
     def __iter__(self) -> Iterator:
         for chunk in self.source:
