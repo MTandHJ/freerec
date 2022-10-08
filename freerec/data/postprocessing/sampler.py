@@ -35,8 +35,8 @@ class NegativesForTrain(Postprocessor):
         """
         super().__init__(datapipe)
         self.num_negatives = num_negatives
-        self.User: SparseField = self.fields.whichis(USER, ID)
-        self.Item: SparseField = self.fields.whichis(ITEM, ID)
+        self.User: SparseField = self.fields[USER, ID]
+        self.Item: SparseField = self.fields[ITEM, ID]
         self.prepare()
 
     @timemeter("NegativeForTrain/prepare")
@@ -133,9 +133,9 @@ class UniformSampler(Postprocessor):
         """
         super().__init__(datapipe)
         self.num_negatives = num_negatives
-        self.User: SparseField = self.fields.whichis(USER, ID)
-        self.Item: SparseField = self.fields.whichis(ITEM, ID)
-        self.fields = self.fields.whichis(ID)
+        self.User: SparseField = self.fields[USER, ID]
+        self.Item: SparseField = self.fields[ITEM, ID]
+        self.fields = self.fields.groupby[ID]
         self.prepare()
 
     @timemeter("NegativeForEval/prepare")
@@ -194,9 +194,9 @@ class TriSampler(Postprocessor):
         """
         super().__init__(datapipe)
         self.batch_size = batch_size
-        self.User: SparseField = self.fields.whichis(USER, ID)
-        self.Item: SparseField = self.fields.whichis(ITEM, ID)
-        self.fields = self.fields.whichis(ID)
+        self.User: SparseField = self.fields[USER, ID]
+        self.Item: SparseField = self.fields[ITEM, ID]
+        self.fields = self.fields.groupby(ID)
         self.prepare()
 
     @timemeter("NegativeForEval/prepare")

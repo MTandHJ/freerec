@@ -3,80 +3,57 @@
 from typing import Dict, Optional
 
 import torch
-import torch.nn as nn
-import dgl
-import dgl.function as dglfn
+import torch_geometric
+from torch_geometric.data.data import Data
+from torch_geometric.nn import MessagePassing
+from torch_geometric.utils import add_self_loops, degree
 
 from .base import RecSysArch
 
-from ..data.fields import SparseToken, Tokenizer, SparseField
+from ..data.fields import Tokenizer
 from ..data.tags import ID, ITEM, SPARSE, DENSE, FEATURE, USER
-from ..utils import timemeter
 
 
 __all__ = ['LightGCN']
 
 
-class LightConv(nn.Module):
+
+class LightConv(MessagePassing):
+
+    def __init__(self) -> None:
+        super().__init__(aggr='add')
+
+    
+    def forward(self, x: torch.Tensor, edge_index: torch.Tensor):
+
+        edge_index, _ = add_self_loops(edge_index)
+        row, col = edge_index
+        deg = degree(col, dtype=x.dtype)
+        deg_inv_sqrt = deg.pow(-0.5)
+        deg_inv_sqrt[torch.isinf(deg_inv_sqrt)] = 0
+        norm = deg_inv_sqrt[row] * deg_inv_sqrt[col]
+
+        return self.propagate(edge_index, x=x, norm=norm)
+
+    def message(self, x_j: torch.Tensor, norm: torch.Tensor) -> torch.Tensor:
+        return x_j * norm.view(-1, 1)
 
 
-    def __init__(self, graph: dgl.DGLGraph, norm: str = 'both') -> None:
-        super().__init__()
-
-        self.norm = norm
-        self.graph = graph
-
-    @property
-    def graph(self):
-        return self.__graph
-
-    @graph.setter
-    def graph(self, graph):
-        # self.__graph = dgl.add_self_loop(graph)
-        self.__graph = dgl.remove_self_loop(graph)
-        if self.norm == 'left':
-            degs = self.graph.out_degrees().float()
-            norm = 1 / degs
-        elif self.norm == 'right':
-            degs = self.graph.in_degrees().float()
-            norm = 1 / degs
-        else:
-            degs = self.graph.out_degrees().float()
-            norm = torch.pow(degs, -0.5)
-        norm[torch.isinf(norm)] = 0.
-        self.__graph.ndata['norm'] = norm.view(-1, 1)
-
-    def forward(self, features: torch.Tensor):
-        self.graph.to(features.device)
-        with self.graph.local_scope():
-            if self.norm in ['left', 'both']:
-                features = features * self.graph.srcdata['norm']
-                
-            self.graph.srcdata['input'] = features
-            self.graph.update_all(
-                message_func=dglfn.copy_src('input', 'hidden'),
-                reduce_func=dglfn.sum('hidden', 'output')
-            )
-            features = self.graph.dstdata['output']
-            if self.norm in ['right', 'both']:
-                features = features * self.graph.srcdata['norm']
-            return features
-
-        
 class LightGCN(RecSysArch):
 
-
     def __init__(
-        self, tokenizer: Tokenizer,
-        graph: dgl.DGLGraph, num_layers: int = 3
+        self, tokenizer: Tokenizer, 
+        graph: Data,
+        num_layers: int = 3
     ) -> None:
         super().__init__()
 
         self.tokenizer = tokenizer
-        self.User: SparseToken = self.tokenizer.groupby(USER, ID)[0]
-        self.Item: SparseToken = self.tokenizer.groupby(ITEM, ID)[0]
-        self.lightconv = LightConv(graph)
+        self.graph = graph
+        self.conv = LightConv()
         self.num_layers = num_layers
+
+        self.User, self.Item = self.tokenizer[USER, ID], self.tokenizer[ITEM, ID]
 
         self.initialize()
 
@@ -95,7 +72,7 @@ class LightGCN(RecSysArch):
         features = torch.cat((userEmbs, itemEmbs), dim=0).flatten(1) # N x D
         allFeats = [features]
         for _ in range(self.num_layers):
-            features = self.lightconv(features)
+            features = self.conv(features, self.graph.edge_index)
             allFeats.append(features)
         allFeats = torch.stack(allFeats, dim=1).mean(dim=1)
         userFeats, itemFeats = torch.split(allFeats, (self.User.count, self.Item.count))
@@ -108,3 +85,4 @@ class LightGCN(RecSysArch):
             return torch.mul(userFeats, itemFeats).sum(-1), userEmbs, itemEmbs
         else:
             return userFeats, itemFeats
+

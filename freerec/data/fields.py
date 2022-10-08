@@ -196,43 +196,16 @@ class DenseField(Field):
 
 class Fielder(tuple):
 
-    @lru_cache(maxsize=4)
-    def whichis(self, *tags: FieldTags) -> Union[FieldTags, None, 'Fielder']:
-        """Return those fields matching given tags.
-        
-        Returns:
-        ---
-
-        - `Field`: If only one field matches given tags.
-        - `None`: If none of fields matches given tags.
-        - `Fielder`: If more than one fields match given tags.
-        """
-        fields = Fielder(field for field in self if field.match(*tags))
-        if len(fields) == 1:
-            return fields[0]
-        elif len(fields) == 0:
-            return None
-        else:
-            return fields
 
     @lru_cache(maxsize=4)
-    def whichisnot(self, *tags: FieldTags) -> Union[FieldTags, None, 'Fielder']:
-        """Return those fields not matching given tags.
+    def groupby(self, *tags: FieldTags) -> 'Fielder':
+        """Return those fields matching given tags."""
+        return Fielder(field for field in self if field.match(*tags))
 
-        Returns:
-        ---
-
-        - `Field`: If only one field does not match given tags.
-        - `None`: If all fields match given tags.
-        - `Fielder`: If more than one fields does not match given tags.
-        """
-        fields = Fielder(field for field in self if not field.match(*tags))
-        if len(fields) == 1:
-            return fields[0]
-        elif len(fields) == 0:
-            return None
-        else:
-            return fields
+    @lru_cache(maxsize=4)
+    def groupbynot(self, *tags: FieldTags) -> 'Fielder':
+        """Return those fields not matching given tags."""
+        return Fielder(field for field in self if not field.match(*tags))
 
     def state_dict(self) -> Dict:
         """Return state dict of fields."""
@@ -244,6 +217,48 @@ class Fielder(tuple):
 
     def copy(self) -> 'Fielder':
         return Fielder(self)
+
+    def __getitem__(self, index: Union[int, FieldTags, Iterable[FieldTags]]) -> Union[Field, 'Fielder', None]:
+        """Get tokens by index.
+
+        Parameters:
+        ---
+
+        index: Union[int, FieldTags, Iterable[FieldTags]]
+            - `int`: Return the token at position `int`.
+            - `FieldTags`: Return the tokens matching `FieldTags`.
+            - `Iterable[FieldTags]`: Return the tokens matching `Iterable[FieldTags]`.
+        
+        Returns:
+        ---
+
+        - `Token`: If only one token matches given tags.
+        - `None`: If none of tokens matches given tags.
+        - `Tokenizer`: If more than one tokens match given tags.
+
+        Examples:
+        ---
+
+        >>> from freerec.data.tags import USER
+        >>> tokenizer[0];
+        >>> user = tokenizer[USER]
+        >>> isinstance(user, Token)
+        True
+        >>> isinstance(tokenizer[ID], Tokenizer)
+        True
+        """
+        if isinstance(index, int):
+            return super().__getitem__(index)
+        elif isinstance(index, FieldTags):
+            fields =  self.groupby(index)
+        else:
+            fields = self.groupby(*index)
+        if len(fields) == 1:
+            return fields[0]
+        elif len(fields) == 0:
+            return None # for a safety purpose
+        else:
+            return fields
 
 
 class Token(torch.nn.Module):
@@ -428,7 +443,7 @@ class Tokenizer(torch.nn.Module):
     @lru_cache(maxsize=4)
     def groupby(self, *tags: FieldTags) -> List[Token]:
         """Group by given tags and return list of tokens matched.
-        
+
         Examples:
         ---
         >>> from freerec.data.tags import USER, ID
@@ -442,7 +457,6 @@ class Tokenizer(torch.nn.Module):
         True
         >>> Item.match(User)
         False
-
         """
         return [token for token in self.tokens if token.match(*tags)]
 
@@ -498,7 +512,7 @@ class Tokenizer(torch.nn.Module):
     def __len__(self):
         return len(self.tokens)
 
-    def __getitem__(self, index: Union[int, FieldTags, Iterable[FieldTags]]) -> Union[Token, None, 'Tokenizer']:
+    def __getitem__(self, index: Union[int, FieldTags, Iterable[FieldTags]]) -> Union[Token, 'Tokenizer', None]:
         """Get tokens by index.
 
         Parameters:

@@ -2,8 +2,10 @@
 
 from typing import Union
 import numpy as np
-import dgl
 import torch
+from torch_geometric.data import Data, HeteroData
+from torch_geometric.utils import to_undirected
+import torch_geometric.transforms as T
 
 from .fields import SparseField, SparseToken
 from .datasets import RecDataSet
@@ -52,11 +54,13 @@ def dict2graph(
     for chunk in datapipe:
         for key, vals in data.items():
             data[key] = np.concatenate((vals, chunk[key]), axis=0)
-    u, v = torch.from_numpy(data[src.name]), torch.from_numpy(data[dst.name])
-    v = v + src.count
-    g = dgl.graph(
-        (u.flatten(), v.flatten()), num_nodes=src.count + dst.count, row_sorted=True
-    )
-    return dgl.to_bidirected(g).int() # int32
+    u, v = torch.from_numpy(data[src.name]).flatten(), torch.from_numpy(data[dst.name]).flatten()
+    graph = HeteroData()
+    graph[src.name] = torch.empty((src.count, 0), dtype=torch.long)
+    graph[dst.name] = torch.empty((dst.count, 0), dtype=torch.long)
+    graph[src.name, 'towards', dst.name].edge_index = torch.stack((u, v), dim=0).contiguous()
+    graph = graph.to_homogeneous()
+    graph.edge_index = to_undirected(graph.edge_index)
+    return graph.to_homogeneous()
 
  

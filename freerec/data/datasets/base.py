@@ -252,9 +252,9 @@ class RecDataSet(BaseSet):
 
             # avoid unseen tokens not included in trainset
             self.valid()
-            self.validsize = fit_transform(self.fields.whichis(SPARSE))
+            self.validsize = fit_transform(self.fields.groupby(SPARSE))
             self.test()
-            self.testsize = fit_transform(self.fields.whichis(SPARSE))
+            self.testsize = fit_transform(self.fields.groupby(SPARSE))
 
             self.save_transforms()
             
@@ -286,6 +286,8 @@ class RecDataSet(BaseSet):
 
     def __iter__(self) -> Iterator:
         yield from self.pickle2data()
+
+    def to_graph(self):
 
     def __str__(self) -> str:
         cfg = '\n'.join(map(str, self.cfg.fields))
