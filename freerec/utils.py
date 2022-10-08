@@ -248,7 +248,7 @@ def debugLogger(words: str):
     return words
 
 def warnLogger(warn: str):
-    words = f"\033[1;31m {warn} \033[0m"
+    words = f"\033[1;31m [Warning] >>> {warn} \033[0m"
     getLogger().info(words)
     return words
 

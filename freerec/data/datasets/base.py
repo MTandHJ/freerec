@@ -1,17 +1,20 @@
 
 
-from typing import Iterator, Dict
+from typing import Iterator, Dict, Optional, Iterable, Tuple
 
+import torch, os
+import numpy as np
 import torchdata.datapipes as dp
-import os
+import torch_geometric.transforms as T
+from torch_geometric.data import Data, HeteroData
+from torch_geometric.utils import to_undirected
 from freeplot.utils import import_pickle, export_pickle
 from math import ceil
 
-
 from ..tags import SPARSE
-from ..fields import Fielder
+from ..fields import Fielder, SparseField
 from ..utils import collate_dict
-from ...utils import timemeter, infoLogger, errorLogger, mkdirs
+from ...utils import timemeter, infoLogger, errorLogger, mkdirs, warnLogger
 
 
 __all__ = ['BaseSet', 'RecDataSet']
@@ -272,6 +275,143 @@ class RecDataSet(BaseSet):
 
         infoLogger(str(self))
 
+    @timemeter("DataSet/to_graph")
+    def to_heterograph(self, *edge_types: Tuple[SparseField, Optional[str], SparseField]) -> HeteroData:
+        """Convert datapipe to a heterograph.
+
+        Parameters:
+        ---
+
+        *edge_types: (src, edge, dst)
+            - src: SparseField
+                Source node.
+            - edge: Optional[str]
+                The name of the edge. `src.name2dst.name` will be specified if `edge` is `None`.
+            - dst: SparseField
+                Destination node.
+
+        Notes:
+        ---
+
+        Warning will be raised if current mode is not 'train' !
+
+        Examples:
+        ---
+
+        >>> from freerec.data.datasets import MovieLens1M
+        >>> from freerec.data.tags import USER, ITEM, ID
+        >>> basepipe = MovieLens1M("../data/MovieLens1M")
+        >>> fields = basepipe.fields
+        >>> graph = basepipe.to_heterograph(
+        ...    (fields[USER, ID], None, fields[ITEM, ID]), 
+        ...    (fields[ITEM, ID], None, fields[USER, ID])
+        ... )
+        >>> graph
+        HeteroData(
+            UserID={ x=[6040, 0] },
+            ItemID={ x=[3706, 0] },
+            (UserID, UserID2ItemID, ItemID)={ edge_index=[2, 994169] },
+            (ItemID, ItemID2UserID, UserID)={ edge_index=[2, 994169] }
+        )
+        """
+        if self.mode != 'train':
+            warnLogger(f"Convert the datapipe for {self.mode} to graph. Ensure this is intentional ...")
+
+        srcs, _, dsts = zip(*edge_types)
+        edges = map(lambda triplet: triplet[1] if triplet[1] else f"{triplet[0].name}2{triplet[2].name}", edge_types)
+        nodes = set(srcs + dsts)
+        data = {node.name: [] for node in nodes}
+        for chunk in self:
+            for node in data:
+                data[node].append(np.ravel(chunk[node]))
+        for key in data:
+            data[key] = torch.tensor(np.concatenate(data[key], axis=0), dtype=torch.long)
+
+        graph = HeteroData()
+        for node in nodes:
+            graph[node.name].x = torch.empty((node.count, 0), dtype=torch.long)
+        for src, edge, dst in zip(srcs, edges, dsts):
+            u, v = data[src.name], data[dst.name]
+            graph[src.name, edge, dst.name].edge_index = torch.stack((u, v), dim=0) # 2 x N
+        return graph
+
+    def to_bigraph(
+        self,
+        src: SparseField,
+        dst: SparseField,
+        edge_type: Optional[str] = None
+    ) -> HeteroData:
+        """Convert datapipe to a bipartite graph.
+
+        Parameters:
+        ---
+
+        src: SparseField
+            Source node.
+        dst: SparseField
+            Destination node.
+        edge_type: Optional[str]
+            The name of the edge. `src.name2dst.name` will be specified if `edge` is `None`.
+
+        Notes:
+        ---
+
+        Warning will be raised if current mode is not 'train' !
+
+        Examples:
+        ---
+
+        >>> from freerec.data.datasets import MovieLens1M
+        >>> from freerec.data.tags import USER, ITEM, ID
+        >>> basepipe = MovieLens1M("../data/MovieLens1M")
+        >>> fields = basepipe.fields
+        >>> graph = basepipe.to_bigraph(
+        ...    (fields[USER, ID], None, fields[ITEM, ID]), 
+        ...    (fields[ITEM, ID], None, fields[USER, ID])
+        ... )
+        >>> graph
+        HeteroData(
+            UserID={ x=[6040, 0] },
+            ItemID={ x=[3706, 0] },
+            (UserID, df, ItemID)={ edge_index=[2, 994169] }
+        )
+        """
+        return self.to_heterograph((src, edge_type, dst))
+   
+    def to_graph(self, src: SparseField, dst: SparseField) -> Data:
+        """Convert datapipe to a homogeneous graph.
+
+        Parameters:
+        ---
+
+        src: SparseField
+            Source node.
+        dst: SparseField
+            Destination node.
+
+        Notes:
+        ---
+
+        Warning will be raised if current mode is not 'train' !
+
+        Examples:
+        ---
+
+        >>> from freerec.data.datasets import MovieLens1M
+        >>> from freerec.data.tags import USER, ITEM, ID
+        >>> basepipe = MovieLens1M("../data/MovieLens1M")
+        >>> fields = basepipe.fields
+        >>> graph = basepipe.to_bigraph(
+        ...    (fields[USER, ID], None, fields[ITEM, ID]), 
+        ...    (fields[ITEM, ID], None, fields[USER, ID])
+        ... )
+        >>> graph
+        Data(edge_index=[2, 1988338], x=[9746, 0], node_type=[9746], edge_type=[994169])
+        """
+        graph = self.to_heterograph((src, None, dst)).to_homogeneous()
+        graph.edge_index = to_undirected(graph.edge_index)
+        return graph
+
     @property
     def datasize(self):
         if self.mode == 'train':
@@ -287,8 +427,8 @@ class RecDataSet(BaseSet):
     def __iter__(self) -> Iterator:
         yield from self.pickle2data()
 
-    def to_graph(self):
-
     def __str__(self) -> str:
         cfg = '\n'.join(map(str, self.cfg.fields))
         return f"[{self.__class__.__name__}] >>> \n" + cfg
+
+
