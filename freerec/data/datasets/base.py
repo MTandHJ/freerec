@@ -19,7 +19,7 @@ from ...utils import timemeter, infoLogger, errorLogger, mkdirs, warnLogger
 __all__ = ['BaseSet', 'RecDataSet']
 
 
-_DEFAULT_PICKLE_FMT = "{0}2pickle"
+_DEFAULT_PICKLE_FMT = "{0}_from_pickle"
 _DEFAULT_TRANSFORM_FILENAME = "transforms.pickle"
 _DEFAULT_CHUNK_FMT = "chunk{0}.pickle"
 
