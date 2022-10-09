@@ -54,10 +54,6 @@ CORE_CONFIG = Config(
 )
 
 
-def _root2dataset(root: str):
-    return root.split('/')[-1]
-
-
 class Parser(Config):
     """ArgumentParser wrapper."""
 
@@ -100,7 +96,7 @@ class Parser(Config):
         self.parser = argparse.ArgumentParser()
 
         self.parser.add_argument("--root", type=str, default=".", help="data")
-        self.parser.add_argument("--dataset", type=str, default=None, help="useless if no need to automatically select a dataset")
+        self.parser.add_argument("--dataset", type=str, default="RecDataSet", help="useless if no need to automatically select a dataset")
         self.parser.add_argument("--config", type=str, default=None, help="config.yml")
 
         self.parser.add_argument("--device", default=torch.cuda.current_device() if torch.cuda.is_available() else 'cpu', help="device")
@@ -163,8 +159,6 @@ class Parser(Config):
                 self[key] = val
         self.load(args) # loading config (.yaml) ...
 
-        if self.dataset is None:
-            self.dataset = _root2dataset(self.root)
         try:
             self.device = int(self.device)
         except ValueError:
@@ -256,7 +250,7 @@ class CoreParser(Config):
                     warnLogger(f"No device is allocated, calling '--{key}' to specify it")
                 )
         if self.ENVS.get('dataset', None) is None:
-            self.ENVS['dataset'] = _root2dataset(self.ENVS['root'])
+            self.ENVS['dataset'] = "RecDataSet"
         self.ENVS = Config(self.ENVS)
         self.PARAMS = Config(self.PARAMS)
 
