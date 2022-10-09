@@ -135,7 +135,7 @@ class UniformSampler(Postprocessor):
         self.num_negatives = num_negatives
         self.User: SparseField = self.fields[USER, ID]
         self.Item: SparseField = self.fields[ITEM, ID]
-        self.fields = self.fields.groupby[ID]
+        self.fields = self.fields.groupby(ID)
         self.prepare()
 
     @timemeter("NegativeForEval/prepare")

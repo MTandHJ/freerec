@@ -248,12 +248,12 @@ def debugLogger(words: str):
     return words
 
 def warnLogger(warn: str):
-    words = f"\033[1;31m [Warning] >>> {warn} \033[0m"
+    words = f"\033[1;31m[Warning] >>> {warn} \033[0m"
     getLogger().info(words)
     return words
 
 def errorLogger(error: str, exception = FreeRecError):
-    words = f"\033[1;31m {error} \033[0m"
+    words = f"\033[1;31m{error} \033[0m"
     getLogger().debug(words)
     raise exception(words)
 
@@ -299,11 +299,11 @@ def set_seed(seed: int) -> int:
     """
     if seed == -1:
         seed = random.randint(0, 2048)
-        infoLogger(f"[Seed] >>> Set seed randomly: {seed}")
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
+    infoLogger(f"[Seed] >>> Set seed: {seed}")
     return seed
 

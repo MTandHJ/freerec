@@ -3,40 +3,17 @@
 from typing import Dict, Optional
 
 import torch
-import torch_geometric
+import torch_geometric.transforms as T
 from torch_geometric.data.data import Data
-from torch_geometric.nn import MessagePassing
-from torch_geometric.utils import add_self_loops, degree
+from torch_geometric.nn import LGConv
 
 from .base import RecSysArch
 
 from ..data.fields import Tokenizer
-from ..data.tags import ID, ITEM, SPARSE, DENSE, FEATURE, USER
+from ..data.tags import ID, ITEM, USER
 
 
 __all__ = ['LightGCN']
-
-
-
-class LightConv(MessagePassing):
-
-    def __init__(self) -> None:
-        super().__init__(aggr='add')
-
-    
-    def forward(self, x: torch.Tensor, edge_index: torch.Tensor):
-
-        edge_index, _ = add_self_loops(edge_index)
-        row, col = edge_index
-        deg = degree(col, dtype=x.dtype)
-        deg_inv_sqrt = deg.pow(-0.5)
-        deg_inv_sqrt[torch.isinf(deg_inv_sqrt)] = 0
-        norm = deg_inv_sqrt[row] * deg_inv_sqrt[col]
-
-        return self.propagate(edge_index, x=x, norm=norm)
-
-    def message(self, x_j: torch.Tensor, norm: torch.Tensor) -> torch.Tensor:
-        return x_j * norm.view(-1, 1)
 
 
 class LightGCN(RecSysArch):
@@ -49,35 +26,41 @@ class LightGCN(RecSysArch):
         super().__init__()
 
         self.tokenizer = tokenizer
-        self.graph = graph
-        self.conv = LightConv()
+        self.conv = LGConv()
         self.num_layers = num_layers
+        self.graph = graph
 
         self.User, self.Item = self.tokenizer[USER, ID], self.tokenizer[ITEM, ID]
 
         self.initialize()
 
-    def preprocess(self, users: Dict[str, torch.Tensor], items: Dict[str, torch.Tensor]):
-        users, items = users[self.User.name], items[self.Item.name]
-        m, n = items.size()
-        users = users.repeat((1, n))
-        return users, items
+    @property
+    def graph(self):
+        return self.__graph
+
+    @graph.setter
+    def graph(self, graph: Data):
+        self.__graph = graph
+        T.ToSparseTensor()(self.__graph)
 
     def forward(
         self, users: Optional[Dict[str, torch.Tensor]] = None, 
         items: Optional[Dict[str, torch.Tensor]] = None
     ):
+        adj_t = self.graph.adj_t.to(self.device)
         userEmbs = self.User.embeddings.weight
         itemEmbs = self.Item.embeddings.weight
         features = torch.cat((userEmbs, itemEmbs), dim=0).flatten(1) # N x D
-        allFeats = [features]
+        avgFeats = features / (self.num_layers + 1)
         for _ in range(self.num_layers):
-            features = self.conv(features, self.graph.edge_index)
-            allFeats.append(features)
-        allFeats = torch.stack(allFeats, dim=1).mean(dim=1)
-        userFeats, itemFeats = torch.split(allFeats, (self.User.count, self.Item.count))
+            features = self.conv(features, adj_t)
+            avgFeats += features / (self.num_layers + 1)
+        userFeats, itemFeats = torch.split(avgFeats, (self.User.count, self.Item.count))
+
         if self.training: # Batch
-            users, items = self.preprocess(users, items)
+            users, items = self.broadcast(
+                users[self.User.name], items[self.Item.name]
+            )
             userFeats = userFeats[users] # B x n x D
             itemFeats = itemFeats[items] # B x n x D
             userEmbs = self.User.look_up(users) # B x n x D
@@ -85,4 +68,3 @@ class LightGCN(RecSysArch):
             return torch.mul(userFeats, itemFeats).sum(-1), userEmbs, itemEmbs
         else:
             return userFeats, itemFeats
-

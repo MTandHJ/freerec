@@ -169,9 +169,6 @@ class Parser(Config):
             self.device = int(self.device)
         except ValueError:
             ...
-
-        activate_benchmark(self.BENCHMARK)
-        self.SEED = set_seed(self.SEED)
         
         self['DATA_DIR'] = DATA_DIR
         self['SUMMARY_DIR'] = SUMMARY_DIR
@@ -184,6 +181,9 @@ class Parser(Config):
         )
         set_color(self.device)
         set_logger(path=self.LOG_PATH, log2file=self.log2file, log2console=self.log2console)
+
+        activate_benchmark(self.BENCHMARK)
+        self.SEED = set_seed(self.SEED)
 
         self.readme(self.CHECKPOINT_PATH) # generate README.md
         self.readme(self.LOG_PATH)
