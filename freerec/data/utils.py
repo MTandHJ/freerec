@@ -5,7 +5,7 @@ from typing import TypeVar, Callable, Dict, List, Optional
 import numpy as np
 import os, requests, warnings, hashlib, tqdm
 
-from ..utils import errorLogger, warnLogger, infoLogger
+from ..utils import errorLogger, infoLogger
 
 T = TypeVar('T')
 
@@ -27,8 +27,8 @@ def collate_dict(batch: List[Dict]):
     return {key: np.array([d[key] for d in batch]) for key in elem}
 
 
-def download(
-    url: str, path: str = '.', filename: Optional[str] = None, 
+def download_from_url(
+    url: str, root: str = '.', filename: Optional[str] = None, 
     overwrite: bool = False, retries=5, 
     sha1_hash: Optional[str] = None, verify_ssl: bool = True, 
     log: bool = True
@@ -38,10 +38,11 @@ def download(
     Codes borrowed from dgl.data.utils
 
     Parameters
-    ----------
+    ---
+
     url : str
         URL to download.
-    path : str, default '.'
+    root : str, default '.'
         Destination path to store downloaded file.
     filename: str, optional
         Filename of the downloaded file.
@@ -58,7 +59,8 @@ def download(
         Whether to print the progress for download
 
     Returns
-    -------
+    ---
+
     str
         The file path of the downloaded file.
     """
@@ -67,7 +69,7 @@ def download(
         # Empty filenames are invalid
         assert filename, 'Can\'t construct file-name from this URL. ' \
             'Please set the `path` option manually.'
-    file_ = os.path.join(path, filename)
+    file_ = os.path.join(root, filename)
 
     assert retries >= 0, "Number of retries should be at least 0"
 
@@ -119,7 +121,8 @@ def extract_archive(file_, target_dir, overwrite=False):
     Codes borrowed from dgl/data/utils.py
 
     Parameters
-    ----------
+    ---
+
     file_ : str
         Absolute path of the archive file.
     target_dir : str
@@ -156,14 +159,16 @@ def check_sha1(filename, sha1_hash):
     Codes borrowed from dgl/data/utils.py
 
     Parameters
-    ----------
+    ---
+
     filename : str
         Path to the file.
     sha1_hash : str
         Expected sha1 hash in hexadecimal digits.
 
     Returns
-    -------
+    ---
+
     bool
         Whether the file content matches the expected hash.
     """

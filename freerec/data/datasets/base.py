@@ -1,11 +1,10 @@
 
 
-from typing import Iterator, Dict, Optional, Iterable, Tuple
+from typing import Iterator, Dict, Optional, Tuple
 
 import torch, os
 import numpy as np
 import torchdata.datapipes as dp
-import torch_geometric.transforms as T
 from torch_geometric.data import Data, HeteroData
 from torch_geometric.utils import to_undirected
 from freeplot.utils import import_pickle, export_pickle
@@ -13,7 +12,7 @@ from math import ceil
 
 from ..tags import SPARSE
 from ..fields import Fielder, SparseField
-from ..utils import collate_dict
+from ..utils import collate_dict, download_from_url, extract_archive
 from ...utils import timemeter, infoLogger, errorLogger, mkdirs, warnLogger
 
 
@@ -84,6 +83,7 @@ class RecDataSet(BaseSet):
     """
 
     _DEFAULT_CHUNK_SIZE = 51200 # chunk size
+    URL: str
 
     def __new__(cls, *args, **kwargs):
         for attr in ('_cfg',):
@@ -93,25 +93,40 @@ class RecDataSet(BaseSet):
             errorLogger("Fields sorted by column should be given in _cfg ...", AssertionError)
         return super().__new__(cls)
 
-    def __init__(self, root: str) -> None:
+    def __init__(self, root: str, filename: Optional[str] = None, download: bool = True) -> None:
         """
         Parameters:
         ---
 
-        root: Data path.
+        root: str
+            The path storing datasets.
+        filename: str, optional
+            The dirname of the dataset.
+            - `None`: Set the classname as the filename.
+        
+        download: bool
+            Download the dataset from a URL.
         """
         super().__init__()
-        self.root = root
+        filename = filename if filename else self.__class__.__name__
+        self.path = os.path.join(root, filename)
         self.fields = self._cfg.fields
         self.trainsize: int = 0
         self.validsize: int = 0
         self.testsize: int = 0
 
-        if not os.path.exists(self.root) or not any(True for _ in os.scandir(self.root)):
-            errorLogger(
-                f"No such root of {self.root} or this dir is empty ...",
-                FileNotFoundError
-            )
+        if not os.path.exists(self.path) or not any(True for _ in os.scandir(self.path)):
+            if download:
+                extract_archive(
+                    download_from_url(self.URL, root, overwrite=False),
+                    self.path
+                )
+            else:
+                errorLogger(
+                    f"No such file of {self.path} or this dir is empty ...",
+                    FileNotFoundError
+                )
+        self.compile()
 
     @property
     def cfg(self):
@@ -121,7 +136,7 @@ class RecDataSet(BaseSet):
     def check_transforms(self):
         """Check if the transformations exist."""
         file_ = os.path.join(
-            self.root, 
+            self.path,
             _DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
             _DEFAULT_TRANSFORM_FILENAME
         )
@@ -129,7 +144,7 @@ class RecDataSet(BaseSet):
             return True
         else:
             mkdirs(os.path.join(
-                self.root,
+                self.path,
                 _DEFAULT_PICKLE_FMT.format(self.__class__.__name__)
             ))
             return False
@@ -141,7 +156,7 @@ class RecDataSet(BaseSet):
         state_dict['validsize'] = self.validsize
         state_dict['testsize'] = self.testsize
         file_ = os.path.join(
-            self.root, 
+            self.path, 
             _DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
             _DEFAULT_TRANSFORM_FILENAME
         )
@@ -149,7 +164,7 @@ class RecDataSet(BaseSet):
 
     def load_transforms(self):
         file_ = os.path.join(
-            self.root, 
+            self.path, 
             _DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
             _DEFAULT_TRANSFORM_FILENAME
         )
@@ -162,7 +177,7 @@ class RecDataSet(BaseSet):
     def check_pickle(self):
         """Check if the dataset has been converted into feather format."""
         path = os.path.join(
-            self.root, 
+            self.path,
             _DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
             self.mode
         )
@@ -175,7 +190,7 @@ class RecDataSet(BaseSet):
     def write_pickle(self, data: Dict, count: int):
         """Save pickle format data."""
         file_ = os.path.join(
-            self.root, 
+            self.path,
             _DEFAULT_PICKLE_FMT.format(self.__class__.__name__),
             self.mode, _DEFAULT_CHUNK_FMT.format(count)
         )
@@ -211,7 +226,7 @@ class RecDataSet(BaseSet):
         """Read pickle data in chunks."""
         datapipe = dp.iter.FileLister(
             os.path.join(
-                self.root, 
+                self.path,
                 _DEFAULT_PICKLE_FMT.format(self.__class__.__name__),
                 self.mode
             )

@@ -9,6 +9,9 @@ from ..tags import USER, ITEM, ID, FEATURE, TARGET
 from ...dict2obj import Config
 
 
+__all__ = ['Gowalla_m1']
+
+
 class _Row2Pairer(dp.iter.IterDataPipe):
 
     def __init__(self, datapipe: dp.iter.IterDataPipe) -> None:
@@ -22,7 +25,7 @@ class _Row2Pairer(dp.iter.IterDataPipe):
                 yield user, item, 1
 
 
-class GowallaM1(RecDataSet):
+class Gowalla_m1(RecDataSet):
     """ GowallaM1: (user, items).
     See [here](https://github.com/kuandeng/LightGCN/tree/master/Data/gowalla) for details.
 
@@ -41,6 +44,8 @@ class GowallaM1(RecDataSet):
 
     """
 
+    URL = "https://zenodo.org/record/7175950/files/Gowalla_m1.zip"
+
     _cfg = Config(
         sparse = [
             SparseField(name='UserID', na_value=0, dtype=int, tags=[USER, ID]),
@@ -53,10 +58,6 @@ class GowallaM1(RecDataSet):
 
     open_kw = Config(mode='rt', delimiter=' ', skip_lines=0)
 
-    def __init__(self, root: str, **open_kw) -> None:
-        super().__init__(root)
-        self.open_kw.update(**open_kw)
-        self.compile()
 
     def file_filter(self, filename: str):
         if self.mode == 'train':
@@ -65,7 +66,7 @@ class GowallaM1(RecDataSet):
             return 'test' in filename
 
     def raw2data(self) -> dp.iter.IterableWrapper:
-        datapipe = dp.iter.FileLister(self.root)
+        datapipe = dp.iter.FileLister(self.path)
         datapipe = datapipe.filter(filter_fn=self.file_filter)
         datapipe = datapipe.open_files(mode=self.open_kw.mode)
         datapipe = datapipe.parse_csv(delimiter=self.open_kw.delimiter, skip_lines=self.open_kw.skip_lines)

@@ -37,6 +37,8 @@ class Criteo_x1(RecDataSet):
         - skip_lines: 1
     """
 
+    URL = "https://zenodo.org/record/5700987/files/Criteo_x1.zip"
+
     _cfg = Config(
         # dataset
         sparse = [SparseField(name=f"C{idx}", na_value='-1', dtype=str, tags=[ITEM, FEATURE]) for idx in range(1, 27)],
@@ -47,16 +49,12 @@ class Criteo_x1(RecDataSet):
 
     open_kw = Config(mode='rt', delimiter=',', skip_lines=1)
 
-    def __init__(self, root: str, **open_kw) -> None:
-        super().__init__(root)
-        self.open_kw.update(**open_kw)
-        self.compile()
 
     def file_filter(self, filename: str):
         return self.mode in filename
 
     def raw2data(self) -> dp.iter.IterableWrapper:
-        datapipe = dp.iter.FileLister(self.root)
+        datapipe = dp.iter.FileLister(self.path)
         datapipe = datapipe.filter(filter_fn=self.file_filter)
         datapipe = datapipe.open_files(mode=self.open_kw.mode)
         datapipe = datapipe.parse_csv(delimiter=self.open_kw.delimiter, skip_lines=self.open_kw.skip_lines)
