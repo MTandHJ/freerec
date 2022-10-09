@@ -57,7 +57,7 @@ class NeuCF(RecSysArch):
     def preprocess(self, users: Dict[str, torch.Tensor], items: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         users = users[self.User.name]
         items = items[self.Item.name]
-        users = users.repeat((1, items.size(1)))
+        users, items = self.broadcast(users, items)
         return {self.User.name: users, self.Item.name: items}
 
     def forward(self, users: Dict[str, torch.Tensor], items: Dict[str, torch.Tensor]) -> torch.Tensor:
