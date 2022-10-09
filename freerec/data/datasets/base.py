@@ -46,12 +46,15 @@ class BaseSet(dp.iter.IterDataPipe):
 
     def train(self):
         self.__mode = 'train'
+        return self
 
     def valid(self):
         self.__mode = 'valid'
+        return self
 
     def test(self):
         self.__mode = 'test'
+        return self
 
     def __len__(self):
         raise NotImplementedError()

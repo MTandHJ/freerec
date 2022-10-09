@@ -88,14 +88,17 @@ class Wrapper(Postprocessor):
     def train(self):
         super().train()
         self.source.train()
+        return self
 
     def valid(self):
         super().valid()
         self.validpipe.valid()
+        return self
 
     def test(self):
         super().test()
         self.testpipe.test()
+        return self
 
     def __len__(self):
         if self.mode == 'train':

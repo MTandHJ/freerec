@@ -20,14 +20,17 @@ class Postprocessor(BaseSet):
     def train(self):
         super().train()
         self.source.train()
+        return self
 
     def valid(self):
         super().valid()
         self.source.valid()
+        return self
 
     def test(self):
         super().test()
         self.source.test()
+        return self
 
     def at_least_2d(self, array: np.array):
         return array[:, None] if array.ndim == 1 else array
