@@ -22,7 +22,7 @@ LOGGER = Config(
         filehandler=logging.Formatter('%(asctime)s:\t%(message)s'),
         consolehandler=logging.Formatter('%(message)s')
     ),
-    info=print
+    info=print,
     debug=print
 )
 

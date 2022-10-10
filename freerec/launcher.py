@@ -550,7 +550,7 @@ class Adapter:
         """Start a new subprocess"""
         for option, val in params.items():
             command += self.get_option(option, val)
-        infoLogger(f"\033[0;31;47mprint{command}\033[0m")
+        infoLogger(f"\033[0;31;47m{command}\033[0m")
         return subprocess.Popen(shlex.split(command))
 
     def wait(self, tasks: Dict):
