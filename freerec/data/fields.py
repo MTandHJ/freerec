@@ -93,7 +93,7 @@ class Field:
         """
         for tag in tags:
             if not isinstance(tag, FieldTags):
-                warnLogger(f"[Warning] FieldTags is expected but {type(tags)} received ...")
+                warnLogger(f"FieldTags is expected but {type(tags)} received ...")
             self.__tags.add(tag)
 
     @property
@@ -296,7 +296,7 @@ class Token(torch.nn.Module):
         """
         for tag in tags:
             if not isinstance(tag, FieldTags):
-                warnLogger(f"[Warning] FieldTags is expected but {type(tags)} received ...")
+                warnLogger(f"FieldTags is expected but {type(tags)} received ...")
             self.__tags.add(tag)
 
     def match(self, *tags: FieldTags):

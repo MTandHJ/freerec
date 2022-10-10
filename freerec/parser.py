@@ -5,7 +5,10 @@ import os, argparse, time, yaml
 from argparse import ArgumentParser
 
 from .dict2obj import Config
-from .utils import mkdirs, set_logger, set_color, set_seed, activate_benchmark, timemeter, warnLogger
+from .utils import (
+    mkdirs, timemeter, set_color, set_seed, activate_benchmark, 
+    set_logger, errorLogger
+)
 
 
 DATA_DIR = 'data'
@@ -243,12 +246,11 @@ class CoreParser(Config):
             'defaults' is required for clear comparsions in tensorbaord.
         """
         if self.COMMAND is None:
-            raise NotImplementedError(warnLogger(template))
+            errorLogger(template)
         for key in ('root', 'device'):
             if self.ENVS.get(key, None) is None:
-                raise NotImplementedError(
-                    warnLogger(f"No device is allocated, calling '--{key}' to specify it")
-                )
+                errorLogger(f"No device is allocated, calling '--{key}' to specify it")
+
         if self.ENVS.get('dataset', None) is None:
             self.ENVS['dataset'] = "RecDataSet"
         self.ENVS = Config(self.ENVS)

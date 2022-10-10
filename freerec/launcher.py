@@ -17,7 +17,7 @@ from .data.fields import Field, Fielder
 from .data.dataloader import DataLoader
 from .models import RecSysArch
 from .dict2obj import Config
-from .utils import AverageMeter, Monitor, timemeter, infoLogger, warnLogger, errorLogger
+from .utils import AverageMeter, Monitor, timemeter, infoLogger, errorLogger
 from .metrics import *
 from .parser import TIME
 
@@ -498,8 +498,8 @@ class Adapter:
         ---
 
         If you find `-1` appears in the tensorboard,
-        it must be the data therein is `str` type,
-        which will raise error if we add it directly !
+        it must be the data therein is of `str` type,
+        which will raise error if we sent it to tensorboard directly !
         """
         data = self.load_best(logPath)
         path = os.path.join(self.cfg.CORE_LOG_PATH, id_)
@@ -550,7 +550,7 @@ class Adapter:
         """Start a new subprocess"""
         for option, val in params.items():
             command += self.get_option(option, val)
-        warnLogger(command)
+        infoLogger(f"\033[0;31;47mprint{command}\033[0m")
         return subprocess.Popen(shlex.split(command))
 
     def wait(self, tasks: Dict):

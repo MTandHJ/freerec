@@ -11,7 +11,7 @@ from typing import Optional, Union, List
 
 import torch
 import torchmetrics
-from .utils import warnLogger
+from .utils import errorLogger
 
 
 __all__ = [
@@ -38,7 +38,7 @@ def _reduce(reduction='mean'):
             elif reduction == 'sum':
                 return results.sum()
             else:
-                raise ValueError(warnLogger(f"reduction should be 'none'|'mean'|'sum' but {reduction} is received ..."))
+                errorLogger(f"reduction should be 'none'|'mean'|'sum' but {reduction} is received ...", ValueError)
         wrapper.__name__ = func.__name__
         wrapper.__doc__ = func.__doc__
         return wrapper

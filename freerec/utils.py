@@ -21,7 +21,9 @@ LOGGER = Config(
     formatter=Config(
         filehandler=logging.Formatter('%(asctime)s:\t%(message)s'),
         consolehandler=logging.Formatter('%(message)s')
-    )
+    ),
+    info=print
+    debug=print
 )
 
 COLOR = {
@@ -229,6 +231,8 @@ def set_logger(
     logger.debug("========================================================================")
     logger.debug("========================================================================")
     logger.debug("========================================================================")
+    LOGGER['info'] = logger.info
+    LOGGER['debug'] = logger.debug
     return logger
 
 def set_color(device: Union[int, str]):
@@ -238,26 +242,23 @@ def set_color(device: Union[int, str]):
     except KeyError:
         pass
 
-def getLogger():
-    return logging.getLogger(LOGGER.name)
-
 def infoLogger(words: str):
     words = COLOR['current'].format(words)
-    getLogger().info(words)
+    LOGGER.info(words)
     return words
 
 def debugLogger(words: str):
-    getLogger().debug(words)
+    LOGGER.debug(words)
     return words
 
 def warnLogger(warn: str):
     words = f"\033[1;31m[Warning] >>> {warn} \033[0m"
-    getLogger().info(words)
+    LOGGER.info(words)
     return words
 
 def errorLogger(error: str, exception = FreeRecError):
     words = f"\033[1;31m{error} \033[0m"
-    getLogger().debug(words)
+    LOGGER.debug(words)
     raise exception(words)
 
 def timemeter(prefix=""):
