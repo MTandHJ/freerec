@@ -297,7 +297,8 @@ class Coach:
                         val=val, epoch=epoch, img=f"![]({imgname})"
                     )
                     data.append([prefix, meter.name, val, epoch])
-                    best[prefix][meter.name] = val
+                    if val != -1: # Only save available data.
+                        best[prefix][meter.name] = val
 
         with open(file_, "w", encoding="utf8") as fh:
             fh.write(info) # Summary.md
@@ -492,6 +493,13 @@ class Adapter:
 
         1. Load best data from the `logPath`.
         2. Write best data to tensorboard with `params`.
+
+        Notes:
+        ---
+
+        If you find `-1` appears in the tensorboard,
+        it must be the data therein is `str` type,
+        which will raise error if we add it directly !
         """
         data = self.load_best(logPath)
         path = os.path.join(self.cfg.CORE_LOG_PATH, id_)
@@ -499,6 +507,7 @@ class Adapter:
             metrics = dict()
             for prefix, best in data.items():
                 for metric, val in best.items():
+                    val = val if isinstance(val, (int, float)) else -1
                     metrics['/'.join([prefix, metric])] = val
             writer.add_hparams(
                 params, metrics,
@@ -567,9 +576,10 @@ class Adapter:
     @timemeter("Adapter/fit")
     def fit(self):
         """Grid search."""
+
+        self.source = self.resume()
+        tasks = dict()
         try:
-            self.source = self.resume()
-            tasks = dict()
             while self.source:
                 self.poll(tasks)
                 params = self.source.pop()
@@ -577,8 +587,8 @@ class Adapter:
                 command, id_, logPath = self.register(device)
                 process_ = self.run(command, params)
                 tasks[device] = (process_, id_, logPath, params)
-            self.wait(tasks)
         except Exception as e:
             print(e)
         finally:
+            self.wait(tasks)
             sys.exit()

@@ -123,7 +123,7 @@ class AverageMeter:
         self.fp.savefig(os.path.join(path, filename))
         return filename
 
-    def argbest(self, caster: Callable, freq: int = 1):
+    def argbest(self, caster: Callable, freq: int = 1) -> float:
         """Return (whichisbest, best) in history.
 
         Paramters:
@@ -137,10 +137,13 @@ class AverageMeter:
         ---
 
         index: The index of best result.
+            - `-1`: No available data.
+
         value: The best result.
+            - `-1`: No available data.
         """
         if len(self.history) == 0:
-            return '-', '-'
+            return -1, -1
         indices = np.argsort(self.history)
         if caster is min:
             return indices[0] * freq, self.history[indices[0]]
