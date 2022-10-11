@@ -507,7 +507,7 @@ class Tokenizer(torch.nn.Module):
         dim: int
             Dimension.
         *tags: FieldTags
-        **kwargs: kwargs for nn.Linear
+        **kwargs: kwargs for nn.Embeddings or nn.Linear
 
         Examples:
         ---
