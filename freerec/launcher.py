@@ -16,6 +16,7 @@ from .data.datasets.base import BaseSet
 from .data.fields import Field, Fielder
 from .data.dataloader import DataLoader
 from .models import RecSysArch
+from .criterions import BaseCriterion
 from .dict2obj import Config
 from .utils import AverageMeter, Monitor, timemeter, infoLogger, errorLogger
 from .metrics import *
@@ -91,8 +92,8 @@ class Coach:
     def __init__(
         self, 
         dataset: BaseSet,
-        criterion: Callable,
         model: Union[RecSysArch, torch.nn.Module, None],
+        criterion: Union[BaseCriterion, Callable],
         optimizer: Optional[torch.optim.Optimizer],
         lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler],
         device: Union[torch.device, str, int]
