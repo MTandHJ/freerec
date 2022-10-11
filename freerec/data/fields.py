@@ -366,7 +366,26 @@ class SparseToken(Token):
         self.embeddings = torch.nn.Embedding(self.count, dim, **kwargs)
 
     def look_up(self, x: torch.Tensor) -> torch.Tensor:
-        """(B, *,) -> (B, *, d)"""
+        """Look up embeddings for categorical features.
+
+        Parameters:
+        ---
+
+        x: (B, *), torch.Tensor
+
+        Returns:
+        ---
+
+        embeddings: (B, *, d)
+
+        Examples:
+        ---
+
+        >>> User: SparseToken
+        >>> ids = torch.arange(3).view(-1, 1)
+        >>> User.look_up(ids).ndim
+        3
+        """
         return self.embeddings(x)
 
 
@@ -400,8 +419,28 @@ class DenseToken(Token):
             self.embeddings = torch.nn.Identity()
 
     def look_up(self, x: torch.Tensor) -> torch.Tensor:
-        """(B, *,) -> (B, *) | (B, *, d)"""
-        return self.embeddings(x)
+        """Look up embeddings for numeric features.
+        Note that the return embeddings' shape is in accordance with
+        that of categorical features.
+
+        Parameters:
+        ---
+
+        x: (B, *), torch.Tensor
+
+        Returns:
+        ---
+
+        embeddings: (B, *, 1) or (B, *, d)
+            - If `linear` is True, it returns (B, *, d).
+            - If `linear` is False, it returns (B, *, 1).
+
+        >>> Feat: DenseToken
+        >>> vals = torch.rand(3, 1)
+        >>> Feat.look_up(vals).ndim
+        3
+        """
+        return self.embeddings(x.unsqueeze(-1))
 
 
 class Tokenizer(torch.nn.Module):
@@ -481,7 +520,7 @@ class Tokenizer(torch.nn.Module):
             feature.embed(dim, **kwargs)
 
     def look_up(self, inputs: Dict[str, torch.Tensor], *tags: FieldTags) -> List[torch.Tensor]:
-        """Dict[torch.Tensor: B x 1] -> List[torch.Tensor: B x 1 x d]
+        """Dict[str, torch.Tensor: B x K] -> List[torch.Tensor: B x K x d]
         
         Parameters:
         ---
