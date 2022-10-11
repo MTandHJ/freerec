@@ -27,7 +27,7 @@ class RecSysArch(nn.Module):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0.)
             elif isinstance(m, nn.Embedding):
-                nn.init.xavier_normal_(m.weight)
+                nn.init.normal_(m.weight, std=1e-4)
 
     @staticmethod
     def broadcast(*tensors: torch.Tensor):
