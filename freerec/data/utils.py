@@ -87,7 +87,7 @@ def download_from_url(
             # pylint: disable=W0703
             try:
                 if log:
-                    infoLogger('Downloading %s from %s...' % (file_, url))
+                    infoLogger('[DataSet] >>> Downloading %s from %s...' % (file_, url))
                 r = requests.get(url, stream=True, verify=verify_ssl)
                 if r.status_code != 200:
                     errorLogger("Failed downloading url %s" % url, RuntimeError)
@@ -109,7 +109,7 @@ def download_from_url(
                     raise e
                 else:
                     if log:
-                        infoLogger("download failed, retrying, {} attempt{} left"
+                        infoLogger("[DataSet] >>> Download failed, retrying, {} attempt{} left"
                               .format(retries, 's' if retries > 1 else ''))
 
     return file_
@@ -133,7 +133,7 @@ def extract_archive(file_, target_dir, overwrite=False):
     """
     if os.path.exists(target_dir) and not overwrite:
         return
-    infoLogger('Extracting file to {}'.format(target_dir))
+    infoLogger('[DataSet] >>> Extracting file to {}'.format(target_dir))
     if file_.endswith('.tar.gz') or file_.endswith('.tar') or file_.endswith('.tgz'):
         import tarfile
         with tarfile.open(file_, 'r') as archive:
