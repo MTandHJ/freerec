@@ -29,7 +29,7 @@ class Yelp18_m1(RecDataSet):
     """ Yelp 2018 dataset.
     |  Dataset  | #Users | #Items | #Interactions |  #Train   |  #Test  | Density |
     |:---------:|:------:|:------:|:-------------:|:---------:|:-------:|:-------:|
-    | Yelp18_x1 | 31,668 | 38,048 |   1,561,406   | 1,237,259 | 324,147 | 0.00130 |
+    | Yelp18_m1 | 31,668 | 38,048 |   1,561,406   | 1,237,259 | 324,147 | 0.00130 |
 
     See [here](https://github.com/openbenchmark/BARS/tree/master/candidate_matching/datasets/Yelp#Yelp18_m1) for details.
 
@@ -48,7 +48,7 @@ class Yelp18_m1(RecDataSet):
 
     """
 
-    URL = None
+    URL = "https://zenodo.org/record/7184851/files/yelp2018.zip"
 
     _cfg = Config(
         sparse = [

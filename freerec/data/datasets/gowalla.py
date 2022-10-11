@@ -44,7 +44,7 @@ class Gowalla_m1(RecDataSet):
 
     """
 
-    URL = "https://zenodo.org/record/7175950/files/Gowalla_m1.zip"
+    URL = "https://zenodo.org/record/7184851/files/Gowalla_m1.zip"
 
     _cfg = Config(
         sparse = [

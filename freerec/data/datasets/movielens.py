@@ -33,7 +33,7 @@ class MovieLens1M_m2(RecDataSet):
 
     """
 
-    URL = "https://zenodo.org/record/7175950/files/MovieLens1M_m2.zip"
+    URL = "https://zenodo.org/record/7184851/files/MovieLens1M_m2.zip"
 
     _cfg = Config(
         sparse = [
