@@ -20,7 +20,8 @@ class BaseCriterion(nn.Module):
         assert reduction in ('none', 'sum', 'mean'), f"Invalid reduction of {reduction} got ..."
         self.reduction = reduction
 
-    def regularize(self, params: Union[torch.Tensor, Iterable[torch.Tensor]], rtype: str = 'l2'):
+    @staticmethod
+    def regularize(params: Union[torch.Tensor, Iterable[torch.Tensor]], rtype: str = 'l2'):
         """Add regularization for given parameters.
 
         Parameters:
@@ -30,11 +31,12 @@ class BaseCriterion(nn.Module):
         rtype: Some kind of regularization including 'l1'|'l2'.
         """
         params = [params] if isinstance(params, torch.Tensor) else params
-        if self.rtype == 'l1':
+        if rtype == 'l1':
             return sum(param.abs().sum() for param in params)
-        elif self.rtype == 'l2':
+        elif rtype == 'l2':
             return sum(param.pow(2).sum() for param in params) / 2
         else:
+            torch.norm()
             errorLogger(f"{rtype} regularization is not supported ...", NotImplementedError)
 
 
