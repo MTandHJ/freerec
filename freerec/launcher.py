@@ -427,24 +427,27 @@ class Adapter:
         3. Convert all parameters from `cfg.PARAMS`;
         4. Convert all defaults from `cfg.DEFAULTS`.
         """
-        def safe_cast(vals):
-            for caster in (int, float, str):
-                try:
-                    return list(map(caster, vals))
-                except ValueError:
-                    continue
         self.cfg = cfg
+        piece = "{key}: {vals} \n"
+        envs, params, defaults = "", "", ""
         for key, val in self.cfg.ENVS.items():
             if key == 'device':
-                self.devices = list(val.split(','))
+                self.devices = val.split(',')
             else:
                 self.cfg.COMMAND += self.get_option(key, val)
+            envs += piece.format(key=key, vals=val)
         for key, vals in self.cfg.PARAMS.items():
             if isinstance(vals, (str, int, float)):
                 vals = (vals, )
-            self.deploy_params(key, safe_cast(vals))
+            self.deploy_params(key, vals)
+            params += piece.format(key=key, vals=vals)
         for key, val in self.cfg.DEFAULTS.items():
-            self.cfg.DEFAULTS[key] = safe_cast([val])[0]
+            self.cfg.DEFAULTS[key] = val
+            defaults += piece.format(key=key, vals=val)
+
+        cfg_infos = f"command: {self.cfg.COMMAND} \nenvs: \n{envs}params: \n{params}defaults: \n{defaults}"
+        infoLogger(f"\033[0;31;47m{cfg_infos}\033[0m")
+        
 
     def deploy_params(self, key: str, vals: Iterable):
         self.params.append(key)
