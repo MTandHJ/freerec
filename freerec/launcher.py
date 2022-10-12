@@ -428,7 +428,7 @@ class Adapter:
         4. Convert all defaults from `cfg.DEFAULTS`.
         """
         self.cfg = cfg
-        piece = "{key}: {vals} \n"
+        piece = "\t{key}: {vals} \n"
         envs, params, defaults = "", "", ""
         for key, val in self.cfg.ENVS.items():
             if key == 'device':
@@ -438,7 +438,7 @@ class Adapter:
             envs += piece.format(key=key, vals=val)
         for key, vals in self.cfg.PARAMS.items():
             if isinstance(vals, (str, int, float)):
-                vals = (vals, )
+                vals = [vals]
             self.deploy_params(key, vals)
             params += piece.format(key=key, vals=vals)
         for key, val in self.cfg.DEFAULTS.items():
