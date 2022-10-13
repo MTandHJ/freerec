@@ -34,7 +34,7 @@ class NegativesForTrain(Postprocessor):
             Yielding dict of np.array.
         num_negatives: int
             Sampling `num_negatives` for every piece of data.
-        unseen_only: bool
+        unseen_only: bool, default True
             - `True`: Sampling negatives only from unseen items (slow).
             - `False`: Sampling negatives from all items (fast).
         """
@@ -232,12 +232,14 @@ class TriSampler(Postprocessor):
         for chunk in self.source:
             users.append(chunk[self.User.name])
             items.append(chunk[self.Item.name])
-            vals.append(-np.ones_like(chunk[self.Item.name]))
+            # -1 for seen positives
+            vals.append(-np.ones_like(chunk[self.Item.name])) 
 
         self.test()
         for chunk in self.source:
             users.append(chunk[self.User.name])
             items.append(chunk[self.Item.name])
+            # 1 for unseen positives
             vals.append(np.ones_like(chunk[self.Item.name]))
         
         users = np.ravel(np.concatenate(users, axis=0))
