@@ -1,4 +1,6 @@
 
+from ctypes import Union
+from math import ceil
 from typing import Callable, Iterator, Optional, Dict
 
 import torch
@@ -77,8 +79,8 @@ class ToTensor(Postprocessor):
             yield {field.name: self.at_least_2d(torch.tensor(batch[field.name], dtype=field.dtype)) for field in self.fields}
 
 
-@dp.functional_datapipe("chunk_")
-class Chunker(Postprocessor):
+@dp.functional_datapipe("split_")
+class Spliter(Postprocessor):
     """A special batcher for Dict[str, Tensor] only."""
 
     def __init__(
@@ -99,12 +101,18 @@ class Chunker(Postprocessor):
 
         self.batch_size = batch_size
 
+    def split(self, vals: Union[torch.Tensor, np.ndarray]):
+        if isinstance(vals, torch.Tensor):
+            return torch.split(vals, self.batch_size, dim=0)
+        elif isinstance(vals, np.ndarray):
+            return np.array_split(vals, ceil(len(vals) / self.batch_size), axis=0)
+
     def __len__(self):
         raise errorLogger("Chunker has no `__len__` method ...", NotImplementedError)
 
     def __iter__(self) -> Iterator:
         for chunk in self.source:
-            chunk = {key: torch.split(vals, self.batch_size, dim=0) for key, vals in chunk.items()}
+            chunk = {key: self.split(vals) for key, vals in chunk.items()}
             try:
                 k = 0
                 while True:
