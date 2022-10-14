@@ -13,7 +13,7 @@ from .base import Postprocessor
 
 
 __all__ = [
-    "Sharder", "Shuffle", "SubFielder", "Chunker", "ToTensor"
+    "Sharder", "Shuffle", "SubFielder", "Spliter", "ToTensor"
 ]
 
 
