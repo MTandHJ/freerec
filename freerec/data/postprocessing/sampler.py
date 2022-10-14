@@ -165,11 +165,11 @@ class UniformSampler(Postprocessor):
         self.fields = self.fields.groupby(ID)
         self.prepare()
 
-    @timemeter("NegativeForEval/prepare")
+    @timemeter("UniformSampler/prepare")
     def prepare(self):
         self.train()
         self.posItems = [set() for _ in range(self.User.count)]
-        self.allItems = set(range(self.Item.count))
+        self.negative_pool = self._sample_from_all(self.datasize * self.num_negatives)
 
         for chunk in self.source:
             list(map(
@@ -179,13 +179,24 @@ class UniformSampler(Postprocessor):
 
         self.posItems = [list(items) for items in self.posItems]
 
+    def _sample_from_all(self, pool_size: int = 51200):
+        allItems = list(range(self.Item.count))
+        while 1:
+            for item in random.choices(allItems, k=pool_size):
+                yield item
+
+    def _sample_from_pool(self, seen):
+        negative = next(self.negative_pool)
+        while negative in seen:
+            negative = next(self.negative_pool)
+        return negative
+
     def sample_from_seen(self, user):
         return random.choice(self.posItems[user.item()])
 
     def sample_from_unseen(self, user):
         seen = self.posItems[user.item()]
-        unseen = list(self.allItems - set(seen))
-        return random.choices(unseen, k=self.num_negatives)
+        return [self._sample_from_pool(seen) for _ in range(self.num_negatives)]
 
     def __len__(self):
         return 1
@@ -235,7 +246,7 @@ class TriSampler(Postprocessor):
         self.fields = self.fields.groupby(ID)
         self.prepare()
 
-    @timemeter("NegativeForEval/prepare")
+    @timemeter("TriSampler/prepare")
     def prepare(self):
         users, items, vals = [], [], []
 
