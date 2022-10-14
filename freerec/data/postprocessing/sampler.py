@@ -48,7 +48,8 @@ class NegativesForTrain(Postprocessor):
     @timemeter("NegativeForTrain/prepare")
     def prepare(self):
         self.train()
-        posItems = [set() for _ in range(self.User.count)]
+        self.posItems = [set() for _ in range(self.User.count)]
+        self.negative_pool = self._sample_from_all(self.datasize * self.num_negatives)
 
         for chunk in self.source:
             list(map(
@@ -56,17 +57,21 @@ class NegativesForTrain(Postprocessor):
                 zip(chunk[self.User.name], chunk[self.Item.name])
             ))
 
-        self.negative_pools = [filter(lambda item: item in seen, self._sample_from_all()) for seen in posItems]
-
-
-    def _sample_from_all(self):
-        nums = self.Item.count - 1
+    def _sample_from_all(self, pool_size: int = 51200):
+        allItems = list(range(self.Item.count))
         while 1:
-            yield random.randint(0, nums)
+            for item in random.choices(allItems, k=pool_size):
+                yield item
+
+    def _sample_from_pool(self, seen):
+        negative = next(self.negative_pool)
+        while negative in seen:
+            negative = next(self.negative_pool)
+        return negative
 
     def sample(self, x):
-        pool = self.negative_pools[x.item()]
-        return [next(pool) for _ in range(self.num_negatives)]
+        seen = self.posItems[x.item()]
+        return [self._sample_from_pool(seen) for _ in range(self.num_negatives)]
 
     def __iter__(self) -> Iterator:
         if self.mode == 'train':
