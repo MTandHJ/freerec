@@ -1,11 +1,11 @@
 
-from ctypes import Union
-from math import ceil
-from typing import Callable, Iterator, Optional, Dict
+
+from typing import Callable, Iterator, Optional, Dict, Union
 
 import torch
 import torchdata.datapipes as dp
 import numpy as np
+from math import ceil
 
 from freerec.utils import errorLogger
 
@@ -81,7 +81,7 @@ class ToTensor(Postprocessor):
 
 @dp.functional_datapipe("split_")
 class Spliter(Postprocessor):
-    """A special batcher for Dict[str, Tensor] only."""
+    """A special batcher for Dict[str, Union[Tensor, ndarray]] only."""
 
     def __init__(
         self, datapipe: Postprocessor, batch_size: int
@@ -91,7 +91,7 @@ class Spliter(Postprocessor):
         ---
 
         datapipe: Postprocessor
-            It must yield tensors !
+            It must yield tensors or array !
         batch_size: int
             If the given batch size is not evenly divisible by _DEFAULT_CHUNK_SIZE,
             minor chunk will yielded frequently. Fortunately, _DEFAULT_CHUNK_SIZE=51200 satisfies
@@ -106,9 +106,11 @@ class Spliter(Postprocessor):
             return torch.split(vals, self.batch_size, dim=0)
         elif isinstance(vals, np.ndarray):
             return np.array_split(vals, ceil(len(vals) / self.batch_size), axis=0)
+        else:
+            errorLogger(f"Only Tensor or ndarray supported but {type(vals)} received", ValueError)
 
     def __len__(self):
-        raise errorLogger("Chunker has no `__len__` method ...", NotImplementedError)
+        raise errorLogger("Spliter has no `__len__` method ...", NotImplementedError)
 
     def __iter__(self) -> Iterator:
         for chunk in self.source:
