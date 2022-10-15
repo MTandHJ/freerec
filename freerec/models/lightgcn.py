@@ -1,6 +1,6 @@
 
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 import torch
 import torch_geometric.transforms as T
@@ -43,17 +43,25 @@ class LightGCN(RecSysArch):
         self.__graph = graph
         T.ToSparseTensor()(self.__graph)
 
+    def to(
+        self, device: Optional[Union[int, torch.device]] = None, 
+        dtype: Optional[Union[torch.dtype, str]] = None, 
+        non_blocking: bool = False
+    ):
+        if device:
+            self.graph.to(device)
+        return super().to(device, dtype, non_blocking)
+
     def forward(
         self, users: Optional[Dict[str, torch.Tensor]] = None, 
         items: Optional[Dict[str, torch.Tensor]] = None
     ):
-        adj_t = self.graph.adj_t.to(self.device)
         userEmbs = self.User.embeddings.weight
         itemEmbs = self.Item.embeddings.weight
         features = torch.cat((userEmbs, itemEmbs), dim=0).flatten(1) # N x D
         avgFeats = features / (self.num_layers + 1)
         for _ in range(self.num_layers):
-            features = self.conv(features, adj_t)
+            features = self.conv(features, self.graph.adj_t)
             avgFeats += features / (self.num_layers + 1)
         userFeats, itemFeats = torch.split(avgFeats, (self.User.count, self.Item.count))
 
