@@ -123,7 +123,7 @@ class Parser(Config):
         self.parser.add_argument("--num-workers", type=int, default=0)
 
         self.parser.add_argument("--seed", type=int, default=CONFIG.SEED, help="calling --seed=-1 for a random seed")
-        self.parser.add_argument("--benchmark", action="store_false", default=True, help="cudnn.benchmark == True ?")
+        self.parser.add_argument("--benchmark", action="store_false", default=True, help="cudnn.deterministic == True ?")
         self.parser.add_argument("--verbose", action="store_true", default=False, help="show the progress bar if true")
         self.parser.add_argument("--resume", action="store_true", default=False, help="resume the training from the recent checkpoint")
 
