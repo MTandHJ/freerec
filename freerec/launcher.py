@@ -240,6 +240,7 @@ class Coach:
         else:
             return self.__dataloader
 
+    @torch.no_grad()
     def monitor(
         self, *values,
         n: int = 1, mode: str = 'mean', 
