@@ -284,11 +284,11 @@ def mkdirs(*paths: str) -> None:
 def activate_benchmark(benchmark: bool) -> None:
     from torch.backends import cudnn
     if benchmark:
-        infoLogger(f"[Benchmark] >>> Activate benchmark")
-        cudnn.benchmark, cudnn.deterministic = True, False
-    else:
-        infoLogger(f"[Benchmark] >>> Deactivate benchmark")
+        infoLogger(f"[Benchmark] >>> cudnn.deterministic == True")
         cudnn.benchmark, cudnn.deterministic = False, True
+    else:
+        infoLogger(f"[Benchmark] >>> cudnn.deterministic == False")
+        cudnn.benchmark, cudnn.deterministic = True, False
 
 def set_seed(seed: int) -> int:
     """Set seed.
