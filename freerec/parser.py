@@ -86,7 +86,7 @@ class Parser(Config):
                     if key.upper() in self:
                         self[key.upper()] = val
                     else:
-                        self[key] = val
+                        errorLogger(f"Unexpected parameter of {key} from {args.config} ...")
 
     def reset(self):
         self.clear()
@@ -110,10 +110,10 @@ class Parser(Config):
         self.parser.add_argument("-mom", "--momentum", type=float, default=0.9, help="the momentum used for SGD")
         self.parser.add_argument("-beta1", "--beta1", type=float, default=0.9, help="the first beta argument for Adam")
         self.parser.add_argument("-beta2", "--beta2", type=float, default=0.999, help="the second beta argument for Adam")
-        self.parser.add_argument("-wd", "--weight-decay", type=float, default=1e-4, help="weight for 'l1|l2|...' regularzation")
-        self.parser.add_argument("-lr", "--lr", "--LR", "--learning-rate", type=float, default=0.001)
-        self.parser.add_argument("-b", "--batch-size", type=int, default=256)
-        self.parser.add_argument("--epochs", type=int, default=1000)
+        self.parser.add_argument("-wd", "--weight-decay", type=float, default=None, help="weight for 'l1|l2|...' regularzation")
+        self.parser.add_argument("-lr", "--lr", "--LR", "--learning-rate", type=float, default=None)
+        self.parser.add_argument("-b", "--batch-size", type=int, default=None)
+        self.parser.add_argument("--epochs", type=int, default=None)
 
         # eval
         self.parser.add_argument("--eval-valid", action="store_false", default=True, help="evaluate validset")
