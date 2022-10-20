@@ -1,5 +1,6 @@
 
 
+from cmath import isnan
 from typing import Callable, Optional, Dict, List, Union
 import torch
 import numpy as np
@@ -101,12 +102,13 @@ class AverageMeter:
         self.reset()
         return info
 
-    def callback(self, *values):
-        val = self.__metric(*values)
-        try:
-            return val.item() # Tensor|ndarray
-        except AttributeError:
-            return val # float
+    def check(self, *values):
+        val = np.array(self.__metric(*values))
+        if np.isnan(val) or np.isinf(val):
+            errorLogger(
+                f"The metric of {self.name} got an unexpected value: {val.item()}."
+            )
+        return val.item()
 
     def plot(self, freq: int = 1) -> None:
         """Plot lines according to historical results."""
@@ -161,7 +163,7 @@ class AverageMeter:
     def __call__(self, *values, n: int = 1, mode: str = "mean")  -> None:
         self.active = True
         self.update(
-            val = self.callback(*values),
+            val = self.check(*values),
             n = n,
             mode = mode
         )
@@ -205,7 +207,6 @@ class Monitor(Config):
                                 val,
                                 t
                             )
-
 
 
 def set_logger(
