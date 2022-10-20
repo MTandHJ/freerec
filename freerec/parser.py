@@ -105,7 +105,7 @@ class Parser(Config):
         self.parser.add_argument("--device", default=torch.cuda.current_device() if torch.cuda.is_available() else 'cpu', help="device")
 
         # model
-        self.parser.add_argument("--optimizer", type=str, choices=("sgd", "adam"), default="adam")
+        self.parser.add_argument("--optimizer", type=str, default="adam", help="Optimizer: adam (default), sgd, ...")
         self.parser.add_argument("--nesterov", action="store_true", default=False, help="nesterov for SGD")
         self.parser.add_argument("-mom", "--momentum", type=float, default=0.9, help="the momentum used for SGD")
         self.parser.add_argument("-beta1", "--beta1", type=float, default=0.9, help="the first beta argument for Adam")
