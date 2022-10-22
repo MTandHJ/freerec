@@ -249,7 +249,7 @@ class CoreParser(Config):
             errorLogger(template)
         for key in ('root', 'device'):
             if self.ENVS.get(key, None) is None:
-                errorLogger(f"No device is allocated, calling '--{key}' to specify it")
+                errorLogger(f"No {key} is allocated, calling '--{key}' to specify it")
 
         if self.ENVS.get('dataset', None) is None:
             self.ENVS['dataset'] = "RecDataSet"
