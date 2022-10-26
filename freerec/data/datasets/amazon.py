@@ -74,8 +74,8 @@ class AmazonBooks_m1(AmazonWithInteractions):
 
     _cfg = Config(
         sparse = [
-            SparseField(name='UserID', na_value=0, dtype=int, tags=[USER, ID]),
-            SparseField(name='ItemID', na_value=0, dtype=int, tags=[ITEM, ID]),
+            SparseField(name='UserID', na_value=-1, dtype=int, tags=[USER, ID]),
+            SparseField(name='ItemID', na_value=-1, dtype=int, tags=[ITEM, ID]),
         ],
         target = [DenseField(name='Rating', na_value=None, dtype=int, transformer='none', tags=TARGET)]
     )
@@ -112,13 +112,15 @@ class AmazonCDs_m1(AmazonWithInteractions):
 
     _cfg = Config(
         sparse = [
-            SparseField(name='UserID', na_value=0, dtype=int, tags=[USER, ID]),
-            SparseField(name='ItemID', na_value=0, dtype=int, tags=[ITEM, ID]),
+            SparseField(name='UserID', na_value=-1, dtype=int, tags=[USER, ID]),
+            SparseField(name='ItemID', na_value=-1, dtype=int, tags=[ITEM, ID]),
         ],
         target = [DenseField(name='Rating', na_value=None, dtype=int, transformer='none', tags=TARGET)]
     )
 
     _cfg.fields = _cfg.sparse + _cfg.target
+
+    open_kw = Config(mode='rt', delimiter=' ', skip_lines=0)
 
 
 class AmazonMovies_m1(AmazonWithInteractions):
@@ -148,13 +150,15 @@ class AmazonMovies_m1(AmazonWithInteractions):
 
     _cfg = Config(
         sparse = [
-            SparseField(name='UserID', na_value=0, dtype=int, tags=[USER, ID]),
-            SparseField(name='ItemID', na_value=0, dtype=int, tags=[ITEM, ID]),
+            SparseField(name='UserID', na_value=-1, dtype=int, tags=[USER, ID]),
+            SparseField(name='ItemID', na_value=-1, dtype=int, tags=[ITEM, ID]),
         ],
         target = [DenseField(name='Rating', na_value=None, dtype=int, transformer='none', tags=TARGET)]
     )
 
     _cfg.fields = _cfg.sparse + _cfg.target
+
+    open_kw = Config(mode='rt', delimiter=' ', skip_lines=0)
 
 
 class AmazonBeauty_m1(AmazonWithInteractions):
@@ -184,11 +188,12 @@ class AmazonBeauty_m1(AmazonWithInteractions):
 
     _cfg = Config(
         sparse = [
-            SparseField(name='UserID', na_value=0, dtype=int, tags=[USER, ID]),
-            SparseField(name='ItemID', na_value=0, dtype=int, tags=[ITEM, ID]),
+            SparseField(name='UserID', na_value=-1, dtype=int, tags=[USER, ID]),
+            SparseField(name='ItemID', na_value=-1, dtype=int, tags=[ITEM, ID]),
         ],
         target = [DenseField(name='Rating', na_value=None, dtype=int, transformer='none', tags=TARGET)]
     )
 
     _cfg.fields = _cfg.sparse + _cfg.target
 
+    open_kw = Config(mode='rt', delimiter=' ', skip_lines=0)
