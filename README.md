@@ -4,7 +4,7 @@
 
 ## Requirements: 
 
-Python==3.9 | [PyTorch >= 1.12.0](https://pytorch.org/) | [TorchData](https://github.com/pytorch/data) | [TorchRec](https://github.com/pytorch/torchrec)
+Python >= 3.7 | [PyTorch >= 1.12.1](https://pytorch.org/) | [TorchData](https://github.com/pytorch/data)
 
 
 ## Installation

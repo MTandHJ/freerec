@@ -59,8 +59,7 @@ class Config(dict):
         super(Config, self).__setattr__(key, value)
 
     def update(self, **kwargs) -> None:
-        # Note that, we only update the keys and 
-        # correspoding values existed.
+        """Update the existed keys and values."""
         for key, value in kwargs.items():
             if key in self.keys():
                 self[key] = value

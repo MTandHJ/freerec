@@ -8,7 +8,7 @@ from .base import Postprocessor
 from ..datasets import RecDataSet
 
 
-__all__ = ['Batcher', 'Mapper', 'ShardingFilter']
+__all__ = ['Batcher', 'Mapper', 'ShardingFilter', 'Prefetcher']
 
 
 @dp.functional_datapipe("batch_")
@@ -44,6 +44,17 @@ class ShardingFilter(Postprocessor):
     def __init__(self, datapipe: Union[RecDataSet, Postprocessor]) -> None:
         super().__init__(datapipe)
         self.datapipe = datapipe.sharding_filter()
+
+    def __iter__(self) -> Iterator:
+        yield from self.datapipe
+
+
+@dp.functional_datapipe("prefetch_")
+class Prefetcher(Postprocessor):
+
+    def __init__(self, datapipe: Union[RecDataSet, Postprocessor], buffer_size: int = 2) -> None:
+        super().__init__(datapipe)
+        self.datapipe = datapipe.prefetch()
 
     def __iter__(self) -> Iterator:
         yield from self.datapipe
