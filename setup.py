@@ -30,7 +30,7 @@ setuptools.setup(
   license='MIT License',
   url="https://github.com/MTandHJ/freerec",
   packages=setuptools.find_packages(),
-  python_requires='>=3.7',
+  python_requires='>=3.9',
   install_requires=requires,
   classifiers=[
   "Programming Language :: Python :: 3",

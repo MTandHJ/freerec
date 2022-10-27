@@ -4,7 +4,7 @@
 
 ## Requirements: 
 
-Python >= 3.7 | [PyTorch >= 1.12.1](https://pytorch.org/) | [TorchData](https://github.com/pytorch/data)
+Python >= 3.9 | [PyTorch >= 1.12.1](https://pytorch.org/) | [TorchData](https://github.com/pytorch/data) | [PyG](https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html#)
 
 
 ## Installation
