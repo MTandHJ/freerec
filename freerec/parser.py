@@ -223,7 +223,7 @@ class CoreParser(Config):
         command: python xxx.py
         envs:
             root: ../../data
-            dataset: MovieLens1M
+            dataset: Gowalla_m1
             device: 0,1,2,3
             eval_freq: 5
             num_workers: 0

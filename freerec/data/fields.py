@@ -458,8 +458,8 @@ class Tokenizer(torch.nn.Module):
         Examples:
         ---
 
-        >>> from freerec.data.datasets import MovieLens1M
-        >>> basepipe = MovieLens1M("../data/MovieLens1M")
+        >>> from freerec.data.datasets import Gowalla_m1
+        >>> basepipe = Gowalla_m1("../data")
         >>> fields = basepipe.fields
         >>> tokenizer = Tokenizer(fields)
         """
