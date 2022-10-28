@@ -316,9 +316,9 @@ class RecDataSet(BaseSet):
         Examples:
         ---
 
-        >>> from freerec.data.datasets import MovieLens1M
+        >>> from freerec.data.datasets import Gowalla_m1
         >>> from freerec.data.tags import USER, ITEM, ID
-        >>> basepipe = MovieLens1M("../data/MovieLens1M")
+        >>> basepipe = Gowalla_m1("../data")
         >>> fields = basepipe.fields
         >>> graph = basepipe.to_heterograph(
         ...    (fields[USER, ID], None, fields[ITEM, ID]), 
@@ -326,19 +326,18 @@ class RecDataSet(BaseSet):
         ... )
         >>> graph
         HeteroData(
-            UserID={ x=[6040, 0] },
-            ItemID={ x=[3706, 0] },
-            (UserID, UserID2ItemID, ItemID)={ edge_index=[2, 994169] },
-            (ItemID, ItemID2UserID, UserID)={ edge_index=[2, 994169] }
+            UserID={ x=[29858, 0] },
+            ItemID={ x=[40981, 0] },
+            (UserID, UserID2ItemID, ItemID)={ edge_index=[2, 810128] },
+            (ItemID, ItemID2UserID, UserID)={ edge_index=[2, 810128] }
         )
         """
         if self.mode != 'train':
             warnLogger(f"Convert the datapipe for {self.mode} to graph. Ensure this is intentional ...")
 
         srcs, _, dsts = zip(*edge_types)
-        edges = map(lambda triplet: triplet[1] if triplet[1] else f"{triplet[0].name}2{triplet[2].name}", edge_types)
-        nodes = set(srcs + dsts)
-        data = {node.name: [] for node in nodes}
+        edges = list(map(lambda triplet: triplet[1] if triplet[1] else f"{triplet[0].name}2{triplet[2].name}", edge_types))
+        data = {node.name: [] for node in set(srcs + dsts)}
         for chunk in self:
             for node in data:
                 data[node].append(np.ravel(chunk[node]))
@@ -346,12 +345,15 @@ class RecDataSet(BaseSet):
             data[key] = torch.tensor(np.concatenate(data[key], axis=0), dtype=torch.long)
 
         graph = HeteroData()
-        for node in nodes:
+        for node in srcs:
             graph[node.name].x = torch.empty((node.count, 0), dtype=torch.long)
+        for node in dsts:
+            if node not in srcs:
+                graph[node.name].x = torch.empty((node.count, 0), dtype=torch.long)
         for src, edge, dst in zip(srcs, edges, dsts):
             u, v = data[src.name], data[dst.name]
             graph[src.name, edge, dst.name].edge_index = torch.stack((u, v), dim=0) # 2 x N
-        return graph
+        return graph.coalesce()
 
     def to_bigraph(
         self,
@@ -379,9 +381,9 @@ class RecDataSet(BaseSet):
         Examples:
         ---
 
-        >>> from freerec.data.datasets import MovieLens1M
+        >>> from freerec.data.datasets import Gowalla_m1
         >>> from freerec.data.tags import USER, ITEM, ID
-        >>> basepipe = MovieLens1M("../data/MovieLens1M")
+        >>> basepipe = Gowalla_m1("../data")
         >>> fields = basepipe.fields
         >>> graph = basepipe.to_bigraph(
         ...    (fields[USER, ID], None, fields[ITEM, ID]), 
@@ -389,9 +391,9 @@ class RecDataSet(BaseSet):
         ... )
         >>> graph
         HeteroData(
-            UserID={ x=[6040, 0] },
-            ItemID={ x=[3706, 0] },
-            (UserID, df, ItemID)={ edge_index=[2, 994169] }
+            UserID={ x=[29858, 0] },
+            ItemID={ x=[40981, 0] },
+            (UserID, UserID2ItemID, ItemID)={ edge_index=[2, 810128] }
         )
         """
         return self.to_heterograph((src, edge_type, dst))
@@ -415,16 +417,16 @@ class RecDataSet(BaseSet):
         Examples:
         ---
 
-        >>> from freerec.data.datasets import MovieLens1M
+        >>> from freerec.data.datasets import Gowalla_m1
         >>> from freerec.data.tags import USER, ITEM, ID
-        >>> basepipe = MovieLens1M("../data/MovieLens1M")
+        >>> basepipe = Gowalla_m1("../data")
         >>> fields = basepipe.fields
         >>> graph = basepipe.to_bigraph(
         ...    (fields[USER, ID], None, fields[ITEM, ID]), 
         ...    (fields[ITEM, ID], None, fields[USER, ID])
         ... )
         >>> graph
-        Data(edge_index=[2, 1988338], x=[9746, 0], node_type=[9746], edge_type=[994169])
+        Data(edge_index=[2, 1620256], x=[70839, 0], node_type=[70839], edge_type=[810128])
         """
         graph = self.to_heterograph((src, None, dst)).to_homogeneous()
         graph.edge_index = to_undirected(graph.edge_index)
