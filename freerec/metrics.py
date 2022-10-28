@@ -16,7 +16,7 @@ from .utils import errorLogger
 
 __all__ = [
     'mean_abs_error', 'mean_squared_error', 'root_mse',
-    'precision', 'recall', 'hit_rate', 
+    'precision', 'recall', 'auroc' 'hit_rate',
     'normalized_dcg', 'mean_reciprocal_rank', 'mean_average_precision'
 ]
 
@@ -266,6 +266,47 @@ def f1_score(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = N
     valid = part2 != 0
     score[valid] /= part2[valid]
     return score
+
+@_reduce("mean") #TODO: This implementation has not been verified.
+def auroc(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+    """AUC.
+
+    .. math::
+
+        \frac{n - (|N_+| - 1) / 2 - (\sum_{v \in |N_+|} rank(v)) / |N_+|}{n - |N_+|}
+    
+    where :math: `n` and :math: `|N_+|` denote the number of items and positive items, respectively; :math: `rank(v)` returns the rank of the positive item :math: `v`.
+
+    Parameters:
+    ---
+
+    preds: (N, d) or (N, d), float
+        N query predictions or a single query.
+    targets: (d,) or (n, d), int or bool
+        Targets in accordance with preds.
+
+    reduction: str, mean|sum|none
+        - `mean`: Return :math: `\frac{1}{N} \sum_{i=1}^N \phi(x_i, y_i)` .
+        - `sum`: Return :math: `\sum_{i=1}^N \phi(x_i, y_i)` .
+        - `None`: Return :math: `[\phi_1(x_i, y_i), \ldots, \phi(x_N, y_N)]` .
+
+    Returns:
+    ---
+
+        torch.Tensor
+    """
+    preds, targets = preds.float(), targets.float()
+    preds, indices = torch.sort(preds, descending=True)
+    targets = targets.gather(-1, indices)
+    ranks = torch.arange(1, targets.size(1) + 1, device=targets.device)
+    length = targets.sum(dim=-1)
+    results = targets.size(1)
+    results -= (ranks * targets).sum(dim=-1).div(length)
+    results -= (length - 1).div(2)
+    results /= (targets.size(1) - length)
+    results[torch.isnan(results)] = 0.
+    return results
+
 
 @_reduce('mean')
 def hit_rate(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:

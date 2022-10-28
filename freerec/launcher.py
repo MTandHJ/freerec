@@ -15,7 +15,6 @@ from freeplot.utils import import_pickle, export_pickle
 from .data.datasets.base import BaseSet
 from .data.fields import Field, Fielder
 from .data.dataloader import DataLoader
-from .metrics import f1_score
 from .models import RecSysArch
 from .criterions import BaseCriterion
 from .dict2obj import Config
@@ -37,6 +36,7 @@ DEFAULT_METRICS = {
     'PRECISION': precision,
     'RECALL': recall,
     'F1': f1_score,
+    'AUC': auroc,
     'HITRATE': hit_rate,
     #############
     'NDCG': normalized_dcg,
@@ -54,6 +54,7 @@ DEFAULT_FMTS = {
     'PRECISION': ".4f",
     'RECALL': ".4f",
     'F1': ".4f",
+    'AUC': ".4d",
     'HITRATE': ".4f",
     #############
     'NDCG': ".4f",
@@ -71,6 +72,7 @@ DEFAULT_BEST_CASTER = {
     'PRECISION': max,
     'RECALL': max,
     'F1': max,
+    'AUC': max,
     'HITRATE': max,
     #############
     'NDCG': max,
