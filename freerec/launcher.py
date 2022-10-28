@@ -54,7 +54,7 @@ DEFAULT_FMTS = {
     'PRECISION': ".4f",
     'RECALL': ".4f",
     'F1': ".4f",
-    'AUC': ".4d",
+    'AUC': ".4f",
     'HITRATE': ".4f",
     #############
     'NDCG': ".4f",
