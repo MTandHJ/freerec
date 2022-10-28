@@ -102,7 +102,11 @@ class AverageMeter:
         return info
 
     def check(self, *values):
-        val = np.array(self.__metric(*values))
+        val = self.__metric(*values)
+        if isinstance(val, torch.Tensor):
+            val = val.cpu().numpy()
+        else:
+            val = np.array(val)
         if np.isnan(val) or np.isinf(val):
             errorLogger(
                 f"The metric of {self.name} got an unexpected value: {val.item()}."
