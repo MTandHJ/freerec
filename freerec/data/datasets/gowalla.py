@@ -27,6 +27,10 @@ class _Row2Pairer(dp.iter.IterDataPipe):
 
 class Gowalla_m1(RecDataSet):
     """ GowallaM1: (user, items).
+    |  Dataset   | #Users | #Items | #Interactions | #Train  |  #Test  | Density |
+    | :--------: | :----: | :----: | :-----------: | :-----: | :-----: | :-----: |
+    | Gowalla_m1 | 29,858 | 40,981 |   1,027,370   | 810,128 | 217,242 | 0.00084 |
+
     See [here](https://github.com/kuandeng/LightGCN/tree/master/Data/gowalla) for details.
 
     Attributes:
