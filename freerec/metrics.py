@@ -16,7 +16,7 @@ from .utils import errorLogger
 
 __all__ = [
     'mean_abs_error', 'mean_squared_error', 'root_mse',
-    'precision', 'recall', 'auroc' 'hit_rate',
+    'precision', 'recall', 'f1_score', 'auroc', 'hit_rate',
     'normalized_dcg', 'mean_reciprocal_rank', 'mean_average_precision'
 ]
 
