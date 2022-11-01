@@ -7,11 +7,12 @@ for formal definitions.
 The implementations below are fully due to torchmetrics.
 """
 
+from multiprocessing import reduction
 from typing import Optional, Union, List 
 
 import torch
 import torchmetrics
-from .utils import errorLogger
+from freerec.utils import errorLogger
 
 
 __all__ = [
@@ -71,6 +72,17 @@ def mean_abs_error(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
     ---
     
         torch.Tensor, (1,) or (n,)
+    
+    Examples:
+    ---
+
+    >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
+    >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
+    >>> mean_abs_error(preds, targets, reduction='none')
+    tensor([0.5000, 0.5250])
+    >>> mean_abs_error(preds, targets)
+    tensor(0.5125)
+
     """
     preds, targets = preds.float(), targets.float()
     return (preds - targets).abs().mean(-1)
@@ -99,6 +111,17 @@ def mean_squared_error(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tens
     ---
 
         torch.Tensor, (1,) or (n,)
+
+    Examples:
+    ---
+
+    >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
+    >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
+    >>> mean_squared_error(preds, targets, reduction='none')
+    tensor([0.3450, 0.3475])
+    >>> mean_squared_error(preds, targets)
+    tensor(0.3462)
+
     """
     preds, targets = preds.float(), targets.float()
     return (preds - targets).pow(2).mean(-1)
@@ -127,6 +150,17 @@ def root_mse(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
     ---
 
         torch.Tensor
+
+    Examples:
+    ---
+
+    >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
+    >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
+    >>> root_mse(preds, targets, reduction='none')
+    tensor([0.5874, 0.5895])
+    >>> root_mse(preds, targets)
+    tensor(0.5884)
+
     """
     preds, targets = preds.float(), targets.float()
     return (preds - targets).pow(2).mean(-1).sqrt()
@@ -165,6 +199,17 @@ def precision(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = 
     ---
 
         torch.Tensor
+
+    Examples:
+    ---
+
+    >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
+    >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
+    >>> precision(preds, targets, k=3, reduction='none')
+    tensor([0.3333, 0.6667])
+    >>> precision(preds, targets, k=3)
+    tensor(0.5000)
+
     """
     preds, targets = preds.float(), targets.float()
     if k is None:
@@ -207,6 +252,17 @@ def recall(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = Non
     ---
 
         torch.Tensor
+
+    Examples:
+    ---
+
+    >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
+    >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
+    >>> recall(preds, targets, k=3, reduction='none')
+    tensor([0.5000, 1.0000])
+    >>> recall(preds, targets, k=3)
+    tensor(0.7500)
+
     """
     preds, targets = preds.float(), targets.float()
     if k is None:
@@ -253,14 +309,25 @@ def f1_score(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = N
     ---
 
         torch.Tensor
+
+    Examples:
+    ---
+
+    >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
+    >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
+    >>> f1_score(preds, targets, k=3, reduction='none')
+    tensor([0.4000, 0.8000])
+    >>> f1_score(preds, targets, k=3)
+    tensor(0.6000)
+
     """
     preds, targets = preds.float(), targets.float()
     if k is None:
         k = preds.size(-1)
     else:
         k = min(k, preds.size(-1))
-    precision_k = precision(preds, targets, k=k)
-    recall_k = recall(preds, targets, k=k)
+    precision_k = precision(preds, targets, k=k, reduction='none')
+    recall_k = recall(preds, targets, k=k, reduction='none')
     score = 2 * precision_k * recall_k
     part2 = precision_k + recall_k
     valid = part2 != 0
@@ -294,6 +361,17 @@ def auroc(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
     ---
 
         torch.Tensor
+
+    Examples:
+    ---
+
+    >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
+    >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
+    >>> auroc(preds, targets, reduction='none')
+    tensor([0.5000, 0.5000])
+    >>> auroc(preds, targets) 
+    tensor(0.5000)
+
     """
     preds, targets = preds.float(), targets.float()
     preds, indices = torch.sort(preds, descending=True)
@@ -306,7 +384,6 @@ def auroc(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
     results /= (targets.size(1) - length)
     results[torch.isnan(results)] = 0.
     return results
-
 
 @_reduce('mean')
 def hit_rate(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
@@ -339,6 +416,17 @@ def hit_rate(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = N
     ---
 
         torch.Tensor
+
+    Examples:
+    ---
+
+    >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
+    >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
+    >>> hit_rate(preds, targets, k=3, reduction='none')
+    tensor([1., 1.])
+    >>> hit_rate(preds, targets, k=3)
+    tensor(1.)
+
     """
     preds, targets = preds.float(), targets.float()
     if k is None:
@@ -386,6 +474,17 @@ def normalized_dcg(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[in
     ---
 
         torch.Tensor
+        
+    Examples:
+    ---
+
+    >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
+    >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
+    >>> normalized_dcg(preds, targets, k=3, reduction='none')
+    tensor([0.6131, 0.6934])
+    >>> normalized_dcg(preds, targets, k=3)
+    tensor(0.6533)
+
     """
     preds, targets = preds.float(), targets.float()
     if k is None:
@@ -430,6 +529,17 @@ def mean_reciprocal_rank(preds: torch.Tensor, targets: torch.Tensor) -> torch.Te
     ---
 
         torch.Tensor
+
+    Examples:
+    ---
+
+    >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
+    >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
+    >>> mean_reciprocal_rank(preds, targets, reduction='none')
+    tensor([1.0000, 0.5000])
+    >>> mean_reciprocal_rank(preds, targets)
+    tensor(0.7500)
+
     """
     metric = torchmetrics.functional.retrieval_reciprocal_rank
     if preds.ndim == 2:
@@ -461,6 +571,16 @@ def mean_average_precision(preds: torch.Tensor, targets: torch.Tensor) -> torch.
     ---
 
         torch.Tensor
+
+    Examples:
+    ---
+
+    >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
+    >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
+    >>> mean_average_precision(preds, targets, reduction='none')
+    tensor([0.7500, 0.5833])
+    >>> mean_average_precision(preds, targets)
+    tensor(0.6667)
     """
     metric = torchmetrics.functional.retrieval_average_precision
     if preds.ndim == 2:
@@ -470,6 +590,5 @@ def mean_average_precision(preds: torch.Tensor, targets: torch.Tensor) -> torch.
 
 
 if __name__ == "__main__":
-    preds = [torch.tensor([0.2, 0.3, 0.5]), torch.tensor([0.1, 0.3, 0.5, 0.2])]
-    targets = [torch.tensor([False, False, True]), torch.tensor([False, True, False, True])]
-    print(mean_reciprocal_rank(preds, targets))
+    import doctest
+    doctest.testmod()
