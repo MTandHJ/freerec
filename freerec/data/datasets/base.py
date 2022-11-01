@@ -58,6 +58,145 @@ class BaseSet(dp.iter.IterDataPipe):
     def __len__(self):
         raise NotImplementedError()
 
+    @timemeter("DataSet/to_graph")
+    def to_heterograph(self, *edge_types: Tuple[SparseField, Optional[str], SparseField]) -> HeteroData:
+        """Convert datapipe to a heterograph.
+
+        Parameters:
+        ---
+
+        *edge_types: (src, edge, dst)
+            - src: SparseField
+                Source node.
+            - edge: Optional[str]
+                The name of the edge. `src.name2dst.name` will be specified if `edge` is `None`.
+            - dst: SparseField
+                Destination node.
+
+        Notes:
+        ---
+
+        Warning will be raised if current mode is not 'train' !
+
+        Examples:
+        ---
+
+        >>> from freerec.data.datasets import Gowalla_m1
+        >>> from freerec.data.tags import USER, ITEM, ID
+        >>> basepipe = Gowalla_m1("../data")
+        >>> fields = basepipe.fields
+        >>> graph = basepipe.to_heterograph(
+        ...    (fields[USER, ID], None, fields[ITEM, ID]), 
+        ...    (fields[ITEM, ID], None, fields[USER, ID])
+        ... )
+        >>> graph
+        HeteroData(
+            UserID={ x=[29858, 0] },
+            ItemID={ x=[40981, 0] },
+            (UserID, UserID2ItemID, ItemID)={ edge_index=[2, 810128] },
+            (ItemID, ItemID2UserID, UserID)={ edge_index=[2, 810128] }
+        )
+        """
+        if self.mode != 'train':
+            warnLogger(f"Convert the datapipe for {self.mode} to graph. Ensure this is intentional ...")
+
+        srcs, _, dsts = zip(*edge_types)
+        edges = list(map(lambda triplet: triplet[1] if triplet[1] else f"{triplet[0].name}2{triplet[2].name}", edge_types))
+        data = {node.name: [] for node in set(srcs + dsts)}
+        for chunk in self:
+            for node in data:
+                data[node].append(np.ravel(chunk[node]))
+        for key in data:
+            data[key] = torch.tensor(np.concatenate(data[key], axis=0), dtype=torch.long)
+
+        graph = HeteroData()
+        for node in srcs:
+            graph[node.name].x = torch.empty((node.count, 0), dtype=torch.long)
+        for node in dsts:
+            if node not in srcs:
+                graph[node.name].x = torch.empty((node.count, 0), dtype=torch.long)
+        for src, edge, dst in zip(srcs, edges, dsts):
+            u, v = data[src.name], data[dst.name]
+            graph[src.name, edge, dst.name].edge_index = torch.stack((u, v), dim=0) # 2 x N
+        return graph.coalesce()
+
+    def to_bigraph(
+        self,
+        src: SparseField,
+        dst: SparseField,
+        edge_type: Optional[str] = None
+    ) -> HeteroData:
+        """Convert datapipe to a bipartite graph.
+
+        Parameters:
+        ---
+
+        src: SparseField
+            Source node.
+        dst: SparseField
+            Destination node.
+        edge_type: Optional[str]
+            The name of the edge. `src.name2dst.name` will be specified if `edge` is `None`.
+
+        Notes:
+        ---
+
+        Warning will be raised if current mode is not 'train' !
+
+        Examples:
+        ---
+
+        >>> from freerec.data.datasets import Gowalla_m1
+        >>> from freerec.data.tags import USER, ITEM, ID
+        >>> basepipe = Gowalla_m1("../data")
+        >>> fields = basepipe.fields
+        >>> graph = basepipe.to_bigraph(
+        ...    (fields[USER, ID], None, fields[ITEM, ID]), 
+        ...    (fields[ITEM, ID], None, fields[USER, ID])
+        ... )
+        >>> graph
+        HeteroData(
+            UserID={ x=[29858, 0] },
+            ItemID={ x=[40981, 0] },
+            (UserID, UserID2ItemID, ItemID)={ edge_index=[2, 810128] }
+        )
+        """
+        return self.to_heterograph((src, edge_type, dst))
+   
+    def to_graph(self, src: SparseField, dst: SparseField) -> Data:
+        """Convert datapipe to a homogeneous graph.
+
+        Parameters:
+        ---
+
+        src: SparseField
+            Source node.
+        dst: SparseField
+            Destination node.
+
+        Notes:
+        ---
+
+        Warning will be raised if current mode is not 'train' !
+
+        Examples:
+        ---
+
+        >>> from freerec.data.datasets import Gowalla_m1
+        >>> from freerec.data.tags import USER, ITEM, ID
+        >>> basepipe = Gowalla_m1("../data")
+        >>> fields = basepipe.fields
+        >>> graph = basepipe.to_bigraph(
+        ...    (fields[USER, ID], None, fields[ITEM, ID]), 
+        ...    (fields[ITEM, ID], None, fields[USER, ID])
+        ... )
+        >>> graph
+        Data(edge_index=[2, 1620256], x=[70839, 0], node_type=[70839], edge_type=[810128])
+        """
+        graph = self.to_heterograph((src, None, dst)).to_homogeneous()
+        graph.edge_index = to_undirected(graph.edge_index)
+        return graph
+
 
 class RecDataSet(BaseSet):
     """ RecDataSet provides a template for specific datasets.
@@ -292,145 +431,6 @@ class RecDataSet(BaseSet):
         self.train()
 
         infoLogger(str(self))
-
-    @timemeter("DataSet/to_graph")
-    def to_heterograph(self, *edge_types: Tuple[SparseField, Optional[str], SparseField]) -> HeteroData:
-        """Convert datapipe to a heterograph.
-
-        Parameters:
-        ---
-
-        *edge_types: (src, edge, dst)
-            - src: SparseField
-                Source node.
-            - edge: Optional[str]
-                The name of the edge. `src.name2dst.name` will be specified if `edge` is `None`.
-            - dst: SparseField
-                Destination node.
-
-        Notes:
-        ---
-
-        Warning will be raised if current mode is not 'train' !
-
-        Examples:
-        ---
-
-        >>> from freerec.data.datasets import Gowalla_m1
-        >>> from freerec.data.tags import USER, ITEM, ID
-        >>> basepipe = Gowalla_m1("../data")
-        >>> fields = basepipe.fields
-        >>> graph = basepipe.to_heterograph(
-        ...    (fields[USER, ID], None, fields[ITEM, ID]), 
-        ...    (fields[ITEM, ID], None, fields[USER, ID])
-        ... )
-        >>> graph
-        HeteroData(
-            UserID={ x=[29858, 0] },
-            ItemID={ x=[40981, 0] },
-            (UserID, UserID2ItemID, ItemID)={ edge_index=[2, 810128] },
-            (ItemID, ItemID2UserID, UserID)={ edge_index=[2, 810128] }
-        )
-        """
-        if self.mode != 'train':
-            warnLogger(f"Convert the datapipe for {self.mode} to graph. Ensure this is intentional ...")
-
-        srcs, _, dsts = zip(*edge_types)
-        edges = list(map(lambda triplet: triplet[1] if triplet[1] else f"{triplet[0].name}2{triplet[2].name}", edge_types))
-        data = {node.name: [] for node in set(srcs + dsts)}
-        for chunk in self:
-            for node in data:
-                data[node].append(np.ravel(chunk[node]))
-        for key in data:
-            data[key] = torch.tensor(np.concatenate(data[key], axis=0), dtype=torch.long)
-
-        graph = HeteroData()
-        for node in srcs:
-            graph[node.name].x = torch.empty((node.count, 0), dtype=torch.long)
-        for node in dsts:
-            if node not in srcs:
-                graph[node.name].x = torch.empty((node.count, 0), dtype=torch.long)
-        for src, edge, dst in zip(srcs, edges, dsts):
-            u, v = data[src.name], data[dst.name]
-            graph[src.name, edge, dst.name].edge_index = torch.stack((u, v), dim=0) # 2 x N
-        return graph.coalesce()
-
-    def to_bigraph(
-        self,
-        src: SparseField,
-        dst: SparseField,
-        edge_type: Optional[str] = None
-    ) -> HeteroData:
-        """Convert datapipe to a bipartite graph.
-
-        Parameters:
-        ---
-
-        src: SparseField
-            Source node.
-        dst: SparseField
-            Destination node.
-        edge_type: Optional[str]
-            The name of the edge. `src.name2dst.name` will be specified if `edge` is `None`.
-
-        Notes:
-        ---
-
-        Warning will be raised if current mode is not 'train' !
-
-        Examples:
-        ---
-
-        >>> from freerec.data.datasets import Gowalla_m1
-        >>> from freerec.data.tags import USER, ITEM, ID
-        >>> basepipe = Gowalla_m1("../data")
-        >>> fields = basepipe.fields
-        >>> graph = basepipe.to_bigraph(
-        ...    (fields[USER, ID], None, fields[ITEM, ID]), 
-        ...    (fields[ITEM, ID], None, fields[USER, ID])
-        ... )
-        >>> graph
-        HeteroData(
-            UserID={ x=[29858, 0] },
-            ItemID={ x=[40981, 0] },
-            (UserID, UserID2ItemID, ItemID)={ edge_index=[2, 810128] }
-        )
-        """
-        return self.to_heterograph((src, edge_type, dst))
-   
-    def to_graph(self, src: SparseField, dst: SparseField) -> Data:
-        """Convert datapipe to a homogeneous graph.
-
-        Parameters:
-        ---
-
-        src: SparseField
-            Source node.
-        dst: SparseField
-            Destination node.
-
-        Notes:
-        ---
-
-        Warning will be raised if current mode is not 'train' !
-
-        Examples:
-        ---
-
-        >>> from freerec.data.datasets import Gowalla_m1
-        >>> from freerec.data.tags import USER, ITEM, ID
-        >>> basepipe = Gowalla_m1("../data")
-        >>> fields = basepipe.fields
-        >>> graph = basepipe.to_bigraph(
-        ...    (fields[USER, ID], None, fields[ITEM, ID]), 
-        ...    (fields[ITEM, ID], None, fields[USER, ID])
-        ... )
-        >>> graph
-        Data(edge_index=[2, 1620256], x=[70839, 0], node_type=[70839], edge_type=[810128])
-        """
-        graph = self.to_heterograph((src, None, dst)).to_homogeneous()
-        graph.edge_index = to_undirected(graph.edge_index)
-        return graph
 
     @property
     def datasize(self):
