@@ -50,6 +50,20 @@ class BCELoss4Logits(BaseCriterion):
 class BPRLoss(BaseCriterion):
 
     def forward(self, pos_scores: torch.Tensor, neg_scores: torch.Tensor):
+        """
+        Parameters:
+        ---
+
+        pos_scores: torch.Tensor
+            positive scores
+        neg_scores: torch.Tensor
+            negative scores
+        
+        Returns:
+        ---
+
+            torch.Tensor
+        """
         loss = F.softplus(neg_scores - pos_scores)
         if self.reduction == 'none':
             return loss
