@@ -12,8 +12,24 @@ from ...dict2obj import Config
 __all__ = ['MovieLens1M_m2']
 
 
+class _Row2Pairer(dp.iter.IterDataPipe):
+
+    def __init__(self, datapipe: dp.iter.IterDataPipe) -> None:
+        super().__init__()
+        self.source = datapipe
+
+    def __iter__(self):
+        for row in self.source:
+            user = row[0]
+            for item in row[1:]:
+                yield user, item, 1
+
+
 class MovieLens1M_m2(RecDataSet):
     """ MovieLens1M: (user, item, rating, timestamp)
+    |    Dataset     | #Users | #Items | #Interactions | #Train  | #Test  | Density |
+    | :------------: | :----: | :----: | :-----------: | :-----: | :----: | :-----: |
+    | MovieLens1M_m2 | 6,022  | 3,043  |    895,699    | 796,244 | 99,455 | 0.04887 |
     See [here](https://github.com/openbenchmark/BARS/tree/master/candidate_matching/datasets) for details.
 
     Attritbutes:
@@ -33,20 +49,19 @@ class MovieLens1M_m2(RecDataSet):
 
     """
 
-    URL = "https://zenodo.org/record/7184851/files/MovieLens1M_m2.zip"
+    URL = "https://zenodo.org/record/7297855/files/MovieLens1M_m2.zip"
 
     _cfg = Config(
         sparse = [
             SparseField(name='UserID', na_value=-1, dtype=int, tags=[USER, ID]),
             SparseField(name='ItemID', na_value=-1, dtype=int, tags=[ITEM, ID]),
         ],
-        dense = [DenseField(name="Timestamp", na_value=0., dtype=float, transformer='none', tags=FEATURE)],
         target = [DenseField(name='Rating', na_value=None, dtype=int, transformer='none', tags=TARGET)]
     )
 
-    _cfg.fields = _cfg.sparse + _cfg.target + _cfg.dense
+    _cfg.fields = _cfg.sparse + _cfg.target
 
-    open_kw = Config(mode='rt', delimiter='\t', skip_lines=0)
+    open_kw = Config(mode='rt', delimiter=' ', skip_lines=0)
 
     def file_filter(self, filename: str):
         if self.mode == 'train':
@@ -59,11 +74,10 @@ class MovieLens1M_m2(RecDataSet):
         datapipe = datapipe.filter(filter_fn=self.file_filter)
         datapipe = datapipe.open_files(mode=self.open_kw.mode)
         datapipe = datapipe.parse_csv(delimiter=self.open_kw.delimiter, skip_lines=self.open_kw.skip_lines)
+        datapipe = _Row2Pairer(datapipe)
         datapipe = datapipe.map(self.row_processer)
         data = list(datapipe)
         if self.mode == 'train':
             random.shuffle(data)
         datapipe = dp.iter.IterableWrapper(data)
         return datapipe
-
-    

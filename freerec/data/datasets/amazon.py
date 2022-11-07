@@ -9,7 +9,7 @@ from ..tags import USER, ITEM, ID, FEATURE, TARGET
 from ...dict2obj import Config
 
 
-__all__ = ['AmazonBooks_m1', 'AmazonCDs_m1', 'AmazonMovies_m1', 'AmazonBeauty_m1']
+__all__ = ['AmazonBooks_m1', 'AmazonCDs_m1', 'AmazonMovies_m1', 'AmazonBeauty_m1', 'AmazonElectronics_m1']
 
 
 class _Row2Pairer(dp.iter.IterDataPipe):
@@ -70,7 +70,7 @@ class AmazonBooks_m1(AmazonWithInteractions):
 
     """
 
-    URL = "https://zenodo.org/record/7184869/files/AmazonBooks_m1.zip"
+    URL = "https://zenodo.org/record/7297855/files/AmazonBooks_m1.zip"
 
     _cfg = Config(
         sparse = [
@@ -108,7 +108,7 @@ class AmazonCDs_m1(AmazonWithInteractions):
 
     """
 
-    URL = "https://zenodo.org/record/7184869/files/AmazonCDs_m1.zip"
+    URL = "https://zenodo.org/record/7297855/files/AmazonCDs_m1.zip"
 
     _cfg = Config(
         sparse = [
@@ -146,7 +146,7 @@ class AmazonMovies_m1(AmazonWithInteractions):
 
     """
 
-    URL = "https://zenodo.org/record/7184869/files/AmazonMovies_m1.zip"
+    URL = "https://zenodo.org/record/7297855/files/AmazonMovies_m1.zip"
 
     _cfg = Config(
         sparse = [
@@ -184,7 +184,7 @@ class AmazonBeauty_m1(AmazonWithInteractions):
 
     """
 
-    URL = "https://zenodo.org/record/7184869/files/AmazonBeauty_m1.zip"
+    URL = "https://zenodo.org/record/7297855/files/AmazonBeauty_m1.zip"
 
     _cfg = Config(
         sparse = [
@@ -197,3 +197,41 @@ class AmazonBeauty_m1(AmazonWithInteractions):
     _cfg.fields = _cfg.sparse + _cfg.target
 
     open_kw = Config(mode='rt', delimiter=' ', skip_lines=0)
+
+
+class AmazonElectronics_m1(AmazonWithInteractions):
+    """Amazon-Beauty dataset.
+    |       Dataset        | #Users | #Items | #Interactions | #Train | #Test | Density |
+    | :------------------: | :----: | :----: | :-----------: | :----: | :---: | :-----: |
+    | AmazonElectronics_m1 | 1,435  | 1,522  |    35,931     | 31,887 | 4,044 | 0.01645 |
+    See [here](https://github.com/xue-pai/UltraGCN/tree/main/data) for details.
+
+    Attributes:
+    ---
+
+    _cfg: Config
+        - sparse: SparseField
+            UserID + ItemID
+        - target: SparseField
+            Rating
+    open_kw: Config
+        - mode: 'rt'
+        - delimiter: ' '
+        - skip_lines: 0
+
+    """
+
+    URL = "https://zenodo.org/record/7297855/files/AmazonElectronics_m1.zip"
+
+    _cfg = Config(
+        sparse = [
+            SparseField(name='UserID', na_value=-1, dtype=int, tags=[USER, ID]),
+            SparseField(name='ItemID', na_value=-1, dtype=int, tags=[ITEM, ID]),
+        ],
+        target = [DenseField(name='Rating', na_value=None, dtype=int, transformer='none', tags=TARGET)]
+    )
+
+    _cfg.fields = _cfg.sparse + _cfg.target
+
+    open_kw = Config(mode='rt', delimiter=' ', skip_lines=0)
+
