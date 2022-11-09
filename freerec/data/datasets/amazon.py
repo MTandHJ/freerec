@@ -12,9 +12,6 @@ from ...dict2obj import Config
 __all__ = ['AmazonBooks_m1', 'AmazonCDs_m1', 'AmazonMovies_m1', 'AmazonBeauty_m1', 'AmazonElectronics_m1']
 
 
-
-
-
 class AmazonBooks_m1(ImplicitRecSet):
     """Amazon-Books dataset.
     |    Dataset     | #Users | #Items | #Interactions |  #Train   |  #Test  | Density |
