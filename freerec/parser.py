@@ -85,6 +85,8 @@ class Parser(Config):
                 for key, val in yaml.full_load(f).items():
                     if key.upper() in self:
                         self[key.upper()] = val
+                    elif key in self:
+                        self[key] = val
                     else:
                         errorLogger(f"Unexpected parameter of {key} from {args.config} ...")
 
