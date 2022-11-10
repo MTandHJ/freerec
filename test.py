@@ -8,7 +8,7 @@ import freerec
 
 # dataset
 from freerec.data.tags import ID
-dataset = 'MovieLens1M_m2'
+dataset = 'AmazonBooks_m1'
 
 basepipe = getattr(freerec.data.datasets, dataset)("../data")
 User, Item = basepipe.fields[ID]
@@ -25,3 +25,4 @@ print(data)
 
 
 # %%
+Item.transformer.classes_

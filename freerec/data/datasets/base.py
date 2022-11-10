@@ -463,7 +463,8 @@ class _Row2Pairer(dp.iter.IterDataPipe):
         for row in self.source:
             user = row[0]
             for item in row[1:]:
-                yield user, item
+                if item:
+                    yield user, item
 
 
 class ImplicitRecSet(RecDataSet):
