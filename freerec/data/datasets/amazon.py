@@ -41,11 +41,10 @@ class AmazonBooks_m1(ImplicitRecSet):
         sparse = [
             SparseField(name='UserID', na_value=-1, dtype=int, tags=[USER, ID]),
             SparseField(name='ItemID', na_value=-1, dtype=int, tags=[ITEM, ID]),
-        ],
-        target = [DenseField(name='Rating', na_value=None, dtype=int, transformer='none', tags=TARGET)]
+        ]
     )
 
-    _cfg.fields = _cfg.sparse + _cfg.target
+    _cfg.fields = _cfg.sparse
 
 
 class AmazonCDs_m1(ImplicitRecSet):
