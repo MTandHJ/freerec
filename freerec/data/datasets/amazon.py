@@ -36,8 +36,8 @@ class AmazonBooks_m1(ImplicitRecSet):
 
     _cfg = Config(
         sparse = [
-            SparseField(name='UserID', na_value=-1, dtype=int, tags=[USER, ID]),
-            SparseField(name='ItemID', na_value=-1, dtype=int, tags=[ITEM, ID]),
+            SparseField(name='UserID', na_value=None, dtype=int, tags=[USER, ID]),
+            SparseField(name='ItemID', na_value=None, dtype=int, tags=[ITEM, ID]),
         ]
     )
 
@@ -71,8 +71,8 @@ class AmazonCDs_m1(ImplicitRecSet):
 
     _cfg = Config(
         sparse = [
-            SparseField(name='UserID', na_value=-1, dtype=int, tags=[USER, ID]),
-            SparseField(name='ItemID', na_value=-1, dtype=int, tags=[ITEM, ID]),
+            SparseField(name='UserID', na_value=None, dtype=int, tags=[USER, ID]),
+            SparseField(name='ItemID', na_value=None, dtype=int, tags=[ITEM, ID]),
         ]
     )
 
@@ -106,8 +106,8 @@ class AmazonMovies_m1(ImplicitRecSet):
 
     _cfg = Config(
         sparse = [
-            SparseField(name='UserID', na_value=-1, dtype=int, tags=[USER, ID]),
-            SparseField(name='ItemID', na_value=-1, dtype=int, tags=[ITEM, ID]),
+            SparseField(name='UserID', na_value=None, dtype=int, tags=[USER, ID]),
+            SparseField(name='ItemID', na_value=None, dtype=int, tags=[ITEM, ID]),
         ]
     )
 
@@ -141,8 +141,8 @@ class AmazonBeauty_m1(ImplicitRecSet):
 
     _cfg = Config(
         sparse = [
-            SparseField(name='UserID', na_value=-1, dtype=int, tags=[USER, ID]),
-            SparseField(name='ItemID', na_value=-1, dtype=int, tags=[ITEM, ID]),
+            SparseField(name='UserID', na_value=None, dtype=int, tags=[USER, ID]),
+            SparseField(name='ItemID', na_value=None, dtype=int, tags=[ITEM, ID]),
         ]
     )
 
@@ -175,8 +175,8 @@ class AmazonElectronics_m1(ImplicitRecSet):
 
     _cfg = Config(
         sparse = [
-            SparseField(name='UserID', na_value=-1, dtype=int, tags=[USER, ID]),
-            SparseField(name='ItemID', na_value=-1, dtype=int, tags=[ITEM, ID]),
+            SparseField(name='UserID', na_value=None, dtype=int, tags=[USER, ID]),
+            SparseField(name='ItemID', na_value=None, dtype=int, tags=[ITEM, ID]),
         ]
     )
 

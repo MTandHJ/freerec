@@ -7,6 +7,7 @@ import os, requests, warnings, hashlib, tqdm
 
 from ..utils import errorLogger, infoLogger
 
+
 T = TypeVar('T')
 
 def safe_cast(val: T, dest_type: Callable[[T], T], default: T) -> T:
@@ -30,8 +31,10 @@ def safe_cast(val: T, dest_type: Callable[[T], T], default: T) -> T:
         if val:
             return dest_type(val)
         else: # fill_na
+            if default is None:
+                raise ValueError
             return dest_type(default)
-    except ValueError:
+    except (ValueError, TypeError):
         errorLogger(
             f"Using '{dest_type.__name__}' to convert '{val}' where the default value is {default} ..." \
             f"This happens when the value (or the default value: {default}) to be cast is not of the type {dest_type.__name__}.",

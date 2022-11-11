@@ -37,8 +37,8 @@ class MovieLens1M_m2(ImplicitRecSet):
 
     _cfg = Config(
         sparse = [
-            SparseField(name='UserID', na_value=-1, dtype=int, tags=[USER, ID]),
-            SparseField(name='ItemID', na_value=-1, dtype=int, tags=[ITEM, ID]),
+            SparseField(name='UserID', na_value=None, dtype=int, tags=[USER, ID]),
+            SparseField(name='ItemID', na_value=None, dtype=int, tags=[ITEM, ID]),
         ]
     )
 
