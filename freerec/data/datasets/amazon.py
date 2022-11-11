@@ -1,11 +1,8 @@
 
 
-import torchdata.datapipes as dp
-import random
-
 from .base import ImplicitRecSet
-from ..fields import SparseField, DenseField
-from ..tags import USER, ITEM, ID, FEATURE, TARGET
+from ..fields import SparseField
+from ..tags import USER, ITEM, ID
 from ...dict2obj import Config
 
 

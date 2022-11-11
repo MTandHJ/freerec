@@ -10,14 +10,31 @@ from ..utils import errorLogger, infoLogger
 T = TypeVar('T')
 
 def safe_cast(val: T, dest_type: Callable[[T], T], default: T) -> T:
+    """Cast the value to the specified type.
+
+    Flows:
+    ---
+
+    1. If the `val` is not `None` or `''` -> return `dest_type(val)`;
+    2. Else return `dest_type(default)`.
+
+    Raises:
+    ---
+
+    ValueError:
+        1. `val` does not belong to the type `dest_type`;
+        2. `default` does not belong to the type `dest_type`;
+    Note that the second case is sometimes useful if you want to make sure that there are no "null" values in your data.
+    """
     try:
         if val:
             return dest_type(val)
         else: # fill_na
-            return default
+            return dest_type(default)
     except ValueError:
         errorLogger(
-            f"Using '{dest_type.__name__}' to convert '{val}' where the default value is {default}", 
+            f"Using '{dest_type.__name__}' to convert '{val}' where the default value is {default} ..." \
+            f"This happens when the value (or the default value: {default}) to be cast is not of the type {dest_type.__name__}.",
             ValueError
         )
 

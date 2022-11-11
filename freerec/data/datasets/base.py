@@ -10,7 +10,7 @@ from torch_geometric.utils import to_undirected
 from freeplot.utils import import_pickle, export_pickle
 from math import ceil
 
-from ..tags import SPARSE
+from ..tags import SPARSE, USER, ITEM, ID
 from ..fields import Fielder, SparseField
 from ..utils import collate_dict, download_from_url, extract_archive
 from ...utils import timemeter, infoLogger, errorLogger, mkdirs, warnLogger
@@ -197,6 +197,9 @@ class BaseSet(dp.iter.IterDataPipe):
         graph = self.to_heterograph((src, None, dst)).to_homogeneous()
         graph.edge_index = to_undirected(graph.edge_index)
         return graph
+
+    def summary(self):
+        infoLogger(str(self))
 
 
 class RecDataSet(BaseSet):
@@ -431,7 +434,7 @@ class RecDataSet(BaseSet):
             self.raw2pickle()
         self.train()
 
-        infoLogger(str(self))
+        self.summary()
 
     @property
     def datasize(self):
@@ -493,3 +496,17 @@ class ImplicitRecSet(RecDataSet):
             random.shuffle(data)
         datapipe = dp.iter.IterableWrapper(data)
         return datapipe
+
+    def summary(self):
+        super().summary()
+        from prettytable import PrettyTable
+        User, Item = self.fields[USER, ID], self.fields[ITEM, ID]
+
+        table = PrettyTable(['#User', '#Item', '#Interactions', '#Train', '#Test', 'Density'])
+        table.add_row([
+            User.count, Item.count, self.trainsize + self.test().testsize,
+            self.trainsize, self.testsize,
+            (self.trainsize + self.testsize) / (User.count * Item.count)
+        ])
+
+        infoLogger(table)

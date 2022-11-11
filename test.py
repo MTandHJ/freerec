@@ -7,22 +7,10 @@ import freerec
 # %%
 
 # dataset
-from freerec.data.tags import ID
-dataset = 'Gowalla_m1'
+datasets = ['Gowalla_m1', 'Yelp18_m1', 'AmazonBooks_m1', 'AmazonCDs_m1', 'AmazonMovies_m1', 'AmazonBeauty_m1', 'AmazonElectronics_m1']
 
-basepipe = getattr(freerec.data.datasets, dataset)("../data")
-User, Item = basepipe.fields[ID]
-print(basepipe)
-
-data = dict()
-data['#User'] = User.count
-data['#Item'] = Item.count
-data['#Train'] = basepipe.train().datasize
-data['#Test'] = basepipe.test().datasize
-data['#Interactions'] = basepipe.train().datasize + basepipe.test().datasize
-data['density'] = data['#Interactions'] / (User.count * Item.count)
-print(data)
+for dataset in datasets:
+    basepipe = getattr(freerec.data.datasets, dataset)("../data")
 
 
 # %%
-Item.transformer.classes_
