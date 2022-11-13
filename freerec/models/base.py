@@ -4,8 +4,6 @@ from typing import Optional, Union
 import torch
 import torch.nn as nn
 
-from ..data.fields import Tokenizer
-
 __all__ = ['RecSysArch']
 
 
@@ -28,6 +26,10 @@ class RecSysArch(nn.Module):
                     nn.init.constant_(m.bias, 0.)
             elif isinstance(m, nn.Embedding):
                 nn.init.normal_(m.weight, std=1e-4)
+            elif isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d)):
+                nn.init.constant_(m.weight, 1.)
+                nn.init.constant_(m.bias, 0.)
+
 
     @staticmethod
     def broadcast(*tensors: torch.Tensor):
