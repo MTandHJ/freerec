@@ -13,7 +13,7 @@ class MovieLens1M_m2(ImplicitRecSet):
     """ MovieLens1M: (user, item, rating, timestamp)
     |    Dataset     | #Users | #Items | #Interactions | #Train  | #Test  | Density |
     | :------------: | :----: | :----: | :-----------: | :-----: | :----: | :-----: |
-    | MovieLens1M_m2 | 6,022  | 3,043  |    895,699    | 796,244 | 99,455 | 0.04887 |
+    | MovieLens1M_m2 | 6,022  | 3,043  |    895,699    | 796,244 | 99,455 | 0.04888 |
     See [here](https://github.com/openbenchmark/BARS/tree/master/candidate_matching/datasets) for details.
 
     Attritbutes:
