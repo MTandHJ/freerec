@@ -43,7 +43,10 @@ def _unitary(value):
 
 class AverageMeter:
 
-    def __init__(self, name: str, metric: Optional[Callable] = None, fmt: str = ".5f"):
+    def __init__(
+        self, name: str, metric: Optional[Callable] = None, 
+        fmt: str = ".5f", best_caster: Callable = max
+    ):
         """
         Paramters:
         ---
@@ -51,9 +54,12 @@ class AverageMeter:
         name: The name of the meter.
         metric: Metrics from freerec.metrics.
         fmt: Output format (default: ".5f").
+        best_caster: min or max 
+            Depends on which indicates better performance for this metric.
         """
         self.name = name
         self.fmt = fmt
+        self.caster = best_caster
         self.reset()
         self.__history = []
         self.__metric = metric if metric else _unitary
@@ -130,14 +136,12 @@ class AverageMeter:
         self.fp.savefig(os.path.join(path, filename))
         return filename
 
-    def argbest(self, caster: Callable, freq: int = 1) -> float:
+    def argbest(self, freq: int = 1) -> float:
         """Return (whichisbest, best) in history.
 
         Paramters:
         ---
 
-        caster: min or max 
-            Depends on which indicates better performance for this metric.
         freq: EVAL_FREQ for T * EVAL_FREQ.
 
         Returns:
@@ -152,9 +156,9 @@ class AverageMeter:
         if len(self.history) == 0:
             return -1, -1
         indices = np.argsort(self.history)
-        if caster is min:
+        if self.caster is min:
             return indices[0] * freq, self.history[indices[0]]
-        elif caster is max:
+        elif self.caster is max:
             return indices[-1] * freq, self.history[indices[-1]]
         else:
             raise ValueError("caster should be min or max ...")

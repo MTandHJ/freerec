@@ -173,6 +173,67 @@ class Coach:
         start_epoch = self.load_checkpoint() if self.cfg.resume else 0
         infoLogger(f"[Coach] >>> Load the recent checkpoint and train from epoch: {start_epoch}")
         return start_epoch
+    
+    def register_metric(
+        self, name: str, metric: Optional[str] = None, 
+        func: Optional[Callable] = None, fmt: str = '.4f', best_caster: Callable = max,
+        prefix: str = 'train'
+    ):
+        """Register a metric.
+
+        Parameters:
+        ---
+
+        name: str
+            The complete name of this metric, such as `NDCG@20`.
+        metric: str
+            The name of this metric, like `NDCG` for `NDCG@20`.
+        func: Callable
+            The function to process data.
+        fmt: str
+            The format to print.
+        best_caster: `min` or `max`
+            Which one is better.
+        prefix: str
+            The group to which this metric belongs.
+
+        Examples
+        ---
+
+        >>> coach = Coach(...)
+        >>> coach.compile(cfg, monitors=['loss', 'recall@10', 'recall@20', 'ndcg@10', 'ndcg@20'])
+        >>> coach.register_metric('loss2', func=None, fmt='.5f', prefix='train')
+        >>> from freerec.metrics import normalized_dcg
+        >>> from functools import partial
+        >>> coach.register_metric(
+        ...    name='NDCG@50',
+        ...    metric='NDCG',
+        ...    func=partial(normalized_dcg, k=50),
+        ...   fmt='.4f',
+        ...    prefix='test'
+        ... )
+
+        Raises:
+        ---
+
+        AttributeError: when calling `register_metric' before `compile'.
+        
+        """
+        try:
+            metric = name if metric is None else metric
+            self.__monitors[prefix][metric.upper()].append(
+                AverageMeter(
+                    name=name,
+                    metric=func,
+                    fmt=fmt,
+                    best_caster=best_caster
+                )
+            )
+        except AttributeError:
+            errorLogger(
+                "'register_metric' should be called after 'compile' ...",
+                AttributeError
+            )
 
     @property
     def monitors(self) -> Monitor:
@@ -185,43 +246,60 @@ class Coach:
     def compile(
         self, cfg: Config, monitors: List[str]
     ):
-        """Load config and set monitors."""
+        """Load config and set monitors.
+        
+        Parameters:
+        ---
+
+        cfg: Config
+        monitors: List[str]
+            The metrics (for 'valid' and 'test' only) of interest.
+        
+        Examples:
+        ---
+
+        >>> coach = Coach(None)
+        >>> coach.compile(cfg, monitors=['loss', 'recall@10', 'recall@20', 'ndcg@10', 'ndcg@20'])
+        """
         self.cfg = cfg
         # meters for train|valid|test
         self.__monitors = Monitor()
-        self.__monitors['train'] = {
-            'LOSS': [
-                AverageMeter(
-                    name='LOSS', 
-                    metric=DEFAULT_METRICS['LOSS'], 
-                    fmt=DEFAULT_FMTS['LOSS']
-                )
-            ]
-        }
+        self.__monitors['train'] = defaultdict(list)
         self.__monitors['valid'] = defaultdict(list)
         self.__monitors['test'] = defaultdict(list)
+
+        self.register_metric(
+            name='LOSS',
+            metric='LOSS',
+            func=DEFAULT_METRICS['LOSS'],
+            fmt=DEFAULT_FMTS['LOSS'],
+            best_caster=DEFAULT_BEST_CASTER['LOSS'],
+            prefix='train'
+        )
 
         for name in monitors:
             name = name.upper()
             if '@' in name:
                 metric, K = name.split('@')
                 for prefix in ('valid', 'test'):
-                    self.__monitors[prefix][metric].append(
-                        AverageMeter(
-                            name=name,
-                            metric=partial(DEFAULT_METRICS[metric], k=int(K)),
-                            fmt=DEFAULT_FMTS[metric]
-                        )
+                    self.register_metric(
+                        name=name,
+                        metric=metric,
+                        func=partial(DEFAULT_METRICS[metric], k=int(K)),
+                        fmt=DEFAULT_FMTS[metric],
+                        best_caster=DEFAULT_BEST_CASTER[metric],
+                        prefix=prefix
                     )
             else:
                 metric = name
                 for prefix in ('valid', 'test'):
-                    self.__monitors[prefix][metric].append(
-                        AverageMeter(
-                            name=name,
-                            metric=DEFAULT_METRICS[metric],
-                            fmt=DEFAULT_FMTS[metric]
-                        )
+                    self.register_metric(
+                        name=name,
+                        metric=metric,
+                        func=DEFAULT_METRICS[metric],
+                        fmt=DEFAULT_FMTS[metric],
+                        best_caster=DEFAULT_BEST_CASTER[metric],
+                        prefix=prefix
                     )
 
         # dataloader
@@ -260,11 +338,13 @@ class Coach:
         prefix: str, 'train'|'test'|'valid'
             The mode values belonging to.
         pool: List[str]
-            Given monitors.
+            Given metrics.
+            - `None`: `pool` will be set for all metrics.
         """
         metrics: Dict[List] = self.monitors[prefix]
+        pool = metrics if pool is None else pool
         for metric in pool:
-            for meter in metrics.get(metric, []):
+            for meter in metrics.get(metric.upper(), []):
                 meter(*values, n=n, mode=mode)
 
     def step(self, epoch: int):
@@ -295,11 +375,11 @@ class Coach:
         for prefix, metrics in self.monitors.items():
             metrics: defaultdict[str, List[AverageMeter]]
             freq = 1 if prefix == 'train' else self.cfg.EVAL_FREQ
-            for METRIC, meters in metrics.items():
+            for _, meters in metrics.items():
                 for meter in meters:
                     meter.plot(freq=freq)
                     imgname = meter.save(path=os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR), prefix=prefix)
-                    epoch, val = meter.argbest(DEFAULT_BEST_CASTER[METRIC], freq)
+                    epoch, val = meter.argbest(freq)
                     info += s.format(
                         prefix=prefix, metric=meter.name,
                         val=val, epoch=epoch, img=f"![]({imgname})"
@@ -313,6 +393,7 @@ class Coach:
 
         df = pd.DataFrame(data, columns=['Prefix', 'Metric', 'Best', '@Epoch'])
         infoLogger(str(df)) # print final metrics
+        infoLogger(f"[LoG_PaTH] >>> {self.cfg.LOG_PATH}")
         # save corresponding data for next analysis
         self.monitors.write(os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR)) # tensorboard
         self.monitors.save(os.path.join(self.cfg.LOG_PATH, self.cfg.DATA_DIR), self.cfg.MONITOR_FILENAME)
