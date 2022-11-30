@@ -593,17 +593,23 @@ class Adapter:
         it must be the data therein is of `str` type,
         which will raise error if we sent it to tensorboard directly !
         """
-        data = self.load_best(logPath)
-        path = os.path.join(self.cfg.CORE_LOG_PATH, id_)
-        with SummaryWriter(log_dir=path) as writer:
-            metrics = dict()
-            for prefix, best in data.items():
-                for metric, val in best.items():
-                    val = val if isinstance(val, (int, float)) else -1
-                    metrics['/'.join([prefix, metric])] = val
-            writer.add_hparams(
-                params, metrics,
+        try:
+            data = self.load_best(logPath)
+            path = os.path.join(self.cfg.CORE_LOG_PATH, id_)
+            with SummaryWriter(log_dir=path) as writer:
+                metrics = dict()
+                for prefix, best in data.items():
+                    for metric, val in best.items():
+                        val = val if isinstance(val, (int, float)) else -1
+                        metrics['/'.join([prefix, metric])] = val
+                writer.add_hparams(
+                    params, metrics,
+                )
+        except Exception:
+            infoLogger(
+                f"[Adapter] >>> Unknown errors happen. This is mainly due to abnormal exits of child processes."
             )
+
 
     def each_grid(self):
         """Grid search for each kind of param."""
