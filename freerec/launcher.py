@@ -607,7 +607,7 @@ class Adapter:
                 )
         except Exception:
             infoLogger(
-                f"[Adapter] >>> Unknown errors happen. This is mainly due to abnormal exits of child processes."
+                f"\033[0;31;47m[Adapter] >>> Unknown errors happen. This is mainly due to abnormal exits of child processes.\033[0m"
             )
 
 
