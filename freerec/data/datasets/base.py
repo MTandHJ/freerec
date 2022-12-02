@@ -403,7 +403,7 @@ class RecDataSet(BaseSet):
                 for batch in datapipe:
                     for field in fields:
                         field.partial_fit(batch[field.name][:, None])
-                    datasize += len(batch[field.name])
+                    datasize += len(batch[list(batch.keys())[0]])
             except NameError as e:
                 errorLogger(e, NameError)
             return datasize
