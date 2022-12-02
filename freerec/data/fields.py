@@ -41,7 +41,7 @@ class Field:
     
     def __init__(
         self, name: str, na_value: Union[str, int, float], dtype: Callable,
-        transformer: Union[str, Callable] = 'none', tags: Union[FieldTags, Iterable[FieldTags]] = tuple()
+        transformer: Union[str, Callable, None] = 'none', tags: Union[FieldTags, Iterable[FieldTags]] = tuple()
     ):
         """
         Parameters:
@@ -70,6 +70,7 @@ class Field:
         self.__tags = set()
         self.dtype = dtype
         self.caster = partial(safe_cast, dest_type=dtype, default=na_value)
+        transformer = 'none' if transformer is None else transformer
         self.transformer = TRANSFORM[transformer]() if isinstance(transformer, str) else transformer
         if isinstance(tags, FieldTags):
             self.add_tag(tags)
@@ -168,7 +169,7 @@ class SparseField(Field):
 
     def __init__(
         self, name: str, na_value: Union[str, int, float], dtype: Callable, 
-        transformer: Union[str, Callable] = 'label2index', 
+        transformer: Union[str, Callable, None] = 'label2index', 
         tags: Union[FieldTags, Iterable[FieldTags]] = tuple()
     ):
         super().__init__(name, na_value, dtype, transformer, tags)
@@ -187,7 +188,7 @@ class DenseField(Field):
 
     def __init__(
         self, name: str, na_value: Union[str, int, float], dtype: Callable, 
-        transformer: Union[str, Callable] = 'minmax', 
+        transformer: Union[str, Callable, None] = 'minmax', 
         tags: Union[FieldTags, Iterable[FieldTags]] = tuple()
     ):
         super().__init__(name, na_value, dtype, transformer, tags)
