@@ -167,11 +167,12 @@ class Coach:
 
     def check_best(self, val: Optional[float]): ...
 
-    @timemeter("Coach/resume")
     def resume(self):
         """Resume from last checkpoint."""
-        start_epoch = self.load_checkpoint() if self.cfg.resume else 0
-        infoLogger(f"[Coach] >>> Load the recent checkpoint and train from epoch: {start_epoch}")
+        start_epoch: int = 0
+        if self.cfg.resume:
+            start_epoch = self.load_checkpoint() 
+            infoLogger(f"[Coach] >>> Load the recent checkpoint and train from epoch: {start_epoch}")
         return start_epoch
     
     def register_metric(
