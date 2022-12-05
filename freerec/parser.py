@@ -77,19 +77,6 @@ class Parser(Config):
         with open(file_, mode, encoding="utf8") as fh:
             fh.write(info)
 
-    @timemeter("Parser/load")
-    def load(self, args: ArgumentParser):
-        """Load config.yaml."""
-        if hasattr(args, 'config') and args.config:
-            with open(args.config, encoding="UTF-8", mode='r') as f:
-                for key, val in yaml.full_load(f).items():
-                    if key.upper() in self:
-                        self[key.upper()] = val
-                    elif key in self:
-                        self[key] = val
-                    else:
-                        errorLogger(f"Unexpected parameter of {key} from {args.config} ...")
-
     def reset(self):
         self.clear()
         for key, val in CONFIG.items():
@@ -139,6 +126,19 @@ class Parser(Config):
     def set_defaults(self, **kwargs):
         self.parser.set_defaults(**kwargs)
 
+    @timemeter("Parser/load")
+    def load(self, args: ArgumentParser):
+        """Load config.yaml."""
+        if hasattr(args, 'config') and args.config:
+            with open(args.config, encoding="UTF-8", mode='r') as f:
+                for key, val in yaml.full_load(f).items():
+                    if key.upper() in self:
+                        self[key.upper()] = val
+                    elif key in self:
+                        self[key] = val
+                    else:
+                        errorLogger(f"Unexpected parameter of {key} from {args.config} ...")
+
     @timemeter("Parser/compile")
     def compile(self):
         """Generate config file according to settings.
@@ -157,12 +157,12 @@ class Parser(Config):
         5. Finally, READMD.md will be added under CHECKPOINT_PATH and LOG_PATH both.
         """
         args = self.parser.parse_args()
+        self.load(args) # loading config (.yaml) first ...
         for key, val in args._get_kwargs():
             if key.upper() in self:
                 self[key.upper()] = val
             else:
                 self[key] = val
-        self.load(args) # loading config (.yaml) ...
 
         try:
             self.device = int(self.device)
