@@ -152,8 +152,7 @@ class BaseSet(dp.iter.IterDataPipe):
         >>> basepipe = Gowalla_m1("../data")
         >>> fields = basepipe.fields
         >>> graph = basepipe.to_bigraph(
-        ...    (fields[USER, ID], None, fields[ITEM, ID]), 
-        ...    (fields[ITEM, ID], None, fields[USER, ID])
+        ...    fields[USER, ID], fields[ITEM, ID]
         ... )
         >>> graph
         HeteroData(
@@ -188,8 +187,7 @@ class BaseSet(dp.iter.IterDataPipe):
         >>> basepipe = Gowalla_m1("../data")
         >>> fields = basepipe.fields
         >>> graph = basepipe.to_bigraph(
-        ...    (fields[USER, ID], None, fields[ITEM, ID]), 
-        ...    (fields[ITEM, ID], None, fields[USER, ID])
+        ...    fields[USER, ID], fields[ITEM, ID],
         ... )
         >>> graph
         Data(edge_index=[2, 1620256], x=[70839, 0], node_type=[70839], edge_type=[810128])
