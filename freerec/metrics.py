@@ -218,7 +218,6 @@ def precision(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = 
         k = min(k, preds.size(-1))
     indices = preds.topk(k)[1]
     relevant = targets.gather(-1, indices).sum(-1)
-    torchmetrics.functional.retrieval_precision
     return relevant / k
 
 @_reduce('mean')
