@@ -50,7 +50,8 @@ class BaseSet(dp.iter.IterDataPipe):
         self.__mode = 'test'
         return self
 
-    def listmap(self, func: Callable, *iterables):
+    @staticmethod
+    def listmap(func: Callable, *iterables):
         return list(map(func, *iterables))
 
     @property
@@ -206,8 +207,11 @@ class BaseSet(dp.iter.IterDataPipe):
     def summary(self):
         infoLogger(str(self))
 
-
     def forward(self):
+        """
+        The original code in `__iter__` should be placed here.
+        Then, `__iter__` will re-buffer previous data for safety purposes.
+        """
         raise NotImplementedError("_iter method should be implemented ...")
 
     def __iter__(self) -> Iterator[FieldList[BufferField]]:
@@ -226,6 +230,8 @@ class RecDataSet(BaseSet):
         Includes fields of each column.
     DEFAULT_CHUNK_SIZE: int, defalut 51200
         Chunk size for saving.
+    VALID_IS_TEST: bool
+        The validset and testset are the same one sometimes.
 
     Notes:
     ---
@@ -411,16 +417,13 @@ class RecDataSet(BaseSet):
 
         """
 
-        def buffer(field: Field, col):
-            return field.buffer(col)
-
         def fit_transform(*tags):
             datapipe = self.raw2data().batch(self.DEFAULT_CHUNK_SIZE).collate(collate_list)
             datasize = 0
             fields = self.fields.groupby(*tags)
             for chunk in datapipe:
                 datasize += len(chunk[0])
-                chunk = FieldList(map(buffer, self.fields, chunk)).groupby(*tags)
+                chunk = FieldList(map(lambda field, col: field.buffer(col), self.fields, chunk)).groupby(*tags)
                 for j, field in enumerate(fields):
                     field.partial_fit(chunk[j].data)
             return datasize
@@ -491,6 +494,7 @@ class ImplicitRecSet(RecDataSet):
     each row represents a user's interacted items.
     """
 
+    # Same validset and testset are the same now !
     VALID_IS_TEST = True
 
     _cfg = Config(
