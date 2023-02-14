@@ -1,54 +1,14 @@
 
 
-from typing import Iterator, Iterable, Union, List, Optional
+from typing import Iterator, Optional
 
 import torchdata.datapipes as dp
 
 from .base import Postprocessor
 from ..fields import FieldList, BufferField
-from ..tags import FieldTags, USER, ITEM, TARGET
 
 
-__all__ = ['Grouper', 'Wrapper']
-
-
-@dp.functional_datapipe("group_")
-class Grouper(Postprocessor):
-    """Group batch into several groups."""
-    def __init__(
-        self, datapipe: Postprocessor, 
-        groups: Iterable[Union[FieldTags, Iterable[FieldTags]]] = (USER, ITEM, TARGET)
-    ) -> None:
-        """
-        Parameters:
-        ---
-        groups: Iterable[Union[FieldTags, Iterable[FieldTags]]]
-            Gathering fields for each group of tags in groups.
-
-        Examples:
-        ---
-
-        >>> from freerec.data.tags import SPARSE, TARGET, USER, ITEM
-        >>> from freerec.data.datasets import MovieLens1M
-        >>> basepipe = MovieLens1M("../../data/MovieLens1M")
-        >>> datapipe = basepipe.tensor_().chunk_(1024)
-        >>> dataset = datapipe.wrap_().group_((USER, ITEM, TARGET))
-        >>> len(next(iter(dataset)))
-        3
-        >>> dataset = datapipe.wrap_().group_((ID, TARGET))
-        >>> len(next(iter(dataset)))
-        2
-        """
-        super().__init__(datapipe)
-        self.groups = []
-        for tags in groups:
-            if isinstance(tags, FieldTags):
-                tags = (tags,)
-            self.groups.append([field for field in self.fields if field.match(*tags)])
-
-    def forward(self) -> List:
-        for batch in self.source:
-            yield [{field.name: batch[field.name] for field in group} for group in self.groups]
+__all__ = ['Wrapper']
 
 
 @dp.functional_datapipe("wrap_")

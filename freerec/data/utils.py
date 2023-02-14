@@ -4,10 +4,11 @@ from typing import TypeVar, Callable, List, Optional
 
 import os, requests, warnings, hashlib, tqdm
 
-from ..utils import errorLogger, infoLogger
+from ..utils import infoLogger
 
 
 T = TypeVar('T')
+class DataSetLoadingError(Exception): ...
 
 def safe_cast(val: T, dest_type: Callable[[T], T], default: T) -> T:
     """Cast the value to the specified type.
@@ -113,7 +114,7 @@ def download_from_url(
                         if chunk:  # filter out keep-alive new chunks
                             f.write(chunk)
                 if sha1_hash and not check_sha1(file_, sha1_hash):
-                    errorLogger(
+                    DataSetLoadingError(
                         'File {} is downloaded but the content hash does not match.'
                         ' The repo may be outdated or download may be incomplete. '
                         'If the "repo_url" is overridden, consider switching to '
@@ -167,7 +168,7 @@ def extract_archive(file_, target_dir, overwrite=False):
         with zipfile.ZipFile(file_, 'r') as archive:
             archive.extractall(path=target_dir)
     else:
-        errorLogger('Unrecognized file type: ' + file_)
+        DataSetLoadingError('Unrecognized file type: ' + file_)
 
 
 def check_sha1(filename, sha1_hash):

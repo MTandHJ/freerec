@@ -13,8 +13,6 @@ from freeplot.utils import export_pickle
 from .dict2obj import Config
 
 
-class FreeRecError(Exception): ...
-
 LOGGER = Config(
     name='RecSys', filename='log.txt', level=logging.DEBUG,
     filelevel=logging.DEBUG, consolelevel=logging.INFO,
@@ -114,7 +112,7 @@ class AverageMeter:
         else:
             val = np.array(val)
         if np.isnan(val) or np.isinf(val):
-            errorLogger(
+            ValueError(
                 f"The metric of {self.name} got an unexpected value: {val.item()}."
             )
         return val.item()
@@ -263,11 +261,6 @@ def warnLogger(warn: str):
     words = f"\033[1;31m[Warning] >>> {warn} \033[0m"
     LOGGER.info(words)
     return words
-
-def errorLogger(error: str, exception = FreeRecError):
-    words = f"\033[1;31m{error} \033[0m"
-    LOGGER.debug(words)
-    raise exception(words)
 
 def timemeter(prefix=""):
     def decorator(func):

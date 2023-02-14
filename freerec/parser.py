@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 from .dict2obj import Config
 from .utils import (
     mkdirs, timemeter, set_color, set_seed, activate_benchmark, 
-    set_logger, errorLogger
+    set_logger
 )
 
 
@@ -137,7 +137,7 @@ class Parser(Config):
                     elif key in self:
                         self[key] = val
                     else:
-                        errorLogger(f"Unexpected parameter of {key} from {args.config} ...")
+                        KeyError(f"Unexpected parameter of {key} from {args.config} ...")
 
     @timemeter("Parser/compile")
     def compile(self):
@@ -153,7 +153,7 @@ class Parser(Config):
             - CHECKPOINT_PATH: saving checkpoints
             - LOG_PATH: collecting training infomation
 
-        4. Set Logger, and then you can log information by info|debug|warn|errorLogger ...
+        4. Set Logger, and then you can log information by info|debug|warnLogger ...
         5. Finally, READMD.md will be added under CHECKPOINT_PATH and LOG_PATH both.
         """
         args = self.parser.parse_args()
@@ -248,10 +248,10 @@ class CoreParser(Config):
             'defaults' is required for clear comparsions in tensorbaord.
         """
         if self.COMMAND is None:
-            errorLogger(template)
+            ValueError(template)
         for key in ('root', 'device'):
             if self.ENVS.get(key, None) is None:
-                errorLogger(f"No {key} is allocated, calling '--{key}' to specify it")
+                KeyError(f"No {key} is allocated, calling '--{key}' to specify it")
 
         if self.ENVS.get('dataset', None) is None:
             self.ENVS['dataset'] = "RecDataSet"
@@ -285,7 +285,7 @@ class CoreParser(Config):
             - CORE_CHECKPOINT_PATH: saving checkpoints of the rest of params
             - CORE_LOG_PATH: saving best results of each subprocess for comparison
 
-        4. Set Logger, and then you can log information by info|debug|warn|errorLogger ...
+        4. Set Logger, and then you can log information by info|debug|warnLogger ...
         5. Finally, READMD.md will be added under CHECKPOINT_PATH and LOG_PATH both.
         """
         args = self.parser.parse_args()
