@@ -9,7 +9,7 @@ from torch_geometric.data import Data, HeteroData
 from torch_geometric.utils import to_undirected
 from freeplot.utils import import_pickle, export_pickle
 
-from ..tags import SPARSE, USER, ITEM, ID
+from ..tags import FieldTags, SPARSE, USER, ITEM, ID
 from ..fields import Field, BufferField, SparseField, FieldList, FieldTuple
 from ..utils import collate_list, download_from_url, extract_archive
 from ...utils import timemeter, infoLogger, mkdirs, warnLogger
@@ -53,22 +53,26 @@ class BaseSet(dp.iter.IterDataPipe):
     def listmap(self, func: Callable, *iterables):
         return list(map(func, *iterables))
 
+    @property
+    def fields(self) -> FieldTuple:
+        raise NotImplementedError("...")
+
     def __len__(self):
         raise NotImplementedError()
 
     @timemeter("DataSet/to_graph")
-    def to_heterograph(self, *edge_types: Tuple[SparseField, Optional[str], SparseField]) -> HeteroData:
+    def to_heterograph(self, *edge_types: Tuple[Tuple[FieldTags], Optional[str], Tuple[FieldTags]]) -> HeteroData:
         """Convert datapipe to a heterograph.
 
         Parameters:
         ---
 
         *edge_types: (src, edge, dst)
-            - src: SparseField
+            - src: Tuple of Fieldtags for filtering
                 Source node.
             - edge: Optional[str]
-                The name of the edge. `src.name2dst.name` will be specified if `edge` is `None`.
-            - dst: SparseField
+                The name of the edge. 'src.name2dst.name' will be adopted if `edge` is `None`
+            - dst: Tuple of Fieldtags for filtering
                 Destination node.
 
         Notes:
@@ -84,8 +88,8 @@ class BaseSet(dp.iter.IterDataPipe):
         >>> basepipe = Gowalla_m1("../data")
         >>> fields = basepipe.fields
         >>> graph = basepipe.to_heterograph(
-        ...    (fields[USER, ID], None, fields[ITEM, ID]), 
-        ...    (fields[ITEM, ID], None, fields[USER, ID])
+        ...    ((USER, ID), None, (ITEM, ID)), 
+        ...    ((ITEM, ID), None, (USER, ID))
         ... )
         >>> graph
         HeteroData(
@@ -98,12 +102,18 @@ class BaseSet(dp.iter.IterDataPipe):
         if self.mode != 'train':
             warnLogger(f"Convert the datapipe for {self.mode} to graph. Make sure that this is intentional ...")
 
-        srcs, _, dsts = zip(*edge_types)
-        edges = list(map(lambda triplet: triplet[1] if triplet[1] else f"{triplet[0].name}2{triplet[2].name}", edge_types))
-        data = {node.name: [] for node in set(srcs + dsts)}
-        for df in self:
-            for node in data:
-                data[node].append(np.ravel(df[node]))
+        srcs, edges, dsts = zip(*edge_types)
+        srcs = [self.fields[src] for src in srcs]
+        dsts = [self.fields[dst] for dst in dsts]
+        nodes = set(srcs + dsts)
+        edges = self.listmap(
+            lambda src, edge, dst: edge if edge else f"{src.name}2{dst.name}",
+            srcs, edges, dsts
+        )
+        data = {node.name: [] for node in nodes}
+        for chunk in self:
+            for node in nodes:
+                data[node.name].append(np.ravel(chunk[node.tags].data))
         for key in data:
             data[key] = torch.tensor(np.concatenate(data[key], axis=0), dtype=torch.long)
 
@@ -120,8 +130,8 @@ class BaseSet(dp.iter.IterDataPipe):
 
     def to_bigraph(
         self,
-        src: SparseField,
-        dst: SparseField,
+        src: Tuple[FieldTags] = (USER, ID),
+        dst: Tuple[FieldTags] = (ITEM, ID),
         edge_type: Optional[str] = None
     ) -> HeteroData:
         """Convert datapipe to a bipartite graph.
@@ -129,9 +139,9 @@ class BaseSet(dp.iter.IterDataPipe):
         Parameters:
         ---
 
-        src: SparseField
+        src: Tuple[FieldTags]
             Source node.
-        dst: SparseField
+        dst: Tuple[FieldTags]
             Destination node.
         edge_type: Optional[str]
             The name of the edge. `src.name2dst.name` will be specified if `edge` is `None`.
@@ -149,7 +159,7 @@ class BaseSet(dp.iter.IterDataPipe):
         >>> basepipe = Gowalla_m1("../data")
         >>> fields = basepipe.fields
         >>> graph = basepipe.to_bigraph(
-        ...    fields[USER, ID], fields[ITEM, ID]
+        ...    (USER, ID), (ITEM, ID)
         ... )
         >>> graph
         HeteroData(
@@ -160,15 +170,15 @@ class BaseSet(dp.iter.IterDataPipe):
         """
         return self.to_heterograph((src, edge_type, dst))
    
-    def to_graph(self, src: SparseField, dst: SparseField) -> Data:
+    def to_graph(self, src: Tuple[FieldTags], dst: Tuple[FieldTags]) -> Data:
         """Convert datapipe to a homogeneous graph.
 
         Parameters:
         ---
 
-        src: SparseField
+        src: Tuple[FieldTags]
             Source node.
-        dst: SparseField
+        dst: Tuple[FieldTags]
             Destination node.
 
         Notes:

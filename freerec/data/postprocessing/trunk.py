@@ -63,15 +63,18 @@ class Shuffle(Postprocessor):
 
 @dp.functional_datapipe("tensor_")
 class ToTensor(Postprocessor):
-    """Convert Dict[str, List] into Dict[str, torch.Tensor]."""
+    """Convert List into torch.Tensor."""
 
     def at_least_2d(self, vals: torch.Tensor):
         return vals.unsqueeze(1) if vals.ndim == 1 else vals
 
     def to_tensor(self, field: BufferField):
-        return field.buffer(self.at_least_2d(
-            torch.tensor(field.data, dtype=field.dtype)
-        ))
+        try:
+            return field.buffer(self.at_least_2d(
+                torch.tensor(field.data, dtype=field.dtype)
+            ))
+        except ValueError: # avoid ragged List
+            return field
 
     def forward(self) -> Iterator:
         for chunk in self.source:

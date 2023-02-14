@@ -2,8 +2,9 @@
 
 from typing import Callable, Iterable, Tuple, Union, Dict, List, Any, Optional
 
+import numpy as np
 import torch, abc
-from functools import partial, lru_cache
+from functools import partial, lru_cache, reduce
 
 from .utils import safe_cast
 from .preprocessing import Identifier, Indexer, StandardScaler, MinMaxScaler
@@ -150,7 +151,7 @@ class Field(metaclass=abc.ABCMeta):
             self.__dtype = val
 
     def __str__(self) -> str:
-        tags = ','.join(map(str, self.tags))
+        tags = ','.join(map(str, self.__tags))
         return f"{self.name}: [dtype: {self.dtype}, na_value: {self.na_value}, tags: {tags}]"
 
     def __len__(self) -> int:
@@ -223,6 +224,35 @@ class BufferField(Field):
         """
         return self.__root.look_up(x if x else self.data)
 
+    def to(
+        self, device: Optional[Union[int, torch.device]] = None,
+        dtype: Optional[Union[torch.dtype, str]] = None,
+        non_blocking: bool = False
+    ):
+        if isinstance(self.data, torch.Tensor): # not check ?
+            self.data.to(device, dtype, non_blocking)
+        return self
+
+    def to_csr(self) -> torch.Tensor:
+        """Convert List to CSR Tensor.
+
+        Notes:
+        ---
+
+        Each row in self.data should be the col indices !
+        """
+        crow_indices = np.cumsum([0] + list(map(len, self.data)), dtype=np.int64)
+        col_indices = reduce(
+            lambda x, y: x + y, self.data
+        )
+        values = np.ones_like(col_indices, dtype=np.int64)
+        return torch.sparse_csr_tensor(
+            crow_indices=crow_indices,
+            col_indices=col_indices,
+            values=values,
+            size=(len(self.data), self.root.count) # B x Num of Items
+        )
+
 
 class TopField(Field, torch.nn.Module):
 
@@ -253,14 +283,15 @@ class TopField(Field, torch.nn.Module):
         >>> Target = SparseField('Label', 0, int, transformer='none', tags=TARGET)
         """
 
-        self.transformer = TRANSFORMATIONS[transformer]() if isinstance(transformer, str) else transformer
-        self.caster = partial(safe_cast, dest_type=dtype, default=na_value)
-        super().__init__(
+        torch.nn.Module.__init__(self)
+        super(TopField, self).__init__(
             name=name,
             na_value=na_value,
             dtype=dtype,
             tags=tags
         )
+        self.transformer = TRANSFORMATIONS[transformer]() if isinstance(transformer, str) else transformer
+        self.caster = partial(safe_cast, dest_type=dtype, default=na_value)
 
     def partial_fit(self, col):
         return self.transformer.partial_fit(col)
@@ -483,6 +514,15 @@ class FieldList(list):
 
     def copy(self) -> 'FieldList':
         return FieldList(self)
+
+    def to(
+        self, device: Optional[Union[int, torch.device]] = None,
+        dtype: Optional[Union[torch.dtype, str]] = None,
+        non_blocking: bool = False
+    ):
+        for field in self:
+            field.to(device, dtype, non_blocking)
+        return self
 
     def __getitem__(self, index: Union[int, FieldTags, Iterable[FieldTags]]) -> Union[Field, 'FieldList', None]:
         """Get fields by index.

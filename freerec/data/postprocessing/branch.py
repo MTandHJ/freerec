@@ -5,6 +5,7 @@ from typing import Iterator, Iterable, Union, List, Optional
 import torchdata.datapipes as dp
 
 from .base import Postprocessor
+from ..fields import FieldList, BufferField
 from ..tags import FieldTags, USER, ITEM, TARGET
 
 
@@ -45,7 +46,7 @@ class Grouper(Postprocessor):
                 tags = (tags,)
             self.groups.append([field for field in self.fields if field.match(*tags)])
 
-    def __iter__(self) -> List:
+    def forward(self) -> List:
         for batch in self.source:
             yield [{field.name: batch[field.name] for field in group} for group in self.groups]
 
@@ -108,7 +109,7 @@ class Wrapper(Postprocessor):
         else:
             return len(self.testpipe)
 
-    def __iter__(self) -> Iterator:
+    def forward(self) -> Iterator[FieldList[BufferField]]:
         if self.mode == 'train':
             yield from self.source
         elif self.mode == 'valid':
