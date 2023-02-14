@@ -13,12 +13,12 @@ from tqdm import tqdm
 from freeplot.utils import import_pickle, export_pickle
 
 from .data.datasets.base import BaseSet
-from .data.fields import Field, Fielder
+from .data.fields import TopField, FieldTuple
 from .data.dataloader import DataLoader
 from .models import RecSysArch
 from .criterions import BaseCriterion
 from .dict2obj import Config
-from .utils import AverageMeter, Monitor, timemeter, infoLogger, errorLogger
+from .utils import AverageMeter, Monitor, timemeter, infoLogger
 from .metrics import *
 from .parser import TIME
 
@@ -83,13 +83,13 @@ DEFAULT_BEST_CASTER = {
 class _DummyModule(torch.nn.Module):
 
     def forward(self, *args, **kwargs):
-        errorLogger("No model available for Coach ...", NotImplementedError)
+        NotImplementedError("No model available for Coach ...")
 
     def step(self, *args, **kwargs):
-        errorLogger("No optimizer or lr scheduler available for Coach ...", NotImplementedError)
+        NotImplementedError("No optimizer or lr scheduler available for Coach ...")
 
     def backward(self, *args, **kwargs):
-        errorLogger("No optimizer available for Coach ...", NotImplementedError)
+        NotImplementedError("No optimizer available for Coach ...")
 
 
 class Coach:
@@ -126,7 +126,7 @@ class Coach:
             - `int`: Using cuda:`int`.
         """
         self.dataset = dataset
-        self.fields: Fielder[Field] = self.dataset.fields
+        self.fields: FieldTuple[TopField] = FieldTuple(self.dataset.fields)
         self.device = torch.device(device)
         self.criterion = criterion
         self.model = model.to(self.device) if model else _DummyModule()
@@ -231,9 +231,8 @@ class Coach:
                 )
             )
         except AttributeError:
-            errorLogger(
-                "'register_metric' should be called after 'compile' ...",
-                AttributeError
+            AttributeError(
+                "'register_metric' should be called after 'compile' ..."
             )
 
     @property
@@ -401,10 +400,10 @@ class Coach:
         export_pickle(best, os.path.join(self.cfg.LOG_PATH, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME))
 
     def train_per_epoch(self):
-        errorLogger("train_per_epoch should be specified ...", NotImplementedError)
+        NotImplementedError("train_per_epoch should be specified ...")
 
     def evaluate(self, prefix: str = 'valid'):
-        errorLogger("evaluate should be specified ...", NotImplementedError)
+        NotImplementedError("evaluate should be specified ...")
 
     @timemeter("Coach/train")
     def train(self):

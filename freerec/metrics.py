@@ -9,11 +9,10 @@ The implementations below are fully due to torchmetrics.
 
 from multiprocessing import reduction
 from typing import Optional, Union, List 
+from functools import  partial
 
 import torch
 import torchmetrics
-from freerec.utils import errorLogger
-
 
 __all__ = [
     'mean_abs_error', 'mean_squared_error', 'root_mse',
@@ -28,10 +27,13 @@ def _reduce(reduction='mean'):
             targets: Union[List[torch.Tensor], torch.Tensor], 
             reduction: str = reduction, **kwargs
         ):
+            func_ = partial(func, **kwargs)
             if isinstance(preds, List):
-                results = torch.tensor([func(pred, target, **kwargs) for pred, target in zip(preds, targets)])
+                results = torch.tensor(list(map(
+                    func_, preds, targets
+                )))
             else:
-                results = func(preds, targets, **kwargs)
+                results = func_(preds, targets)
             if reduction == 'none':
                 return results
             elif reduction == 'mean':
@@ -39,7 +41,7 @@ def _reduce(reduction='mean'):
             elif reduction == 'sum':
                 return results.sum()
             else:
-                errorLogger(f"reduction should be 'none'|'mean'|'sum' but {reduction} is received ...", ValueError)
+                ValueError(f"reduction should be 'none'|'mean'|'sum' but {reduction} is received ...")
         wrapper.__name__ = func.__name__
         wrapper.__doc__ = func.__doc__
         return wrapper
