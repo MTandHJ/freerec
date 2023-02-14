@@ -40,11 +40,14 @@ class Avazu_x1(RecDataSet):
     URL = "https://zenodo.org/record/5700987/files/Avazu_x1.zip"
 
     _cfg = Config(
-        target = [SparseField('Label', na_value=None, dtype=int, transformer='none', tags=TARGET)],
-        features = [SparseField(f"Feat{k}", na_value=-1, dtype=int, tags=[ITEM, FEATURE]) for k in range(1, 23)]
+        fields = [
+            (SparseField, Config(name='Label', na_value=None, dtype=int, tags=TARGET, transformer='none'))
+        ] + 
+        [
+            (SparseField, Config(name=f"Feat{k}", na_value=-1, dtype=int, tags=[ITEM, FEATURE])) 
+            for k in range(1, 23)
+        ]
     )
-
-    _cfg.fields = _cfg.target + _cfg.features
 
     open_kw = Config(mode='rt', delimiter=',', skip_lines=1)
 
@@ -57,10 +60,6 @@ class Avazu_x1(RecDataSet):
         datapipe = datapipe.open_files(mode=self.open_kw.mode)
         datapipe = datapipe.parse_csv(delimiter=self.open_kw.delimiter, skip_lines=self.open_kw.skip_lines)
         datapipe = datapipe.map(self.row_processer)
-        # data = list(datapipe)
-        # if self.mode == 'train':
-        #     random.shuffle(data)
-        # datapipe = dp.iter.IterableWrapper(data)
         return datapipe
 
 

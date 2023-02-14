@@ -1,19 +1,16 @@
 
 
-from typing import Callable, Iterator, Optional, Dict, Union
+from typing import Iterator, Sized
 
-import torch
+import torch, random
 import torchdata.datapipes as dp
-import numpy as np
-from math import ceil
-
-from freerec.utils import errorLogger
+from ..fields import BufferField
 
 from .base import Postprocessor
 
 
 __all__ = [
-    "Sharder", "Shuffle", "SubFielder", "Spliter", "ToTensor"
+    "Sharder", "Shuffle", "Spliter", "ToTensor"
 ]
 
 
@@ -21,50 +18,47 @@ __all__ = [
 class Sharder(Postprocessor):
     """For num_workers != 0."""
 
-    def __iter__(self) -> Iterator:
-        worker_infos = torch.utils.data.get_worker_info()
-        if worker_infos:
-            id_, nums = worker_infos.id, worker_infos.num_workers
-            for idx, item in enumerate(self.source):
-                if idx % nums == id_:
-                    yield item
-        else:
-            yield from self.source
+    def __init__(self, datapipe):
+        super().__init__(datapipe)
+        self.num_of_instances = 1
+        self.instance_id = 0
+
+    def is_shardable(self):
+        return True
+
+    def apply_sharding(self, num_of_instances, instance_id):
+        self.num_of_instances = num_of_instances
+        self.instance_id = instance_id
+
+    def forward(self):
+        for i, item in enumerate(self.source):
+            if i % self.num_of_instances == self.instance_id:
+                yield item
+
+    def __len__(self):
+        if isinstance(self.source, Sized):
+            return len(self.source) // self.num_of_instances +\
+                (1 if (self.instance_id < len(self.source) % self.num_of_instances) else 0)
+        raise TypeError("{} instance doesn't have valid length".format(type(self).__name__))
 
 
 @dp.functional_datapipe("shuffle_")
 class Shuffle(Postprocessor):
-    """Shuffling the datapipe."""
+    """Shuffling each dataframe."""
 
-    def shuffle(self, chunk: Dict):
-        indices = None
-        for key in chunk:
-            if indices is None:
-                indices = np.arange(len(chunk[key]))
-                np.random.shuffle(indices)
-            chunk[key] = chunk[key][indices]
-        return chunk
+    def shuffle(self, field, state):
+        random.setstate(state) # for same indices
+        random.shuffle(field.data)
 
-    def __iter__(self):
+    def forward(self):
         for chunk in self.source:
-            yield self.shuffle(chunk)
-
-
-@dp.functional_datapipe("subfield_")
-class SubFielder(Postprocessor):
-    """Select subfields."""
-
-    def __init__(
-        self, datapipe: Postprocessor,
-        filter_: Optional[Callable] = None
-    ) -> None:
-        super().__init__(datapipe)
-        if filter_:
-            self.fields = [field for field in self.fields if filter_(field)]
-
-    def __iter__(self) -> Iterator:
-        for chunk in self.source:
-            yield {field.name: chunk[field.name] for field in self.fields}
+            state = random.getstate()
+            self.listmap(
+                self.shuffle,
+                chunk,
+                [state] * len(chunk)
+            )
+            yield chunk
 
 
 @dp.functional_datapipe("tensor_")
@@ -74,14 +68,19 @@ class ToTensor(Postprocessor):
     def at_least_2d(self, vals: torch.Tensor):
         return vals.unsqueeze(1) if vals.ndim == 1 else vals
 
-    def __iter__(self) -> Iterator:
-        for batch in self.source:
-            yield {field.name: self.at_least_2d(torch.tensor(batch[field.name], dtype=field.dtype)) for field in self.fields}
+    def to_tensor(self, field: BufferField):
+        return field.buffer(self.at_least_2d(
+            torch.tensor(field.data, dtype=field.dtype)
+        ))
+
+    def forward(self) -> Iterator:
+        for chunk in self.source:
+            yield self.listmap(self.to_tensor, chunk)
 
 
 @dp.functional_datapipe("split_")
 class Spliter(Postprocessor):
-    """A special batcher for Dict[str, Union[Tensor, ndarray]] only."""
+    """A special batcher for DataFrame only."""
 
     def __init__(
         self, datapipe: Postprocessor, batch_size: int
@@ -94,32 +93,22 @@ class Spliter(Postprocessor):
             It must yield tensors or array !
         batch_size: int
             If the given batch size is not evenly divisible by _DEFAULT_CHUNK_SIZE,
-            minor chunk will yielded frequently. Fortunately, _DEFAULT_CHUNK_SIZE=51200 satisfies
-            almost all popular batch sizes. For example, 128, 1024 ... 
+            minor chunk will yielded frequently. Fortunately, _DEFAULT_CHUNK_SIZE=51200 satisfies almost all popular batch sizes. For example, 128, 1024 ... 
         """
         super().__init__(datapipe)
 
         self.batch_size = batch_size
 
-    def split(self, vals: Union[torch.Tensor, np.ndarray]):
-        if isinstance(vals, torch.Tensor):
-            return torch.split(vals, self.batch_size, dim=0)
-        elif isinstance(vals, np.ndarray):
-            return np.array_split(vals, ceil(len(vals) / self.batch_size), axis=0)
-        else:
-            errorLogger(f"Only Tensor or ndarray supported but {type(vals)} received", ValueError)
+    def split(self, field: BufferField, start, end):
+        return field.buffer(field[start:end])
 
-    def __len__(self):
-        raise errorLogger("Spliter has no `__len__` method ...", NotImplementedError)
+    def forward(self) -> Iterator:
 
-    def __iter__(self) -> Iterator:
         for chunk in self.source:
-            chunk = {key: self.split(vals) for key, vals in chunk.items()}
-            try:
-                k = 0
-                while True:
-                    yield {key: chunk[key][k] for key in chunk}
-                    k += 1
-            except IndexError:
-                pass
-
+            for start, end in zip(
+                range(0, chunk.datasize, self.batch_size),
+                range(self.batch_size, chunk.datasize + self.batch_size, self.batch_size)
+            ):
+                yield self.listmap(
+                    self.split, chunk, [start] * len(chunk), [end] * len(chunk)
+                )

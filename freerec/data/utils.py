@@ -1,8 +1,7 @@
 
 
-from typing import TypeVar, Callable, Dict, List, Optional
+from typing import TypeVar, Callable, List, Optional
 
-import numpy as np
 import os, requests, warnings, hashlib, tqdm
 
 from ..utils import errorLogger, infoLogger
@@ -35,16 +34,14 @@ def safe_cast(val: T, dest_type: Callable[[T], T], default: T) -> T:
                 raise ValueError
             return dest_type(default)
     except (ValueError, TypeError):
-        errorLogger(
+        ValueError(
             f"Using '{dest_type.__name__}' to convert '{val}' where the default value is {default} ..." \
             f"This happens when the value (or the default value: {default}) to be cast is not of the type {dest_type.__name__}.",
-            ValueError
         )
 
 
-def collate_dict(batch: List[Dict]):
-    elem = batch[0]
-    return {key: np.array([d[key] for d in batch]) for key in elem}
+def collate_list(batch: List):
+    return list(zip(*batch))
 
 
 def download_from_url(
@@ -110,7 +107,7 @@ def download_from_url(
                     infoLogger('[DataSet] >>> Downloading %s from %s...' % (file_, url))
                 r = requests.get(url, stream=True, verify=verify_ssl)
                 if r.status_code != 200:
-                    errorLogger("Failed downloading url %s" % url, RuntimeError)
+                    RuntimeError("Failed downloading url %s" % url)
                 with open(file_, 'wb') as f:
                     for chunk in tqdm.tqdm(r.iter_content(chunk_size=1024), leave=False, desc="վ'ᴗ' ի-"):
                         if chunk:  # filter out keep-alive new chunks

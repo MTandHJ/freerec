@@ -1,9 +1,6 @@
 
 
 from .base import ImplicitRecSet
-from ..fields import SparseField
-from ..tags import USER, ITEM, ID
-from ...dict2obj import Config
 
 
 __all__ = ['Yelp18_m1']
@@ -33,12 +30,3 @@ class Yelp18_m1(ImplicitRecSet):
     """
 
     URL = "https://zenodo.org/record/7297855/files/Yelp18_m1.zip"
-
-    _cfg = Config(
-        sparse = [
-            SparseField(name='UserID', na_value=None, dtype=int, tags=[USER, ID]),
-            SparseField(name='ItemID', na_value=None, dtype=int, tags=[ITEM, ID]),
-        ]
-    )
-
-    _cfg.fields = _cfg.sparse

@@ -1,8 +1,9 @@
 
 
-from typing import Union, Dict
+from typing import Union, Dict, Iterator
 
 import numpy as np
+from ..fields import FieldList, BufferField
 
 from ..datasets import BaseSet, RecDataSet
 
@@ -15,7 +16,10 @@ class Postprocessor(BaseSet):
     def __init__(self, datapipe: Union[RecDataSet, 'Postprocessor']) -> None:
         super().__init__()
         self.source = datapipe
-        self.fields = self.source.fields
+
+    @property
+    def fields(self):
+        return self.source.fields
 
     def train(self):
         super().train()
@@ -39,8 +43,13 @@ class Postprocessor(BaseSet):
     def datasize(self):
         return self.source.datasize
 
-    def __len__(self):
-        return len(self.source)
+    @property
+    def VALID_IS_TEST(self):
+        return self.source.VALID_IS_TEST
+
+    @property
+    def DEFAULT_CHUNK_SIZE(self):
+        return self.source.DEFAULT_CHUNK_SIZE
 
 class ModeError(Exception): ...
 

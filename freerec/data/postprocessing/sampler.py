@@ -1,23 +1,20 @@
 
 
-from typing import Iterator, Dict
+from typing import Iterator
 
-import torchdata.datapipes as dp
-import numpy as np
 import random
-import scipy.sparse as sp
-from math import ceil
+import torchdata.datapipes as dp
 
 from .base import Postprocessor, ModeError
 from ..fields import SparseField
-from ..tags import USER, ITEM, ID
-from ...utils import errorLogger, timemeter
+from ..tags import USER, ITEM, ID, POSITIVE, NEGATIVE, SEEN, UNSEEN
+from ...utils import timemeter
 
 
-__all__ = ['NegativesForTrain', 'NegativesForEval', 'UniformSampler', 'TriSampler']
+__all__ = ['NegativesForTrain', 'NegativesForEval', 'UniformSampler', 'Tripleter']
 
 
-@dp.functional_datapipe("negatives_for_train_")
+@dp.functional_datapipe("train_user_pos_negs_")
 class NegativesForTrain(Postprocessor):
     """Sampling negatives for trainpipe."""
 
@@ -43,22 +40,23 @@ class NegativesForTrain(Postprocessor):
         self.unseen_only = unseen_only
         self.User: SparseField = self.fields[USER, ID]
         self.Item: SparseField = self.fields[ITEM, ID]
+        self.Negative = self.Item.buffer(tags=NEGATIVE)
         self.prepare()
 
     @timemeter("NegativeForTrain/prepare")
     def prepare(self):
-        self.train()
+
         self.posItems = [set() for _ in range(self.User.count)]
         self.negative_pool = self._sample_from_all(self.datasize * self.num_negatives)
 
-        for chunk in self.source:
-            list(map(
-                lambda row: self.posItems[row[0].item()].add(row[1].item()),
-                zip(chunk[self.User.name], chunk[self.Item.name])
-            ))
+        for chunk in self.source.train():
+            self.listmap(
+                lambda user, item: self.posItems[user].add(item),
+                chunk[USER, ID], chunk[ITEM, ID],
+            )
 
     def _sample_from_all(self, pool_size: int = 51200):
-        allItems = list(range(self.Item.count))
+        allItems = self.Item.ids
         while 1:
             for item in random.choices(allItems, k=pool_size):
                 yield item
@@ -69,33 +67,32 @@ class NegativesForTrain(Postprocessor):
             negative = next(self.negative_pool)
         return negative
 
-    def sample(self, x):
-        seen = self.posItems[x.item()]
-        return [self._sample_from_pool(seen) for _ in range(self.num_negatives)]
+    def sample_from_unseen(self, x):
+        seen = self.posItems[x]
+        return self.listmap(self._sample_from_pool, [seen] * self.num_negatives)
 
-    def __iter__(self) -> Iterator:
+    def sample_from_all(self, x):
+        return random.choices(self.Item.ids, k=self.num_negatives)
+
+    def forward(self):
         if self.mode == 'train':
             for chunk in self.source:
                 if self.unseen_only:
-                    negatives = self.at_least_2d(
-                        np.apply_along_axis(self.sample, 1, chunk[self.User.name])
-                    )
+                    negatives = self.listmap(self.sample_from_unseen, chunk[USER, ID])
                 else:
-                    negatives = np.random.randint(
-                        0, self.Item.count, 
-                        size=(len(chunk[self.User.name]), self.num_negatives)
-                    )
-                chunk[self.Item.name] = np.concatenate([chunk[self.Item.name], negatives], axis=1)
-                yield chunk
+                    negatives = self.listmap(self.sample_from_all, chunk[USER, ID])
+                yield chunk[USER, ID], chunk[ITEM, ID].buffer(tags=POSITIVE), self.Negative.buffer(negatives)
         else:    
-            raise ModeError(errorLogger("for training only ..."))
+            raise ModeError("for training only ...")
 
 
-@dp.functional_datapipe("negatives_for_eval_")
+@dp.functional_datapipe("eval_user_pos_negs_")
 class NegativesForEval(NegativesForTrain):
     """Sampling negatives for valid|testpipe."""
 
-    def __init__(self, datapipe: Postprocessor, num_negatives: int = 1) -> None:
+    def __init__(
+        self, datapipe: Postprocessor, num_negatives: int = 100,
+    ) -> None:
         """
         Parameters:
         ---
@@ -108,35 +105,68 @@ class NegativesForEval(NegativesForTrain):
             Note that all negatives will be frozen once sampled.
         """
         super().__init__(datapipe, num_negatives)
+    
+    def _prepare_for_valid(self):
+        posItems = [set() for _ in range(self.User.count)]
+        allItems = set(self.Item.ids)
+        self.negItems_for_valid = []
+
+        for chunk in self.source.train():
+            self.listmap(
+                lambda user, item: posItems[user].add(item),
+                chunk[USER, ID], chunk[ITEM, ID]
+            )
+
+        for items in posItems:
+            unseen = list(allItems - items)
+            self.negItems_for_valid.append(tuple(random.sample(unseen, k=self.num_negatives)))
+            # random.sample or random.choices ?
+
+        return posItems, allItems
+
+    def _prepare_for_test(self, posItems: set, allItems: set):
+        self.negItems_for_test = []
+
+        for chunk in self.source.valid():
+            self.listmap(
+                lambda user, item: posItems[user].add(item),
+                chunk[USER, ID], chunk[ITEM, ID]
+            )
+
+        for items in posItems:
+            unseen = list(allItems - items)
+            self.negItems_for_test.append(tuple(random.sample(unseen, k=self.num_negatives)))
 
     @timemeter("NegativeForEval/prepare")
     def prepare(self):
-        self.train()
-        posItems = [set() for _ in range(self.User.count)]
-        allItems = set(range(self.Item.count))
-        self.negItems = []
+        if self.VALID_IS_TEST:
+            self._prepare_for_valid()
+            self.negItems_for_test = self.negItems_for_valid
+        else: # validation set is not test set
+            self._prepare_for_test(
+                *self._prepare_for_valid()
+            )
 
-        for chunk in self.source:
-            list(map(
-                lambda row: posItems[row[0].item()].add(row[1].item()),
-                zip(chunk[self.User.name], chunk[self.Item.name])
-            ))
-        for items in posItems:
-            unseen = list(allItems - items)
-            self.negItems.append(random.sample(unseen, k=self.num_negatives))
-        self.negItems = np.array(self.negItems)
+    def sample_for_valid(self, user: int):
+        return self.negItems_for_valid[user]
 
-    def __iter__(self) -> Iterator:
-        if self.mode in ('valid', 'test'):
+    def sample_for_test(self, user: int):
+        return self.negItems_for_test[user]
+
+    def forward(self) -> Iterator:
+        if self.mode == 'valid':
             for chunk in self.source:
-                negatives = self.negItems[np.ravel(chunk[self.User.name])]
-                chunk[self.Item.name] = np.concatenate([chunk[self.Item.name], negatives], axis=1)
-                yield chunk
+                negatives = self.listmap(self.sample_for_valid, chunk[USER, ID])
+                yield chunk[USER, ID], chunk[ITEM, ID].buffer(tags=POSITIVE), self.Negative.buffer(negatives)
+        elif self.mode =='test':
+            for chunk in self.source:
+                negatives = self.listmap(self.sample_for_test, chunk[USER, ID])
+                yield chunk[USER, ID], chunk[ITEM, ID].buffer(tags=POSITIVE), self.Negative.buffer(negatives)
         else:
-            raise ModeError(errorLogger("for evaluation only ..."))
+            raise ModeError("for evaluation only ...")
 
 
-@dp.functional_datapipe("uniform_sampling_")
+@dp.functional_datapipe("train_uniform_user_")
 class UniformSampler(Postprocessor):
     """Uniformly sampling users and their negatives."""
 
@@ -162,25 +192,23 @@ class UniformSampler(Postprocessor):
         self.unseen_only = unseen_only
         self.User: SparseField = self.fields[USER, ID]
         self.Item: SparseField = self.fields[ITEM, ID]
-        self.fields = self.fields.groupby(ID)
         self.prepare()
 
     @timemeter("UniformSampler/prepare")
     def prepare(self):
-        self.train()
         self.posItems = [set() for _ in range(self.User.count)]
         self.negative_pool = self._sample_from_all(self.datasize * self.num_negatives)
 
-        for chunk in self.source:
-            list(map(
-                lambda row: self.posItems[row[0].item()].add(row[1].item()),
-                zip(chunk[self.User.name], chunk[self.Item.name])
-            ))
+        for chunk in self.source.train():
+            self.listmap(
+                lambda user, item: self.posItems[user].add(item),
+                chunk[USER, ID], chunk[ITEM, ID]
+            )
 
-        self.posItems = [list(items) for items in self.posItems]
+        self.posItems = [tuple(items) for items in self.posItems]
 
     def _sample_from_all(self, pool_size: int = 51200):
-        allItems = list(range(self.Item.count))
+        allItems = self.Item.ids
         while 1:
             for item in random.choices(allItems, k=pool_size):
                 yield item
@@ -191,45 +219,46 @@ class UniformSampler(Postprocessor):
             negative = next(self.negative_pool)
         return negative
 
-    def sample_from_seen(self, user):
-        return random.choice(self.posItems[user.item()])
+    def _sample_pos(self, user):
+        return random.choice(self.posItems[user])
+
+    def _sample_neg(self, user):
+        seen = self.posItems[user]
+        return self.listmap(self._sample_from_pool, [seen] * self.num_negatives)
 
     def sample_from_unseen(self, user):
-        seen = self.posItems[user.item()]
-        return [self._sample_from_pool(seen) for _ in range(self.num_negatives)]
+        return self._sample_neg(user)
 
-    def __len__(self):
-        return 1
+    def sample_from_all(self, user):
+        return random.choices(self.Item.ids, k=self.num_negatives)
 
-    def __iter__(self):
+    def forward(self):
+        users = random.choices(self.User.ids, k=self.datasize)
+        chunk_size = self.DEFAULT_CHUNK_SIZE
         if self.mode == 'train':
-            users = np.random.randint(0, self.User.count, (self.datasize, 1))
-            positives = self.at_least_2d(np.apply_along_axis(self.sample_from_seen, 1, users))
-            if self.unseen_only:
-                negatives = self.at_least_2d(
-                    np.apply_along_axis(self.sample_from_unseen, 1, users)
-                )
-            else:
-                negatives = np.random.randint(
-                    0, self.Item.count, 
-                    size=(self.datasize, self.num_negatives)
-                )
-            yield {self.User.name: users, self.Item.name: np.concatenate((positives, negatives), axis=1)}
+            for start, end in zip(
+                range(0, self.datasize, chunk_size), 
+                range(chunk_size, self.datasize + chunk_size, chunk_size)
+            ):
+                chunk_users = users[start:end]
+                chunk_pos_items = self.listmap(self._sample_pos, chunk_users)
+                if self.unseen_only:
+                    chunk_neg_items = self.listmap(self.sample_from_unseen, chunk_users)
+                else:
+                    chunk_neg_items = self.listmap(self.sample_from_all, chunk_users)
+                yield self.User.buffer(chunk_users), \
+                    self.Item.buffer(chunk_pos_items, tags=POSITIVE), \
+                    self.Item.buffer(chunk_neg_items, tags=NEGATIVE)
         else:
-            raise ModeError(errorLogger("for training only ..."))
+            raise ModeError("for training only ...")
 
 
-@dp.functional_datapipe("trisample_")
-class TriSampler(Postprocessor):
-    """Yielding users with all items.
-    The items are trinary including -1, 0, 1:
-        - `-1`: This item has been used in trainset;
-        - `0`: A negative item.
-        - `1`: A positive item has not used in trainset.
-    """
+@dp.functional_datapipe("eval_user_unseens_seens_")
+class Tripleter(Postprocessor):
+    """Yielding [user, unseen, seen]"""
 
     def __init__(
-        self, datapipe: Postprocessor, batch_size: int
+        self, datapipe: Postprocessor
     ) -> None:
         """
         Parameters:
@@ -237,53 +266,67 @@ class TriSampler(Postprocessor):
 
         datapipe: RecDataSet or Postprocessor
             Yielding dict of np.array.
-        batch_size: int
         """
         super().__init__(datapipe)
-        self.batch_size = batch_size
         self.User: SparseField = self.fields[USER, ID]
         self.Item: SparseField = self.fields[ITEM, ID]
-        self.fields = self.fields.groupby(ID)
         self.prepare()
 
-    @timemeter("TriSampler/prepare")
+    @timemeter("Tripleter/prepare")
     def prepare(self):
-        users, items, vals = [], [], []
 
-        self.train()
-        for chunk in self.source:
-            users.append(chunk[self.User.name])
-            items.append(chunk[self.Item.name])
-            # -1 for seen positives
-            vals.append(-np.ones_like(chunk[self.Item.name])) 
+        self.trainItems = [set() for _ in range(self.User.count)]
+        self.validItems = [set() for _ in range(self.User.count)]
+        self.testItems = [set() for _ in range(self.User.count)]
 
-        self.test()
-        for chunk in self.source:
-            users.append(chunk[self.User.name])
-            items.append(chunk[self.Item.name])
-            # 1 for unseen positives
-            vals.append(np.ones_like(chunk[self.Item.name]))
-        
-        users = np.ravel(np.concatenate(users, axis=0))
-        items = np.ravel(np.concatenate(items, axis=0))
-        vals = np.ravel(np.concatenate(vals, axis=0))
+        for chunk in self.source.train():
+            self.listmap(
+                lambda user, item: self.trainItems[user].add(item),
+                chunk[USER, ID], chunk[ITEM, ID]
+            )
 
-        self.graph = sp.csr_array(
-            (vals, (users, items)), dtype=np.int64
-        )
+        for chunk in self.source.valid():
+            self.listmap(
+                lambda user, item: self.validItems[user].add(item),
+                chunk[USER, ID], chunk[ITEM, ID]
+            )
 
+        for chunk in self.source.test():
+            self.listmap(
+                lambda user, item: self.testItems[user].add(item),
+                chunk[USER, ID], chunk[ITEM, ID]
+            )
 
-    def __len__(self):
-        return ceil(self.User.count / self.batch_size)
+        self.trainItems = [tuple(items) for items in self.trainItems]
+        self.validItems = [tuple(items) for items in self.validItems]
+        self.testItems = [tuple(items) for items in self.testItems]
 
-    def __iter__(self):
-        if self.mode == 'train':
-            raise ModeError(errorLogger("for evaluation only ..."))
+    def sample_from_seen(self, user: int):
+        if self.mode == 'valid' or self.VALID_IS_TEST:
+            return self.trainItems[user] 
         else:
-            allUsers = np.arange(self.User.count)
-            for k in range(len(self)):
-                start = k * self.batch_size
-                end = (k + 1) * self.batch_size
-                users = allUsers[start:end]
-                items = self.graph[users].todense()
-                yield {self.User.name: users[:, None], self.Item.name: items}
+            return self.trainItems['user'] + self.validItems['user']
+
+    def sample_from_unseen(self, user: int):
+        return self.validItems[user] if self.mode == 'valid' else self.testItems['user']
+
+    def forward(self):
+        if self.mode == 'train':
+            raise ModeError("for evaluation only ...")
+        else:
+            users = list(self.User.ids)
+            chunk_size = self.DEFAULT_CHUNK_SIZE
+            for start, end in zip(
+                range(0, self.User.count, chunk_size), 
+                range(chunk_size, self.User.count + chunk_size, chunk_size)
+            ):
+                chunk_users = users[start:end]
+                chunk_unseen_items = self.listmap(
+                    self.sample_from_unseen, chunk_users
+                )
+                chunk_seen_items = self.listmap(
+                    self.sample_from_seen, chunk_users
+                )
+                yield self.User.buffer(chunk_users), \
+                    self.Item.buffer(chunk_unseen_items, tags=UNSEEN), \
+                    self.Item.buffer(chunk_seen_items, tags=SEEN)

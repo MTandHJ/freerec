@@ -40,12 +40,10 @@ class Criteo_x1(RecDataSet):
     URL = "https://zenodo.org/record/5700987/files/Criteo_x1.zip"
 
     _cfg = Config(
-        # dataset
-        sparse = [SparseField(name=f"C{idx}", na_value='-1', dtype=str, tags=[ITEM, FEATURE]) for idx in range(1, 27)],
-        dense = [DenseField(name=f"I{idx}", na_value=0., dtype=float, tags=[ITEM, FEATURE]) for idx in range(1, 14)],
-        target = [SparseField(name='Label', na_value=None, dtype=int, transformer='none', tags=TARGET)]
+        fields = [(SparseField, Config(name=f"C{idx}", na_value='-1', dtype=str, tags=[ITEM, FEATURE])) for idx in range(1, 27)] \
+                    + [(DenseField, Config(name=f"I{idx}", na_value=0., dtype=float, tags=[ITEM, FEATURE])) for idx in range(1, 14)] \
+                    + [(SparseField, Config(name='Label', na_value=None, dtype=int, transformer='none', tags=TARGET))]
     )
-    _cfg.fields = _cfg.target + _cfg.dense + _cfg.sparse
 
     open_kw = Config(mode='rt', delimiter=',', skip_lines=1)
 
@@ -59,8 +57,4 @@ class Criteo_x1(RecDataSet):
         datapipe = datapipe.open_files(mode=self.open_kw.mode)
         datapipe = datapipe.parse_csv(delimiter=self.open_kw.delimiter, skip_lines=self.open_kw.skip_lines)
         datapipe = datapipe.map(self.row_processer)
-        # data = list(datapipe)
-        # if self.mode == 'train':
-        #     random.shuffle(data)
-        # datapipe = dp.iter.IterableWrapper(data)
         return datapipe

@@ -1,28 +1,30 @@
 
 
-from typing import Iterator, Dict, Optional, Tuple
+from typing import Iterator, Optional, Tuple, Callable
 
-import torch, os, random
+import torch, os
 import numpy as np
 import torchdata.datapipes as dp
 from torch_geometric.data import Data, HeteroData
 from torch_geometric.utils import to_undirected
 from freeplot.utils import import_pickle, export_pickle
-from math import ceil
 
 from ..tags import SPARSE, USER, ITEM, ID
-from ..fields import Fielder, SparseField
-from ..utils import collate_dict, download_from_url, extract_archive
-from ...utils import timemeter, infoLogger, errorLogger, mkdirs, warnLogger
+from ..fields import Field, BufferField, SparseField, FieldList, FieldTuple
+from ..utils import collate_list, download_from_url, extract_archive
+from ...utils import timemeter, infoLogger, mkdirs, warnLogger
 from ...dict2obj import Config
 
 
 __all__ = ['BaseSet', 'RecDataSet']
 
 
-_DEFAULT_PICKLE_FMT = "{0}_from_pickle"
-_DEFAULT_TRANSFORM_FILENAME = "transforms.pickle"
-_DEFAULT_CHUNK_FMT = "chunk{0}.pickle"
+DEFAULT_PICKLE_FMT = "{0}_from_pickle"
+DEFAULT_TRANSFORM_FILENAME = "transforms.pickle"
+DEFAULT_CHUNK_FMT = "chunk{0}.pickle"
+
+
+class RecSetBuildingError(Exception): ...
 
 
 class BaseSet(dp.iter.IterDataPipe):
@@ -31,14 +33,6 @@ class BaseSet(dp.iter.IterDataPipe):
         super().__init__()
 
         self.__mode = 'train'
-
-    @property
-    def fields(self):
-        return self.__fields
-
-    @fields.setter
-    def fields(self, vals) -> Fielder:
-        self.__fields = Fielder(vals)
         
     @property
     def mode(self):
@@ -55,6 +49,9 @@ class BaseSet(dp.iter.IterDataPipe):
     def test(self):
         self.__mode = 'test'
         return self
+
+    def listmap(self, func: Callable, *iterables):
+        return list(map(func, *iterables))
 
     def __len__(self):
         raise NotImplementedError()
@@ -99,14 +96,14 @@ class BaseSet(dp.iter.IterDataPipe):
         )
         """
         if self.mode != 'train':
-            warnLogger(f"Convert the datapipe for {self.mode} to graph. Ensure this is intentional ...")
+            warnLogger(f"Convert the datapipe for {self.mode} to graph. Make sure that this is intentional ...")
 
         srcs, _, dsts = zip(*edge_types)
         edges = list(map(lambda triplet: triplet[1] if triplet[1] else f"{triplet[0].name}2{triplet[2].name}", edge_types))
         data = {node.name: [] for node in set(srcs + dsts)}
-        for chunk in self:
+        for df in self:
             for node in data:
-                data[node].append(np.ravel(chunk[node]))
+                data[node].append(np.ravel(df[node]))
         for key in data:
             data[key] = torch.tensor(np.concatenate(data[key], axis=0), dtype=torch.long)
 
@@ -200,6 +197,15 @@ class BaseSet(dp.iter.IterDataPipe):
         infoLogger(str(self))
 
 
+    def forward(self):
+        raise NotImplementedError("_iter method should be implemented ...")
+
+    def __iter__(self) -> Iterator[FieldList[BufferField]]:
+        for chunk in self.forward():
+            yield FieldList(map(lambda field: field.buffer(), chunk))
+
+
+
 class RecDataSet(BaseSet):
     """ RecDataSet provides a template for specific datasets.
 
@@ -208,7 +214,7 @@ class RecDataSet(BaseSet):
 
     _cfg: Config[str, Field]
         Includes fields of each column.
-    _DEFAULT_CHUNK_SIZE: int, defalut 51200
+    DEFAULT_CHUNK_SIZE: int, defalut 51200
         Chunk size for saving.
 
     Notes:
@@ -223,15 +229,15 @@ class RecDataSet(BaseSet):
     Because these three datasets share the same _cfg, compiling any one of them will overwrite it ! 
     """
 
-    _DEFAULT_CHUNK_SIZE = 51200 # chunk size
+    DEFAULT_CHUNK_SIZE = 51200 # chunk size
     URL: str
+    VALID_IS_TEST: bool
 
     def __new__(cls, *args, **kwargs):
-        for attr in ('_cfg',):
+        for attr in ('_cfg', 'VALID_IS_TEST'):
             if not hasattr(cls, attr):
-                errorLogger("_cfg, should be defined before instantiation ...", AttributeError)
-        if not hasattr(cls._cfg, 'fields'):
-            errorLogger("Fields sorted by column should be given in _cfg ...", AssertionError)
+                raise RecSetBuildingError(f"'{attr}' should be defined before instantiation ...")
+        assert 'fields' in cls._cfg, "the config of fields should be defined in '_cfg' ..."
         return super().__new__(cls)
 
     def __init__(self, root: str, filename: Optional[str] = None, download: bool = True) -> None:
@@ -251,10 +257,14 @@ class RecDataSet(BaseSet):
         super().__init__()
         filename = filename if filename else self.__class__.__name__
         self.path = os.path.join(root, filename)
-        self.fields = self._cfg.fields
         self.trainsize: int = 0
         self.validsize: int = 0
         self.testsize: int = 0
+
+        fields = []
+        for field_type, cfg in self._cfg['fields']:
+            fields.append(field_type(**cfg))
+        self.fields = fields
 
         if not os.path.exists(self.path) or not any(True for _ in os.scandir(self.path)):
             if download:
@@ -263,30 +273,30 @@ class RecDataSet(BaseSet):
                     self.path
                 )
             else:
-                errorLogger(
-                    f"No such file of {self.path} or this dir is empty ...",
-                    FileNotFoundError
-                )
+                FileNotFoundError(f"No such file of {self.path}, or this dir is empty ...")
         self.compile()
 
     @property
-    def cfg(self):
-        """Return the config of the dataset."""
-        return self._cfg
+    def fields(self):
+        return self.__fields
+
+    @fields.setter
+    def fields(self, vals) -> FieldTuple[Field]:
+        self.__fields = FieldTuple(vals)
 
     def check_transforms(self):
         """Check if the transformations exist."""
         file_ = os.path.join(
             self.path,
-            _DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
-            _DEFAULT_TRANSFORM_FILENAME
+            DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
+            DEFAULT_TRANSFORM_FILENAME
         )
         if os.path.isfile(file_):
             return True
         else:
             mkdirs(os.path.join(
                 self.path,
-                _DEFAULT_PICKLE_FMT.format(self.__class__.__name__)
+                DEFAULT_PICKLE_FMT.format(self.__class__.__name__)
             ))
             return False
 
@@ -298,16 +308,16 @@ class RecDataSet(BaseSet):
         state_dict['testsize'] = self.testsize
         file_ = os.path.join(
             self.path, 
-            _DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
-            _DEFAULT_TRANSFORM_FILENAME
+            DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
+            DEFAULT_TRANSFORM_FILENAME
         )
         export_pickle(state_dict, file_)
 
     def load_transforms(self):
         file_ = os.path.join(
             self.path, 
-            _DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
-            _DEFAULT_TRANSFORM_FILENAME
+            DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
+            DEFAULT_TRANSFORM_FILENAME
         )
         state_dict = import_pickle(file_)
         self.trainsize = state_dict['trainsize']
@@ -319,7 +329,7 @@ class RecDataSet(BaseSet):
         """Check if the dataset has been converted into feather format."""
         path = os.path.join(
             self.path,
-            _DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
+            DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
             self.mode
         )
         if os.path.exists(path):
@@ -328,12 +338,12 @@ class RecDataSet(BaseSet):
             os.makedirs(path)
             return False
 
-    def write_pickle(self, data: Dict, count: int):
+    def write_pickle(self, data, count: int):
         """Save pickle format data."""
         file_ = os.path.join(
             self.path,
-            _DEFAULT_PICKLE_FMT.format(self.__class__.__name__),
-            self.mode, _DEFAULT_CHUNK_FMT.format(count)
+            DEFAULT_PICKLE_FMT.format(self.__class__.__name__),
+            self.mode, DEFAULT_CHUNK_FMT.format(count)
         )
         export_pickle(data, file_)
 
@@ -341,24 +351,22 @@ class RecDataSet(BaseSet):
         """Load pickle format data."""
         return import_pickle(file_)
 
-    def raw2data(self) -> dp.iter.IterableWrapper:
-        errorLogger(
-            "raw2data method should be specified ...",
-            NotImplementedError
-        )
-
     def row_processer(self, row):
         """Row processer for raw data."""
-        return {field.name: field.caster(val) for val, field in zip(row, self.fields)}
+        return [field.caster(val) for val, field in zip(row, self.fields)]
+
+    def raw2data(self) -> dp.iter.IterableWrapper:
+        """Return `Tuple` by row !!!"""
+        raise NotImplementedError("raw2data method should be implemented ...")
 
     def raw2pickle(self):
         """Convert raw data into pickle format."""
         infoLogger(f"[{self.__class__.__name__}] >>> Convert raw data ({self.mode}) to chunks in pickle format")
         datapipe = self.raw2data()
         count = 0
-        for chunk in datapipe.batch(batch_size=self._DEFAULT_CHUNK_SIZE).collate(collate_dict):
-            for field in self.fields:
-                chunk[field.name] = field.transform(chunk[field.name][:, None]).ravel()[:, None] # N x 1
+        for chunk in datapipe.batch(batch_size=self.DEFAULT_CHUNK_SIZE).collate(collate_list):
+            for j, field in enumerate(self.fields):
+                chunk[j] = field.transform(chunk[j])
             self.write_pickle(chunk, count)
             count += 1
         infoLogger(f"[{self.__class__.__name__}] >>> {count} chunks done")
@@ -368,7 +376,7 @@ class RecDataSet(BaseSet):
         datapipe = dp.iter.FileLister(
             os.path.join(
                 self.path,
-                _DEFAULT_PICKLE_FMT.format(self.__class__.__name__),
+                DEFAULT_PICKLE_FMT.format(self.__class__.__name__),
                 self.mode
             )
         )
@@ -376,7 +384,6 @@ class RecDataSet(BaseSet):
             datapipe.shuffle()
         for file_ in datapipe:
             yield self.read_pickle(file_)
-
 
     @timemeter("DataSet/compile")
     def compile(self):
@@ -394,29 +401,31 @@ class RecDataSet(BaseSet):
 
         """
 
-        def fit_transform(fields):
-            datapipe = self.raw2data().batch(batch_size=self._DEFAULT_CHUNK_SIZE).collate(collate_dict)
+        def buffer(field: Field, col):
+            return field.buffer(col)
+
+        def fit_transform(*tags):
+            datapipe = self.raw2data().batch(self.DEFAULT_CHUNK_SIZE).collate(collate_list)
             datasize = 0
-            try:
-                for batch in datapipe:
-                    for field in fields:
-                        field.partial_fit(batch[field.name][:, None])
-                    datasize += len(batch[list(batch.keys())[0]])
-            except NameError as e:
-                errorLogger(e, NameError)
+            fields = self.fields.groupby(*tags)
+            for chunk in datapipe:
+                datasize += len(chunk[0])
+                chunk = FieldList(map(buffer, self.fields, chunk)).groupby(*tags)
+                for j, field in enumerate(fields):
+                    field.partial_fit(chunk[j].data)
             return datasize
 
         if self.check_transforms():
             self.load_transforms()
         else:
             self.train()
-            self.trainsize = fit_transform(self.fields)
+            self.trainsize = fit_transform()
 
             # avoid unseen tokens not included in trainset
             self.valid()
-            self.validsize = fit_transform(self.fields.groupby(SPARSE))
+            self.validsize = fit_transform(SPARSE)
             self.test()
-            self.testsize = fit_transform(self.fields.groupby(SPARSE))
+            self.testsize = fit_transform(SPARSE)
 
             self.save_transforms()
             
@@ -443,14 +452,12 @@ class RecDataSet(BaseSet):
         else:
             return self.testsize
 
-    def __len__(self):
-        return ceil(self.datasize / self._DEFAULT_CHUNK_SIZE)
-
-    def __iter__(self) -> Iterator:
-        yield from self.pickle2data()
+    def forward(self) -> Iterator:
+        for chunk in self.pickle2data():
+            yield [field.buffer(col) for field, col in zip(self.fields, chunk)]
 
     def __str__(self) -> str:
-        cfg = '\n'.join(map(str, self.cfg.fields))
+        cfg = '\n'.join(map(str, self.fields))
         return f"[{self.__class__.__name__}] >>> \n" + cfg
 
 
@@ -474,6 +481,15 @@ class ImplicitRecSet(RecDataSet):
     each row represents a user's interacted items.
     """
 
+    VALID_IS_TEST = True
+
+    _cfg = Config(
+        fields = [
+            (SparseField, Config(name='UserID', na_value=None, dtype=int, tags=[USER, ID])),
+            (SparseField, Config(name='ItemID', na_value=None, dtype=int, tags=[ITEM, ID]))
+        ]
+    )
+
     open_kw = Config(mode='rt', delimiter=' ', skip_lines=0)
 
     def file_filter(self, filename: str):
@@ -489,10 +505,6 @@ class ImplicitRecSet(RecDataSet):
         datapipe = datapipe.parse_csv(delimiter=self.open_kw.delimiter, skip_lines=self.open_kw.skip_lines)
         datapipe = _Row2Pairer(datapipe)
         datapipe = datapipe.map(self.row_processer)
-        data = list(datapipe)
-        if self.mode == 'train':
-            random.shuffle(data)
-        datapipe = dp.iter.IterableWrapper(data)
         return datapipe
 
     def summary(self):

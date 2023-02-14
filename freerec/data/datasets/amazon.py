@@ -1,9 +1,6 @@
 
 
 from .base import ImplicitRecSet
-from ..fields import SparseField
-from ..tags import USER, ITEM, ID
-from ...dict2obj import Config
 
 
 __all__ = ['AmazonBooks_m1', 'AmazonCDs_m1', 'AmazonMovies_m1', 'AmazonBeauty_m1', 'AmazonElectronics_m1']
@@ -34,15 +31,6 @@ class AmazonBooks_m1(ImplicitRecSet):
 
     URL = "https://zenodo.org/record/7297855/files/AmazonBooks_m1.zip"
 
-    _cfg = Config(
-        sparse = [
-            SparseField(name='UserID', na_value=None, dtype=int, tags=[USER, ID]),
-            SparseField(name='ItemID', na_value=None, dtype=int, tags=[ITEM, ID]),
-        ]
-    )
-
-    _cfg.fields = _cfg.sparse
-
 
 class AmazonCDs_m1(ImplicitRecSet):
     """Amazon-CDs dataset.
@@ -69,14 +57,6 @@ class AmazonCDs_m1(ImplicitRecSet):
 
     URL = "https://zenodo.org/record/7297855/files/AmazonCDs_m1.zip"
 
-    _cfg = Config(
-        sparse = [
-            SparseField(name='UserID', na_value=None, dtype=int, tags=[USER, ID]),
-            SparseField(name='ItemID', na_value=None, dtype=int, tags=[ITEM, ID]),
-        ]
-    )
-
-    _cfg.fields = _cfg.sparse
 
 
 class AmazonMovies_m1(ImplicitRecSet):
@@ -104,15 +84,6 @@ class AmazonMovies_m1(ImplicitRecSet):
 
     URL = "https://zenodo.org/record/7297855/files/AmazonMovies_m1.zip"
 
-    _cfg = Config(
-        sparse = [
-            SparseField(name='UserID', na_value=None, dtype=int, tags=[USER, ID]),
-            SparseField(name='ItemID', na_value=None, dtype=int, tags=[ITEM, ID]),
-        ]
-    )
-
-    _cfg.fields = _cfg.sparse
-
 
 class AmazonBeauty_m1(ImplicitRecSet):
     """Amazon-Beauty dataset.
@@ -139,15 +110,6 @@ class AmazonBeauty_m1(ImplicitRecSet):
 
     URL = "https://zenodo.org/record/7297855/files/AmazonBeauty_m1.zip"
 
-    _cfg = Config(
-        sparse = [
-            SparseField(name='UserID', na_value=None, dtype=int, tags=[USER, ID]),
-            SparseField(name='ItemID', na_value=None, dtype=int, tags=[ITEM, ID]),
-        ]
-    )
-
-    _cfg.fields = _cfg.sparse
-
 
 class AmazonElectronics_m1(ImplicitRecSet):
     """Amazon-Beauty dataset.
@@ -172,12 +134,3 @@ class AmazonElectronics_m1(ImplicitRecSet):
     """
 
     URL = "https://zenodo.org/record/7297855/files/AmazonElectronics_m1.zip"
-
-    _cfg = Config(
-        sparse = [
-            SparseField(name='UserID', na_value=None, dtype=int, tags=[USER, ID]),
-            SparseField(name='ItemID', na_value=None, dtype=int, tags=[ITEM, ID]),
-        ]
-    )
-
-    _cfg.fields = _cfg.sparse
