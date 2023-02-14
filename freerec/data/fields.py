@@ -11,7 +11,8 @@ from .tags import FieldTags, SPARSE, DENSE
 from ..utils import warnLogger
 
 
-__all__ = ['Field', 'DenseField', 'SparseField', 'Token', 'SparseToken', 'DenseToken', 'Tokenizer']
+__all__ = ['Field', 'BufferField', 'SparseField', 'DenseField', 'FieldTuple', 'FieldList', 'FieldModule']
+
 
 TRANSFORMATIONS = {
     "none": Identifier,
@@ -19,6 +20,7 @@ TRANSFORMATIONS = {
     'minmax': MinMaxScaler,
     'standard': StandardScaler,
 }
+
 
 
 class Field(metaclass=abc.ABCMeta):
@@ -57,9 +59,9 @@ class Field(metaclass=abc.ABCMeta):
         ---
 
         >>> from freerec.data.tags import USER, ITEM, ID, TARGET
-        >>> User = SparseField('User', -1, int, tags=(USER, ID))
-        >>> Item = SparseField('Item', -1, int, tags=(ITEM, ID))
-        >>> Target = SparseField('Label', -1, int, transformer='none', tags=TARGET)
+        >>> User = SparseField('User', None, int, tags=(USER, ID))
+        >>> Item = SparseField('Item', None, int, tags=(ITEM, ID))
+        >>> Target = SparseField('Label', 0, int, transformer='none', tags=TARGET)
         """
 
         self.__name = name
@@ -166,6 +168,19 @@ class Field(metaclass=abc.ABCMeta):
 
 
 class BufferField(Field):
+    """For buffering data, which should be re-created once the data changes.
+    
+    Attributes:
+    ---
+
+    name: str
+        Name of this field.
+    tags: set
+        A set of FieldTags.
+    dtype: torch.long|torch.float32
+    root: TopField
+        the root field for `.look_up` embeddings
+    """
 
     def __init__(
         self, parent: Field, data: Any = None,
@@ -202,8 +217,11 @@ class BufferField(Field):
     def __getitem__(self, *args, **kwargs):
         return self.data.__getitem__(*args, **kwargs)
 
-    def look_up(self, x: torch.Tensor) -> torch.Tensor:
-        return self.__root.look_up(x)
+    def look_up(self, x: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """Look up embeddings from indices `x` if it is not None.
+        Otherwise, self-look-up will be done.
+        """
+        return self.__root.look_up(x if x else self.data)
 
 
 class TopField(Field, torch.nn.Module):
@@ -222,7 +240,7 @@ class TopField(Field, torch.nn.Module):
         na_value: str, int or float
             Fill 'na' with na_value.
         dtype: str|int|float for safe_cast
-        transformer: 'none'|'label2index'|'binary'|'minmax'|'standard'
+        transformer: 'none'|'label2index'|'minmax'|'standard'
         tags: Union[FieldTags, Iterable[FieldTags]]
             For quick retrieve.
 
@@ -230,9 +248,9 @@ class TopField(Field, torch.nn.Module):
         ---
 
         >>> from freerec.data.tags import USER, ITEM, ID, TARGET
-        >>> User = SparseField('User', -1, int, tags=(USER, ID))
-        >>> Item = SparseField('Item', -1, int, tags=(ITEM, ID))
-        >>> Target = SparseField('Label', -1, int, transformer='none', tags=TARGET)
+        >>> User = SparseField('User', None, int, tags=(USER, ID))
+        >>> Item = SparseField('Item', None, int, tags=(ITEM, ID))
+        >>> Target = SparseField('Label', 0, int, transformer='none', tags=TARGET)
         """
 
         self.transformer = TRANSFORMATIONS[transformer]() if isinstance(transformer, str) else transformer
@@ -251,7 +269,10 @@ class TopField(Field, torch.nn.Module):
         return self.transformer.transform(col)
 
     def embed(self, dim: int, **kwargs):
-        NotImplementedError("embed method should be specified ...")
+        NotImplementedError("'embed' method should be implemented ...")
+
+    def look_up(self, x: torch.Tensor) -> torch.Tensor:
+        NotImplementedError("'look_up' method should be implemented ...")
 
 
 
@@ -286,11 +307,6 @@ class SparseField(TopField):
             Dimension.
         **kwargs: other kwargs for nn.Embedding
 
-        Examples:
-        ---
-
-        >>> token = SparseToken(field)
-        >>> token.embed(8)
         """
 
         self.dimension = dim
@@ -312,14 +328,12 @@ class SparseField(TopField):
         Examples:
         ---
 
-        >>> User: SparseToken
+        >>> User: SparseField
         >>> ids = torch.arange(3).view(-1, 1)
         >>> User.look_up(ids).ndim
         3
         """
         return self.embeddings(x)
-
-
 
 
 class DenseField(TopField):
@@ -347,11 +361,6 @@ class DenseField(TopField):
             - `True`: nn.Linear.
             - `False`: using nn.Identity instead.
 
-        Examples:
-        ---
-
-        >>> token = DenseToken(field)
-        >>> token.embed(8, bias=True, linear=False)
         """
         if linear:
             self.dimension = dim
@@ -377,15 +386,16 @@ class DenseField(TopField):
             - If `linear` is True, it returns (B, *, d).
             - If `linear` is False, it returns (B, *, 1).
 
-        >>> Feat: DenseToken
+        >>> Field: DenseField
         >>> vals = torch.rand(3, 1)
-        >>> Feat.look_up(vals).ndim
+        >>> Field.look_up(vals).ndim
         3
         """
         return self.embeddings(x.unsqueeze(-1))
    
 
 class FieldTuple(tuple):
+    """A tuple of fields."""
 
     @lru_cache(maxsize=4)
     def groupby(self, *tags: FieldTags) -> 'FieldTuple':
@@ -409,32 +419,37 @@ class FieldTuple(tuple):
         return FieldTuple(self)
 
     def __getitem__(self, index: Union[int, FieldTags, Iterable[FieldTags]]) -> Union[Field, 'FieldTuple', None]:
-        """Get tokens by index.
+        """Get fields by index.
 
         Parameters:
         ---
 
         index: Union[int, FieldTags, Iterable[FieldTags]]
-            - `int`: Return the token at position `int`.
-            - `FieldTags`: Return the tokens matching `FieldTags`.
-            - `Iterable[FieldTags]`: Return the tokens matching `Iterable[FieldTags]`.
+            - `int`: Return the field at position `int`.
+            - `FieldTags`: Return the fields matching `FieldTags`.
+            - `Iterable[FieldTags]`: Return the fields matching `Iterable[FieldTags]`.
         
         Returns:
         ---
 
-        - `Token`: If only one token matches given tags.
-        - `None`: If none of tokens matches given tags.
-        - `Tokenizer`: If more than one tokens match given tags.
+        - `Field`: If only one field matches given tags.
+        - `None`: If none of fields matches given tags.
+        - `FieldTuple`: If more than one field match given tags.
 
         Examples:
         ---
 
-        >>> from freerec.data.tags import USER
-        >>> tokenizer[0];
-        >>> user = tokenizer[USER]
-        >>> isinstance(user, Token)
+        >>> from freerec.data.tags import USER, ITEM, ID
+        >>> User = SparseField('User', None, int, tags=(USER, ID))
+        >>> Item = SparseField('Item', None, int, tags=(ITEM, ID))
+        >>> fields = FieldTuple([User, Item])
+        >>> fields[USER, ID] is User
         True
-        >>> isinstance(tokenizer[ID], Tokenizer)
+        >>> fields[Item, ID] is Item
+        True
+        >>> len(fields[ID])
+        2
+        >>> isinstance(fields[ID], FieldTuple)
         True
         """
         if isinstance(index, int):
@@ -452,6 +467,7 @@ class FieldTuple(tuple):
 
 
 class FieldList(list):
+    """A list of (buffer)fields."""
 
     @property
     def datasize(self):
@@ -469,32 +485,37 @@ class FieldList(list):
         return FieldList(self)
 
     def __getitem__(self, index: Union[int, FieldTags, Iterable[FieldTags]]) -> Union[Field, 'FieldList', None]:
-        """Get tokens by index.
+        """Get fields by index.
 
         Parameters:
         ---
 
         index: Union[int, FieldTags, Iterable[FieldTags]]
-            - `int`: Return the token at position `int`.
-            - `FieldTags`: Return the tokens matching `FieldTags`.
-            - `Iterable[FieldTags]`: Return the tokens matching `Iterable[FieldTags]`.
+            - `int`: Return the field at position `int`.
+            - `FieldTags`: Return the fields matching `FieldTags`.
+            - `Iterable[FieldTags]`: Return the fields matching `Iterable[FieldTags]`.
         
         Returns:
         ---
 
-        - `Token`: If only one token matches given tags.
-        - `None`: If none of tokens matches given tags.
-        - `Tokenizer`: If more than one tokens match given tags.
+        - `Field`: If only one field matches given tags.
+        - `None`: If none of fields matches given tags.
+        - `FieldTuple`: If more than one fields match given tags.
 
         Examples:
         ---
 
-        >>> from freerec.data.tags import USER
-        >>> tokenizer[0];
-        >>> user = tokenizer[USER]
-        >>> isinstance(user, Token)
+        >>> from freerec.data.tags import USER, ITEM, ID
+        >>> User = SparseField('User', None, int, tags=(USER, ID))
+        >>> Item = SparseField('Item', None, int, tags=(ITEM, ID))
+        >>> fields = FieldList([User, Item])
+        >>> fields[USER, ID] is User
         True
-        >>> isinstance(tokenizer[ID], Tokenizer)
+        >>> fields[Item, ID] is Item
+        True
+        >>> len(fields[ID])
+        2
+        >>> isinstance(fields[ID], FieldList)
         True
         """
 
@@ -511,153 +532,124 @@ class FieldList(list):
         else:
             return fields
 
+    def look_up(self):
+        """Self-Look-Up for a collection of embeddings.
+        """
+        return list(map(
+            lambda field: field.look_up(),
+            self
+        ))
 
-# class Tokenizer(torch.nn.Module):
-#     """A collection of tokens.
+
+class FieldModule(torch.nn.Module):
+    """A collection of fields.
     
-#     Attributes:
-#     ---
+    Attributes:
+    ---
 
-#     tokens: nn.ModuleList
+    fields: nn.ModuleList
 
-#     """
+    """
 
-#     def __init__(self, fields: Iterable[Union[Field, Token]]) -> None:
-#         """
-#         Examples:
-#         ---
+    def __init__(self, fields: Iterable[TopField]) -> None:
+        """
+        Examples:
+        ---
 
-#         >>> from freerec.data.datasets import Gowalla_m1
-#         >>> basepipe = Gowalla_m1("../data")
-#         >>> fields = basepipe.fields
-#         >>> tokenizer = Tokenizer(fields)
-#         """
-#         super().__init__()
+        >>> from freerec.data.datasets import Gowalla_m1
+        >>> basepipe = Gowalla_m1("../data")
+        >>> fields = basepipe.fields
+        >>> fields = FieldModule(fields)
+        """
+        super().__init__()
 
-#         fields = [self.totoken(field) for field in fields]
-#         self.tokens = torch.nn.ModuleList(fields)
-    
-#     def totoken(self, field: Field):
-#         """Field to Token."""
-#         if isinstance(field, Token):
-#             return field
-#         elif isinstance(field, SparseField):
-#             return SparseToken(field)
-#         elif isinstance(field, DenseField):
-#             return DenseToken(field)
-#         else:
-#             errorLogger("Only Sparse|DenseField supported !")
+        self.fields = torch.nn.ModuleList(fields)
 
-#     @lru_cache(maxsize=4)
-#     def groupby(self, *tags: FieldTags) -> List[Token]:
-#         """Group by given tags and return list of tokens matched.
+    @lru_cache(maxsize=4)
+    def groupby(self, *tags: FieldTags) -> List[TopField]:
+        """Group by given tags and return list of fields matched.
 
-#         Examples:
-#         ---
-#         >>> from freerec.data.tags import USER, ID
-#         >>> User = tokenizer.groupby(USER, ID)
-#         >>> isinstance(User, List)
-#         True
-#         >>> Item = tokenizer.groupby(ITEM, ID)[0]
-#         >>> Item.match(ITEM)
-#         True
-#         >>> Item.match(ID)
-#         True
-#         >>> Item.match(User)
-#         False
-#         """
-#         return [token for token in self.tokens if token.match(*tags)]
+        Examples:
+        ---
+        >>> from freerec.data.tags import USER, ID
+        >>> User = fields.groupby(USER, ID)
+        >>> isinstance(User, List)
+        True
+        >>> Item = fields.groupby(ITEM, ID)[0]
+        >>> Item.match(ITEM)
+        True
+        >>> Item.match(ID)
+        True
+        >>> Item.match(User)
+        False
+        """
+        return [field for field in self.fields if field.match(*tags)]
 
-#     def embed(self, dim: int, *tags: FieldTags, **kwargs):
-#         """Create embeddings.
+    def embed(self, dim: int, *tags: FieldTags, **kwargs):
+        """Create embeddings.
 
-#         Parameters:
-#         ---
-#         dim: int
-#             Dimension.
-#         *tags: FieldTags
-#         **kwargs: kwargs for nn.Embeddings or nn.Linear
+        Parameters:
+        ---
+        dim: int
+            Dimension.
+        *tags: FieldTags
+        **kwargs: kwargs for nn.Embeddings or nn.Linear
 
-#         Examples:
-#         ---
+        Examples:
+        ---
 
-#         >>> from freerec.data.tags import DENSE, SPARSE
-#         >>> tokenizer.embed(8, SPARSE) # nn.Embedding(count, 8)
-#         >>> tokenizer.embed(8, DENSE, bias=False) # nn.Linear(1, 8, bias=False)
-#         """
-#         for feature in self.groupby(*tags):
-#             feature.embed(dim, **kwargs)
+        >>> from freerec.data.tags import DENSE, SPARSE
+        >>> fields.embed(8, SPARSE) # nn.Embedding(count, 8)
+        >>> fields.embed(8, DENSE, bias=False) # nn.Linear(1, 8, bias=False)
+        """
+        for field in self.groupby(*tags):
+            field.embed(dim, **kwargs)
 
-#     def look_up(self, inputs: Dict[str, torch.Tensor], *tags: FieldTags) -> List[torch.Tensor]:
-#         """Dict[str, torch.Tensor: B x K] -> List[torch.Tensor: B x K x d]
+    def calculate_dimension(self, *tags: FieldTags):
+        """Return the total dimension of fields matching tiven tags."""
+        return sum(field.dimension for field in self.groupby(*tags))
+
+    def __len__(self):
+        return len(self.fields)
+
+    def __getitem__(self, index: Union[int, FieldTags, Iterable[FieldTags]]) -> Union[TopField, 'FieldModule', None]:
+        """Get fields by index.
+
+        Parameters:
+        ---
+
+        index: Union[int, FieldTags, Iterable[FieldTags]]
+            - `int`: Return the fields at position `int`.
+            - `FieldTags`: Return the fields matching `FieldTags`.
+            - `Iterable[FieldTags]`: Return the fields matching `Iterable[FieldTags]`.
         
-#         Parameters:
-#         ---
+        Returns:
+        ---
 
-#         inputs: Dict[str, torch.Tensor]
-#             A dict of inputs.
+        - `TopField`: If only one field matches given tags.
+        - `None`: If none of fields matches given tags.
+        - `FieldModule`: If more than one fields match given tags.
 
-#         Returns:
-#         ---
+        Examples:
+        ---
 
-#         A list of torch.Tensor.
-
-#         Examples:
-#         ---
-
-#         >>> from freerec.data.tags import User, ID
-#         >>> userEmbds = tokenizer.look_up(users, USER, ID)
-#         >>> isinstance(userEmbds, List)
-#         True
-
-#         """
-#         return [token.look_up(inputs[token.name]) for token in self.groupby(*tags)]
-
-#     def calculate_dimension(self, *tags: FieldTags):
-#         """Return the total dimension of tokens matching tiven tags."""
-#         return sum(feature.dimension for feature in self.groupby(*tags))
-
-#     def __len__(self):
-#         return len(self.tokens)
-
-#     def __getitem__(self, index: Union[int, FieldTags, Iterable[FieldTags]]) -> Union[Token, 'Tokenizer', None]:
-#         """Get tokens by index.
-
-#         Parameters:
-#         ---
-
-#         index: Union[int, FieldTags, Iterable[FieldTags]]
-#             - `int`: Return the token at position `int`.
-#             - `FieldTags`: Return the tokens matching `FieldTags`.
-#             - `Iterable[FieldTags]`: Return the tokens matching `Iterable[FieldTags]`.
-        
-#         Returns:
-#         ---
-
-#         - `Token`: If only one token matches given tags.
-#         - `None`: If none of tokens matches given tags.
-#         - `Tokenizer`: If more than one tokens match given tags.
-
-#         Examples:
-#         ---
-
-#         >>> from freerec.data.tags import USER
-#         >>> tokenizer[0];
-#         >>> user = tokenizer[USER]
-#         >>> isinstance(user, Token)
-#         True
-#         >>> isinstance(tokenizer[ID], Tokenizer)
-#         True
-#         """
-#         if isinstance(index, int):
-#             tokens = [self.tokens[index]]
-#         elif isinstance(index, FieldTags):
-#             tokens =  self.groupby(index)
-#         else:
-#             tokens = self.groupby(*index)
-#         if len(tokens) == 1:
-#             return tokens[0]
-#         elif len(tokens) == 0:
-#             return None # for a safety purpose
-#         else:
-#             return Tokenizer(tokens)
+        >>> from freerec.data.tags import USER
+        >>> fields[0];
+        >>> user = fields[USER]
+        >>> isinstance(user, TopField)
+        True
+        >>> isinstance(fields[ID], FieldModule)
+        True
+        """
+        if isinstance(index, int):
+            fields = [self.fields[index]]
+        elif isinstance(index, FieldTags):
+            fields =  self.groupby(index)
+        else:
+            fields = self.groupby(*index)
+        if len(fields) == 1:
+            return fields[0]
+        elif len(fields) == 0:
+            return None # for a safety purpose
+        else:
+            return FieldModule(fields)
