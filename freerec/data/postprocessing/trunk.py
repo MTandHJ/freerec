@@ -18,28 +18,15 @@ __all__ = [
 class Sharder(Postprocessor):
     """For num_workers != 0."""
 
-    def __init__(self, datapipe):
-        super().__init__(datapipe)
-        self.num_of_instances = 1
-        self.instance_id = 0
-
-    def is_shardable(self):
-        return True
-
-    def apply_sharding(self, num_of_instances, instance_id):
-        self.num_of_instances = num_of_instances
-        self.instance_id = instance_id
-
     def forward(self):
-        for i, item in enumerate(self.source):
-            if i % self.num_of_instances == self.instance_id:
-                yield item
-
-    def __len__(self):
-        if isinstance(self.source, Sized):
-            return len(self.source) // self.num_of_instances +\
-                (1 if (self.instance_id < len(self.source) % self.num_of_instances) else 0)
-        raise TypeError("{} instance doesn't have valid length".format(type(self).__name__))
+        worker_infos = torch.utils.data.get_worker_info()
+        if worker_infos:
+            id_, nums = worker_infos.id, worker_infos.num_workers
+            for idx, item in enumerate(self.source):
+                if idx % nums == id_:
+                    yield item
+        else:
+            yield from self.source
 
 
 @dp.functional_datapipe("shuffle_")

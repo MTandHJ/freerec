@@ -230,7 +230,7 @@ class BufferField(Field):
         non_blocking: bool = False
     ):
         if isinstance(self.data, torch.Tensor): # not check ?
-            self.data.to(device, dtype, non_blocking)
+            self.data = self.data.to(device, dtype, non_blocking)
         return self
 
     def to_csr(self) -> torch.Tensor:
