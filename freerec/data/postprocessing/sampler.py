@@ -305,10 +305,10 @@ class Tripleter(Postprocessor):
         if self.mode == 'valid' or self.VALID_IS_TEST:
             return self.trainItems[user] 
         else:
-            return self.trainItems['user'] + self.validItems['user']
+            return self.trainItems[user] + self.validItems[user]
 
     def sample_from_unseen(self, user: int):
-        return self.validItems[user] if self.mode == 'valid' else self.testItems['user']
+        return self.validItems[user] if self.mode == 'valid' else self.testItems[user]
 
     def forward(self):
         if self.mode == 'train':
