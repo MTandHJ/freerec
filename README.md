@@ -11,7 +11,7 @@ Python == 3.9 | [PyTorch == 1.12.1](https://pytorch.org/) | [TorchData == 0.4.1]
 
     pip install freerec
 
-or
+or (for latest)
 
     pip install git+https://github.com/MTandHJ/freerec.git
 
