@@ -1,9 +1,9 @@
 
 
-from typing import Callable, Iterable, Tuple, Union, Dict, List, Any, Optional
+from typing import Callable, Iterable, Tuple, Union, Dict, Optional, Any
 
-import numpy as np
 import torch, abc
+import numpy as np
 from functools import partial, lru_cache, reduce
 
 from .utils import safe_cast
@@ -23,72 +23,44 @@ TRANSFORMATIONS = {
 }
 
 
-
 class Field(metaclass=abc.ABCMeta):
-    """Fielding data by column.
-    
+    """ Fielding data by column.
+
     Attributes:
-    ---
+        name (None, str): Name of this field.
+        tags (set): A set of FieldTags.
+        dtype (Any): Data type of the field.
+        caster (callable): Function to convert elements to specified dtype (int, float or str) with na_value.
+        na_value (Union[None, str, int, float]): The fill value for null/missing values.
 
-    name: str
-        Name of this field.
-    tags: set
-        A set of FieldTags.
-    dtype: torch.long|torch.float32
-    caster: Callable
-        Convert elements to specified dtype (int, float or str) with na_value.
-    """
-    
-    def __init__(
-        self, name: str, na_value: Union[str, int, float], dtype: Union[int, str, float],
-        tags: Union[FieldTags, Iterable[FieldTags]] = tuple()
-    ):
-        """
-        Parameters:
-        ---
-
-        name: str 
-            The name of the field.
-        na_value: str, int or float
-            Fill 'na' with na_value.
-        dtype: str|int|float
-        transformer: 'none'|'label2index'|'binary'|'minmax'|'standard'
-        tags: Union[FieldTags, Iterable[FieldTags]]
-            For quick retrieve.
-
-        Examples:
-        ---
-
+    Examples:
         >>> from freerec.data.tags import USER, ITEM, ID, TARGET
         >>> User = SparseField('User', None, int, tags=(USER, ID))
         >>> Item = SparseField('Item', None, int, tags=(ITEM, ID))
         >>> Target = SparseField('Label', 0, int, transformer='none', tags=TARGET)
-        """
+    """
 
-        self.__name = name
-        self.dtype = dtype
-        self.__na_value = na_value
+    def __init__(
+        self, data: Any = None, 
+        tags: Union[FieldTags, Iterable[FieldTags]] = tuple()
+    ) -> None:
         self.__tags = set()
         if isinstance(tags, FieldTags):
             self.add_tag(tags)
         else:
             self.add_tag(*tags)
-        self.data = None
+        self.data = data
 
-    def add_tag(self, *tags: FieldTags):
+    def add_tag(self, *tags: FieldTags) -> None:
         """Add some tags.
 
-        Parameters:
-        ---
-        *tags: FieldTags
+        Args:
+            *tags (FieldTags): The tags to add.
 
         Examples:
-        ---
-
-        >>> from freerec.data.tags import ID
-        >>> User = SparseField('User', -1, int)
-        >>> User.add_tag(ID)
-
+            >>> from freerec.data.tags import ID
+            >>> User = SparseField('User', -1, int)
+            >>> User.add_tag(ID)
         """
         for tag in tags:
             if not isinstance(tag, FieldTags):
@@ -96,41 +68,141 @@ class Field(metaclass=abc.ABCMeta):
             self.__tags.add(tag)
 
     @property
-    def tags(self):
+    def tags(self) -> set:
         return self.__tags
 
     def match(self, *tags: FieldTags):
         """If current field matches the given tags, return True.
-        
-        Parameters:
-        ---
-        *tags: FieldTags
 
+        Args:
+            *tags (FieldTags): The tags to match.
 
         Returns:
-        ---
-
-        - `True`: If all given tags are matched.
-        - 'False': If any tag is not matched.
+            bool: True if all given tags are matched, False otherwise.
 
         Examples:
-        ---
-
-        >>> from freerec.data.tags import ID
-        >>> User = SparseField('User', -1, int)
-        >>> User.add_tag(ID)
-        >>> User.match(ID)
-        True
-        >>> User.match(ID, Feature)
-        False
-        >>> User.match(Feature)
-        False
-
+            >>> from freerec.data.tags import ID
+            >>> User = SparseField('User', -1, int)
+            >>> User.add_tag(ID)
+            >>> User.match(ID)
+            True
+            >>> User.match(ID, Feature)
+            False
+            >>> User.match(Feature)
+            False
         """
         return all(tag in self.__tags for tag in tags)
 
+    def buffer(
+        self, data: Any = None,
+        tags: Union[FieldTags, Iterable[FieldTags]] = tuple()
+    ) -> 'BufferField':
+        """Return a new BufferField with the given or inherited data.
+
+        Notes: The tags will also be inherited.
+        """
+        buffer_ = BufferField(data, tags)
+        buffer_.add_tag(*self.tags)
+        return buffer_
+
+
+class BufferField(Field):
+    """For buffering data, which should be re-created once the data changes.
+    
+    Args:
+        data (Any): Any column data.
+        tags (Union[FieldTags, Iterable[FieldTags]]): Tags for filtering.
+    """
+
+    def __init__(
+        self, data: Any, 
+        tags: Union[FieldTags, Iterable[FieldTags]] = tuple()
+    ) -> None:
+        super().__init__(data, tags)
+        self.data = data
+        if isinstance(tags, FieldTags):
+            self.add_tag(tags)
+        else:
+            self.add_tag(*tags)
+
+    def __getitem__(self, *args, **kwargs):
+        return self.data.__getitem__(*args, **kwargs)
+
+    def __iter__(self):
+        yield from iter(self.data)
+
+    def to(
+        self, device: Optional[Union[int, torch.device]] = None,
+        dtype: Optional[Union[torch.dtype, str]] = None,
+        non_blocking: bool = False
+    ):
+        if isinstance(self.data, torch.Tensor):
+            self.data = self.data.to(device, dtype, non_blocking)
+        return self
+
+    def to_csr(self) -> torch.Tensor:
+        """Convert List to CSR Tensor.
+
+        Notes:
+            Each row in self.data should be the col indices !
+        """
+        crow_indices = np.cumsum([0] + list(map(len, self.data)), dtype=np.int64)
+        col_indices = reduce(
+            lambda x, y: x + y, self.data
+        )
+        values = np.ones_like(col_indices, dtype=np.int64)
+        return torch.sparse_csr_tensor(
+            crow_indices=crow_indices,
+            col_indices=col_indices,
+            values=values,
+            size=(len(self.data), self.root.count) # B x Num of Items
+        )
+
+
+
+class FieldModule(Field, torch.nn.Module):
+    """ A module that represents a field of data.
+
+    Args:
+        name (str): The name of the field.
+        tags (set): A set of FieldTags.
+        dtype (Callable): A function to convert elements to specified dtype (int, float or str) with na_value.
+        na_value (Union[str, int, float]): The fill value for null/missing values.
+        transformer (Transformer): A transformer to apply on the column data.
+
+    Attributes:
+        name (str): Name of this field.
+        tags (set): A set of FieldTags.
+        dtype (torch.dtype): Data type of the field.
+        caster (callable): Function to convert elements to specified dtype (int, float or str) with na_value.
+        na_value (Union[str, int, float]): The fill value for null/missing values.
+        dimension (int): The dimension of embeddings
+        embeddings (torch.nn.Module): Embedding module.
+
+    Examples:
+        >>> from freerec.data.tags import USER, ITEM, ID, TARGET
+        >>> User = SparseField('User', None, int, tags=(USER, ID))
+        >>> Item = SparseField('Item', None, int, tags=(ITEM, ID))
+        >>> Target = SparseField('Label', 0, int, transformer='none', tags=TARGET)
+    """
+
+    def __init__(
+        self, name: str, na_value: Union[str, int, float], dtype: Callable,
+        tags: Union[FieldTags, Iterable[FieldTags]] = tuple(),
+        transformer: Union[str, Callable] = 'none'
+    ) -> None:
+        torch.nn.Module.__init__(self)
+        Field.__init__(self, tags=tags)
+
+        self.__name = name
+        self.__na_value = na_value
+        self.dtype = dtype
+
+        self.transformer = TRANSFORMATIONS[transformer]() if isinstance(transformer, str) else transformer
+        self.caster = partial(safe_cast, dest_type=dtype, default=na_value)
+
     @property
-    def name(self):
+    def name(self) -> str:
         return self.__name
 
     @property
@@ -150,171 +222,88 @@ class Field(metaclass=abc.ABCMeta):
         else:
             self.__dtype = val
 
-    def __str__(self) -> str:
-        tags = ','.join(map(str, self.__tags))
-        return f"{self.name}: [dtype: {self.dtype}, na_value: {self.na_value}, tags: {tags}]"
-
-    def __len__(self) -> int:
-        try:
-            return len(self.data)
-        except TypeError:
-            return 0
-
-    def buffer( # copy for multiprocessing
-        self, data: Any = None,
-        dtype: Union[None, int, str, float] = None,
-        tags: Union[FieldTags, Iterable[FieldTags]] = tuple()
-    ):
-        return BufferField(self, data, dtype, tags)
-
-
-class BufferField(Field):
-    """For buffering data, which should be re-created once the data changes.
-    
-    Attributes:
-    ---
-
-    name: str
-        Name of this field.
-    tags: set
-        A set of FieldTags.
-    dtype: torch.long|torch.float32
-    root: TopField
-        the root field for `.look_up` embeddings
-    """
-
-    def __init__(
-        self, parent: Field, data: Any = None,
-        dtype: Union[None, int, str, float] = None, 
-        tags: Union[FieldTags, Iterable[FieldTags]] = tuple()
-    ):
-        super().__init__(
-            name = parent.name, 
-            na_value = parent.na_value, 
-            dtype = dtype if dtype else parent.dtype,
-            tags = parent.tags
-        )
-        if isinstance(tags, FieldTags):
-            self.add_tag(tags)
-        else:
-            self.add_tag(*tags)
-        self.root = parent
-        self.data = data if data is not None else parent.data
-
-    @property
-    def root(self):
-        return self.__root
-
-    @root.setter
-    def root(self, field: Field):
-        if isinstance(field, TopField):
-            self.__root = field
-        else:
-            self.__root = field.root
-
-    def __iter__(self):
-        yield from iter(self.data)
-
-    def __getitem__(self, *args, **kwargs):
-        return self.data.__getitem__(*args, **kwargs)
-
-    def look_up(self, x: Optional[torch.Tensor] = None) -> torch.Tensor:
-        """Look up embeddings from indices `x` if it is not None.
-        Otherwise, self-look-up will be done.
+    def partial_fit(self, col) -> None:
         """
-        return self.__root.look_up(x if x else self.data)
+        Updates the transformer with a new batch of data.
 
-    def to(
-        self, device: Optional[Union[int, torch.device]] = None,
-        dtype: Optional[Union[torch.dtype, str]] = None,
-        non_blocking: bool = False
-    ):
-        if isinstance(self.data, torch.Tensor): # not check ?
-            self.data = self.data.to(device, dtype, non_blocking)
-        return self
+        Args:
+            col (Iterable): The data to fit the transformer with.
 
-    def to_csr(self) -> torch.Tensor:
-        """Convert List to CSR Tensor.
-
-        Notes:
-        ---
-
-        Each row in self.data should be the col indices !
+        Returns:
+            None
         """
-        crow_indices = np.cumsum([0] + list(map(len, self.data)), dtype=np.int64)
-        col_indices = reduce(
-            lambda x, y: x + y, self.data
-        )
-        values = np.ones_like(col_indices, dtype=np.int64)
-        return torch.sparse_csr_tensor(
-            crow_indices=crow_indices,
-            col_indices=col_indices,
-            values=values,
-            size=(len(self.data), self.root.count) # B x Num of Items
-        )
-
-
-class TopField(Field, torch.nn.Module):
-
-    def __init__(
-        self, name: str, na_value: Union[str, int, float], dtype: Callable,
-        tags: Union[FieldTags, Iterable[FieldTags]] = tuple(),
-        transformer: Union[str, Callable] = 'none'
-    ):
-        """
-        Parameters:
-        ---
-
-        name: str 
-            The name of the field.
-        na_value: str, int or float
-            Fill 'na' with na_value.
-        dtype: str|int|float for safe_cast
-        transformer: 'none'|'label2index'|'minmax'|'standard'
-        tags: Union[FieldTags, Iterable[FieldTags]]
-            For quick retrieve.
-
-        Examples:
-        ---
-
-        >>> from freerec.data.tags import USER, ITEM, ID, TARGET
-        >>> User = SparseField('User', None, int, tags=(USER, ID))
-        >>> Item = SparseField('Item', None, int, tags=(ITEM, ID))
-        >>> Target = SparseField('Label', 0, int, transformer='none', tags=TARGET)
-        """
-
-        torch.nn.Module.__init__(self)
-        super(TopField, self).__init__(
-            name=name,
-            na_value=na_value,
-            dtype=dtype,
-            tags=tags
-        )
-        self.transformer = TRANSFORMATIONS[transformer]() if isinstance(transformer, str) else transformer
-        self.caster = partial(safe_cast, dest_type=dtype, default=na_value)
-
-    def partial_fit(self, col):
         return self.transformer.partial_fit(col)
-    
+
     def transform(self, col):
+        """
+        Applies the transformer to a new batch of data.
+
+        Args:
+            col (Iterable): The data to transform.
+
+        Returns:
+            The processed data.
+        """
         return self.transformer.transform(col)
 
     def embed(self, dim: int, **kwargs):
-        NotImplementedError("'embed' method should be implemented ...")
+        """Embed the field values into a lower dimensional space.
+
+        Args:
+            dim (int): The dimension of the lower dimensional space.
+            **kwargs: Other arguments for embedding.
+
+        Raises:
+            NotImplementedError: if the method is not implemented.
+        """
+        raise NotImplementedError(f"{self.__class__.__name__}.embed() method should be implemented ...")
 
     def look_up(self, x: torch.Tensor) -> torch.Tensor:
-        NotImplementedError("'look_up' method should be implemented ...")
+        """Look up embeddings.
+
+        Args:
+            x (torch.Tensor): Indices for looking up.
+
+        Raises:
+            NotImplementedError: if the method is not implemented.
+        """
+        raise NotImplementedError(f"{self.__class__.__name__}.look_up() method should be implemented...")
+
+    def __str__(self) -> str:
+        tags = ','.join(map(str, self.tags))
+        return f"{self.name}: [dtype: {self.dtype}, na_value: {self.na_value}, tags: {tags}]"
 
 
+class SparseField(FieldModule):
+    """ SparseField inherits from FieldModule and represents sparse features. 
+    It is used to look up embeddings for categorical features.
 
-class SparseField(TopField):
+    Args:
+        name (str): The name of the field.
+        na_value (Union[str, int, float]): Fill 'na' with na_value.
+        dtype (Callable): Function to cast the data.
+        tags (Union[FieldTags, Iterable[FieldTags]]): Optional. For quick retrieve.
+        transformer (Union[str, Callable]): Optional. Transform the input data. Default is 'label2index'.
+
+    Attributes:
+        name (str): Name of this field.
+        tags (set): A set of FieldTags.
+        dtype (torch.dtype): Data type of the field.
+        caster (callable): Function to convert elements to specified dtype (int, float or str) with na_value.
+        na_value (Union[str, int, float]): The fill value for null/missing values.
+        dimension (int): The dimension of embeddings
+        embeddings (torch.nn.Module): Embedding module.
+
+    Tags:
+        SPARSE
+    """
 
     def __init__(
         self, name: str, na_value: Union[str, int, float], dtype: Callable, 
         tags: Union[FieldTags, Iterable[FieldTags]] = tuple(),
         transformer: Union[str, Callable] = 'label2index'
     ):
-        assert transformer == 'label2index', "SparseField supports 'Label2Index' only !"
+        assert transformer == 'label2index', "SparseField supports 'label2index' only !"
         super().__init__(name, na_value, dtype, tags, transformer)
         self.add_tag(SPARSE)
 
@@ -325,18 +314,18 @@ class SparseField(TopField):
 
     @property
     def ids(self) -> Optional[Tuple[int]]:
-        """Return the list of IDs."""
+        """Return the tuple of IDs."""
         return self.transformer.ids
 
-    def embed(self, dim: int, **kwargs):
-        """Create nn.Embedding.
+    def embed(self, dim: int, **kwargs) -> None:
+        """Create an nn.Embedding layer for the sparse field.
 
-        Parameters:
-        ---
+        Args:
+            dim (int): The embedding dimension.
+            **kwargs: Other keyword arguments to be passed to nn.Embedding.
 
-        dim: int
-            Dimension.
-        **kwargs: other kwargs for nn.Embedding
+        Returns:
+            None
 
         """
 
@@ -346,28 +335,45 @@ class SparseField(TopField):
     def look_up(self, x: torch.Tensor) -> torch.Tensor:
         """Look up embeddings for categorical features.
 
-        Parameters:
-        ---
-
-        x: (B, *), torch.Tensor
+        Args:
+            x (torch.Tensor): The input tensor of shape (B, *), where B is the batch size
+                and * can be any number of additional dimensions.
 
         Returns:
-        ---
-
-        embeddings: (B, *, d)
+            torch.Tensor: The output tensor of shape (B, *, d), where d is the embedding dimension.
 
         Examples:
-        ---
-
-        >>> User: SparseField
-        >>> ids = torch.arange(3).view(-1, 1)
-        >>> User.look_up(ids).ndim
-        3
+            >>> User: SparseField
+            >>> ids = torch.arange(3).view(-1, 1)
+            >>> User.look_up(ids).ndim
+            3
         """
         return self.embeddings(x)
 
 
-class DenseField(TopField):
+class DenseField(FieldModule):
+    """DenseField is used for numerical features.
+
+    Args:
+        name (str): Feature name.
+        na_value (Union[str, int, float]): Value to represent null value.
+        dtype (Callable): Data type converter.
+        tags (Union[FieldTags, Iterable[FieldTags]], optional): Field tags. Defaults to tuple().
+        transformer (Union[str, Callable], optional): Transformer to convert data. Defaults to 'none'.
+
+    Attributes:
+        name (str): Name of this field.
+        tags (set): A set of FieldTags.
+        dtype (torch.dtype): Data type of the field.
+        caster (callable): Function to convert elements to specified dtype (int, float or str) with na_value.
+        na_value (Union[str, int, float]): The fill value for null/missing values.
+        dimension (int): The dimension of embeddings
+        embeddings (torch.nn.Module): Embedding module.
+
+    Tags:
+        DENSE
+
+    """
 
     def __init__(
         self, name: str, na_value: Union[str, int, float], dtype: Callable, 
@@ -377,21 +383,19 @@ class DenseField(TopField):
         super().__init__(name, na_value, dtype, tags, transformer)
         self.add_tag(DENSE)
 
-
-    def embed(self, dim: int = 1, bias: bool = False, linear: bool = False):
+    def embed(self, dim: int = 1, bias: bool = False, linear: bool = False) -> None:
         """Create Embedding in nn.Linear manner.
 
-        Parameters:
-        ---
+        Args:
+            dim (int): Dimension.
+            bias (bool): Add bias or not.
+            linear (bool): 
+                - `True`: nn.Linear.
+                - `False`: using nn.Identity instead.
+            **kwargs: other kwargs for nn.Linear.
 
-        dim: int
-            Dimension.
-        bias: bool
-            Add bias or not.
-        linear: bool
-            - `True`: nn.Linear.
-            - `False`: using nn.Identity instead.
-
+        Returns:
+            None.
         """
         if linear:
             self.dimension = dim
@@ -405,86 +409,131 @@ class DenseField(TopField):
         Note that the return embeddings' shape is in accordance with
         that of categorical features.
 
-        Parameters:
-        ---
-
-        x: (B, *), torch.Tensor
+        Args:
+            x: (B, *), torch.Tensor
 
         Returns:
-        ---
+            embeddings: (B, *, 1) or (B, *, d)
+                - If `linear` is True, it returns (B, *, d).
+                - If `linear` is False, it returns (B, *, 1).
 
-        embeddings: (B, *, 1) or (B, *, d)
-            - If `linear` is True, it returns (B, *, d).
-            - If `linear` is False, it returns (B, *, 1).
-
-        >>> Field: DenseField
-        >>> vals = torch.rand(3, 1)
-        >>> Field.look_up(vals).ndim
-        3
+        Examples:
+            >>> Field: DenseField
+            >>> vals = torch.rand(3, 1)
+            >>> Field.look_up(vals).ndim
+            3
         """
         return self.embeddings(x.unsqueeze(-1))
    
 
 class FieldTuple(tuple):
-    """A tuple of fields."""
+    """A tuple of fields.
+
+    A tuple of fields, which support attribute access and filtering by tags.
+
+    """
 
     @lru_cache(maxsize=4)
     def groupby(self, *tags: FieldTags) -> 'FieldTuple':
-        """Return those fields matching given tags."""
+        """Return those fields matching given tags.
+
+        Args:
+            *tags (FieldTags): Variable length argument list of FieldTags to filter the fields by.
+
+        Returns:
+            A new FieldTuple that contains only the fields whose tags match the given tags.
+
+        """
         return FieldTuple(field for field in self if field.match(*tags))
 
     @lru_cache(maxsize=4)
     def groupbynot(self, *tags: FieldTags) -> 'FieldTuple':
-        """Return those fields not matching given tags."""
+        """Return those fields not matching given tags.
+
+        Args:
+            *tags (FieldTags): Variable length argument list of FieldTags to filter the fields by.
+
+        Returns:
+            A new FieldTuple that contains only the fields whose tags do not match the given tags.
+
+        """
         return FieldTuple(field for field in self if not field.match(*tags))
 
     def state_dict(self) -> Dict:
-        """Return state dict of fields."""
+        """Return state dict of fields.
+
+        Returns:
+            A dictionary containing the name and transformer of each field.
+
+        """
         return {field.name: field.transformer for field in self}
 
     def load_state_dict(self, state_dict: Dict, strict: bool = False):
+        """Load state dict of fields.
+
+        Args:
+            state_dict (Dict): A dictionary containing the state of the fields.
+            strict (bool): Whether to strictly enforce that the keys in the state dict match the names of the fields.
+
+        """
         for field in self:
             field.transformer = state_dict.get(field.name, field.transformer)
 
     def copy(self) -> 'FieldTuple':
+        """Return a copy of the FieldTuple.
+
+        Returns:
+            A new FieldTuple with the same fields as this one.
+
+        """
         return FieldTuple(self)
 
-    def __getitem__(self, index: Union[int, FieldTags, Iterable[FieldTags]]) -> Union[Field, 'FieldTuple', None]:
+    def __getitem__(self, index: Union[int, slice, FieldTags, Iterable[FieldTags]]) -> Union[Field, 'FieldTuple', None]:
         """Get fields by index.
 
-        Parameters:
-        ---
+        Args:
+            index (Union[int, slice, FieldTags, Iterable[FieldTags]]):
+                - int: Return the field at position `int`.
+                - slice: Return the fields at positions of `slice`.
+                - FieldTags: Return the fields matching `FieldTags`.
+                - Iterable[FieldTags]: Return the fields matching `Iterable[FieldTags]`.
 
-        index: Union[int, FieldTags, Iterable[FieldTags]]
-            - `int`: Return the field at position `int`.
-            - `FieldTags`: Return the fields matching `FieldTags`.
-            - `Iterable[FieldTags]`: Return the fields matching `Iterable[FieldTags]`.
-        
         Returns:
-        ---
-
-        - `Field`: If only one field matches given tags.
-        - `None`: If none of fields matches given tags.
-        - `FieldTuple`: If more than one field match given tags.
+            - Field: If only one field matches given tags.
+            - None: If none of fields matches given tags.
+            - FieldTuple: If more than one field match given tags.
 
         Examples:
-        ---
+            >>> from freerec.data.tags import USER, ITEM, ID
+            >>> User = SparseField('User', None, int, tags=(USER, ID))
+            >>> Item = SparseField('Item', None, int, tags=(ITEM, ID))
+            >>> fields = FieldModuleTuple([User, Item])
+            >>> fields[USER, ID] is User
+            True
+            >>> fields[0] is User
+            True
+            >>> fields[0:1] is User
+            True
+            >>> fields[Item, ID] is Item
+            True
+            >>> fields [1] is Item
+            True
+            >>> fields[1:] is Item
+            True
+            >>> len(fields[ID])
+            2
+            >>> len(fields[:])
+            2
+            >>> isinstance(fields[ID], FieldList)
+            True
 
-        >>> from freerec.data.tags import USER, ITEM, ID
-        >>> User = SparseField('User', None, int, tags=(USER, ID))
-        >>> Item = SparseField('Item', None, int, tags=(ITEM, ID))
-        >>> fields = FieldTuple([User, Item])
-        >>> fields[USER, ID] is User
-        True
-        >>> fields[Item, ID] is Item
-        True
-        >>> len(fields[ID])
-        2
-        >>> isinstance(fields[ID], FieldTuple)
-        True
         """
         if isinstance(index, int):
             return super().__getitem__(index)
+        elif isinstance(index, slice):
+            fields = FieldTuple(
+                super().__getitem__(index)
+            )
         elif isinstance(index, FieldTags):
             fields =  self.groupby(index)
         else:
@@ -498,69 +547,92 @@ class FieldTuple(tuple):
 
 
 class FieldList(list):
-    """A list of (buffer)fields."""
+    """A list of fields.
 
-    @property
-    def datasize(self):
-        return len(self[0])
+    A list of fields, which support attribute access and filtering by tags.
+
+    """
 
     def groupby(self, *tags: FieldTags) -> 'FieldList':
-        """Return those fields matching given tags."""
+        """Return those fields matching given tags.
+
+        Args:
+            *tags (FieldTags): Variable length argument list of FieldTags to filter the fields by.
+
+        Returns:
+            A new FieldList that contains only the fields whose tags match the given tags.
+
+        """
         return FieldList(field for field in self if field.match(*tags))
 
     def groupbynot(self, *tags: FieldTags) -> 'FieldList':
-        """Return those fields not matching given tags."""
+        """Return those fields not matching given tags.
+
+        Args:
+            *tags (FieldTags): Variable length argument list of FieldTags to filter the fields by.
+
+        Returns:
+            A new FieldList that contains only the fields whose tags do not match the given tags.
+
+        """
         return FieldList(field for field in self if not field.match(*tags))
 
     def copy(self) -> 'FieldList':
+        """Return a copy of the FieldList.
+
+        Returns:
+            A new FieldList with the same fields as this one.
+
+        """
         return FieldList(self)
 
-    def to(
-        self, device: Optional[Union[int, torch.device]] = None,
-        dtype: Optional[Union[torch.dtype, str]] = None,
-        non_blocking: bool = False
-    ):
-        for field in self:
-            field.to(device, dtype, non_blocking)
-        return self
-
-    def __getitem__(self, index: Union[int, FieldTags, Iterable[FieldTags]]) -> Union[Field, 'FieldList', None]:
+    def __getitem__(self, index: Union[int, slice, FieldTags, Iterable[FieldTags]]) -> Union[Field, 'FieldList', None]:
         """Get fields by index.
 
-        Parameters:
-        ---
+        Args:
+            index (Union[int, FieldTags, Iterable[FieldTags]]):
+                - int: Return the field at position `int`.
+                - slice: Return the fields at positions of `slice`.
+                - FieldTags: Return the fields matching `FieldTags`.
+                - Iterable[FieldTags]: Return the fields matching `Iterable[FieldTags]`.
 
-        index: Union[int, FieldTags, Iterable[FieldTags]]
-            - `int`: Return the field at position `int`.
-            - `FieldTags`: Return the fields matching `FieldTags`.
-            - `Iterable[FieldTags]`: Return the fields matching `Iterable[FieldTags]`.
-        
         Returns:
-        ---
-
-        - `Field`: If only one field matches given tags.
-        - `None`: If none of fields matches given tags.
-        - `FieldTuple`: If more than one fields match given tags.
+            - Field: If only one field matches given tags.
+            - None: If none of fields matches given tags.
+            - FieldList: If more than one field match given tags.
 
         Examples:
-        ---
+            >>> from freerec.data.tags import USER, ITEM, ID
+            >>> User = SparseField('User', None, int, tags=(USER, ID))
+            >>> Item = SparseField('Item', None, int, tags=(ITEM, ID))
+            >>> fields = FieldModuleList([User, Item])
+            >>> fields[USER, ID] is User
+            True
+            >>> fields[0] is User
+            True
+            >>> fields[0:1] is User
+            True
+            >>> fields[Item, ID] is Item
+            True
+            >>> fields [1] is Item
+            True
+            >>> fields[1:] is Item
+            True
+            >>> len(fields[ID])
+            2
+            >>> len(fields[:])
+            2
+            >>> isinstance(fields[ID], FieldList)
+            True
 
-        >>> from freerec.data.tags import USER, ITEM, ID
-        >>> User = SparseField('User', None, int, tags=(USER, ID))
-        >>> Item = SparseField('Item', None, int, tags=(ITEM, ID))
-        >>> fields = FieldList([User, Item])
-        >>> fields[USER, ID] is User
-        True
-        >>> fields[Item, ID] is Item
-        True
-        >>> len(fields[ID])
-        2
-        >>> isinstance(fields[ID], FieldList)
-        True
         """
 
         if isinstance(index, int):
             return super().__getitem__(index)
+        elif isinstance(index, slice):
+            fields = FieldList(
+                super().__getitem__(index)
+            )
         elif isinstance(index, FieldTags):
             fields =  self.groupby(index)
         else:
@@ -572,58 +644,63 @@ class FieldList(list):
         else:
             return fields
 
-    def look_up(self):
-        """Self-Look-Up for a collection of embeddings.
-        """
-        return list(map(
-            lambda field: field.look_up(),
-            self
-        ))
 
-
-class FieldModule(torch.nn.Module):
+class FieldModuleList(torch.nn.Module):
     """A collection of fields.
     
     Attributes:
-    ---
+        fields (nn.ModuleList): A list of fields.
 
-    fields: nn.ModuleList
-
-    """
-
-    def __init__(self, fields: Iterable[TopField]) -> None:
-        """
-        Examples:
-        ---
-
+    Examples:
         >>> from freerec.data.datasets import Gowalla_m1
         >>> basepipe = Gowalla_m1("../data")
         >>> fields = basepipe.fields
         >>> fields = FieldModule(fields)
-        """
+    """
+
+    def __init__(self, fields: Iterable[FieldModule]) -> None:
         super().__init__()
 
         self.fields = torch.nn.ModuleList(fields)
 
     @lru_cache(maxsize=4)
-    def groupby(self, *tags: FieldTags) -> List[TopField]:
-        """Group by given tags and return list of fields matched.
+    def groupby(self, *tags: FieldTags) -> FieldList[FieldModule]:
+        """Return those fields matching given tags.
+
+        Args:
+            *tags (FieldTags): Variable length argument list of FieldTags to filter the fields by.
+
+        Returns:
+            A new FieldList that contains only the fields whose tags match the given tags.
 
         Examples:
-        ---
-        >>> from freerec.data.tags import USER, ID
-        >>> User = fields.groupby(USER, ID)
-        >>> isinstance(User, List)
-        True
-        >>> Item = fields.groupby(ITEM, ID)[0]
-        >>> Item.match(ITEM)
-        True
-        >>> Item.match(ID)
-        True
-        >>> Item.match(User)
-        False
+            >>> from freerec.data.tags import USER, ID
+            >>> User = fields.groupby(USER, ID)
+            >>> isinstance(User, List)
+            True
+            >>> Item = fields.groupby(ITEM, ID)[0]
+            >>> Item.match(ITEM)
+            True
+            >>> Item.match(ID)
+            True
+            >>> Item.match(User)
+            False
+
         """
-        return [field for field in self.fields if field.match(*tags)]
+        return FieldList(field for field in self.fields if field.match(*tags))
+
+    @lru_cache(maxsize=4)
+    def groupbynot(self, *tags: FieldTags) -> 'FieldList':
+        """Return those fields not matching given tags.
+
+        Args:
+            *tags (FieldTags): Variable length argument list of FieldTags to filter the fields by.
+
+        Returns:
+            A new FieldList that contains only the fields whose tags do not match the given tags.
+
+        """
+        return FieldList(field for field in self.fields if not field.match(*tags))
 
     def embed(self, dim: int, *tags: FieldTags, **kwargs):
         """Create embeddings.
@@ -652,37 +729,53 @@ class FieldModule(torch.nn.Module):
     def __len__(self):
         return len(self.fields)
 
-    def __getitem__(self, index: Union[int, FieldTags, Iterable[FieldTags]]) -> Union[TopField, 'FieldModule', None]:
+    def __getitem__(self, index: Union[int, FieldTags, Iterable[FieldTags]]) -> Union[FieldModule, 'FieldList', None]:
         """Get fields by index.
 
-        Parameters:
-        ---
+        Args:
+            index (Union[int, FieldTags, Iterable[FieldTags]]):
+                - int: Return the field at position `int`.
+                - slice: Return the fields at positions of `slice`.
+                - FieldTags: Return the fields matching `FieldTags`.
+                - Iterable[FieldTags]: Return the fields matching `Iterable[FieldTags]`.
 
-        index: Union[int, FieldTags, Iterable[FieldTags]]
-            - `int`: Return the fields at position `int`.
-            - `FieldTags`: Return the fields matching `FieldTags`.
-            - `Iterable[FieldTags]`: Return the fields matching `Iterable[FieldTags]`.
-        
         Returns:
-        ---
-
-        - `TopField`: If only one field matches given tags.
-        - `None`: If none of fields matches given tags.
-        - `FieldModule`: If more than one fields match given tags.
+            - Field: If only one field matches given tags.
+            - None: If none of fields matches given tags.
+            - FieldList: If more than one field match given tags.
 
         Examples:
-        ---
+            >>> from freerec.data.tags import USER, ITEM, ID
+            >>> User = SparseField('User', None, int, tags=(USER, ID))
+            >>> Item = SparseField('Item', None, int, tags=(ITEM, ID))
+            >>> fields = FieldModuleList([User, Item])
+            >>> fields[USER, ID] is User
+            True
+            >>> fields[0] is User
+            True
+            >>> fields[0:1] is User
+            True
+            >>> fields[Item, ID] is Item
+            True
+            >>> fields [1] is Item
+            True
+            >>> fields[1:] is Item
+            True
+            >>> len(fields[ID])
+            2
+            >>> len(fields[:])
+            2
+            >>> isinstance(fields[ID], FieldList)
+            True
 
-        >>> from freerec.data.tags import USER
-        >>> fields[0];
-        >>> user = fields[USER]
-        >>> isinstance(user, TopField)
-        True
-        >>> isinstance(fields[ID], FieldModule)
-        True
         """
+
         if isinstance(index, int):
-            fields = [self.fields[index]]
+            return super().__getitem__(index)
+        elif isinstance(index, slice):
+            fields = FieldList(
+                super().__getitem__(index)
+            )
         elif isinstance(index, FieldTags):
             fields =  self.groupby(index)
         else:
@@ -692,4 +785,4 @@ class FieldModule(torch.nn.Module):
         elif len(fields) == 0:
             return None # for a safety purpose
         else:
-            return FieldModule(fields)
+            return fields

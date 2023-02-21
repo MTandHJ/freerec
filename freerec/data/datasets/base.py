@@ -1,6 +1,6 @@
 
 
-from typing import Iterator, Optional, Tuple, Callable
+from typing import Iterator, Optional, TypeVar, Tuple
 
 import torch, os
 import numpy as np
@@ -24,82 +24,92 @@ DEFAULT_TRANSFORM_FILENAME = "transforms.pickle"
 DEFAULT_CHUNK_FMT = "chunk{0}.pickle"
 
 
+T = TypeVar('T')
+
+
 class RecSetBuildingError(Exception): ...
 
 
 class BaseSet(dp.iter.IterDataPipe):
-
+    """ Base class for data pipes. Defines basic functionality and methods for 
+    pre-processing the data for the learning models.
+    """
     def __init__(self) -> None:
         super().__init__()
 
         self.__mode = 'train'
         
     @property
-    def mode(self):
+    def mode(self) -> str:
+        """Return: The mode that the dataset is currently in."""
         return self.__mode
 
-    def train(self):
+    def train(self: T) -> T:
+        """Switch the dataset mode to 'train'."""
         self.__mode = 'train'
         return self
 
-    def valid(self):
+    def valid(self: T) -> T:
+        """Switch the dataset mode to 'valid'."""
         self.__mode = 'valid'
         return self
 
-    def test(self):
+    def test(self: T) -> T:
+        """Switch the dataset mode to 'test'."""
         self.__mode = 'test'
         return self
 
-    @staticmethod
-    def listmap(func: Callable, *iterables):
-        return list(map(func, *iterables))
-
     @property
     def fields(self) -> FieldTuple:
-        raise NotImplementedError("...")
+        """Return: A tuple containing the fields of the dataset."""
+        raise NotImplementedError("Fields not defined for this dataset.")
 
-    def __len__(self):
+    def __len__(self) -> int:
+        """Return: The length of the dataset."""
         raise NotImplementedError()
+
+    def summary(self):
+        """Print a summary of the dataset."""
+        infoLogger(str(self))
 
     @timemeter("DataSet/to_graph")
     def to_heterograph(self, *edge_types: Tuple[Tuple[FieldTags], Optional[str], Tuple[FieldTags]]) -> HeteroData:
-        """Convert datapipe to a heterograph.
+        """
+        Convert datapipe to a heterograph.
 
-        Parameters:
-        ---
+        Args:
+            *edge_types: (src, edge, dst)
+                - src: Tuple of Fieldtags for filtering
+                    Source node.
+                - edge: Optional[str]
+                    The name of the edge. 'src.name2dst.name' will be adopted if `edge` is `None`
+                - dst: Tuple of Fieldtags for filtering
+                    Destination node.
 
-        *edge_types: (src, edge, dst)
-            - src: Tuple of Fieldtags for filtering
-                Source node.
-            - edge: Optional[str]
-                The name of the edge. 'src.name2dst.name' will be adopted if `edge` is `None`
-            - dst: Tuple of Fieldtags for filtering
-                Destination node.
+        Returns:
+            HeteroData: The converted heterograph.
 
         Notes:
-        ---
-
-        Warning will be raised if current mode is not 'train' !
+            Warning will be raised if current mode is not 'train' !
 
         Examples:
-        ---
-
-        >>> from freerec.data.datasets import Gowalla_m1
-        >>> from freerec.data.tags import USER, ITEM, ID
-        >>> basepipe = Gowalla_m1("../data")
-        >>> fields = basepipe.fields
-        >>> graph = basepipe.to_heterograph(
-        ...    ((USER, ID), None, (ITEM, ID)), 
-        ...    ((ITEM, ID), None, (USER, ID))
-        ... )
-        >>> graph
-        HeteroData(
-            UserID={ x=[29858, 0] },
-            ItemID={ x=[40981, 0] },
-            (UserID, UserID2ItemID, ItemID)={ edge_index=[2, 810128] },
-            (ItemID, ItemID2UserID, UserID)={ edge_index=[2, 810128] }
-        )
+            >>> from freerec.data.datasets import Gowalla_m1
+            >>> from freerec.data.tags import USER, ITEM, ID
+            >>> basepipe = Gowalla_m1("../data")
+            >>> fields = basepipe.fields
+            >>> graph = basepipe.to_heterograph(
+            ...    ((USER, ID), None, (ITEM, ID)), 
+            ...    ((ITEM, ID), None, (USER, ID))
+            ... )
+            >>> graph
+            HeteroData(
+                UserID={ x=[29858, 0] },
+                ItemID={ x=[40981, 0] },
+                (UserID, UserID2ItemID, ItemID)={ edge_index=[2, 810128] },
+                (ItemID, ItemID2UserID, UserID)={ edge_index=[2, 810128] }
+            )
         """
+        # check mode and raise warning if not in 'train' mode
         if self.mode != 'train':
             warnLogger(f"Convert the datapipe for {self.mode} to graph. Make sure that this is intentional ...")
 
@@ -137,37 +147,31 @@ class BaseSet(dp.iter.IterDataPipe):
     ) -> HeteroData:
         """Convert datapipe to a bipartite graph.
 
-        Parameters:
-        ---
-
-        src: Tuple[FieldTags]
-            Source node.
-        dst: Tuple[FieldTags]
-            Destination node.
-        edge_type: Optional[str]
-            The name of the edge. `src.name2dst.name` will be specified if `edge` is `None`.
+        Args:
+            src (Tuple[FieldTags]): Source node.
+            dst (Tuple[FieldTags]): Destination node.
+            edge_type (Optional[str]): The name of the edge. `src.name2dst.name` will be specified if `edge_type` is `None`.
 
         Notes:
-        ---
+            Warning will be raised if current mode is not 'train' !
 
-        Warning will be raised if current mode is not 'train' !
+        Returns:
+            HeteroData: The resulting bipartite graph.
 
         Examples:
-        ---
-
-        >>> from freerec.data.datasets import Gowalla_m1
-        >>> from freerec.data.tags import USER, ITEM, ID
-        >>> basepipe = Gowalla_m1("../data")
-        >>> fields = basepipe.fields
-        >>> graph = basepipe.to_bigraph(
-        ...    (USER, ID), (ITEM, ID)
-        ... )
-        >>> graph
-        HeteroData(
-            UserID={ x=[29858, 0] },
-            ItemID={ x=[40981, 0] },
-            (UserID, UserID2ItemID, ItemID)={ edge_index=[2, 810128] }
-        )
+            >>> from freerec.data.datasets import Gowalla_m1
+            >>> from freerec.data.tags import USER, ITEM, ID
+            >>> basepipe = Gowalla_m1("../data")
+            >>> fields = basepipe.fields
+            >>> graph = basepipe.to_bigraph(
+            ...    (USER, ID), (ITEM, ID)
+            ... )
+            >>> graph
+            HeteroData(
+                UserID={ x=[29858, 0] },
+                ItemID={ x=[40981, 0] },
+                (UserID, UserID2ItemID, ItemID)={ edge_index=[2, 810128] }
+            )
         """
         return self.to_heterograph((src, edge_type, dst))
    
@@ -175,74 +179,63 @@ class BaseSet(dp.iter.IterDataPipe):
         """Convert datapipe to a homogeneous graph.
 
         Parameters:
-        ---
-
-        src: Tuple[FieldTags]
-            Source node.
-        dst: Tuple[FieldTags]
-            Destination node.
+            src: Tuple[FieldTags]
+                Source node.
+            dst: Tuple[FieldTags]
+                Destination node.
 
         Notes:
-        ---
-
-        Warning will be raised if current mode is not 'train' !
+            Warning will be raised if current mode is not 'train' !
 
         Examples:
-        ---
-
-        >>> from freerec.data.datasets import Gowalla_m1
-        >>> from freerec.data.tags import USER, ITEM, ID
-        >>> basepipe = Gowalla_m1("../data")
-        >>> fields = basepipe.fields
-        >>> graph = basepipe.to_bigraph(
-        ...    fields[USER, ID], fields[ITEM, ID],
-        ... )
-        >>> graph
-        Data(edge_index=[2, 1620256], x=[70839, 0], node_type=[70839], edge_type=[810128])
+            >>> from freerec.data.datasets import Gowalla_m1
+            >>> from freerec.data.tags import USER, ITEM, ID
+            >>> basepipe = Gowalla_m1("../data")
+            >>> fields = basepipe.fields
+            >>> graph = basepipe.to_graph(
+            ...    fields[USER, ID], fields[ITEM, ID],
+            ... )
+            >>> graph
+            Data(edge_index=[2, 1620256], x=[70839, 0])
         """
         graph = self.to_heterograph((src, None, dst)).to_homogeneous()
         graph.edge_index = to_undirected(graph.edge_index)
         return graph
 
-    def summary(self):
-        infoLogger(str(self))
-
-    def forward(self):
-        """
-        The original code in `__iter__` should be placed here.
-        Then, `__iter__` will re-buffer previous data for safety purposes.
-        """
-        raise NotImplementedError("_iter method should be implemented ...")
+    def pickle2data(self):
+        raise NotImplementedError(
+                f"{self.__class__.__name__}.pickle2data should be implemented before using ..."
+        )
 
     def __iter__(self) -> Iterator[FieldList[BufferField]]:
-        for chunk in self.forward():
-            yield FieldList(map(lambda field: field.buffer(), chunk))
-
+        for cols in self.pickle2data():
+            yield FieldList(map(
+                lambda field, col: field.buffer(col),
+                self.fields,
+                cols
+            ))
 
 
 class RecDataSet(BaseSet):
     """ RecDataSet provides a template for specific datasets.
 
-    Attributes:
-    ---
+    Args:
+        root (str): The path storing datasets.
+        filename (str, optional): The dirname of the dataset. If `None`, sets the classname as the filename.
+        download (bool): Download the dataset from a URL.
 
-    _cfg: Config[str, Field]
-        Includes fields of each column.
-    DEFAULT_CHUNK_SIZE: int, defalut 51200
-        Chunk size for saving.
-    VALID_IS_TEST: bool
-        The validset and testset are the same one sometimes.
+    Attributes:
+        _cfg (Config[str, Field]): Includes fields of each column.
+        DEFAULT_CHUNK_SIZE (int, default 51200): Chunk size for saving.
+        VALID_IS_TEST (bool): The validset and testset are the same one sometimes.
 
     Notes:
-    ---
+        All datasets that inherit RecDataSet should define the class variable `_cfg` before instantiation.
+        Generally speaking, the dataset will be split into:
+            - trainset
+            - validset
+            - testset
 
-    All datasets inherit RecDataSet should define the class variable of `_cfg` before instantiation.
-    Generally speaking, the dataset will be splited into 
-        - trainset
-        - validset
-        - testset
-
-    Because these three datasets share the same _cfg, compiling any one of them will overwrite it ! 
     """
 
     DEFAULT_CHUNK_SIZE = 51200 # chunk size
@@ -257,19 +250,6 @@ class RecDataSet(BaseSet):
         return super().__new__(cls)
 
     def __init__(self, root: str, filename: Optional[str] = None, download: bool = True) -> None:
-        """
-        Parameters:
-        ---
-
-        root: str
-            The path storing datasets.
-        filename: str, optional
-            The dirname of the dataset.
-            - `None`: Set the classname as the filename.
-        
-        download: bool
-            Download the dataset from a URL.
-        """
         super().__init__()
         filename = filename if filename else self.__class__.__name__
         self.path = os.path.join(root, filename)
@@ -298,9 +278,10 @@ class RecDataSet(BaseSet):
 
     @fields.setter
     def fields(self, vals) -> FieldTuple[Field]:
+        """Return: Tuple of Field."""
         self.__fields = FieldTuple(vals)
 
-    def check_transforms(self):
+    def check_transforms(self) -> None:
         """Check if the transformations exist."""
         file_ = os.path.join(
             self.path,
@@ -316,8 +297,10 @@ class RecDataSet(BaseSet):
             ))
             return False
 
-    def save_transforms(self):
+    def save_transforms(self) -> None:
+        """Save transformers in a pickle format."""
         infoLogger(f"[{self.__class__.__name__}] >>> Save transformers ...")
+        # Get the state dictionary of the fields and add the size information.
         state_dict = self.fields.state_dict()
         state_dict['trainsize'] = self.trainsize
         state_dict['validsize'] = self.validsize
@@ -327,22 +310,26 @@ class RecDataSet(BaseSet):
             DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
             DEFAULT_TRANSFORM_FILENAME
         )
+        # Export the state dictionary as a pickle file.
         export_pickle(state_dict, file_)
 
-    def load_transforms(self):
+    def load_transforms(self) -> None:
+        """Load transformers from a pickle file."""
         file_ = os.path.join(
             self.path, 
             DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
             DEFAULT_TRANSFORM_FILENAME
         )
+        # Import the state dictionary from the pickle file and update the size information.
         state_dict = import_pickle(file_)
         self.trainsize = state_dict['trainsize']
         self.validsize = state_dict['validsize']
         self.testsize = state_dict['testsize']
+        # Load the state dictionary into the fields.
         self.fields.load_state_dict(state_dict, strict=False)
 
-    def check_pickle(self):
-        """Check if the dataset has been converted into feather format."""
+    def check_pickle(self) -> bool:
+        """Check if the dataset has been converted into pickle format."""
         path = os.path.join(
             self.path,
             DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
@@ -354,8 +341,16 @@ class RecDataSet(BaseSet):
             os.makedirs(path)
             return False
 
-    def write_pickle(self, data, count: int):
-        """Save pickle format data."""
+    def write_pickle(self, data, count: int) -> None:
+        """Save pickle format data.
+
+        Args:
+            data: The data to be saved in pickle format.
+            count: The count of the data chunks.
+
+        Returns:
+            None.
+        """
         file_ = os.path.join(
             self.path,
             DEFAULT_PICKLE_FMT.format(self.__class__.__name__),
@@ -364,16 +359,39 @@ class RecDataSet(BaseSet):
         export_pickle(data, file_)
 
     def read_pickle(self, file_: str):
-        """Load pickle format data."""
+        """Load pickle format data.
+
+        Args:
+            file_: The file path to load the pickle format data.
+
+        Returns:
+            The loaded pickle format data.
+        """
         return import_pickle(file_)
 
     def row_processer(self, row):
-        """Row processer for raw data."""
+        """Process a row of raw data.
+
+        Args:
+            row: A row of raw data.
+
+        Returns:
+            A processed row of data.
+        """
         return [field.caster(val) for val, field in zip(row, self.fields)]
 
     def raw2data(self) -> dp.iter.IterableWrapper:
-        """Return `Tuple` by row !!!"""
-        raise NotImplementedError("raw2data method should be implemented ...")
+        """Process raw data.
+
+        This method should be implemented by subclasses.
+
+        Raises:
+            NotImplementedError: Subclasses should implement this method.
+
+        Returns:
+            A processed data.
+        """
+        raise NotImplementedError(f"{self.__class__.__name__}.raw2data() method should be implemented ...")
 
     def raw2pickle(self):
         """Convert raw data into pickle format."""
@@ -388,7 +406,13 @@ class RecDataSet(BaseSet):
         infoLogger(f"[{self.__class__.__name__}] >>> {count} chunks done")
 
     def pickle2data(self):
-        """Read pickle data in chunks."""
+        """Read pickle data in chunks.
+
+        Read the pickle data and return it as a generator.
+
+        Yields:
+            A chunk of the pickle data.
+        """
         datapipe = dp.iter.FileLister(
             os.path.join(
                 self.path,
@@ -406,18 +430,17 @@ class RecDataSet(BaseSet):
         """Check current dataset and transformations.
 
         Flows:
-        ---
-
-        1. Check whether the transformation has been fitted:
-            - `True`: Skip.
-            - `False`: Fit the total trainset and the `SPARSE` fields in valid|testset
-                to avoid unseen features. This operation will not cause information leakage.
-            
-        2. Convert each set into pickle format for fast loading.
+            1. Check whether the transformation has been fitted:
+                - `True`: Skip.
+                - `False`: Fit the total trainset and the `SPARSE` fields in valid|testset
+                    to avoid unseen features. This operation will not cause information leakage.
+                
+            2. Convert each set into pickle format for fast loading.
 
         """
 
         def fit_transform(*tags):
+            """Function to fit and transform data for pickle conversion."""
             datapipe = self.raw2data().batch(self.DEFAULT_CHUNK_SIZE).collate(collate_list)
             datasize = 0
             fields = self.fields.groupby(*tags)
@@ -434,7 +457,7 @@ class RecDataSet(BaseSet):
             self.train()
             self.trainsize = fit_transform()
 
-            # avoid unseen tokens not included in trainset
+            # avoid unseen IDs not included in trainset
             self.valid()
             self.validsize = fit_transform(SPARSE)
             self.test()
@@ -458,16 +481,13 @@ class RecDataSet(BaseSet):
 
     @property
     def datasize(self):
+        """Return the size of dataset according to the current mode."""
         if self.mode == 'train':
             return self.trainsize
         elif self.mode == 'valid':
             return self.validsize
         else:
             return self.testsize
-
-    def forward(self) -> Iterator:
-        for chunk in self.pickle2data():
-            yield [field.buffer(col) for field, col in zip(self.fields, chunk)]
 
     def __str__(self) -> str:
         cfg = '\n'.join(map(str, self.fields))
