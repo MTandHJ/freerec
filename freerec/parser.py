@@ -11,6 +11,75 @@ from .utils import (
 )
 
 
+"""
+A configuration module for a Recommender System.
+
+Templates:
+----------
+DATA_DIR : str
+    Directory for saving historical metric information.
+SUMMARY_DIR : str
+    Directory for saving final summary information.
+CHECKPOINT_PATH : str
+    Path for saving checkpoints.
+LOG_PATH : str
+    Path for saving logging information.
+CORE_CHECKPOINT_PATH : str
+    Path for tuning.
+CORE_LOG_PATH : str
+    Path for tuning logging.
+TIME : str
+    A string representation of time in the format of "%m%d%H%M%S".
+CONFIG : Config
+    A Config object containing general configurations for the recommender system.
+CORE_CONFIG : Config
+    A Config object containing configurations for tuning the recommender system.
+
+
+Configurations:
+--------------
+BENCHMARK : bool
+    If True, activate cudnn.benchmark.
+SEED : int
+    The random seed used by PyTorch. If set to -1, uses a random seed.
+EVAL_FREQ : int
+    The frequency of evaluation.
+EVAL_VALID : bool
+    If True, evaluate on the validation set.
+EVAL_TEST : bool
+    If True, evaluate on the test set.
+log2file : bool
+    If True, save logs to a file.
+log2console : bool
+    If True, display logs on the console.
+SAVED_FILENAME : str
+    The filename of saved model parameters.
+CHECKPOINT_FREQ : int
+    The frequency of saving checkpoints.
+CHECKPOINT_MODULES : list
+    A list of modules to save in a checkpoint.
+CHECKPOINT_FILENAME : str
+    The filename of the saved checkpoint.
+SUMMARY_FILENAME : str
+    The filename of the summary.
+MONITOR_FILENAME : str
+    The filename of the monitor.
+MONITOR_BEST_FILENAME : str
+    The filename of the best monitor.
+description : str
+    The description of the recommender system.
+EXCLUSIVE : bool
+    If True, run a command exclusively.
+COMMAND : str
+    The command to be run.
+ENVS : dict
+    A dictionary of environment variables.
+PARAMS : dict
+    A dictionary of parameters.
+DEFAULTS : dict
+    A dictionary of default parameters.
+"""
+
 DATA_DIR = 'data'
 SUMMARY_DIR = 'summary'
 CHECKPOINT_PATH = "./infos/{description}/{dataset}/{device}"
@@ -20,8 +89,8 @@ CORE_LOG_PATH = "./logs/{description}/core"
 TIME = "%m%d%H%M%S"
 
 CONFIG = Config(
-    BENCHMARK = True, # activate cudnn.benchmark if True
-    SEED = 1, # -1 for random
+    BENCHMARK = True,
+    SEED = 1,
 
     # evaluation
     EVAL_FREQ = 5,
@@ -33,7 +102,7 @@ CONFIG = Config(
     log2console = True,
 
     # path|file
-    SAVED_FILENAME = "model.pt", # the filename of saved model paramters
+    SAVED_FILENAME = "model.pt",
     CHECKPOINT_FREQ = 1,
     CHECKPOINT_MODULES = ['model', 'optimizer', 'lr_scheduler'],
     CHECKPOINT_FILENAME = "checkpoint.tar",
@@ -84,6 +153,7 @@ class Parser(Config):
 
     @timemeter("Parser/parse")
     def parse(self):
+        """Add command-line arguments to the parser."""
 
         self.parser = argparse.ArgumentParser()
 
@@ -109,7 +179,7 @@ class Parser(Config):
         self.parser.add_argument("--eval-test", action="store_true", default=False, help="evaluate testset")
         self.parser.add_argument("--eval-freq", type=int, default=CONFIG.EVAL_FREQ, help="the evaluation frequency")
 
-        self.parser.add_argument("--num-workers", type=int, default=0)
+        self.parser.add_argument("--num-workers", type=int, default=4)
 
         self.parser.add_argument("--seed", type=int, default=CONFIG.SEED, help="calling --seed=-1 for a random seed")
         self.parser.add_argument("--benchmark", action="store_false", default=True, help="cudnn.deterministic == True ?")
@@ -120,15 +190,48 @@ class Parser(Config):
         self.parser.add_argument("-m", "--description", type=str, default=CONFIG.description)
 
     def add_argument(self, *args: str, **kwargs):
+        """
+        Add an argument to the parser.
+
+        Parameters
+        ----------
+        *args : str
+            The name(s) of the argument.
+        **kwargs
+            Additional keyword arguments to pass to `parser.add_argument`.
+        
+        Notes:
+        ------
+        Any character `_' will be replaced by `-'.
+        """
         args = (arg.replace('_', '-') for arg in args) # user '-' instead of '_'
         self.parser.add_argument(*args, **kwargs)
 
     def set_defaults(self, **kwargs):
+        """Set the default values for the arguments.
+
+        Parameters
+        ----------
+        **kwargs
+            The default values to set.
+        """
         self.parser.set_defaults(**kwargs)
 
     @timemeter("Parser/load")
     def load(self, args: ArgumentParser):
-        """Load config.yaml."""
+        """Load config.yaml.
+
+        Parameters
+        ----------
+        args : argparse.ArgumentParser
+            An instance of argparse.ArgumentParser containing the arguments
+            passed to the script.
+
+        Raises
+        ------
+        KeyError
+            If the parameter key is not recognized.
+        """
         if hasattr(args, 'config') and args.config:
             with open(args.config, encoding="UTF-8", mode='r') as f:
                 for key, val in yaml.full_load(f).items():
@@ -141,20 +244,19 @@ class Parser(Config):
 
     @timemeter("Parser/compile")
     def compile(self):
-        """Generate config file according to settings.
+        """
+        Generate the configuration file according to the specified settings.
 
         Flows:
-        ---
-
-        1. Load (default) settings from parsed args (ArgumentParser).
-        2. Load settings from xxx.yaml if --config has been activated. 
-        Note that this step might override the settings above.
-        3. Generate basic paths:
-            - CHECKPOINT_PATH: saving checkpoints
-            - LOG_PATH: collecting training infomation
-
-        4. Set Logger, and then you can log information by info|debug|warnLogger ...
-        5. Finally, READMD.md will be added under CHECKPOINT_PATH and LOG_PATH both.
+        ------
+        1. Load the default settings from the parsed command-line arguments (ArgumentParser).
+        2. If the `--config` flag has been specified, load settings from a .yaml file, which may override the 
+        default settings.
+        3. Generate the paths for saving checkpoints and collecting training information:
+            - CHECKPOINT_PATH: the path where checkpoints will be saved.
+            - LOG_PATH: the path where training information will be collected.
+        4. Configure the logger so that information can be logged by `info|debug|warnLogger`.
+        5. Add a README.md file under CHECKPOINT_PATH and LOG_PATH.
         """
         args = self.parser.parse_args()
         self.load(args) # loading config (.yaml) first ...
@@ -184,11 +286,13 @@ class Parser(Config):
         activate_benchmark(self.BENCHMARK)
         self.SEED = set_seed(self.SEED)
 
-        self.readme(self.CHECKPOINT_PATH) # generate README.md
+        self.readme(self.CHECKPOINT_PATH) # create README.md
         self.readme(self.LOG_PATH)
 
 
 class CoreParser(Config):
+    """CoreParser class to parse command-line arguments and configuration files."""
+
     ALL_ENVS = (
         'description', 'root', 'device', 'eval_freq', 'num_workers'
     )
@@ -199,6 +303,7 @@ class CoreParser(Config):
 
     @timemeter("CoreParser/parse")
     def parse(self):
+        """Parse command-line arguments."""
 
         self.parser = argparse.ArgumentParser()
 
@@ -217,7 +322,7 @@ class CoreParser(Config):
         self.parser.add_argument("--resume", action="store_true", default=False, help="resume the search from the recent checkpoint")
 
 
-    def check(self):
+    def check(self) -> None:
         """Check the validity of the given config."""
         template = """
         Please make sure the configuration file follows the template below:
@@ -259,8 +364,19 @@ class CoreParser(Config):
         self.PARAMS = Config(self.PARAMS)
 
     @timemeter("Parser/load")
-    def load(self, args: ArgumentParser):
-        """Load config."""
+    def load(self, args: ArgumentParser) -> None:
+        """
+        Load configuration file.
+
+        Parameters
+        ----------
+        args : ArgumentParser
+            The command line arguments.
+
+        Returns
+        -------
+        None
+        """
         with open(args.config, encoding="UTF-8", mode='r') as f:
             config = {key.upper(): vals for key, vals in yaml.full_load(f).items()}
             self.update(**config)
@@ -271,12 +387,12 @@ class CoreParser(Config):
                 self.ENVS[key] = val
 
     @timemeter("CoreParser/compile")
-    def compile(self):
-        """Generate config file according to settings.
+    def compile(self) -> None:
+        """
+        Generate config file according to settings.
 
         Flows:
-        ---
-
+        ------
         1. Load settings from xxx.yaml which provides parameters for grid searching.
         2. Load settings of the execution environment from parsed args (ArgumentParser).
         3. Generate basic paths:
@@ -284,7 +400,6 @@ class CoreParser(Config):
             - LOG_PATH: subprocess
             - CORE_CHECKPOINT_PATH: saving checkpoints of the rest of params
             - CORE_LOG_PATH: saving best results of each subprocess for comparison
-
         4. Set Logger, and then you can log information by info|debug|warnLogger ...
         5. Finally, READMD.md will be added under CHECKPOINT_PATH and LOG_PATH both.
         """
@@ -304,7 +419,20 @@ class CoreParser(Config):
         self.readme(self.CORE_LOG_PATH)
 
     def readme(self, path: str, mode: str = "w") -> None:
-        """Add README.md to the path."""
+        """
+        Add README.md to the given path.
+
+        Parameters:
+        -----------
+        path: str 
+            The path to add the README.md file.
+        mode: str, optional 
+            The file opening mode. Defaults to "w".
+
+        Returns:
+        --------
+        None
+        """
         time_ = time.strftime("%Y-%m-%d-%H:%M:%S")
         file_ = os.path.join(path, "README.md")
         s = "|  {key}  |   {val}    |\n"

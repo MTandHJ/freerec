@@ -2,18 +2,16 @@
 
 from typing import Any, Callable, Iterable, List, Dict, Optional, Tuple, Union
 
-import torch
+import torch, abc, os, subprocess, shlex, time, sys
 import pandas as pd
-import os, subprocess, shlex, time, sys
+from torchdata.datapipes.iter import IterDataPipe
 from torch.utils.tensorboard import SummaryWriter
 from functools import partial
 from itertools import product
 from collections import defaultdict
-from tqdm import tqdm
 from freeplot.utils import import_pickle, export_pickle
 
-from .data.datasets.base import BaseSet
-from .data.fields import TopField, FieldTuple
+from .data.fields import FieldModule, FieldTuple
 from .data.dataloader import DataLoader
 from .models import RecSysArch
 from .criterions import BaseCriterion
@@ -23,11 +21,11 @@ from .metrics import *
 from .parser import TIME
 
 
-__all__ = ['Coach', 'Adapter']
+__all__ = ['ChiefCoach', 'Coach', 'Adapter']
 
 
 DEFAULT_METRICS = {
-    'LOSS': None,
+    'LOSS': lambda x: x,
     #############
     'MSE': mean_squared_error,
     'MAE': mean_abs_error,
@@ -80,185 +78,219 @@ DEFAULT_BEST_CASTER = {
     'MAP': max,
 }
 
-class _DummyModule(torch.nn.Module):
 
+class _DummyModule(torch.nn.Module):
+    """This is a dummy module that serves as a placeholder for a real model."""
     def forward(self, *args, **kwargs):
-        NotImplementedError("No model available for Coach ...")
+        """Dummy forward method that raises a `NotImplementedError`."""
+        raise NotImplementedError("No model available for Coach ...")
 
     def step(self, *args, **kwargs):
-        NotImplementedError("No optimizer or lr scheduler available for Coach ...")
+        """Dummy step method that raises a `NotImplementedError`."""
+        raise NotImplementedError("No optimizer or lr scheduler available for Coach ...")
 
     def backward(self, *args, **kwargs):
-        NotImplementedError("No optimizer available for Coach ...")
+        """Dummy backward method that raises a `NotImplementedError`."""
+        raise NotImplementedError("No optimizer available for Coach ...")
 
 
-class Coach:
-    """The framework for training."""
-    
-    def __init__(
-        self, 
-        dataset: BaseSet,
-        model: Union[RecSysArch, torch.nn.Module, None],
-        criterion: Union[BaseCriterion, Callable],
-        optimizer: Optional[torch.optim.Optimizer],
-        lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler],
-        device: Union[torch.device, str, int]
-    ):
-        """
-        Parameters:
-        ---
+class ChiefCoach(metaclass=abc.ABCMeta):
+    """ 
+    The `ChiefCoach` class is the top-level class for running the training and evaluation loops.
 
-        dataset: RecDataSet for training, validation and test
-        criterion: Callable
-            Loss funcion.
-        model: nn.Module or None
-            - `None`: Using _DummyModule instead, by which `forward` should not be called.
-        
-        optimizer: torch.optim.Optimizer or None
-            - `None`: Using _DummyModule instead, by which `step` and `backward` should not be called.
-
-        lr_scheduler: Callable or None
-            - `None`: Using _DummyModule instead, by which `step` should not be called.
-
-        device: torch.device, str or int
+    Parameters:
+    -----------
+    trainpipe : IterDataPipe
+        Iterable data pipeline for training data.
+    validpipe : IterDataPipe, optional
+        Iterable data pipeline for validation data.
+        If `None`, use `trainpipe` instead.
+    testpipe : IterDataPipe, optional
+        Iterable data pipeline for testing data.
+        If `None`, use `validpipe` instead.
+    fields : Iterable[FieldModule]
+        Tuple of `FieldModule`s for dataset fields.
+    model : Union[RecSysArch, torch.nn.Module, None]
+        Model for training and evaluating. 
+        If `None`, use _DummyModule instead, which should not call `forward`.
+    criterion : Union[BaseCriterion, Callable]
+        Callable for computing the loss function.
+    optimizer : torch.optim.Optimizer, optional
+        Optimizer for updating model parameters. 
+        If `None`, use _DummyModule instead, which should not call `step` and `backward`.
+    lr_scheduler : torch.optim.lr_scheduler._LRScheduler, optional
+        Learning rate scheduler. If `None`, use _DummyModule instead, 
+        which should not call `step`.
+    device : Union[torch.device, str, int]
+        Device on which to run the computation. 
             - `torch.device`
             - `str`: Like `cpu`, `cuda:0`.
             - `int`: Using cuda:`int`.
-        """
-        self.dataset = dataset
-        self.fields: FieldTuple[TopField] = FieldTuple(self.dataset.fields)
+
+    """
+
+
+    def __init__(
+        self, *,
+        trainpipe: IterDataPipe, validpipe: Optional[IterDataPipe], testpipe: Optional[IterDataPipe], fields: Iterable[FieldModule],
+        model: Union[RecSysArch, torch.nn.Module, None], criterion: Union[BaseCriterion, Callable], 
+        optimizer: Optional[torch.optim.Optimizer], lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler],
+        device: Union[torch.device, str, int]
+    ):
+
+        self.fields: FieldTuple[FieldModule] = FieldTuple(fields)
         self.device = torch.device(device)
+
+        self._set_datapipe(trainpipe, validpipe, testpipe)
+        self._set_other(model, criterion, optimizer, lr_scheduler)
+
+        self.__mode = 'train'
+
+    def _set_datapipe(
+        self,
+        trainpipe,
+        validpipe=None,
+        testpipe=None,
+    ):
+        """Set the data pipe for training, validation and test."""
+        self.trainpipe = trainpipe
+        self.validpipe = self.trainpipe if validpipe is None else validpipe
+        self.testpipe = self.validpipe if testpipe is None else testpipe
+
+    def _set_other(
+        self,
+        model=None, criterion=None, optimizer=None, lr_scheduler=None,
+    ):
+        """Set the other necessary components."""
         self.criterion = criterion
         self.model = model.to(self.device) if model else _DummyModule()
         self.optimizer = optimizer if optimizer else _DummyModule()
         self.lr_scheduler = lr_scheduler if lr_scheduler else _DummyModule()
 
-      
-    def save(self) -> None:
-        """Save the model"""
-        torch.save(self.model.state_dict(), os.path.join(self.cfg.LOG_PATH, self.cfg.SAVED_FILENAME))
+    @property
+    def mode(self):
+        """Get the current mode of the chief coach."""
+        return self.__mode
 
-    def save_checkpoint(self, epoch: int) -> None:
-        """Save current checkpoint at epoch X."""
-        path = os.path.join(self.cfg.CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
-        checkpoint = dict()
-        checkpoint['epoch'] = epoch
-        for module in self.cfg.CHECKPOINT_MODULES:
-            checkpoint[module] = getattr(self, module).state_dict()
-        checkpoint['monitors'] = self.monitors.state_dict()
-        torch.save(checkpoint, path)
+    @timemeter("Coach/train")
+    def train(self):
+        """Start training and return the training loss."""
+        self.__mode = 'train'
+        self.model.train()
+        return self.train_per_epoch()
 
-    def load_checkpoint(self) -> int:
-        """Load last saved checkpoint.
+    @timemeter("Coach/valid")
+    @torch.no_grad()
+    def valid(self):
+        """Start validation and return the validation metrics."""
+        self.__mode = 'valid'
+        self.model.eval()
+        return self.evaluate(prefix='valid')
 
-        Returns:
-        ---
+    @timemeter("Coach/test")
+    @torch.no_grad()
+    def test(self):
+        """Start testing and return the test metrics."""
+        self.__mode = 'test'
+        self.model.eval()
+        return self.evaluate(prefix='test')
 
-        epoch: int
-        """
-        path = os.path.join(self.cfg.CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
-        checkpoint = torch.load(path)
-        for module in self.cfg.CHECKPOINT_MODULES:
-            getattr(self, module).load_state_dict(checkpoint[module])
-        self.monitors.load_state_dict(checkpoint['monitors'])
-        return checkpoint['epoch']
+    @abc.abstractmethod
+    def train_per_epoch(self):
+        raise NotImplementedError(
+            f"{self.__class__.__name__}.train_per_epoch() should be implemented ..."
+        )
 
-    def save_best(self, path: str, prefix: str): ...
+    @abc.abstractmethod
+    def evaluate(self, prefix: str = 'valid'):
+        raise NotImplementedError(
+            f"{self.__class__.__name__}.evaluate() should be implemented ..."
+        )
 
-    def check_best(self, val: Optional[float]): ...
-
-    def resume(self):
-        """Resume from last checkpoint."""
-        start_epoch: int = 0
-        if self.cfg.resume:
-            start_epoch = self.load_checkpoint() 
-            infoLogger(f"[Coach] >>> Load the recent checkpoint and train from epoch: {start_epoch}")
-        return start_epoch
-    
     def register_metric(
-        self, name: str, metric: Optional[str] = None, 
-        func: Optional[Callable] = None, fmt: str = '.4f', best_caster: Callable = max,
-        prefix: str = 'train'
-    ):
-        """Register a metric.
-
-        Parameters:
-        ---
-
-        name: str
-            The complete name of this metric, such as `NDCG@20`.
-        metric: str
-            The name of this metric, like `NDCG` for `NDCG@20`.
-        func: Callable
-            The function to process data.
-        fmt: str
-            The format to print.
-        best_caster: `min` or `max`
-            Which one is better.
-        prefix: str
-            The group to which this metric belongs.
-
-        Examples
-        ---
-
-        >>> coach = Coach(...)
-        >>> coach.compile(cfg, monitors=['loss', 'recall@10', 'recall@20', 'ndcg@10', 'ndcg@20'])
-        >>> coach.register_metric('loss2', func=None, fmt='.5f', prefix='train')
-        >>> from freerec.metrics import normalized_dcg
-        >>> from functools import partial
-        >>> coach.register_metric(
-        ...    name='NDCG@50',
-        ...    metric='NDCG',
-        ...    func=partial(normalized_dcg, k=50),
-        ...   fmt='.4f',
-        ...    prefix='test'
-        ... )
-
-        Raises:
-        ---
-
-        AttributeError: when calling `register_metric' before `compile'.
-        
+        self, name: str, func: Callable, 
+        fmt: str = '.4f', best_caster: Callable = max
+    ) -> None:
         """
-        try:
-            metric = name if metric is None else metric
-            self.__monitors[prefix][metric.upper()].append(
-                AverageMeter(
-                    name=name,
-                    metric=func,
-                    fmt=fmt,
-                    best_caster=best_caster
-                )
-            )
-        except AttributeError:
-            AttributeError(
-                "'register_metric' should be called after 'compile' ..."
-            )
+        Register a metric.
+
+        Parameters
+        ----------
+        name : str
+            The complete name of the metric, such as `LOSS2`.
+            The notation `@` should not be included, i.e., 'LOSS@2' is invalid.
+        func : Callable
+            The function to process the data for the metric.
+        fmt : str, optional
+            The format to use when printing the metric, defaults to `'.4f'`.
+        best_caster : Callable, optional
+            A function used to cast the best value of the metric, defaults to `max`.
+            
+        Returns
+        -------
+        None
+        
+        Raises
+        ------
+        AssertionError
+            When `name` has already been registered or contains the notation `@`.
+        """
+
+        name = name.upper()
+        assert DEFAULT_METRICS.get(name, None) is None, f"The metric {name} already exists ..."
+        assert '@' not in name, f"The metric name has invalid notation of `@' ..."
+        DEFAULT_METRICS[name] = func
+        DEFAULT_FMTS[name] = fmt
+        DEFAULT_BEST_CASTER[name] = best_caster
+
+
+class Coach(ChiefCoach):
+    """The framework for training."""
+
+    def prepare_dataloader(self) -> None:
+        """Prepare data loaders for training, validation, and testing data."""
+        self.trainloader = DataLoader(
+            datapipe=self.trainpipe, num_workers=self.cfg.num_workers
+        )
+        self.validloader = DataLoader(
+            datapipe=self.validpipe, num_workers=self.cfg.num_workers
+        )
+        self.testloader = DataLoader(
+            datapipe=self.testpipe, num_workers=self.cfg.num_workers
+        )
+    
+    @property
+    def dataloader(self):
+        """Return the corresponding data loader depending on the current mode."""
+        if self.mode == 'train':
+            return self.trainloader
+        elif self.mode == 'valid':
+            return self.validloader
+        else:
+            return self.testloader
 
     @property
     def monitors(self) -> Monitor:
-        """Return Dict[str, Dict[str, List]], specifically,
-        Monitor[prefix: str, Dict[metric: str, meters: List]].
-        """
+        """Return the monitor dictionary for the different modes ('train', 'valid', 'test')."""
         return self.__monitors
 
     @timemeter("Coach/compile")
     def compile(
         self, cfg: Config, monitors: List[str]
     ):
-        """Load config and set monitors.
-        
-        Parameters:
-        ---
+        """
+        Load the configuration and set up monitors for training.
 
-        cfg: Config
-        monitors: List[str]
-            The metrics (for 'valid' and 'test' only) of interest.
-        
-        Examples:
-        ---
+        Parameters
+        ----------
+        cfg : Config
+            A configuration object with the training details.
+        monitors : List[str]
+            A list of metric names to be monitored during training.
 
-        >>> coach = Coach(None)
+        Examples
+        --------
+        >>> coach: Coach
         >>> coach.compile(cfg, monitors=['loss', 'recall@10', 'recall@20', 'ndcg@10', 'ndcg@20'])
         """
         self.cfg = cfg
@@ -268,89 +300,161 @@ class Coach:
         self.__monitors['valid'] = defaultdict(list)
         self.__monitors['test'] = defaultdict(list)
 
-        self.register_metric(
-            name='LOSS',
-            metric='LOSS',
-            func=DEFAULT_METRICS['LOSS'],
-            fmt=DEFAULT_FMTS['LOSS'],
-            best_caster=DEFAULT_BEST_CASTER['LOSS'],
-            prefix='train'
-        )
+        def set_monitor(
+            name: str, lastname: str, prefix: str = 'train', **kwargs
+        ):
+            """Add a monitor for the specified metric."""
+            try:
+                self.__monitors[prefix][lastname].append(
+                    AverageMeter(
+                        name=name,
+                        metric=partial(DEFAULT_METRICS[lastname], **kwargs),
+                        fmt=DEFAULT_FMTS[lastname],
+                        best_caster=DEFAULT_BEST_CASTER[lastname]
+                    )
+                )
+            except KeyError:
+                raise KeyError(
+                    f"The metric of {lastname} is not included. "
+                    f"You can register by calling `register_metric(...)' ..."
+                )
+
+        # UPPER
+        monitors = ['LOSS'] + [name.upper() for name in monitors]
+        monitors = sorted(set(monitors), key=monitors.index)
 
         for name in monitors:
-            name = name.upper()
             if '@' in name:
-                metric, K = name.split('@')
-                for prefix in ('valid', 'test'):
-                    self.register_metric(
+                lastname, K = name.split('@')
+                for prefix in ('train', 'valid', 'test'):
+                    set_monitor(
                         name=name,
-                        metric=metric,
-                        func=partial(DEFAULT_METRICS[metric], k=int(K)),
-                        fmt=DEFAULT_FMTS[metric],
-                        best_caster=DEFAULT_BEST_CASTER[metric],
-                        prefix=prefix
+                        lastname=lastname,
+                        prefix=prefix,
+                        k=int(K)
                     )
             else:
-                metric = name
-                for prefix in ('valid', 'test'):
-                    self.register_metric(
+                lastname = name
+                for prefix in ('train', 'valid', 'test'):
+                    set_monitor(
                         name=name,
-                        metric=metric,
-                        func=DEFAULT_METRICS[metric],
-                        fmt=DEFAULT_FMTS[metric],
-                        best_caster=DEFAULT_BEST_CASTER[metric],
+                        lastname=lastname,
                         prefix=prefix
                     )
 
-        # dataloader
-        self.load_dataloader()
+        # Prepare data loaders
+        self.prepare_dataloader()
 
-    def load_dataloader(self):
-        self.__dataloader = DataLoader(
-            datapipe=self.dataset, num_workers=self.cfg.num_workers
-        )
-    
-    @property
-    def dataloader(self):
-        if self.cfg.verbose:
-            return tqdm(
-                self.__dataloader,
-                leave=False, desc="վ'ᴗ' ի-"
-            )
-        else:
-            return self.__dataloader
+    def save(self) -> None:
+        """Save the model"""
+        torch.save(self.model.state_dict(), os.path.join(self.cfg.LOG_PATH, self.cfg.SAVED_FILENAME))
+
+    def save_checkpoint(self, epoch: int) -> None:
+        """
+        Save current checkpoint at epoch.
+
+        Parameters:
+        -----------
+            epoch :int Current epoch number.
+
+        Returns:
+        --------
+            None
+        """
+        path = os.path.join(self.cfg.CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
+        checkpoint = dict()
+        checkpoint['epoch'] = epoch
+        for module in self.cfg.CHECKPOINT_MODULES:
+            checkpoint[module] = getattr(self, module).state_dict()
+        checkpoint['monitors'] = self.monitors.state_dict()
+        torch.save(checkpoint, path)
+
+    def load_checkpoint(self) -> int:
+        """
+        Load last saved checkpoint.
+
+        Returns:
+        --------
+        epoch: int 
+            The epoch number loaded from the checkpoint.
+        """
+        path = os.path.join(self.cfg.CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
+        checkpoint = torch.load(path)
+        for module in self.cfg.CHECKPOINT_MODULES:
+            getattr(self, module).load_state_dict(checkpoint[module])
+        self.monitors.load_state_dict(checkpoint['monitors'])
+        return checkpoint['epoch']
+
+    def save_best(self) -> None:
+        """Save best model."""
+        ...
+
+    def check_best(self, val: float) -> None:
+        """Update best value."""
+        ...
+
+    def resume(self) -> int:
+        """
+        Resume training from the last checkpoint.
+
+        Returns:
+        -------
+        start_epoch: int
+            The epoch number to resume training from.
+        """
+        start_epoch: int = 0
+        if self.cfg.resume:
+            start_epoch = self.load_checkpoint()
+            infoLogger(f"[Coach] >>> Load last checkpoint and train from epoch: {start_epoch}")
+        return start_epoch
 
     @torch.no_grad()
     def monitor(
         self, *values,
         n: int = 1, mode: str = 'mean', 
-        prefix: str = 'train', pool: Optional[List] = None
+        prefix: str = 'train', pool: Optional[Iterable] = None
     ):
-        """Log some values to given monitors.
+
+        """
+        Log data values to specific monitors.
 
         Parameters:
-        ---
-
-        *values: data
-        n: int
-            Batch size in general
-        mode: 'sum'|'mean' (default)
-        prefix: str, 'train'|'test'|'valid'
-            The mode values belonging to.
-        pool: List[str]
-            Given metrics.
-            - `None`: `pool` will be set for all metrics.
+        ----------
+        *values : data
+            The data values to be logged.
+        n : int
+            The batch size in general.
+        mode : str, optional
+            The mode to compute the metric. Can be 'sum' or 'mean' (default).
+        prefix : str, optional
+            The prefix string indicating which mode the values belong to. Can be 'train', 'test' or 'valid'.
+        pool : List[str], optional
+            A list of metric names to log. If None, all metrics in the pool of `prefix` will be logged.
         """
+
         metrics: Dict[List] = self.monitors[prefix]
         pool = metrics if pool is None else pool
-        for metric in pool:
-            for meter in metrics.get(metric.upper(), []):
+        for lastname in pool:
+            for meter in metrics.get(lastname.upper(), []):
                 meter(*values, n=n, mode=mode)
 
     def step(self, epoch: int):
-        """Print information and reset them."""
+        """
+        Prints training status and evaluation results for each epoch, 
+        and resets the corresponding `AverageMeter` instances.
+
+        Parameters:
+        ----------
+            epoch : int
+                The epoch number.
+
+        Returns:
+        -------
+            None
+        """
+
+        metrics: Dict[str, List[AverageMeter]]
         for prefix, metrics in self.monitors.items():
-            metrics: Dict[str, List[AverageMeter]]
             infos = [f"[Coach] >>> {prefix.upper():5} @Epoch: {epoch:<4d} >>> "]
             for meters in metrics.values():
                 infos += [meter.step() for meter in meters if meter.active]
@@ -358,14 +462,16 @@ class Coach:
 
     @timemeter("Coach/summary")
     def summary(self):
-        """Summary the whole training process.
-        The following information will be saved:
-            1. historical evaluation saved in monitors;
-            2. best historical results;
-            3. curves of historical results.
         """
-        file_ = os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR, self.cfg.SUMMARY_FILENAME)
-        s = "|  {prefix}  |   {metric}   |   {val}   |   {epoch}   |   {img}   |\n"
+        Summary the whole training process.
+
+        Generate a summary of the entire training process, including the historical evaluation results, the best
+        historical results, and the curves of historical results. The resulting summary is saved to a Markdown file named
+        "Summary.md" in the `self.cfg.LOG_PATH` directory.
+
+        Additionally, the best historical results are saved to a binary file named `self.cfg.MONITOR_BEST_FILENAME`.
+        """
+        s = "|  {prefix}  |   {name}   |   {val}   |   {epoch}   |   {img}   |\n"
         info = ""
         info += "|  Prefix  |   Metric   |   Best   |   @Epoch   |   Img   |\n"
         info += "| :-------: | :-------: | :-------: | :-------: | :-------: |\n"
@@ -375,59 +481,35 @@ class Coach:
         for prefix, metrics in self.monitors.items():
             metrics: defaultdict[str, List[AverageMeter]]
             freq = 1 if prefix == 'train' else self.cfg.EVAL_FREQ
-            for _, meters in metrics.items():
+            for lastname, meters in metrics.items():
                 for meter in meters:
+                    # Skip those meters never been activated.
+                    if len(meter.history) == 0:
+                        continue
                     meter.plot(freq=freq)
                     imgname = meter.save(path=os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR), prefix=prefix)
                     epoch, val = meter.argbest(freq)
                     info += s.format(
-                        prefix=prefix, metric=meter.name,
+                        prefix=prefix, name=meter.name,
                         val=val, epoch=epoch, img=f"![]({imgname})"
                     )
                     data.append([prefix, meter.name, val, epoch])
-                    if val != -1: # Only save available data.
-                        best[prefix][meter.name] = val
 
+        file_ = os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR, self.cfg.SUMMARY_FILENAME)
         with open(file_, "w", encoding="utf8") as fh:
-            fh.write(info) # Summary.md
+            fh.write(info)
 
         df = pd.DataFrame(data, columns=['Prefix', 'Metric', 'Best', '@Epoch'])
-        infoLogger(str(df)) # print final metrics
+        infoLogger(str(df))
         infoLogger(f"[LoG_PaTH] >>> {self.cfg.LOG_PATH}")
-        # save corresponding data for next analysis
+
         self.monitors.write(os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR)) # tensorboard
+
         self.monitors.save(os.path.join(self.cfg.LOG_PATH, self.cfg.DATA_DIR), self.cfg.MONITOR_FILENAME)
         export_pickle(best, os.path.join(self.cfg.LOG_PATH, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME))
-
-    def train_per_epoch(self):
-        NotImplementedError("train_per_epoch should be specified ...")
-
-    def evaluate(self, prefix: str = 'valid'):
-        NotImplementedError("evaluate should be specified ...")
-
-    @timemeter("Coach/train")
-    def train(self):
-        self.dataset.train()
-        self.model.train()
-        return self.train_per_epoch()
-
-    @timemeter("Coach/valid")
-    @torch.no_grad()
-    def valid(self):
-        self.dataset.valid() # TODO: multiprocessing pitfall ???
-        self.model.eval()
-        return self.evaluate(prefix='valid')
-
-    @timemeter("Coach/test")
-    @torch.no_grad()
-    def test(self):
-        self.dataset.test()
-        self.model.eval()
-        return self.evaluate(prefix='test')
-
+    
     @timemeter("Coach/fit")
     def fit(self):
-        """Start the training and log some useful information."""
         start_epoch = self.resume()
         for epoch in range(start_epoch, self.cfg.epochs):
             if epoch % self.cfg.CHECKPOINT_FREQ == 0:
@@ -450,28 +532,22 @@ class Coach:
         self.summary()
 
 
-class CoachForCTR(Coach): ...
-
-class CoachForMatching(Coach): ...
-
-
 class Adapter:
-    """ Params tuner.
+    """
+    Params tuner.
 
     Flows:
-    ---
-
-    1. compile: get command, envs and params for training;
-    2. allocate devices for various params
-        - register id, logPath, device first
-        - run it
-        - collect information from logPath and output to tensorbaord
-        - save checkpoint
-        - release corresponding device
+    -----
+    1. compile: configure the command, environments, and parameters for training.
+    2. allocate devices for various parameters:
+        - register the ID, log path, and device first
+        - execute the command
+        - collect information from the log path and output to TensorBoard
+        - save the checkpoint
+        - release the corresponding device
 
     Examples:
-    ---
-
+    --------
     >>> cfg = {'command': 'python xxx.py', 'params': {'optimizer': ['sgd', 'adam']}}
     >>> tuner = Adapter()
     >>> tuner.compile(cfg)
@@ -495,21 +571,25 @@ class Adapter:
         return command, self.cfg.ENVS.id, self.cfg.LOG_PATH.format(**self.cfg.ENVS)
 
     @timemeter("Adapter/compile")
-    def compile(self, cfg: Config):
+    def compile(self, cfg: Config) -> None:
         """
-        Parameters:
-        ---
+        Configure the command, environments, and parameters for training.
 
-        cfg: Config
-            Including command, envs, params, defaults.
-        
-        Flows:
-        ---
+        Parameters
+        ----------
+        cfg : Config
+            An object that contains the command, environments, parameters, and defaults.
 
-        1. Add environmental parameters to basic `command`;
-        2. Register all available devices;
-        3. Convert all parameters from `cfg.PARAMS`;
+        Flows
+        -----
+        1. Add environmental parameters to the basic `command`.
+        2. Register all available devices.
+        3. Convert all parameters from `cfg.PARAMS`.
         4. Convert all defaults from `cfg.DEFAULTS`.
+
+        Returns
+        -------
+        None
         """
         self.cfg = cfg
         piece = "\t{key}: {vals} \n"
@@ -539,26 +619,31 @@ class Adapter:
 
     @staticmethod
     def get_option(key: str, val: Any):
-        """Convert (key, val) to '--key=val'.
+        """
+        Convert (key, val) to '--key=val'.
 
-        Parameters:
-        ---
+        Parameters
+        ----------
+        key : str
+            The key of the parameter.
+        val : Any
+            The value of the parameter.
 
-        key: str
-        val: Any
+        Notes
+        -----
+        All '_' in `key` will be replaced by '-'.
 
-        Notes:
-        ---
+        Returns
+        -------
+        str
+            The parameter with format '--key=val'.
 
-        All '_' in key will be replaced by '-'.
-        
-        Examples:
-        ---
-
+        Examples
+        --------
         >>> Adapter.get_option('lr', '1e-3')
-        --lr=1e-3
+        '--lr=1e-3'
         >>> Adapter.get_option('learning_rate', '1e-3')
-        --learning-rate=1e-3
+        '--learning-rate=1e-3'
         """
         return f" --{key.replace('_', '-')}={val}"
 
@@ -568,30 +653,28 @@ class Adapter:
         return import_pickle(file_)
 
     def write(self, id_: str, logPath: str, params: Dict):
-        """Write results to tensorboard.
-        
+        """
+        Write experiment results to tensorboard.
+
         Parameters:
-        ---
-
+        ----------
         id_: str
-            The experiment id.
+            Experiment ID.
         logPath: str
-            The log path of this experiment.
+            Path to the experiment logs.
         params: Dict
-            Parameter config of this experiemnt.
-        
-        Flows:
-        ---
+            Configuration parameters of the experiment.
 
-        1. Load best data from the `logPath`.
-        2. Write best data to tensorboard with `params`.
+        Flows:
+        ------
+        1. Load the best data from `logPath`.
+        2. Write the best data to tensorboard with `params`.
 
         Notes:
-        ---
-
-        If you find `-1` appears in the tensorboard,
-        it must be the data therein is of `str` type,
-        which will raise error if we sent it to tensorboard directly !
+        ------
+        If you find `-1` appearing in the tensorboard,
+        it could mean that the data is of `str` type,
+        which will cause an error if it is sent to tensorboard directly!
         """
         try:
             data = self.load_best(logPath)
@@ -674,7 +757,6 @@ class Adapter:
     @timemeter("Adapter/fit")
     def fit(self):
         """Grid search."""
-
         self.source = self.resume()
         tasks = dict()
         try:

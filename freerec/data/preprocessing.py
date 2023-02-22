@@ -11,11 +11,21 @@ __all__ = ['Identifier', 'Indexer', 'StandardScaler', 'MinMaxScaler']
 class TransformError(Exception): ...
 
 class Identifier:
-    """Transform X into X identically.
+    """
+    Transform X into X identically.
+
+    Parameters:
+    ----------
+    X : Any
+        The input data to be transformed.
+
+    Returns:
+    -------
+    Any
+        The transformed data.
 
     Examples:
-    ---
-
+    --------
     >>> import torcharrow.dtypes as dt
     >>> col = [3, 2, 1]
     >>> transformer = Identifier()
@@ -34,19 +44,16 @@ class Identifier:
         return col
 
 class Indexer(Identifier):
-    """Transform sparse items into indices.
-
-    Attributes:
-    ---
+    """
+    Transform sparse items into indices.
 
     classes: set
-        the classes therein
+        Set of unique classes seen during `fit`.
     maper: dict
-        map X to Y
+        Mapping of input values to output indices.
 
     Examples:
-    ---
-
+    ---------
     >>> col = [3, 2, 1]
     >>> col2 = [4, 5, 6]
     >>> transformer = Indexer()
@@ -87,22 +94,23 @@ class Indexer(Identifier):
 
 
 class StandardScaler(Identifier):
-    """Normalize dense items.
+    """
+    Normalize dense items using the standard scaler.
 
     Attributes:
-    ---
-
-    field: `dt.Field` or the `Field` defined in fields
-    nums: int
-        the number of fitted items
-    sum: float
-        the summation of the fitted items
-    ssum: float 
-        the summation of the suqared items
+    -----------
+    field: dt.Field or the Field defined in torcharrow.fields
+        The field type of the dense items.
+    n_samples: int
+        The number of fitted items.
+    sum_: float
+        The summation of the fitted items.
+    sum_of_squares: float 
+        The summation of the squared fitted items.
 
     Examples:
-    ---
-
+    ---------
+    >>> import torcharrow.dtypes as dt
     >>> col = [3., 2., 1.]
     >>> transformer = StandardScaler()
     >>> transformer.partial_fit(col)
@@ -136,19 +144,18 @@ class StandardScaler(Identifier):
             raise TransformError("StandardScaler should be (partially) fitted before using ...")
 
 class MinMaxScaler(Identifier):
-    """Scale to [0, 1].
+    """
+    Scale data to the range [0, 1].
 
     Attributes:
-    ---
-
+    -----------
     min: float
-        the minimum
+        The minimum value in the data.
     max: float
-        the maximum
+        The maximum value in the data.
 
     Examples:
-    ---
-
+    ---------
     >>> col = [3., 2., 1.]
     >>> transformer = MinMaxScaler()
     >>> transformer.partial_fit(col)
@@ -171,8 +178,6 @@ class MinMaxScaler(Identifier):
             return col
 
 
-
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
-   

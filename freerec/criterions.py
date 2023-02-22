@@ -11,7 +11,25 @@ __all__ = ["BaseCriterion", "BCELoss", "MSELoss", "L1Loss"]
 
 
 class BaseCriterion(nn.Module):
-    """Criterion."""
+    """
+    Criterion.
+
+    Parameters:
+    -----------
+    reduction : str, default 'mean'
+        Reduction method. Choices are 'none', 'sum', and 'mean'.
+
+    Attributes:
+    -----------
+    reduction : str
+        Reduction method.
+
+    Methods:
+    --------
+    regularize(params: Union[torch.Tensor, Iterable[torch.Tensor]], rtype: str = 'l2') -> torch.Tensor
+        Regularizes the given parameters with the specified regularization method.
+
+    """
 
     def __init__(self, reduction: str = 'mean') -> None:
         super().__init__()
@@ -20,13 +38,20 @@ class BaseCriterion(nn.Module):
 
     @staticmethod
     def regularize(params: Union[torch.Tensor, Iterable[torch.Tensor]], rtype: str = 'l2'):
-        """Add regularization for given parameters.
+        """
+        Add regularization for given parameters.
 
         Parameters:
-        ---
+        -----------
+        params : Union[torch.Tensor, Iterable[torch.Tensor]]
+            List of parameters for regularization.
+        rtype : str, default 'l2'
+            The type of regularization to use. Options include 'l1' and 'l2'.
 
-        params: List of parameters for regularization.
-        rtype: Some kind of regularization including 'l1'|'l2'.
+        Returns:
+        --------
+        reg_loss : torch.Tensor
+            The regularization loss tensor.
         """
         params = [params] if isinstance(params, torch.Tensor) else params
         if rtype == 'l1':
@@ -50,17 +75,15 @@ class BPRLoss(BaseCriterion):
     def forward(self, pos_scores: torch.Tensor, neg_scores: torch.Tensor):
         """
         Parameters:
-        ---
-
+        -----------
         pos_scores: torch.Tensor
-            positive scores
+            Positive scores
         neg_scores: torch.Tensor
-            negative scores
+            Negative scores
         
         Returns:
-        ---
-
-            torch.Tensor
+        --------
+        loss: torch.Tensor
         """
         loss = F.softplus(neg_scores - pos_scores)
         if self.reduction == 'none':
@@ -72,13 +95,13 @@ class BPRLoss(BaseCriterion):
 
 
 class MSELoss(BaseCriterion):
-    """Mean Square Loss"""
+    """Mean Square Loss."""
 
     def forward(self, inputs: torch.Tensor, targets: torch.Tensor):
         return F.mse_loss(inputs, targets, reduction=self.reduction)
 
 
 class L1Loss(BaseCriterion):
-
+    """L1 Loss."""
     def forward(self, inputs: torch.Tensor, targets: torch.Tensor):
         return F.l1_loss(inputs, targets, reduction=self.reduction)

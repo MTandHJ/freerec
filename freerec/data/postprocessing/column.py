@@ -6,7 +6,7 @@ import torch
 import torchdata.datapipes as dp
 
 from .base import Postprocessor
-from ..fields import BufferField, FieldList
+from ..fields import BufferField, FieldList, Field
 
 
 __all__ = ["Columner", "ToTensor", "Fielder"]
@@ -17,14 +17,15 @@ T = TypeVar("T")
 
 @dp.functional_datapipe("column_")
 class Columner(Postprocessor):
-    """A postprocessor that converts a batch of samples into columns.
-
+    """
+    A postprocessor that converts a batch of samples into columns.
     Columner takes a datapipe that yields a batch of samples, and converts them into columns. 
     This can be useful for the following transformation (by column).
 
-    Args:
-        source_dp (dp.IterDataPipe): A datapipe that yields a batch samples.
-
+    Parameters:
+    -----------
+    source_dp: dp.IterDataPipe 
+        A datapipe that yields a batch samples.
     """
 
     def __iter__(self):
@@ -34,10 +35,9 @@ class Columner(Postprocessor):
 
 @dp.functional_datapipe("tensor_")
 class ToTensor(Postprocessor):
-    """A datapipe that converts lists into torch Tensors.
-
+    """
+    A datapipe that converts lists into torch Tensors.
     This class converts a List into a torch.Tensor.
-
     """
 
     def at_least_2d(self, vals: torch.Tensor):
@@ -60,9 +60,16 @@ class ToTensor(Postprocessor):
 
 @dp.functional_datapipe("field_")
 class Fielder(Postprocessor):
-    """Convert column data to field-style data.
+    """
+    Convert column data to field-style data.
     Then filtering by tags can be possible.
     """
+
+    def __init__(
+        self, source_dp: dp.iter.IterDataPipe, 
+        *fields: Field
+    ) -> None:
+        super().__init__(source_dp, fields=fields)
 
     def __iter__(self) -> Iterator[FieldList[BufferField]]:
         for cols in self.source:
@@ -71,4 +78,3 @@ class Fielder(Postprocessor):
                 self.fields,
                 cols
             ))
-

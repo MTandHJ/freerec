@@ -11,21 +11,33 @@ T = TypeVar('T')
 class DataSetLoadingError(Exception): ...
 
 def safe_cast(val: T, dest_type: Callable[[T], T], default: T) -> T:
-    """Cast the value to the specified type.
+    """
+    Cast the value to the specified type.
 
-    Flows:
-    ---
+    Parameters:
+    -----------
+    val : T
+        The value to be casted to the specified type.
+    dest_type : Callable[[T], T]
+        A function to cast `val` to the specified type.
+    default : T
+        The default value to use if `val` is None or an empty string.
 
-    1. If the `val` is not `None` or `''` -> return `dest_type(val)`;
-    2. Else return `dest_type(default)`.
+    Returns:
+    --------
+    value: T
+        The value of `val` casted to the specified type.
 
     Raises:
-    ---
+    -------
+    ValueError
+        If `val` or `default` cannot be casted to the specified type `dest_type`.
 
-    ValueError:
-        1. `val` does not belong to the type `dest_type`;
-        2. `default` does not belong to the type `dest_type`;
-    Note that the second case is sometimes useful if you want to make sure that there are no "null" values in your data.
+    Notes:
+    ------
+    This function casts `val` to the specified type using the `dest_type` function.
+    If `val` is None or an empty string, the function will use the `default` value.
+    If the `default` value is None, a ValueError will be raised.
     """
     try:
         if val:
@@ -51,34 +63,33 @@ def download_from_url(
     sha1_hash: Optional[str] = None, verify_ssl: bool = True, 
     log: bool = True
 ):
-    """Download a given URL.
+    """
+    Download a file from a given URL.
 
     Codes borrowed from dgl.data.utils
 
-    Parameters
-    ---
-
+    Parameters:
+    -----------
     url : str
-        URL to download.
-    root : str, default '.'
-        Destination path to store downloaded file.
+        The URL to download the file from.
+    root : str, optional
+        The root directory where the downloaded file will be saved. Default is current directory ('.').
     filename: str, optional
-        Filename of the downloaded file.
+        The filename of the downloaded file. If None, the filename will be inferred from the URL.
     overwrite : bool, optional
         Whether to overwrite the destination file if it already exists.
     sha1_hash : str, optional
         Expected sha1 hash in hexadecimal digits. Will ignore existing file when hash is specified
         but doesn't match.
-    retries : integer, default 5
-        The number of times to attempt downloading in case of failure or non 200 return codes.
-    verify_ssl : bool, default True
-        Verify SSL certificates.
-    log : bool, default True
-        Whether to print the progress for download
+    retries : int, optional
+        The number of times to attempt downloading in case of failure or non 200 return codes. Default is 5.
+    verify_ssl : bool, optional
+        Verify SSL certificates. Default is True.
+    log : bool, optional
+        Whether to print the progress of download. Default is True.
 
-    Returns
-    ---
-
+    Returns:
+    --------
     str
         The file path of the downloaded file.
     """
@@ -134,21 +145,26 @@ def download_from_url(
 
 
 def extract_archive(file_, target_dir, overwrite=False):
-    """Extract archive file.
+    """
+    Extract files from an archive.
 
     Codes borrowed from dgl/data/utils.py
 
-    Parameters
-    ---
-
+    Parameters:
+    -----------
     file_ : str
-        Absolute path of the archive file.
+        The path to the archive file to extract.
     target_dir : str
-        Target directory of the archive to be uncompressed.
-    overwrite : bool, default True
-        Whether to overwrite the contents inside the directory.
-        By default always overwrites.
+        The directory to extract the archive contents to.
+    overwrite : bool, optional
+        Whether to overwrite existing files in the target directory. Defaults to False.
+
+    Raises:
+    -------
+    DataSetLoadingError
+        If an unsupported archive file type is encountered.
     """
+
     if os.path.exists(target_dir) and not overwrite:
         return
     infoLogger('[DataSet] >>> Extracting file to {}'.format(target_dir))
@@ -172,23 +188,20 @@ def extract_archive(file_, target_dir, overwrite=False):
 
 
 def check_sha1(filename, sha1_hash):
-    """Check whether the sha1 hash of the file content matches the expected hash.
+    """
+    Check if the SHA1 hash of a file matches the expected hash.
 
-    Codes borrowed from dgl/data/utils.py
-
-    Parameters
-    ---
-
+    Parameters:
+    ----------
     filename : str
-        Path to the file.
+        The path to the file to check the hash of.
     sha1_hash : str
-        Expected sha1 hash in hexadecimal digits.
+        The expected SHA1 hash value.
 
-    Returns
-    ---
-
+    Returns:
+    --------
     bool
-        Whether the file content matches the expected hash.
+        True if the file's hash matches the expected value, False otherwise.
     """
     sha1 = hashlib.sha1()
     with open(filename, 'rb') as f:

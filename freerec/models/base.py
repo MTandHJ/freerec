@@ -9,16 +9,56 @@ __all__ = ['RecSysArch']
 
 class RecSysArch(nn.Module):
 
+    """
+    A PyTorch Module for recommendation system architecture.
+    This module contains methods for broadcasting tensors and initializing the module parameters.
+
+    Parameters:
+    -----------
+    nn.Module : PyTorch Module
+        The base class of this module.
+
+    Methods:
+    --------
+    to(device, dtype, non_blocking)
+        Moves and/or casts the parameters and buffers.
+
+    initialize()
+        Initializes the module parameters.
+
+    broadcast(*tensors)
+        Broadcasts the given tensors according to broadcasting semantics.
+
+    """
+
     def to(
         self, device: Optional[Union[int, torch.device]] = None,
         dtype: Optional[Union[torch.dtype, str]] = None,
         non_blocking: bool = False
     ):
+        """
+        Moves and/or casts the parameters and buffers.
+
+        Parameters:
+        -----------
+        device : Union[int, torch.device], optional
+            The destination device of the parameters and buffers, by default None.
+        dtype : Union[torch.dtype, str], optional
+            The desired data type of the parameters and buffers, by default None.
+        non_blocking : bool, optional
+            Whether the copy should be asynchronous or not, by default False.
+
+        Returns:
+        --------
+        nn.Module
+            The module with parameters and buffers moved and/or cast.
+        """
         if device:
             self.device = device
         return super().to(device, dtype, non_blocking)
 
     def initialize(self):
+        """Initializes the module parameters."""
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.xavier_normal_(m.weight)
@@ -33,12 +73,22 @@ class RecSysArch(nn.Module):
 
     @staticmethod
     def broadcast(*tensors: torch.Tensor):
-        """Broadcasts the given tensors according to Broadcasting semantics.
+        """
+        Broadcasts the given tensors according to Broadcasting semantics.
         See [here](https://pytorch.org/docs/stable/generated/torch.broadcast_tensors.html#torch.broadcast_tensors) for details.
 
-        Examples:
-        ---
+        Parameters:
+        -----------
+        tensors : torch.Tensor
+            The tensors to broadcast.
 
+        Returns:
+        --------
+        Tuple[torch.Tensor, ...]
+            The broadcasted tensors.
+
+        Examples:
+        ---------
         >>> users = torch.rand(4, 1, 4)
         >>> items = torch.rand(4, 2, 1)
         >>> users, items = RecSysArch.broadcast(users, items)

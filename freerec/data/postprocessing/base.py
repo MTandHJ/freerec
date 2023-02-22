@@ -6,21 +6,24 @@ import torchdata.datapipes as dp
 from ..fields import Field, FieldTuple
 
 
-__all__ = ['BaseProcessor', 'Postprocessor', 'Adapter']
+__all__ = ['BaseProcessor', 'Postprocessor']
 
 
 class BaseProcessor(dp.iter.IterDataPipe):
-    """A base processor that defines the property of fields.
+    """
+    A base processor that defines the property of fields.
 
-    Args:
-        fields (None, Field, Iterable):
-            - `None': Pass.
-            - `Field`: FieldTuple with one Field.
-            - `Iterable`: FieldTuple with multi Fields
+    Parameters:
+    -----------
+    fields: Field or Iterable, optional
+        - `None': Pass.
+        - `Field`: FieldTuple with one Field.
+        - `Iterable`: FieldTuple with multi Fields
     
     Raises:
-        AttributeError: If `fields' are not given or `None` before using.
-
+    -------
+    AttributeError: 
+        If `fields' are not given or `None` before using.
     """
 
     def __init__(self, fields: Union[None, Field, Iterable] = None) -> None:
@@ -38,13 +41,15 @@ class BaseProcessor(dp.iter.IterDataPipe):
 
     @fields.setter
     def fields(self, fields: Union[None, Field, Iterable] = None):
-        """Set fields.
+        """
+        Set fields.
 
-        Args:
-            fields (None, Field, Iterable):
-                - `None': Pass.
-                - `Field`: FieldTuple with one Field.
-                - `Iterable`: FieldTuple with multi Fields.
+        Parameters:
+        -----------
+        fields: Field or Iterable, optional
+            - `None': Pass.
+            - `Field`: FieldTuple with one Field.
+            - `Iterable`: FieldTuple with multi Fields.
         """
         if fields is None:
             pass
@@ -59,24 +64,30 @@ class BaseProcessor(dp.iter.IterDataPipe):
  
     @staticmethod
     def listmap(func: Callable, *iterables):
-        """Apply a function to multiple iterables and return a list.
+        """
+        Apply a function to multiple iterables and return a list.
 
-        Args:
-            func (Callable): The function to be applied.
-            *iterables: Multiple iterables to be processed.
+        Parameters:
+        -----------
+        func (Callable): The function to be applied.
+        *iterables: Multiple iterables to be processed.
 
         Returns:
-            List: The results after applying the function to the iterables.
+        --------
+        List: The results after applying the function to the iterables.
         """
         return list(map(func, *iterables))
 
    
 
 class Postprocessor(BaseProcessor):
-    """A post-processor that wraps another IterDataPipe object.
+    """
+    A post-processor that wraps another IterDataPipe object.
 
-    Args:
-        source_dp (dp.iter.IterDataPipe): The data pipeline to be wrapped.
+    Parameters:
+    -----------
+    source_dp: dp.iter.IterDataPipe 
+        The data pipeline to be wrapped.
     """
 
 
@@ -87,58 +98,3 @@ class Postprocessor(BaseProcessor):
     ) -> None:
         super().__init__(fields=fields)
         self.source = source_dp
-
-
-class Adapter(BaseProcessor):
-    """A base class for data pipeline adapters."""
-
-    def __init__(self, fields: Union[None, Field, Iterable] = None) -> None:
-        super().__init__(fields)
-
-        self.__mode = 'train'
-        
-    @property
-    def mode(self):
-        """Get the current mode of the adapter.
-
-        Returns:
-            str: The current mode of the adapter.
-        """
-        return self.__mode
-
-    def train(self):
-        """Set the mode of the adapter to 'train' and return itself.
-
-        Returns:
-            Adapter: Itself.
-        """
-        self.__mode = 'train'
-        return self
-
-    def valid(self):
-        """Set the mode of the adapter to 'valid' and return itself.
-
-        Returns:
-            Adapter: Itself.
-        """
-        self.__mode = 'valid'
-        return self
-
-    def test(self):
-        """Set the mode of the adapter to 'test' and return itself.
-
-        Returns:
-            Adapter: Itself.
-        """
-        self.__mode = 'test'
-        return self
-
-
-    def __getattr__(self, attribute_name):
-        if attribute_name in dp.iter.IterDataPipe.functions:
-            raise AttributeError(
-                f"`{self.__class__.__name__}' must be the end of the pipeline."
-                f"The follow-up operation of `{attribute_name}' is invalid here."
-            )
-        else:
-            return super().__getattr__(attribute_name)

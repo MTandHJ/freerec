@@ -31,7 +31,8 @@ class RecSetBuildingError(Exception): ...
 
 
 class BaseSet(dp.iter.IterDataPipe):
-    """ Base class for data pipes. Defines basic functionality and methods for 
+    """ 
+    Base class for data pipes. Defines basic functionality and methods for 
     pre-processing the data for the learning models.
     """
     def __init__(self) -> None:
@@ -41,7 +42,13 @@ class BaseSet(dp.iter.IterDataPipe):
         
     @property
     def mode(self) -> str:
-        """Return: The mode that the dataset is currently in."""
+        """
+        Return the mode in which the dataset is currently being used.
+
+        Returns:
+            str: The mode in which the dataset is currently being used.
+        """
+
         return self.__mode
 
     def train(self: T) -> T:
@@ -77,38 +84,43 @@ class BaseSet(dp.iter.IterDataPipe):
         """
         Convert datapipe to a heterograph.
 
-        Args:
-            *edge_types: (src, edge, dst)
-                - src: Tuple of Fieldtags for filtering
-                    Source node.
-                - edge: Optional[str]
-                    The name of the edge. 'src.name2dst.name' will be adopted if `edge` is `None`
-                - dst: Tuple of Fieldtags for filtering
-                    Destination node.
+        Parameters:
+        -----------
+        *edge_types: Tuple[Tuple[str, str], Optional[str], Tuple[str, str]]
+            The desired edges in the returned heterograph. Each edge is defined by a tuple (source, edge, destination):
+            - source: Tuple of field tags for filtering the source node data.
+            - edge: Optional[str], default None
+                The name of the edge. If not provided, the name 'src.field2dst.field' will be used.
+            - destination: Tuple of field tags for filtering the destination node data.
 
         Returns:
-            HeteroData: The converted heterograph.
+        --------
+        HeteroData:
+            The resulting heterograph, with the requested edges and nodes.
 
         Notes:
-            Warning will be raised if current mode is not 'train' !
+        ------
+        A warning will be raised if the current mode is not 'train'!
 
         Examples:
-            >>> from freerec.data.datasets import Gowalla_m1
-            >>> from freerec.data.tags import USER, ITEM, ID
-            >>> basepipe = Gowalla_m1("../data")
-            >>> fields = basepipe.fields
-            >>> graph = basepipe.to_heterograph(
-            ...    ((USER, ID), None, (ITEM, ID)), 
-            ...    ((ITEM, ID), None, (USER, ID))
-            ... )
-            >>> graph
-            HeteroData(
-                UserID={ x=[29858, 0] },
-                ItemID={ x=[40981, 0] },
-                (UserID, UserID2ItemID, ItemID)={ edge_index=[2, 810128] },
-                (ItemID, ItemID2UserID, UserID)={ edge_index=[2, 810128] }
-            )
+        ---------
+        >>> from freerec.data.datasets import Gowalla_m1
+        >>> from freerec.data.tags import USER, ITEM, ID
+        >>> basepipe = Gowalla_m1("../data")
+        >>> fields = basepipe.fields
+        >>> graph = basepipe.to_heterograph(
+        ...    ((USER, ID), None, (ITEM, ID)),
+        ...    ((ITEM, ID), None, (USER, ID))
+        ... )
+        >>> graph
+        HeteroData(
+            UserID={ x=[29858, 0] },
+            ItemID={ x=[40981, 0] },
+            (UserID, UserID2ItemID, ItemID)={ edge_index=[2, 810128] },
+            (ItemID, ItemID2UserID, UserID)={ edge_index=[2, 810128] }
+        )
         """
+
         # check mode and raise warning if not in 'train' mode
         if self.mode != 'train':
             warnLogger(f"Convert the datapipe for {self.mode} to graph. Make sure that this is intentional ...")
@@ -117,10 +129,10 @@ class BaseSet(dp.iter.IterDataPipe):
         srcs = [self.fields[src] for src in srcs]
         dsts = [self.fields[dst] for dst in dsts]
         nodes = set(srcs + dsts)
-        edges = self.listmap(
+        edges = list(map(
             lambda src, edge, dst: edge if edge else f"{src.name}2{dst.name}",
             srcs, edges, dsts
-        )
+        ))
         data = {node.name: [] for node in nodes}
         for chunk in self:
             for node in nodes:
@@ -145,58 +157,76 @@ class BaseSet(dp.iter.IterDataPipe):
         dst: Tuple[FieldTags] = (ITEM, ID),
         edge_type: Optional[str] = None
     ) -> HeteroData:
-        """Convert datapipe to a bipartite graph.
+        """
+        Convert datapipe to a bipartite graph.
 
-        Args:
-            src (Tuple[FieldTags]): Source node.
-            dst (Tuple[FieldTags]): Destination node.
-            edge_type (Optional[str]): The name of the edge. `src.name2dst.name` will be specified if `edge_type` is `None`.
-
-        Notes:
-            Warning will be raised if current mode is not 'train' !
+        Parameters:
+        ----------
+        src: Tuple[FieldTags] 
+            Source node.
+        dst: Tuple[FieldTags] 
+            Destination node.
+        edge_type: str, optional 
+            The name of the edge. `src.name2dst.name` will be specified if `edge_type` is `None`.
 
         Returns:
-            HeteroData: The resulting bipartite graph.
+        --------
+        HeteroData:
+            The resulting heterograph, with the requested edges and nodes.
+
+        Notes:
+        ------
+        A warning will be raised if the current mode is not 'train'!
 
         Examples:
-            >>> from freerec.data.datasets import Gowalla_m1
-            >>> from freerec.data.tags import USER, ITEM, ID
-            >>> basepipe = Gowalla_m1("../data")
-            >>> fields = basepipe.fields
-            >>> graph = basepipe.to_bigraph(
-            ...    (USER, ID), (ITEM, ID)
-            ... )
-            >>> graph
-            HeteroData(
-                UserID={ x=[29858, 0] },
-                ItemID={ x=[40981, 0] },
-                (UserID, UserID2ItemID, ItemID)={ edge_index=[2, 810128] }
-            )
+        ---------
+        >>> from freerec.data.datasets import Gowalla_m1
+        >>> from freerec.data.tags import USER, ITEM, ID
+        >>> basepipe = Gowalla_m1("../data")
+        >>> fields = basepipe.fields
+        >>> graph = basepipe.to_bigraph(
+        ...    (USER, ID), (ITEM, ID)
+        ... )
+        >>> graph
+        HeteroData(
+            UserID={ x=[29858, 0] },
+            ItemID={ x=[40981, 0] },
+            (UserID, UserID2ItemID, ItemID)={ edge_index=[2, 810128] }
+        )
         """
         return self.to_heterograph((src, edge_type, dst))
    
     def to_graph(self, src: Tuple[FieldTags], dst: Tuple[FieldTags]) -> Data:
-        """Convert datapipe to a homogeneous graph.
+        """
+        Convert datapipe to a homogeneous graph.
 
         Parameters:
-            src: Tuple[FieldTags]
-                Source node.
-            dst: Tuple[FieldTags]
-                Destination node.
+        ----------
+        src: Tuple[FieldTags]
+            Source node.
+        dst: Tuple[FieldTags]
+            Destination node.
+
+        Returns:
+        --------
+        HeteroData:
+            The resulting heterograph, with the requested edges and nodes.
 
         Notes:
-            Warning will be raised if current mode is not 'train' !
+        ------
+        A warning will be raised if current mode is not 'train' !
 
         Examples:
-            >>> from freerec.data.datasets import Gowalla_m1
-            >>> from freerec.data.tags import USER, ITEM, ID
-            >>> basepipe = Gowalla_m1("../data")
-            >>> fields = basepipe.fields
-            >>> graph = basepipe.to_graph(
-            ...    fields[USER, ID], fields[ITEM, ID],
-            ... )
-            >>> graph
-            Data(edge_index=[2, 1620256], x=[70839, 0])
+        --------
+        >>> from freerec.data.datasets import Gowalla_m1
+        >>> from freerec.data.tags import USER, ITEM, ID
+        >>> basepipe = Gowalla_m1("../data")
+        >>> fields = basepipe.fields
+        >>> graph = basepipe.to_graph(
+        ...    fields[USER, ID], fields[ITEM, ID],
+        ... )
+        >>> graph
+        Data(edge_index=[2, 1620256], x=[70839, 0])
         """
         graph = self.to_heterograph((src, None, dst)).to_homogeneous()
         graph.edge_index = to_undirected(graph.edge_index)
@@ -217,25 +247,34 @@ class BaseSet(dp.iter.IterDataPipe):
 
 
 class RecDataSet(BaseSet):
-    """ RecDataSet provides a template for specific datasets.
+    """ 
+    RecDataSet provides a template for specific datasets.
 
-    Args:
-        root (str): The path storing datasets.
-        filename (str, optional): The dirname of the dataset. If `None`, sets the classname as the filename.
-        download (bool): Download the dataset from a URL.
+    Parameters:
+    -----------
+    root: str
+        The path storing datasets.
+    filename: str, optional 
+        The dirname of the dataset. If `None`, sets the classname as the filename.
+    download: bool 
+        Download the dataset from a URL.
 
     Attributes:
-        _cfg (Config[str, Field]): Includes fields of each column.
-        DEFAULT_CHUNK_SIZE (int, default 51200): Chunk size for saving.
-        VALID_IS_TEST (bool): The validset and testset are the same one sometimes.
+    -----------
+    _cfg: Config[str, Field] 
+        Includes fields of each column.
+    DEFAULT_CHUNK_SIZE: int, default 51200 
+        Chunk size for saving.
+    VALID_IS_TEST: bool 
+        The validset and testset are the same one sometimes.
 
     Notes:
-        All datasets that inherit RecDataSet should define the class variable `_cfg` before instantiation.
-        Generally speaking, the dataset will be split into:
-            - trainset
-            - validset
-            - testset
-
+    ------
+    All datasets that inherit RecDataSet should define the class variable `_cfg` before instantiation.
+    Generally speaking, the dataset will be split into:
+        - trainset
+        - validset
+        - testset
     """
 
     DEFAULT_CHUNK_SIZE = 51200 # chunk size
@@ -342,14 +381,19 @@ class RecDataSet(BaseSet):
             return False
 
     def write_pickle(self, data, count: int) -> None:
-        """Save pickle format data.
+        """
+        Save pickle format data.
 
-        Args:
-            data: The data to be saved in pickle format.
-            count: The count of the data chunks.
+        Parameters:
+        -----------
+        data: Any
+            The data to be saved in pickle format.
+        count: int
+            The count of the data chunks.
 
         Returns:
-            None.
+        --------
+        None.
         """
         file_ = os.path.join(
             self.path,
@@ -359,37 +403,49 @@ class RecDataSet(BaseSet):
         export_pickle(data, file_)
 
     def read_pickle(self, file_: str):
-        """Load pickle format data.
+        """
+        Load pickle format data.
 
-        Args:
-            file_: The file path to load the pickle format data.
+        Parameters:
+        -----------
+        file_: str 
+            The file path to load the pickle format data.
 
         Returns:
-            The loaded pickle format data.
+        --------
+        The loaded pickle format data.
         """
         return import_pickle(file_)
 
     def row_processer(self, row):
         """Process a row of raw data.
 
-        Args:
-            row: A row of raw data.
+        Parameters:
+        -----------
+        row: Any
+            A row of raw data.
 
         Returns:
-            A processed row of data.
+        --------
+        A processed row of data.
         """
         return [field.caster(val) for val, field in zip(row, self.fields)]
 
     def raw2data(self) -> dp.iter.IterableWrapper:
-        """Process raw data.
-
-        This method should be implemented by subclasses.
-
-        Raises:
-            NotImplementedError: Subclasses should implement this method.
+        """
+        Process raw data.
 
         Returns:
-            A processed data.
+        --------
+        A processed data.
+
+        Raises:
+        -------
+        NotImplementedError: Subclasses should implement this method.
+
+        Notes:
+        ------
+        This method should be implemented by subclasses.
         """
         raise NotImplementedError(f"{self.__class__.__name__}.raw2data() method should be implemented ...")
 
@@ -406,12 +462,12 @@ class RecDataSet(BaseSet):
         infoLogger(f"[{self.__class__.__name__}] >>> {count} chunks done")
 
     def pickle2data(self):
-        """Read pickle data in chunks.
-
+        """
         Read the pickle data and return it as a generator.
 
         Yields:
-            A chunk of the pickle data.
+        -------
+        A chunk of the pickle data.
         """
         datapipe = dp.iter.FileLister(
             os.path.join(
@@ -427,16 +483,17 @@ class RecDataSet(BaseSet):
 
     @timemeter("DataSet/compile")
     def compile(self):
-        """Check current dataset and transformations.
+        """
+        Check current dataset and transformations.
 
         Flows:
-            1. Check whether the transformation has been fitted:
-                - `True`: Skip.
-                - `False`: Fit the total trainset and the `SPARSE` fields in valid|testset
-                    to avoid unseen features. This operation will not cause information leakage.
-                
-            2. Convert each set into pickle format for fast loading.
-
+        ------
+        1. Check whether the transformation has been fitted:
+            - `True`: Skip.
+            - `False`: Fit the total trainset and the `SPARSE` fields in valid|testset
+                to avoid unseen features. This operation will not cause information leakage.
+            
+        2. Convert each set into pickle format for fast loading.
         """
 
         def fit_transform(*tags):
@@ -509,7 +566,8 @@ class _Row2Pairer(dp.iter.IterDataPipe):
 
 
 class ImplicitRecSet(RecDataSet):
-    """Implicit feedback data.
+    """
+    Implicit feedback data.
     The data should be collected in the order of users; that is,
     each row represents a user's interacted items.
     """

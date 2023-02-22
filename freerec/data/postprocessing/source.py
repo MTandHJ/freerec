@@ -17,11 +17,15 @@ __all__ = [
 
 
 class RandomSource(BaseProcessor):
-    """DataPipe that generates random items from given source.
+    """
+    DataPipe that generates random items from given source.
 
-    Args:
-        source (Iterable): The source data to start.
-        datasize (int): Datasize.
+    Parameters:
+    -----------
+    source: Iterable 
+        The source data to start.
+    datasize: int 
+        Datasize.
     """
 
     def __init__(
@@ -40,11 +44,15 @@ class RandomSource(BaseProcessor):
 
 
 class OrderedSource(BaseProcessor):
-    """DataPipe that generates ordered items from given source.
+    """
+    DataPipe that generates ordered items from given source.
 
-    Args:
-        source (Sequence): The source data to start.
-        datasize (int): Datasize.
+    Parameters:
+    -----------
+    source: Sequence 
+        The source data to start.
+    datasize: int 
+        Datasize.
     """
 
     def __init__(self, source: Sequence) -> None:
@@ -58,11 +66,15 @@ class OrderedSource(BaseProcessor):
 
 
 class RandomIDs(RandomSource):
-    """DataPipe that generates random IDs according to SparseField.
+    """
+    DataPipe that generates random IDs according to SparseField.
 
-    Args:
-        field SparseField: ID values to select from.
-        datasize (int): Number of IDs to generate.
+    Parameters:
+    -----------
+    field: SparseField 
+        ID values to select from.
+    datasize: int 
+        Number of IDs to generate.
     """
 
     def __init__(
@@ -73,12 +85,13 @@ class RandomIDs(RandomSource):
 
 
 class OrderedIDs(OrderedSource):
-    """DataPipe that generates ordered IDs.
+    """
+    DataPipe that generates ordered IDs.
 
-    Args:
-        low (Optional[int]): Lowest possible ID value. Default: None.
-        high (Optional[int]): Highest possible ID value. Default: None.
-        ids (Union[None, SparseField, Iterable]): ID values to select from. Default: None.
+    Parameters:
+    -----------
+    field: SparseField 
+        ID values to select from.
     """
 
     def __init__(self, field: SparseField) -> None:
@@ -86,10 +99,13 @@ class OrderedIDs(OrderedSource):
 
 
 class DummySource(OrderedSource):
-    """DataPipe that generates dummy data.
+    """
+    DataPipe that generates dummy data.
 
-    Args:
-        datasize (int): Number of data to generate.
+    Parameters:
+    -----------
+    datasize: int 
+        Number of data to generate.
     """
     def __init__(self, datasize: int) -> None:
         super().__init__(range(datasize))
@@ -97,11 +113,15 @@ class DummySource(OrderedSource):
 
 @dp.functional_datapipe("dummy_")
 class _DummySource(DummySource):
-    """Functional DataPipe wrapper for DummySource.
+    """
+    Functional DataPipe wrapper for DummySource.
 
-    Args:
-        source_dp (dp.iter.IterDataPipe): The source DataPipe (No use here).
-        datasize (int): Number of data to generate.
+    Parameters:
+    -----------
+    source_dp: dp.iter.IterDataPipe 
+        The source DataPipe (No use here).
+    datasize: int 
+        Number of data to generate.
     """
     def __init__(self, source_dp: dp.iter.IterDataPipe, datasize: int) -> None:
         super().__init__(datasize)

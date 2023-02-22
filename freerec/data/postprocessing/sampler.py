@@ -17,12 +17,17 @@ __all__ = ['TrainUniformSampler', 'ValidTripleter', 'TestTripleter']
 
 @dp.functional_datapipe("train_uniform_sampling_")
 class TrainUniformSampler(Postprocessor):
-    """A functional datapipe for uniformly sampling users and their negatives.
+    """
+    A functional datapipe for uniformly sampling users and their negatives.
 
-    Args:
-        source_dp (dp.iter.IterableWrapper): A datapipe that yields users.
-        dataset (RecDataSet): The dataset object that contains field objects.
-        num_negatives (int): The number of negative samples for each piece of data.
+    Parameters:
+    -----------
+    source_dp: dp.iter.IterableWrapper 
+        A datapipe that yields users.
+    dataset: RecDataSet 
+        The dataset object that contains field objects.
+    num_negatives: int 
+        The number of negative samples for each piece of data.  
     """
 
     def __init__(
@@ -38,10 +43,13 @@ class TrainUniformSampler(Postprocessor):
 
     @timemeter("UniformSampler/prepare")
     def prepare(self, dataset: RecDataSet):
-        """Prepare the data before sampling.
+        """
+        Prepare the data before sampling.
 
-        Args:
-            dataset (RecDataSet): The dataset object that contains field objects.
+        Parameters:
+        -----------
+        dataset: RecDataSet 
+            The dataset object that contains field objects.
         """
         self.posItems = [set() for _ in range(self.User.count)]
         self.negative_pool = self._sample_from_all(dataset.datasize * self.num_negatives)
@@ -53,13 +61,17 @@ class TrainUniformSampler(Postprocessor):
         self.posItems = [tuple(items) for items in self.posItems]
 
     def _sample_from_all(self, pool_size: int = 51200):
-        """Randomly sample items from all items.
+        """
+        Randomly sample items from all items.
 
-        Args:
-            pool_size (int): The number of items to be sampled.
+        Parameters:
+        -----------
+        pool_size: int 
+            The number of items to be sampled.
 
         Returns:
-            Generator: A generator that yields sampled items.
+        --------
+        Generator: A generator that yields sampled items.
         """
         allItems = self.Item.ids
         while 1:
@@ -67,13 +79,18 @@ class TrainUniformSampler(Postprocessor):
                 yield item
 
     def _sample_from_pool(self, seen: Tuple):
-        """Randomly sample a negative item from the pool of all items.
+        """
+        Randomly sample a negative item from the pool of all items.
 
-        Args:
-            seen (set): A set of seen items.
+        Parameters:
+        -----------
+        seen: set 
+            A set of seen items.
 
         Returns:
-            int: A negative item that has not been seen.
+        --------
+        negative: int 
+            A negative item that has not been seen.
         """
         negative = next(self.negative_pool)
         while negative in seen:
@@ -81,24 +98,33 @@ class TrainUniformSampler(Postprocessor):
         return negative
 
     def _sample_pos(self, user: int) -> int:
-        """Randomly sample a positive item for a user.
+        """
+        Randomly sample a positive item for a user.
 
-        Args:
-            user (int): A user index.
+        Parameters:
+        -----------
+        user: int 
+            A user index.
 
         Returns:
-            int: A positive item that the user has interacted with.
+        --------
+        positive: int 
+            A positive item that the user has interacted with.
         """
         return random.choice(self.posItems[user])
 
     def _sample_neg(self, user: int) -> List[int]:
         """Randomly sample negative items for a user.
 
-        Args:
-            user (int): A user index.
+        Parameters:
+        ----------
+        user: int 
+            A user index.
 
         Returns:
-            List[int]: A list of negative items that the user has not interacted with.
+        --------
+        negatives: List[int] 
+            A list of negative items that the user has not interacted with.
         """
         seen = self.posItems[user]
         return self.listmap(self._sample_from_pool, [seen] * self.num_negatives)
@@ -110,8 +136,8 @@ class TrainUniformSampler(Postprocessor):
 
 @dp.functional_datapipe("valid_triplet_")
 class ValidTripleter(Postprocessor):
-    """A datapipe that yields (user, unseen, seen) triplets.
-
+    """
+    A datapipe that yields (user, unseen, seen) triplets.
     The ValidTripleter postprocessor takes a RecDataSet as input,
     and yields (user, unseen, seen) triplets. The unseen and seen sets contain the IDs of
     the items that the user has not seen and seen, respectively. Whether to use validation
@@ -122,13 +148,15 @@ class ValidTripleter(Postprocessor):
         self, source_dp: dp.iter.IterDataPipe,
         dataset: RecDataSet
     ) -> None:
-        """Initializes a new instance of the Tripleter postprocessor.
-
-        Args:
-            source_dp (RecDatapipe or Postprocessor): A RecDatapipe or another Postprocessor
-                that yields dicts of NumPy arrays.
-            dataset (RecDataSet): The dataset that provides the data source.
-
+        """
+        Initializes a new instance of the Tripleter postprocessor.
+        
+        Parameters:
+        -----------
+        source_dp: RecDatapipe or Postprocessor 
+            A RecDatapipe or another Postprocessor that yields dicts of NumPy arrays.
+        dataset: RecDataSet 
+            The dataset that provides the data source.
         """
         super().__init__(source_dp)
 
@@ -139,11 +167,13 @@ class ValidTripleter(Postprocessor):
 
     @timemeter("ValidTripleter/prepare")
     def prepare(self, dataset: RecDataSet):
-        """Prepares the dataset by building sets of seen items for each user.
+        """
+        Prepares the dataset by building sets of seen items for each user.
 
-        Args:
-            dataset (RecDataSet): The dataset that provides the data source.
-
+        Parameters:
+        -----------
+        dataset: RecDataSet 
+            The dataset that provides the data source.
         """
         self.seenItems = [set() for _ in range(self.User.count)]
         self.unseenItems = [set() for _ in range(self.User.count)]
@@ -164,28 +194,34 @@ class ValidTripleter(Postprocessor):
         self.unseenItems = [tuple(items) for items in self.unseenItems]
 
     def __iter__(self):
-        """Yields (user, unseen, seen) triplets for each user in the data source."""
+        """
+        Yields:
+        -------
+        user, unseen, seen: int, List[int], List[int]
+            Triplets for each user in the data source.
+        """
         for user in self.source:
             yield user, self.unseenItems[user], self.seenItems[user]
 
 
 @dp.functional_datapipe("test_triplet_")
 class TestTripleter(ValidTripleter):
-    """A datapipe that yields (user, unseen, seen) triplets from the test set.
-
+    """
+    A datapipe that yields (user, unseen, seen) triplets from the test set.
     The TestTriplet postprocessor takes a RecDataSet as input,
     and yields (user, unseen, seen) triplets from the test set. The unseen and seen sets contain the IDs of
     the items that the user has not seen and seen, respectively.
-
     """
 
     @timemeter("TestTripleter/prepare")
     def prepare(self, dataset: RecDataSet):
-        """Prepares the dataset by building sets of seen items for each user.
+        """
+        Prepares the dataset by building sets of seen items for each user.
 
-        Args:
-            dataset (RecDataSet): The dataset that provides the data source.
-
+        Parameters:
+        -----------
+        dataset: RecDataSet 
+            The dataset that provides the data source.
         """
         self.seenItems = [set() for _ in range(self.User.count)]
         self.unseenItems = [set() for _ in range(self.User.count)]
