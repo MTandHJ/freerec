@@ -37,8 +37,7 @@ COLOR = {
 
 
 class AverageMeter:
-
-    """
+    r"""
     Computes and stores the average and current value of a metric.
 
     Parameters:
@@ -84,7 +83,7 @@ class AverageMeter:
         self.active = False
 
     def update(self, val: float, n: int = 1, mode: str = "mean") -> None:
-        """
+        r"""
         Updates the meter.
 
         Parameters:
@@ -107,7 +106,7 @@ class AverageMeter:
         self.avg = self.sum / self.count
 
     def step(self) -> str:
-        """
+        r"""
         Saves the average value and resets the meter.
 
         Returns:
@@ -121,7 +120,7 @@ class AverageMeter:
         return info
 
     def check(self, *values):
-        """
+        r"""
         Check the metric value.
 
         Parameters:
@@ -145,7 +144,7 @@ class AverageMeter:
         return val.item()
 
     def plot(self, freq: int = 1) -> None:
-        """
+        r"""
         Plots the meter values.
         
         Parameters:
@@ -163,7 +162,7 @@ class AverageMeter:
         self.fp.set_title(y=.98)
 
     def save(self, path: str, prefix: str = '') -> None:
-        """
+        r"""
         Save the curves as a PNG file.
 
         Parameters:
@@ -183,7 +182,7 @@ class AverageMeter:
         return filename
 
     def argbest(self, freq: int = 1) -> float:
-        """
+        r"""
         Return the index and value of the best result in history.
 
         Parameters:
@@ -211,7 +210,7 @@ class AverageMeter:
             raise ValueError("caster should be `min' or `max' ...")
 
     def __str__(self):
-        """
+        r"""
         Return the string representation of this object.
 
         Returns:
@@ -223,7 +222,7 @@ class AverageMeter:
         return fmtstr.format(**self.__dict__)
 
     def __call__(self, *values, n: int = 1, mode: str = "mean")  -> None:
-        """
+        r"""
         Add a new data point to the history.
 
         Parameters:
@@ -246,11 +245,11 @@ class AverageMeter:
 class Monitor(Config):
 
     def state_dict(self) -> Dict:
-        """
+        r"""
         Return the state dictionary of monitors.
 
-        Returns
-        -------
+        Returns:
+        --------
         state_dict : Dict
             The state dictionary that contains the history of all monitors.
         """
@@ -264,10 +263,11 @@ class Monitor(Config):
         return state_dict
 
     def load_state_dict(self, state_dict: Dict, strict: bool = False):
-        """Load the history of monitors from the given state dictionary.
+        r"""
+        Load the history of monitors from the given state dictionary.
 
-        Parameters
-        ----------
+        Parameters:
+        -----------
         state_dict : Dict
             The state dictionary that contains the history of monitors.
         strict : bool, optional (default=False)
@@ -280,11 +280,11 @@ class Monitor(Config):
                     meter.history = state_dict[prefix][metric].get(meter.name, meter.history)
 
     def save(self, path: str, filename: str = 'monitors.pickle'):
-        """
+        r"""
         Save the current state of the monitors to disk.
 
-        Parameters
-        ----------
+        Parameters:
+        -----------
         path : str
             The path to the directory to save the state.
         filename : str, optional (default='monitors.pickle')
@@ -294,13 +294,13 @@ class Monitor(Config):
         export_pickle(self.state_dict(), file_)
 
     def write(self, path: str):
-        """Write the history of monitors to Tensorboard.
+        r"""
+        Write the history of monitors to Tensorboard.
 
-        Parameters
-        ----------
+        Parameters:
+        -----------
         path : str
             The path to the directory to write the history to.
-
         """
         with SummaryWriter(path) as writer:
             monitors: Dict[str, List[AverageMeter]]
@@ -319,7 +319,7 @@ def set_logger(
     path: str,
     log2file: bool = True, log2console: bool = True
 ) -> None:
-    """
+    r"""
     Set up a logger instance.
 
     Parameters:
@@ -360,11 +360,11 @@ def set_logger(
     return logger
 
 def set_color(device: Union[int, str]):
-    """
+    r"""
     Set a color for the output of the specified device.
 
     Parameters:
-    ---
+    -----------
     device : Union[int, str]
         The device identifier, which can be an integer or string.
     """
@@ -374,7 +374,7 @@ def set_color(device: Union[int, str]):
         pass
 
 def infoLogger(words: str):
-    """
+    r"""
     Log an info-level message.
 
     Parameters:
@@ -392,7 +392,7 @@ def infoLogger(words: str):
     return words
 
 def debugLogger(words: str):
-    """
+    r"""
     Log a debug-level message.
 
     Parameters:
@@ -409,7 +409,7 @@ def debugLogger(words: str):
     return words
 
 def warnLogger(warn: str):
-    """
+    r"""
     Log a warning-level message.
 
     Parameters:
@@ -427,15 +427,16 @@ def warnLogger(warn: str):
     return words
 
 def timemeter(prefix=""):
-    """A decorator to measure the running time of a function.
+    r"""
+    A decorator to measure the running time of a function.
 
-    Parameters
-    ----------
+    Parameters:
+    -----------
     prefix : str, optional
         A prefix to be displayed in the logging message, by default "".
 
-    Returns
-    -------
+    Returns:
+    --------
     wrapper : function
         The decorated function.
     """
@@ -452,10 +453,11 @@ def timemeter(prefix=""):
     return decorator
 
 def mkdirs(*paths: str) -> None:
-    """Create directories.
+    r"""
+    Create directories.
 
-    Parameters
-    ----------
+    Parameters:
+    -----------
     *paths : str
         Paths of directories to create.
     """
@@ -466,10 +468,11 @@ def mkdirs(*paths: str) -> None:
             pass
 
 def activate_benchmark(benchmark: bool) -> None:
-    """Activate or deactivate the cudnn benchmark mode.
+    r"""
+    Activate or deactivate the cudnn benchmark mode.
 
-    Parameters
-    ----------
+    Parameters:
+    -----------
     benchmark : bool
         Whether to activate the benchmark mode.
     """
@@ -482,16 +485,16 @@ def activate_benchmark(benchmark: bool) -> None:
         cudnn.benchmark, cudnn.deterministic = True, False
 
 def set_seed(seed: int) -> int:
-    """
+    r"""
     Set the seed for the random number generators.
 
-    Parameters
-    ----------
+    Parameters:
+    -----------
     seed : int
         The seed to set. If seed is -1, a random seed between 0 and 2048 will be generated.
 
-    Returns
-    -------
+    Returns:
+    --------
     seed : int
         The actual seed used.
     """

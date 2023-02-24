@@ -13,7 +13,7 @@ def get_csr_matrix(
     rowName: str, colName: str, valName: str,
     shape: Optional[Tuple[int, int]] = None
 ) -> sp.csr_array:
-    """Compressed Sparse Row matrix
+    r"""Compressed Sparse Row matrix
     Advantages of the CSR format
       - efficient arithmetic operations CSR + CSR, CSR * CSR, etc.
       - efficient row slicing
@@ -37,7 +37,7 @@ def get_csc_matrix(
     rowName: str, colName: str, valName: str,
     shape: Optional[Tuple[int, int]] = None
 ) -> sp.csc_array:
-    """Compressed Sparse Column matrix
+    r"""Compressed Sparse Column matrix
     Advantages of the CSC format
         - efficient arithmetic operations CSC + CSC, CSC * CSC, etc.
         - efficient column slicing
@@ -55,7 +55,7 @@ def get_coo_matrix(
     rowName: str, colName: str, valName: str,
     shape: Optional[Tuple[int, int]] = None
 ) -> sp.coo_array:
-    """A sparse matrix in COOrdinate format.
+    r"""A sparse matrix in COOrdinate format.
     Also known as the 'ijv' or 'triplet' format.
     Advantages of the COO format
         - facilitates fast conversion among sparse formats
@@ -75,7 +75,7 @@ def get_lil_matrix(
     rowName: str, colName: str, valName: str,
     shape: Optional[Tuple[int, int]] = None
 ) -> sp.lil_array:
-    """Row-based list of lists sparse matrix
+    r"""Row-based list of lists sparse matrix
     Advantages of the LIL format
         - supports flexible slicing
         - changes to the matrix sparsity structure are efficient
@@ -93,7 +93,7 @@ def get_dok_matrix(
     rowName: str, colName: str, valName: str,
     shape: Optional[Tuple[int, int]] = None
 ) -> sp.dok_array:
-    """Dictionary Of Keys based sparse matrix.
+    r"""Dictionary Of Keys based sparse matrix.
     This is an efficient structure for constructing sparse
     matrices incrementally.
     """

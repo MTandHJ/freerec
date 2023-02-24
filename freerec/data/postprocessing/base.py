@@ -10,7 +10,7 @@ __all__ = ['BaseProcessor', 'Postprocessor']
 
 
 class BaseProcessor(dp.iter.IterDataPipe):
-    """
+    r"""
     A base processor that defines the property of fields.
 
     Parameters:
@@ -41,7 +41,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
 
     @fields.setter
     def fields(self, fields: Union[None, Field, Iterable] = None):
-        """
+        r"""
         Set fields.
 
         Parameters:
@@ -64,7 +64,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
  
     @staticmethod
     def listmap(func: Callable, *iterables):
-        """
+        r"""
         Apply a function to multiple iterables and return a list.
 
         Parameters:
@@ -81,7 +81,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
    
 
 class Postprocessor(BaseProcessor):
-    """
+    r"""
     A post-processor that wraps another IterDataPipe object.
 
     Parameters:

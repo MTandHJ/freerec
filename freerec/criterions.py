@@ -11,7 +11,7 @@ __all__ = ["BaseCriterion", "BCELoss", "MSELoss", "L1Loss"]
 
 
 class BaseCriterion(nn.Module):
-    """
+    r"""
     Criterion.
 
     Parameters:
@@ -38,7 +38,7 @@ class BaseCriterion(nn.Module):
 
     @staticmethod
     def regularize(params: Union[torch.Tensor, Iterable[torch.Tensor]], rtype: str = 'l2'):
-        """
+        r"""
         Add regularization for given parameters.
 
         Parameters:
@@ -73,7 +73,7 @@ class BCELoss4Logits(BaseCriterion):
 class BPRLoss(BaseCriterion):
 
     def forward(self, pos_scores: torch.Tensor, neg_scores: torch.Tensor):
-        """
+        r"""
         Parameters:
         -----------
         pos_scores: torch.Tensor

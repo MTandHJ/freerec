@@ -5,27 +5,29 @@ from typing import List
 import math
 import numpy as np
 
+
 __all__ = ['Identifier', 'Indexer', 'StandardScaler', 'MinMaxScaler']
 
 
 class TransformError(Exception): ...
 
+
 class Identifier:
-    """
+    r"""
     Transform X into X identically.
 
     Parameters:
-    ----------
+    -----------
     X : Any
         The input data to be transformed.
 
     Returns:
-    -------
+    --------
     Any
         The transformed data.
 
     Examples:
-    --------
+    ---------
     >>> import torcharrow.dtypes as dt
     >>> col = [3, 2, 1]
     >>> transformer = Identifier()
@@ -43,8 +45,9 @@ class Identifier:
     def transform(self, col: List) -> List:
         return col
 
+
 class Indexer(Identifier):
-    """
+    r"""
     Transform sparse items into indices.
 
     classes: set
@@ -74,14 +77,14 @@ class Indexer(Identifier):
     def reset(self):
         self.classes = set()
         self.maper = None
-        self.ids = None
+        self.enums = None
 
     def partial_fit(self, col: List):
         self.classes |= set(col)
         ordered = sorted(self.classes)
         self.count = len(ordered)
-        self.ids = tuple(range(self.count))
-        self.maper = dict(zip(ordered, self.ids))
+        self.enums = tuple(range(self.count))
+        self.maper = dict(zip(ordered, self.enums))
 
     def _map(self, x):
         return self.maper[x]
@@ -94,7 +97,7 @@ class Indexer(Identifier):
 
 
 class StandardScaler(Identifier):
-    """
+    r"""
     Normalize dense items using the standard scaler.
 
     Attributes:
@@ -143,8 +146,9 @@ class StandardScaler(Identifier):
         else:
             raise TransformError("StandardScaler should be (partially) fitted before using ...")
 
+
 class MinMaxScaler(Identifier):
-    """
+    r"""
     Scale data to the range [0, 1].
 
     Attributes:

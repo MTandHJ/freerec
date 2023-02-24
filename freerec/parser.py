@@ -11,7 +11,7 @@ from .utils import (
 )
 
 
-"""
+r"""
 A configuration module for a Recommender System.
 
 Templates:
@@ -37,7 +37,7 @@ CORE_CONFIG : Config
 
 
 Configurations:
---------------
+---------------
 BENCHMARK : bool
     If True, activate cudnn.benchmark.
 SEED : int
@@ -190,11 +190,11 @@ class Parser(Config):
         self.parser.add_argument("-m", "--description", type=str, default=CONFIG.description)
 
     def add_argument(self, *args: str, **kwargs):
-        """
+        r"""
         Add an argument to the parser.
 
-        Parameters
-        ----------
+        Parameters:
+        -----------
         *args : str
             The name(s) of the argument.
         **kwargs
@@ -208,10 +208,11 @@ class Parser(Config):
         self.parser.add_argument(*args, **kwargs)
 
     def set_defaults(self, **kwargs):
-        """Set the default values for the arguments.
+        r"""
+        Set the default values for the arguments.
 
-        Parameters
-        ----------
+        Parameters:
+        -----------
         **kwargs
             The default values to set.
         """
@@ -219,16 +220,17 @@ class Parser(Config):
 
     @timemeter("Parser/load")
     def load(self, args: ArgumentParser):
-        """Load config.yaml.
+        r"""
+        Load config.yaml.
 
-        Parameters
-        ----------
+        Parameters:
+        -----------
         args : argparse.ArgumentParser
             An instance of argparse.ArgumentParser containing the arguments
             passed to the script.
 
-        Raises
-        ------
+        Raises:
+        -------
         KeyError
             If the parameter key is not recognized.
         """
@@ -244,7 +246,7 @@ class Parser(Config):
 
     @timemeter("Parser/compile")
     def compile(self):
-        """
+        r"""
         Generate the configuration file according to the specified settings.
 
         Flows:
@@ -365,16 +367,16 @@ class CoreParser(Config):
 
     @timemeter("Parser/load")
     def load(self, args: ArgumentParser) -> None:
-        """
+        r"""
         Load configuration file.
 
-        Parameters
-        ----------
+        Parameters:
+        -----------
         args : ArgumentParser
             The command line arguments.
 
-        Returns
-        -------
+        Returns:
+        --------
         None
         """
         with open(args.config, encoding="UTF-8", mode='r') as f:
@@ -388,7 +390,7 @@ class CoreParser(Config):
 
     @timemeter("CoreParser/compile")
     def compile(self) -> None:
-        """
+        r"""
         Generate config file according to settings.
 
         Flows:
@@ -419,7 +421,7 @@ class CoreParser(Config):
         self.readme(self.CORE_LOG_PATH)
 
     def readme(self, path: str, mode: str = "w") -> None:
-        """
+        r"""
         Add README.md to the given path.
 
         Parameters:

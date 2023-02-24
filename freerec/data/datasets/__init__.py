@@ -1,9 +1,10 @@
 
 
 from .base import *
-from .criteo import *
-from .avazu import *
-from .movielens import *
-from .gowalla import *
-from .yelp import *
-from .amazon import *
+from .general.base import *
+from .sequential.base import *
+from .session.base import *
+from .context.base import *
+from .knowledge.base import *
+
+from . import general, sequential, session, context, knowledge

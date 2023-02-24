@@ -11,7 +11,7 @@ T = TypeVar('T')
 class DataSetLoadingError(Exception): ...
 
 def safe_cast(val: T, dest_type: Callable[[T], T], default: T) -> T:
-    """
+    r"""
     Cast the value to the specified type.
 
     Parameters:
@@ -53,17 +53,13 @@ def safe_cast(val: T, dest_type: Callable[[T], T], default: T) -> T:
         )
 
 
-def collate_list(batch: List):
-    return list(zip(*batch))
-
-
 def download_from_url(
     url: str, root: str = '.', filename: Optional[str] = None, 
     overwrite: bool = False, retries=5, 
     sha1_hash: Optional[str] = None, verify_ssl: bool = True, 
     log: bool = True
 ):
-    """
+    r"""
     Download a file from a given URL.
 
     Codes borrowed from dgl.data.utils
@@ -145,7 +141,7 @@ def download_from_url(
 
 
 def extract_archive(file_, target_dir, overwrite=False):
-    """
+    r"""
     Extract files from an archive.
 
     Codes borrowed from dgl/data/utils.py
@@ -188,7 +184,7 @@ def extract_archive(file_, target_dir, overwrite=False):
 
 
 def check_sha1(filename, sha1_hash):
-    """
+    r"""
     Check if the SHA1 hash of a file matches the expected hash.
 
     Parameters:

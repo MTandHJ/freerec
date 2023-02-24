@@ -24,7 +24,7 @@ TRANSFORMATIONS = {
 
 
 class Field(metaclass=abc.ABCMeta):
-    """
+    r"""
     Fielding data by column.
 
     Parametesr:
@@ -60,7 +60,7 @@ class Field(metaclass=abc.ABCMeta):
         self.data = data
 
     def add_tag(self, *tags: FieldTags) -> None:
-        """
+        r"""
         Add some tags.
 
         Parameters:
@@ -84,7 +84,7 @@ class Field(metaclass=abc.ABCMeta):
         return self.__tags
 
     def match(self, *tags: FieldTags):
-        """
+        r"""
         If current field matches the given tags, return True.
 
         Parametesr:
@@ -113,7 +113,7 @@ class Field(metaclass=abc.ABCMeta):
         self, data: Any = None,
         tags: Union[FieldTags, Iterable[FieldTags]] = tuple()
     ) -> 'BufferField':
-        """
+        r"""
         Return a new BufferField with the given or inherited data.
 
         Parameters:
@@ -127,13 +127,12 @@ class Field(metaclass=abc.ABCMeta):
         ------
         The tags will also be inherited.
         """
-        buffer_ = BufferField(data, tags)
-        buffer_.add_tag(*self.tags)
+        buffer_ = BufferField(data, tags, root=self)
         return buffer_
 
 
 class BufferField(Field):
-    """
+    r"""
     For buffering data, which should be re-created once the data changes.
     
     Parameters:
@@ -142,11 +141,14 @@ class BufferField(Field):
         Any column data.
     tags: Union[FieldTags, Iterable[FieldTags]] 
         Tags for filtering.
+    root: Field, optional
+        Inherit some attribuites from the root.
     """
 
     def __init__(
         self, data: Any, 
-        tags: Union[FieldTags, Iterable[FieldTags]] = tuple()
+        tags: Union[FieldTags, Iterable[FieldTags]] = tuple(),
+        *, root: Optional[Field] = None
     ) -> None:
         super().__init__(data, tags)
         self.data = data
@@ -154,6 +156,20 @@ class BufferField(Field):
             self.add_tag(tags)
         else:
             self.add_tag(*tags)
+        self.inherit(root)
+
+    def inherit(self, root: Union[None, 'BufferField', 'FieldModule']):
+        if root is None:
+            pass
+        elif root.match(SPARSE):
+            self.count = root.count
+            self.add_tag(*root.tags)
+        elif root.match(DENSE):
+            self.add_tag(*root.tags)
+        else:
+            raise ValueError(
+                f"root should be `None|BufferField|FieldMoudle' but {type(root)} received ..."
+            )
 
     def __getitem__(self, *args, **kwargs):
         return self.data.__getitem__(*args, **kwargs)
@@ -170,8 +186,9 @@ class BufferField(Field):
             self.data = self.data.to(device, dtype, non_blocking)
         return self
 
-    def to_csr(self, count: int) -> torch.Tensor:
-        """Convert List to CSR Tensor.
+    def to_csr(self) -> torch.Tensor:
+        r"""
+        Convert List to CSR Tensor.
 
         Notes:
         ------
@@ -186,12 +203,12 @@ class BufferField(Field):
             crow_indices=crow_indices,
             col_indices=col_indices,
             values=values,
-            size=(len(self.data), count) # B x Num of Items
+            size=(len(self.data), self.count) # B x Num of Items
         )
 
 
 class FieldModule(Field, torch.nn.Module):
-    """
+    r"""
     A module that represents a field of data.
 
     Attributes:
@@ -234,6 +251,8 @@ class FieldModule(Field, torch.nn.Module):
         self.transformer = TRANSFORMATIONS[transformer]() if isinstance(transformer, str) else transformer
         self.caster = partial(safe_cast, dest_type=dtype, default=na_value)
 
+        self.dimension: int
+
     @property
     def name(self) -> str:
         return self.__name
@@ -256,7 +275,7 @@ class FieldModule(Field, torch.nn.Module):
             self.__dtype = val
 
     def partial_fit(self, col) -> None:
-        """
+        r"""
         Updates the transformer with a new batch of data.
 
         Parameters:
@@ -271,7 +290,7 @@ class FieldModule(Field, torch.nn.Module):
         return self.transformer.partial_fit(col)
 
     def transform(self, col):
-        """
+        r"""
         Applies the transformer to a new batch of data.
 
         Parameters:
@@ -286,7 +305,7 @@ class FieldModule(Field, torch.nn.Module):
         return self.transformer.transform(col)
 
     def embed(self, dim: int, **kwargs):
-        """
+        r"""
         Embed the field values into a lower dimensional space.
 
         Parameters:
@@ -303,7 +322,7 @@ class FieldModule(Field, torch.nn.Module):
         raise NotImplementedError(f"{self.__class__.__name__}.embed() method should be implemented ...")
 
     def look_up(self, x: torch.Tensor) -> torch.Tensor:
-        """
+        r"""
         Look up embeddings.
 
         Args:
@@ -324,7 +343,7 @@ class FieldModule(Field, torch.nn.Module):
 
 
 class SparseField(FieldModule):
-    """ 
+    r""" 
     SparseField inherits from FieldModule and represents sparse features. 
     It is used to look up embeddings for categorical features.
 
@@ -365,12 +384,12 @@ class SparseField(FieldModule):
         return self.transformer.count
 
     @property
-    def ids(self) -> Optional[Tuple[int]]:
-        """Return the tuple of IDs."""
-        return self.transformer.ids
+    def enums(self) -> Optional[Tuple[int]]:
+        """Return the tuple of IDs|..."""
+        return self.transformer.enums
 
-    def embed(self, dim: int, **kwargs) -> None:
-        """
+    def embed(self, dim: int, padding_idx: Optional[int] = None, **kwargs) -> None:
+        r"""
         Create an nn.Embedding layer for the sparse field.
 
         Args:
@@ -385,12 +404,12 @@ class SparseField(FieldModule):
         --------
         None
         """
-
         self.dimension = dim
-        self.embeddings = torch.nn.Embedding(self.count, dim, **kwargs)
+        nums = self.count if padding_idx is None else self.count + 1
+        self.embeddings = torch.nn.Embedding(nums, dim, padding_idx=padding_idx, **kwargs)
 
     def look_up(self, x: torch.Tensor) -> torch.Tensor:
-        """
+        r"""
         Look up embeddings for categorical features.
 
         Parameters:
@@ -415,7 +434,7 @@ class SparseField(FieldModule):
 
 
 class DenseField(FieldModule):
-    """
+    r"""
     DenseField is used for numerical features.
 
     Attributes:
@@ -449,7 +468,7 @@ class DenseField(FieldModule):
         self.add_tag(DENSE)
 
     def embed(self, dim: int = 1, bias: bool = False, linear: bool = False) -> None:
-        """
+        r"""
         Create Embedding in nn.Linear manner.
 
         Parameters:
@@ -475,7 +494,7 @@ class DenseField(FieldModule):
             self.embeddings = torch.nn.Identity()
 
     def look_up(self, x: torch.Tensor) -> torch.Tensor:
-        """
+        r"""
         Look up embeddings for numeric features.
         Note that the return embeddings' shape is in accordance with
         that of categorical features.
@@ -485,7 +504,7 @@ class DenseField(FieldModule):
             x: torch.Tensor in the shape of (B, *)
 
         Returns:
-        -------
+        --------
         embeddings: (B, *, 1) or (B, *, d)
             - If `linear` is True, it returns (B, *, d).
             - If `linear` is False, it returns (B, *, 1).
@@ -505,7 +524,7 @@ class FieldTuple(tuple):
 
     @lru_cache(maxsize=4)
     def groupby(self, *tags: FieldTags) -> 'FieldTuple':
-        """
+        r"""
         Return those fields matching given tags.
 
         Parameters:
@@ -521,7 +540,7 @@ class FieldTuple(tuple):
 
     @lru_cache(maxsize=4)
     def groupbynot(self, *tags: FieldTags) -> 'FieldTuple':
-        """
+        r"""
         Return those fields not matching given tags.
 
         Parameters:
@@ -536,7 +555,7 @@ class FieldTuple(tuple):
         return FieldTuple(field for field in self if not field.match(*tags))
 
     def state_dict(self) -> Dict:
-        """
+        r"""
         Return state dict of fields.
 
         Returns:
@@ -546,7 +565,7 @@ class FieldTuple(tuple):
         return {field.name: field.transformer for field in self}
 
     def load_state_dict(self, state_dict: Dict, strict: bool = False):
-        """
+        r"""
         Load state dict of fields.
 
         Parameters:
@@ -560,7 +579,7 @@ class FieldTuple(tuple):
             field.transformer = state_dict.get(field.name, field.transformer)
 
     def copy(self) -> 'FieldTuple':
-        """
+        r"""
         Return a copy of the FieldTuple.
 
         Returns:
@@ -568,9 +587,35 @@ class FieldTuple(tuple):
         A new FieldTuple with the same fields as this one.
         """
         return FieldTuple(self)
+    
+    def index(self, *tags) -> int:
+        r"""
+        Get index by tags.
+
+        Parameters:
+        -----------
+        *tags: FieldTags
+
+        Returns:
+        --------
+        Index: int 
+            Index of the field accordance with the given tags.
+        
+        Examples:
+        ---------
+        >>> from freerec.data.tags import USER, ITEM, ID
+        >>> User = SparseField('User', None, int, tags=(USER, ID))
+        >>> Item = SparseField('Item', None, int, tags=(ITEM, ID))
+        >>> fields = FieldTuple([User, Item])
+        >>> fields.index(USER, ID)
+        0
+        >>> fields.index(ITEM, ID)
+        1
+        """
+        return super().index(self[tags])
 
     def __getitem__(self, index: Union[int, slice, FieldTags, Iterable[FieldTags]]) -> Union[Field, 'FieldTuple', None]:
-        """
+        r"""
         Get fields by index.
 
         Parameters:
@@ -593,7 +638,7 @@ class FieldTuple(tuple):
         >>> from freerec.data.tags import USER, ITEM, ID
         >>> User = SparseField('User', None, int, tags=(USER, ID))
         >>> Item = SparseField('Item', None, int, tags=(ITEM, ID))
-        >>> fields = FieldModuleTuple([User, Item])
+        >>> fields = FieldTuple([User, Item])
         >>> fields[USER, ID] is User
         True
         >>> fields[0] is User
@@ -635,7 +680,7 @@ class FieldList(list):
     """A list of fields, which support attribute access and filtering by tags."""
 
     def groupby(self, *tags: FieldTags) -> 'FieldList':
-        """
+        r"""
         Return those fields matching given tags.
 
         Parameters:
@@ -650,7 +695,7 @@ class FieldList(list):
         return FieldList(field for field in self if field.match(*tags))
 
     def groupbynot(self, *tags: FieldTags) -> 'FieldList':
-        """
+        r"""
         Return those fields not matching given tags.
 
         Parameters:
@@ -665,7 +710,7 @@ class FieldList(list):
         return FieldList(field for field in self if not field.match(*tags))
 
     def copy(self) -> 'FieldList':
-        """
+        r"""
         Return a copy of the FieldList.
 
         Returns:
@@ -674,8 +719,34 @@ class FieldList(list):
         """
         return FieldList(self)
 
-    def __getitem__(self, index: Union[int, slice, FieldTags, Iterable[FieldTags]]) -> Union[Field, 'FieldList', None]:
+    def index(self, *tags) -> int:
+        r"""
+        Get index by tags.
+
+        Parameters:
+        -----------
+        *tags: FieldTags
+
+        Returns:
+        --------
+        Index: int 
+            Index of the field accordance with the given tags.
+        
+        Examples:
+        ---------
+        >>> from freerec.data.tags import USER, ITEM, ID
+        >>> User = SparseField('User', None, int, tags=(USER, ID))
+        >>> Item = SparseField('Item', None, int, tags=(ITEM, ID))
+        >>> fields = FieldList([User, Item])
+        >>> fields.index(USER, ID)
+        0
+        >>> fields.index(ITEM, ID)
+        1
         """
+        return super().index(self[tags])
+
+    def __getitem__(self, index: Union[int, slice, FieldTags, Iterable[FieldTags]]) -> Union[Field, 'FieldList', None]:
+        r"""
         Get fields by index.
 
         Parameters:
@@ -698,7 +769,7 @@ class FieldList(list):
         >>> from freerec.data.tags import USER, ITEM, ID
         >>> User = SparseField('User', None, int, tags=(USER, ID))
         >>> Item = SparseField('Item', None, int, tags=(ITEM, ID))
-        >>> fields = FieldModuleList([User, Item])
+        >>> fields = FieldList([User, Item])
         >>> fields[USER, ID] is User
         True
         >>> fields[0] is User
@@ -738,7 +809,7 @@ class FieldList(list):
 
 
 class FieldModuleList(torch.nn.Module):
-    """A collection of fields.
+    r"""A collection of fields.
     
     Attributes:
         fields (nn.ModuleList): A list of fields.
@@ -757,7 +828,7 @@ class FieldModuleList(torch.nn.Module):
 
     @lru_cache(maxsize=4)
     def groupby(self, *tags: FieldTags) -> FieldList[FieldModule]:
-        """
+        r"""
         Return those fields matching given tags.
 
         Parameters:
@@ -787,7 +858,7 @@ class FieldModuleList(torch.nn.Module):
 
     @lru_cache(maxsize=4)
     def groupbynot(self, *tags: FieldTags) -> 'FieldList':
-        """
+        r"""
         Return those fields not matching given tags.
 
         Parameters:
@@ -802,7 +873,7 @@ class FieldModuleList(torch.nn.Module):
         return FieldList(field for field in self.fields if not field.match(*tags))
 
     def embed(self, dim: int, *tags: FieldTags, **kwargs):
-        """
+        r"""
         Create embeddings.
 
         Parameters:
@@ -829,7 +900,7 @@ class FieldModuleList(torch.nn.Module):
         return len(self.fields)
 
     def __getitem__(self, index: Union[int, FieldTags, Iterable[FieldTags]]) -> Union[FieldModule, 'FieldList', None]:
-        """
+        r"""
         Get fields by index.
 
         Parameters:

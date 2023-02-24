@@ -4,7 +4,7 @@ from typing import Any
 
 
 class Config(dict):
-    """
+    r"""
     A dictionary subclass that converts a dictionary to an object.
 
     Parameters:
@@ -55,7 +55,7 @@ class Config(dict):
         self.prefix = prefix
 
     def __setattr__(self, name: str, value: Any) -> None:
-        """
+        r"""
         Set an attribute and corresponding item in the dictionary.
 
         Parameters:
@@ -70,7 +70,7 @@ class Config(dict):
             super(Config, self).__setitem__(name, value)
 
     def __setitem__(self, key: str, value: Any) -> None:
-        """
+        r"""
         Set an item in the dictionary and corresponding attribute.
 
         Parameters:
@@ -84,7 +84,7 @@ class Config(dict):
         super(Config, self).__setattr__(key, value)
 
     def update(self, **kwargs) -> None:
-        """
+        r"""
         Update the dictionary with new keys and values.
 
         Parameters
@@ -97,7 +97,7 @@ class Config(dict):
                 self[key] = value
 
     def __str__(self) -> str:
-        """
+        r"""
         Return a string representation of the object.
 
         Returns:

@@ -8,6 +8,7 @@ class FieldTags(Enum):
     Dense = 'Dense'
     User = 'User'
     Item = 'Item'
+    Timestamp = 'Timestamp'
     ID = 'ID'
     Feature = 'Feature'
     Target = 'Target'
@@ -21,6 +22,7 @@ SPARSE = FieldTags('Sparse')
 DENSE = FieldTags('Dense')
 USER = FieldTags('User')
 ITEM = FieldTags('Item')
+TIMESTAMP = FieldTags('Timestamp')
 ID = FieldTags('ID')
 FEATURE = FieldTags('Feature')
 TARGET = FieldTags('Target')

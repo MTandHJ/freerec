@@ -2,7 +2,7 @@
 
 from typing import Iterator, Optional, TypeVar, Tuple
 
-import torch, os
+import torch, os, abc
 import numpy as np
 import torchdata.datapipes as dp
 from torch_geometric.data import Data, HeteroData
@@ -10,10 +10,9 @@ from torch_geometric.utils import to_undirected
 from freeplot.utils import import_pickle, export_pickle
 
 from ..tags import FieldTags, SPARSE, USER, ITEM, ID
-from ..fields import Field, BufferField, SparseField, FieldList, FieldTuple
-from ..utils import collate_list, download_from_url, extract_archive
+from ..fields import Field, BufferField, FieldList, FieldTuple
+from ..utils import download_from_url, extract_archive
 from ...utils import timemeter, infoLogger, mkdirs, warnLogger
-from ...dict2obj import Config
 
 
 __all__ = ['BaseSet', 'RecDataSet']
@@ -27,22 +26,88 @@ DEFAULT_CHUNK_FMT = "chunk{0}.pickle"
 T = TypeVar('T')
 
 
+#===============================Basic Class===============================
+
 class RecSetBuildingError(Exception): ...
 
 
-class BaseSet(dp.iter.IterDataPipe):
-    """ 
+class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
+    r""" 
     Base class for data pipes. Defines basic functionality and methods for 
     pre-processing the data for the learning models.
+
+    Parameters:
+    -----------
+    root: str
+        The path storing datasets.
+    filename: str, optional 
+        The dirname of the dataset. If `None`, sets the classname as the filename.
+    download: bool 
+        Download the dataset from a URL.
+
+    Attributes:
+    -----------
+    _cfg: Config[str, Field] 
+        Includes fields of each column.
+    DEFAULT_CHUNK_SIZE: int, default 51200 
+        Chunk size for saving.
+    VALID_IS_TEST: bool 
+        The validset and testset are the same one sometimes.
+
+    Notes:
+    ------
+    All datasets that inherit RecDataSet should define the class variable `_cfg` before instantiation.
+    Generally speaking, the dataset will be split into:
+        - trainset
+        - validset
+        - testset
     """
-    def __init__(self) -> None:
+
+    DEFAULT_CHUNK_SIZE = 51200 # chunk size
+    URL: str
+    VALID_IS_TEST: bool
+
+    def __new__(cls, *args, **kwargs):
+        for attr in ('_cfg', 'VALID_IS_TEST'):
+            if not hasattr(cls, attr):
+                raise RecSetBuildingError(f"'{attr}' should be defined before instantiation ...")
+        assert 'fields' in cls._cfg, "the config of fields should be defined in '_cfg' ..."
+        return super().__new__(cls)
+
+    def __init__(self, root: str, filename: Optional[str] = None, download: bool = True) -> None:
         super().__init__()
 
+        self.trainsize: int = 0
+        self.validsize: int = 0
+        self.testsize: int = 0
+
+        fields = []
+        for field_type, cfg in self._cfg['fields']:
+            fields.append(field_type(**cfg))
+        self.fields = fields
         self.__mode = 'train'
+
+        filename = filename if filename else self.__class__.__name__
+        self.path = os.path.join(root, filename)
+        if not os.path.exists(self.path) or not any(True for _ in os.scandir(self.path)):
+            if download:
+                extract_archive(
+                    download_from_url(self.URL, root, overwrite=False),
+                    self.path
+                )
+            else:
+                FileNotFoundError(f"No such file of {self.path}, or this dir is empty ...")
+
+        self.compile()
+        self.check()
+
+    def check(self):
+        """Self-check program should be placed here."""
+        ...
         
     @property
     def mode(self) -> str:
-        """
+        r"""
         Return the mode in which the dataset is currently being used.
 
         Returns:
@@ -67,13 +132,46 @@ class BaseSet(dp.iter.IterDataPipe):
         return self
 
     @property
-    def fields(self) -> FieldTuple:
-        """Return: A tuple containing the fields of the dataset."""
-        raise NotImplementedError("Fields not defined for this dataset.")
+    def fields(self):
+        return self.__fields
 
-    def __len__(self) -> int:
-        """Return: The length of the dataset."""
-        raise NotImplementedError()
+    @fields.setter
+    def fields(self, vals) -> FieldTuple[Field]:
+        """Return: Tuple of Field."""
+        self.__fields = FieldTuple(vals)
+
+    @abc.abstractmethod
+    def raw2data(self) -> dp.iter.IterableWrapper:
+        r"""
+        Process raw data.
+
+        Returns:
+        --------
+        A processed data.
+
+        Raises:
+        -------
+        NotImplementedError: Subclasses should implement this method.
+
+        Notes:
+        ------
+        This method should be implemented by subclasses.
+        """
+        raise NotImplementedError(f"{self.__class__.__name__}.raw2data() method should be implemented ...")
+
+    @abc.abstractmethod
+    def pickle2data(self):
+        raise NotImplementedError(
+                f"{self.__class__.__name__}.pickle2data should be implemented before using ..."
+        )
+
+    def __iter__(self) -> Iterator[FieldList[BufferField]]:
+        for cols in self.pickle2data():
+            yield FieldList(map(
+                lambda field, col: field.buffer(col),
+                self.fields,
+                cols
+            ))
 
     def summary(self):
         """Print a summary of the dataset."""
@@ -81,7 +179,7 @@ class BaseSet(dp.iter.IterDataPipe):
 
     @timemeter("DataSet/to_graph")
     def to_heterograph(self, *edge_types: Tuple[Tuple[FieldTags], Optional[str], Tuple[FieldTags]]) -> HeteroData:
-        """
+        r"""
         Convert datapipe to a heterograph.
 
         Parameters:
@@ -157,7 +255,7 @@ class BaseSet(dp.iter.IterDataPipe):
         dst: Tuple[FieldTags] = (ITEM, ID),
         edge_type: Optional[str] = None
     ) -> HeteroData:
-        """
+        r"""
         Convert datapipe to a bipartite graph.
 
         Parameters:
@@ -197,7 +295,7 @@ class BaseSet(dp.iter.IterDataPipe):
         return self.to_heterograph((src, edge_type, dst))
    
     def to_graph(self, src: Tuple[FieldTags], dst: Tuple[FieldTags]) -> Data:
-        """
+        r"""
         Convert datapipe to a homogeneous graph.
 
         Parameters:
@@ -232,93 +330,9 @@ class BaseSet(dp.iter.IterDataPipe):
         graph.edge_index = to_undirected(graph.edge_index)
         return graph
 
-    def pickle2data(self):
-        raise NotImplementedError(
-                f"{self.__class__.__name__}.pickle2data should be implemented before using ..."
-        )
-
-    def __iter__(self) -> Iterator[FieldList[BufferField]]:
-        for cols in self.pickle2data():
-            yield FieldList(map(
-                lambda field, col: field.buffer(col),
-                self.fields,
-                cols
-            ))
-
 
 class RecDataSet(BaseSet):
-    """ 
-    RecDataSet provides a template for specific datasets.
-
-    Parameters:
-    -----------
-    root: str
-        The path storing datasets.
-    filename: str, optional 
-        The dirname of the dataset. If `None`, sets the classname as the filename.
-    download: bool 
-        Download the dataset from a URL.
-
-    Attributes:
-    -----------
-    _cfg: Config[str, Field] 
-        Includes fields of each column.
-    DEFAULT_CHUNK_SIZE: int, default 51200 
-        Chunk size for saving.
-    VALID_IS_TEST: bool 
-        The validset and testset are the same one sometimes.
-
-    Notes:
-    ------
-    All datasets that inherit RecDataSet should define the class variable `_cfg` before instantiation.
-    Generally speaking, the dataset will be split into:
-        - trainset
-        - validset
-        - testset
-    """
-
-    DEFAULT_CHUNK_SIZE = 51200 # chunk size
-    URL: str
-    VALID_IS_TEST: bool
-
-    def __new__(cls, *args, **kwargs):
-        for attr in ('_cfg', 'VALID_IS_TEST'):
-            if not hasattr(cls, attr):
-                raise RecSetBuildingError(f"'{attr}' should be defined before instantiation ...")
-        assert 'fields' in cls._cfg, "the config of fields should be defined in '_cfg' ..."
-        return super().__new__(cls)
-
-    def __init__(self, root: str, filename: Optional[str] = None, download: bool = True) -> None:
-        super().__init__()
-        filename = filename if filename else self.__class__.__name__
-        self.path = os.path.join(root, filename)
-        self.trainsize: int = 0
-        self.validsize: int = 0
-        self.testsize: int = 0
-
-        fields = []
-        for field_type, cfg in self._cfg['fields']:
-            fields.append(field_type(**cfg))
-        self.fields = fields
-
-        if not os.path.exists(self.path) or not any(True for _ in os.scandir(self.path)):
-            if download:
-                extract_archive(
-                    download_from_url(self.URL, root, overwrite=False),
-                    self.path
-                )
-            else:
-                FileNotFoundError(f"No such file of {self.path}, or this dir is empty ...")
-        self.compile()
-
-    @property
-    def fields(self):
-        return self.__fields
-
-    @fields.setter
-    def fields(self, vals) -> FieldTuple[Field]:
-        """Return: Tuple of Field."""
-        self.__fields = FieldTuple(vals)
+    """RecDataSet provides a template for specific datasets."""
 
     def check_transforms(self) -> None:
         """Check if the transformations exist."""
@@ -339,7 +353,6 @@ class RecDataSet(BaseSet):
     def save_transforms(self) -> None:
         """Save transformers in a pickle format."""
         infoLogger(f"[{self.__class__.__name__}] >>> Save transformers ...")
-        # Get the state dictionary of the fields and add the size information.
         state_dict = self.fields.state_dict()
         state_dict['trainsize'] = self.trainsize
         state_dict['validsize'] = self.validsize
@@ -349,7 +362,6 @@ class RecDataSet(BaseSet):
             DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
             DEFAULT_TRANSFORM_FILENAME
         )
-        # Export the state dictionary as a pickle file.
         export_pickle(state_dict, file_)
 
     def load_transforms(self) -> None:
@@ -359,12 +371,10 @@ class RecDataSet(BaseSet):
             DEFAULT_PICKLE_FMT.format(self.__class__.__name__), 
             DEFAULT_TRANSFORM_FILENAME
         )
-        # Import the state dictionary from the pickle file and update the size information.
         state_dict = import_pickle(file_)
         self.trainsize = state_dict['trainsize']
         self.validsize = state_dict['validsize']
         self.testsize = state_dict['testsize']
-        # Load the state dictionary into the fields.
         self.fields.load_state_dict(state_dict, strict=False)
 
     def check_pickle(self) -> bool:
@@ -381,7 +391,7 @@ class RecDataSet(BaseSet):
             return False
 
     def write_pickle(self, data, count: int) -> None:
-        """
+        r"""
         Save pickle format data.
 
         Parameters:
@@ -393,7 +403,7 @@ class RecDataSet(BaseSet):
 
         Returns:
         --------
-        None.
+        None
         """
         file_ = os.path.join(
             self.path,
@@ -403,7 +413,7 @@ class RecDataSet(BaseSet):
         export_pickle(data, file_)
 
     def read_pickle(self, file_: str):
-        """
+        r"""
         Load pickle format data.
 
         Parameters:
@@ -418,7 +428,8 @@ class RecDataSet(BaseSet):
         return import_pickle(file_)
 
     def row_processer(self, row):
-        """Process a row of raw data.
+        r"""
+        Process a row of raw data.
 
         Parameters:
         -----------
@@ -431,30 +442,12 @@ class RecDataSet(BaseSet):
         """
         return [field.caster(val) for val, field in zip(row, self.fields)]
 
-    def raw2data(self) -> dp.iter.IterableWrapper:
-        """
-        Process raw data.
-
-        Returns:
-        --------
-        A processed data.
-
-        Raises:
-        -------
-        NotImplementedError: Subclasses should implement this method.
-
-        Notes:
-        ------
-        This method should be implemented by subclasses.
-        """
-        raise NotImplementedError(f"{self.__class__.__name__}.raw2data() method should be implemented ...")
-
     def raw2pickle(self):
         """Convert raw data into pickle format."""
         infoLogger(f"[{self.__class__.__name__}] >>> Convert raw data ({self.mode}) to chunks in pickle format")
         datapipe = self.raw2data()
         count = 0
-        for chunk in datapipe.batch(batch_size=self.DEFAULT_CHUNK_SIZE).collate(collate_list):
+        for chunk in datapipe.batch(batch_size=self.DEFAULT_CHUNK_SIZE).column_():
             for j, field in enumerate(self.fields):
                 chunk[j] = field.transform(chunk[j])
             self.write_pickle(chunk, count)
@@ -462,7 +455,7 @@ class RecDataSet(BaseSet):
         infoLogger(f"[{self.__class__.__name__}] >>> {count} chunks done")
 
     def pickle2data(self):
-        """
+        r"""
         Read the pickle data and return it as a generator.
 
         Yields:
@@ -476,14 +469,12 @@ class RecDataSet(BaseSet):
                 self.mode
             )
         )
-        if self.mode == 'train':
-            datapipe.shuffle()
         for file_ in datapipe:
             yield self.read_pickle(file_)
 
     @timemeter("DataSet/compile")
     def compile(self):
-        """
+        r"""
         Check current dataset and transformations.
 
         Flows:
@@ -498,14 +489,14 @@ class RecDataSet(BaseSet):
 
         def fit_transform(*tags):
             """Function to fit and transform data for pickle conversion."""
-            datapipe = self.raw2data().batch(self.DEFAULT_CHUNK_SIZE).collate(collate_list)
+            datapipe = self.raw2data().batch(self.DEFAULT_CHUNK_SIZE).column_()
             datasize = 0
             fields = self.fields.groupby(*tags)
             for chunk in datapipe:
                 datasize += len(chunk[0])
-                chunk = FieldList(map(lambda field, col: field.buffer(col), self.fields, chunk)).groupby(*tags)
-                for j, field in enumerate(fields):
-                    field.partial_fit(chunk[j].data)
+                for field in fields:
+                    index = self.fields.index(*field.tags)
+                    field.partial_fit(chunk[index])
             return datasize
 
         if self.check_transforms():
@@ -549,66 +540,3 @@ class RecDataSet(BaseSet):
     def __str__(self) -> str:
         cfg = '\n'.join(map(str, self.fields))
         return f"[{self.__class__.__name__}] >>> \n" + cfg
-
-
-class _Row2Pairer(dp.iter.IterDataPipe):
-
-    def __init__(self, datapipe: dp.iter.IterDataPipe) -> None:
-        super().__init__()
-        self.source = datapipe
-
-    def __iter__(self):
-        for row in self.source:
-            user = row[0]
-            for item in row[1:]:
-                if item:
-                    yield user, item
-
-
-class ImplicitRecSet(RecDataSet):
-    """
-    Implicit feedback data.
-    The data should be collected in the order of users; that is,
-    each row represents a user's interacted items.
-    """
-
-    # Same validset and testset are the same now !
-    VALID_IS_TEST = True
-
-    _cfg = Config(
-        fields = [
-            (SparseField, Config(name='UserID', na_value=None, dtype=int, tags=[USER, ID])),
-            (SparseField, Config(name='ItemID', na_value=None, dtype=int, tags=[ITEM, ID]))
-        ]
-    )
-
-    open_kw = Config(mode='rt', delimiter=' ', skip_lines=0)
-
-    def file_filter(self, filename: str):
-        if self.mode == 'train':
-            return 'train' in filename
-        else:
-            return 'test' in filename
-
-    def raw2data(self) -> dp.iter.IterableWrapper:
-        datapipe = dp.iter.FileLister(self.path)
-        datapipe = datapipe.filter(filter_fn=self.file_filter)
-        datapipe = datapipe.open_files(mode=self.open_kw.mode)
-        datapipe = datapipe.parse_csv(delimiter=self.open_kw.delimiter, skip_lines=self.open_kw.skip_lines)
-        datapipe = _Row2Pairer(datapipe)
-        datapipe = datapipe.map(self.row_processer)
-        return datapipe
-
-    def summary(self):
-        super().summary()
-        from prettytable import PrettyTable
-        User, Item = self.fields[USER, ID], self.fields[ITEM, ID]
-
-        table = PrettyTable(['#User', '#Item', '#Interactions', '#Train', '#Test', 'Density'])
-        table.add_row([
-            User.count, Item.count, self.trainsize + self.test().testsize,
-            self.trainsize, self.testsize,
-            (self.trainsize + self.testsize) / (User.count * Item.count)
-        ])
-
-        infoLogger(table)

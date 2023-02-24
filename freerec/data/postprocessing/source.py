@@ -17,7 +17,7 @@ __all__ = [
 
 
 class RandomSource(BaseProcessor):
-    """
+    r"""
     DataPipe that generates random items from given source.
 
     Parameters:
@@ -44,7 +44,7 @@ class RandomSource(BaseProcessor):
 
 
 class OrderedSource(BaseProcessor):
-    """
+    r"""
     DataPipe that generates ordered items from given source.
 
     Parameters:
@@ -66,7 +66,7 @@ class OrderedSource(BaseProcessor):
 
 
 class RandomIDs(RandomSource):
-    """
+    r"""
     DataPipe that generates random IDs according to SparseField.
 
     Parameters:
@@ -81,11 +81,11 @@ class RandomIDs(RandomSource):
         self, field: SparseField,
         datasize: int,
     ) -> None:
-        super().__init__(field.ids, datasize)
+        super().__init__(field.enums, datasize)
 
 
 class OrderedIDs(OrderedSource):
-    """
+    r"""
     DataPipe that generates ordered IDs.
 
     Parameters:
@@ -95,11 +95,11 @@ class OrderedIDs(OrderedSource):
     """
 
     def __init__(self, field: SparseField) -> None:
-        super().__init__(field.ids)
+        super().__init__(field.enums)
 
 
 class DummySource(OrderedSource):
-    """
+    r"""
     DataPipe that generates dummy data.
 
     Parameters:
@@ -113,7 +113,7 @@ class DummySource(OrderedSource):
 
 @dp.functional_datapipe("dummy_")
 class _DummySource(DummySource):
-    """
+    r"""
     Functional DataPipe wrapper for DummySource.
 
     Parameters:

@@ -17,7 +17,7 @@ T = TypeVar("T")
 
 @dp.functional_datapipe("column_")
 class Columner(Postprocessor):
-    """
+    r"""
     A postprocessor that converts a batch of samples into columns.
     Columner takes a datapipe that yields a batch of samples, and converts them into columns. 
     This can be useful for the following transformation (by column).
@@ -30,12 +30,12 @@ class Columner(Postprocessor):
 
     def __iter__(self):
         for batch in self.source:
-            yield tuple(zip(*batch))
+            yield list(zip(*batch))
 
 
 @dp.functional_datapipe("tensor_")
 class ToTensor(Postprocessor):
-    """
+    r"""
     A datapipe that converts lists into torch Tensors.
     This class converts a List into a torch.Tensor.
     """
@@ -60,7 +60,7 @@ class ToTensor(Postprocessor):
 
 @dp.functional_datapipe("field_")
 class Fielder(Postprocessor):
-    """
+    r"""
     Convert column data to field-style data.
     Then filtering by tags can be possible.
     """

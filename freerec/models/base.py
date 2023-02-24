@@ -1,15 +1,15 @@
 
 
-from typing import Optional, Union
+from typing import Optional, Union, overload, Tuple
 import torch
 import torch.nn as nn
+
 
 __all__ = ['RecSysArch']
 
 
 class RecSysArch(nn.Module):
-
-    """
+    r"""
     A PyTorch Module for recommendation system architecture.
     This module contains methods for broadcasting tensors and initializing the module parameters.
 
@@ -36,7 +36,7 @@ class RecSysArch(nn.Module):
         dtype: Optional[Union[torch.dtype, str]] = None,
         non_blocking: bool = False
     ):
-        """
+        r"""
         Moves and/or casts the parameters and buffers.
 
         Parameters:
@@ -73,7 +73,7 @@ class RecSysArch(nn.Module):
 
     @staticmethod
     def broadcast(*tensors: torch.Tensor):
-        """
+        r"""
         Broadcasts the given tensors according to Broadcasting semantics.
         See [here](https://pytorch.org/docs/stable/generated/torch.broadcast_tensors.html#torch.broadcast_tensors) for details.
 
@@ -98,3 +98,10 @@ class RecSysArch(nn.Module):
         torch.Size(4, 2, 4)
         """
         return torch.broadcast_tensors(*tensors)
+
+
+    @overload
+    def recommand(self) -> Tuple[torch.Tensor, torch.Tensor]: ...
+
+    @overload
+    def recommand(self, seqs: torch.Tensor, items: torch.Tensor) -> torch.Tensor: ...

@@ -95,7 +95,7 @@ class _DummyModule(torch.nn.Module):
 
 
 class ChiefCoach(metaclass=abc.ABCMeta):
-    """ 
+    r""" 
     The `ChiefCoach` class is the top-level class for running the training and evaluation loops.
 
     Parameters:
@@ -126,7 +126,6 @@ class ChiefCoach(metaclass=abc.ABCMeta):
             - `torch.device`
             - `str`: Like `cpu`, `cuda:0`.
             - `int`: Using cuda:`int`.
-
     """
 
 
@@ -211,7 +210,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         self, name: str, func: Callable, 
         fmt: str = '.4f', best_caster: Callable = max
     ) -> None:
-        """
+        r"""
         Register a metric.
 
         Parameters
@@ -278,7 +277,7 @@ class Coach(ChiefCoach):
     def compile(
         self, cfg: Config, monitors: List[str]
     ):
-        """
+        r"""
         Load the configuration and set up monitors for training.
 
         Parameters
@@ -350,7 +349,7 @@ class Coach(ChiefCoach):
         torch.save(self.model.state_dict(), os.path.join(self.cfg.LOG_PATH, self.cfg.SAVED_FILENAME))
 
     def save_checkpoint(self, epoch: int) -> None:
-        """
+        r"""
         Save current checkpoint at epoch.
 
         Parameters:
@@ -370,7 +369,7 @@ class Coach(ChiefCoach):
         torch.save(checkpoint, path)
 
     def load_checkpoint(self) -> int:
-        """
+        r"""
         Load last saved checkpoint.
 
         Returns:
@@ -394,11 +393,11 @@ class Coach(ChiefCoach):
         ...
 
     def resume(self) -> int:
-        """
+        r"""
         Resume training from the last checkpoint.
 
         Returns:
-        -------
+        --------
         start_epoch: int
             The epoch number to resume training from.
         """
@@ -415,11 +414,11 @@ class Coach(ChiefCoach):
         prefix: str = 'train', pool: Optional[Iterable] = None
     ):
 
-        """
+        r"""
         Log data values to specific monitors.
 
         Parameters:
-        ----------
+        -----------
         *values : data
             The data values to be logged.
         n : int
@@ -439,18 +438,18 @@ class Coach(ChiefCoach):
                 meter(*values, n=n, mode=mode)
 
     def step(self, epoch: int):
-        """
+        r"""
         Prints training status and evaluation results for each epoch, 
         and resets the corresponding `AverageMeter` instances.
 
         Parameters:
-        ----------
-            epoch : int
-                The epoch number.
+        -----------
+        epoch : int
+            The epoch number.
 
         Returns:
-        -------
-            None
+        --------
+        None
         """
 
         metrics: Dict[str, List[AverageMeter]]
@@ -462,7 +461,7 @@ class Coach(ChiefCoach):
 
     @timemeter("Coach/summary")
     def summary(self):
-        """
+        r"""
         Summary the whole training process.
 
         Generate a summary of the entire training process, including the historical evaluation results, the best
@@ -533,11 +532,11 @@ class Coach(ChiefCoach):
 
 
 class Adapter:
-    """
+    r"""
     Params tuner.
 
     Flows:
-    -----
+    ------
     1. compile: configure the command, environments, and parameters for training.
     2. allocate devices for various parameters:
         - register the ID, log path, and device first
@@ -547,7 +546,7 @@ class Adapter:
         - release the corresponding device
 
     Examples:
-    --------
+    ---------
     >>> cfg = {'command': 'python xxx.py', 'params': {'optimizer': ['sgd', 'adam']}}
     >>> tuner = Adapter()
     >>> tuner.compile(cfg)
@@ -572,23 +571,23 @@ class Adapter:
 
     @timemeter("Adapter/compile")
     def compile(self, cfg: Config) -> None:
-        """
+        r"""
         Configure the command, environments, and parameters for training.
 
-        Parameters
-        ----------
+        Parameters:
+        -----------
         cfg : Config
             An object that contains the command, environments, parameters, and defaults.
 
-        Flows
-        -----
+        Flows:
+        ------
         1. Add environmental parameters to the basic `command`.
         2. Register all available devices.
         3. Convert all parameters from `cfg.PARAMS`.
         4. Convert all defaults from `cfg.DEFAULTS`.
 
-        Returns
-        -------
+        Returns:
+        --------
         None
         """
         self.cfg = cfg
@@ -619,27 +618,27 @@ class Adapter:
 
     @staticmethod
     def get_option(key: str, val: Any):
-        """
+        r"""
         Convert (key, val) to '--key=val'.
 
-        Parameters
-        ----------
+        Parameters:
+        -----------
         key : str
             The key of the parameter.
         val : Any
             The value of the parameter.
 
-        Notes
-        -----
+        Notes:
+        ------
         All '_' in `key` will be replaced by '-'.
 
-        Returns
-        -------
+        Returns:
+        --------
         str
             The parameter with format '--key=val'.
 
-        Examples
-        --------
+        Examples:
+        ---------
         >>> Adapter.get_option('lr', '1e-3')
         '--lr=1e-3'
         >>> Adapter.get_option('learning_rate', '1e-3')
@@ -653,11 +652,11 @@ class Adapter:
         return import_pickle(file_)
 
     def write(self, id_: str, logPath: str, params: Dict):
-        """
+        r"""
         Write experiment results to tensorboard.
 
         Parameters:
-        ----------
+        -----------
         id_: str
             Experiment ID.
         logPath: str
