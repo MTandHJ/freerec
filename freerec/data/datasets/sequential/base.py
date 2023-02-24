@@ -13,6 +13,7 @@ __all__ = ['SequentialRecSet']
 
 
 class SequentialRecSet(RecDataSet):
+    DATATYPE =  "Sequential"
 
     def check(self):
         assert isinstance(self.fields[TIMESTAMP], Field), "SequentialRecSet must have `TIMESTAMP' field."

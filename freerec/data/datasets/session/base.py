@@ -7,4 +7,5 @@ __all__ = []
 
 
 #TODO:===============================Session-based Recommendation===============================
-class SessionBasedRecSet(RecDataSet): ...
+class SessionBasedRecSet(RecDataSet):
+    DATATYPE =  "Session"

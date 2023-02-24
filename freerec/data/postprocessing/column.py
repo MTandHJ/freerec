@@ -1,6 +1,6 @@
 
 
-from typing import Iterator, List, Union, Iterable, TypeVar
+from typing import Iterator, List, Union, TypeVar, Any
 
 import torch
 import torchdata.datapipes as dp
@@ -71,10 +71,14 @@ class Fielder(Postprocessor):
     ) -> None:
         super().__init__(source_dp, fields=fields)
 
+    @staticmethod
+    def _buffer(field: Field, col: Any):
+        return field.buffer(col)
+
     def __iter__(self) -> Iterator[FieldList[BufferField]]:
         for cols in self.source:
             yield FieldList(map(
-                lambda field, col: field.buffer(col),
+                self._buffer,
                 self.fields,
                 cols
             ))

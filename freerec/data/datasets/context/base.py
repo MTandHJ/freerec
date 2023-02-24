@@ -7,4 +7,5 @@ __all__ = []
 
 
 #TODO:===============================Context-aware Recommendation===============================
-class ContextAwareRecSet(RecDataSet): ...
+class ContextAwareRecSet(RecDataSet):
+    DATATYPE =  "Context"

@@ -96,14 +96,14 @@ class DropEmpty(RowFilter):
         indices: Iterable[int]
     ) -> None:
 
-        def _check(x: Any) -> bool:
-            return (not isinstance(x, Iterable)) or len(x) > 0
-
         super().__init__(
             source_dp=source_dp,
-            fn=_check,
+            fn=self._check,
             indices=indices
         )
+
+    def _check(self, x: Any) -> bool:
+        return (not isinstance(x, Iterable)) or len(x) > 0
 
 
 #==================================Mapper==================================
@@ -192,14 +192,17 @@ class LeftPruningRow(RowMapper):
         indices: Union[None, int, Iterable[int]],
         maxlen: int
     ) -> None:
-        def _lprune(x: Iterable) -> Iterable:
-            return x[-maxlen:]
+
+        self.maxlen = maxlen
 
         super().__init__(
             source_dp=source_dp, 
-            fn=_lprune,
+            fn=self._lprune,
             indices=indices
         )
+
+    def _lprune(self, x: Iterable) -> Iterable:
+        return x[-self.maxlen:]
 
 
 @dp.functional_datapipe("rprune_")
@@ -222,14 +225,17 @@ class RightPruningRow(RowMapper):
         indices: Union[None, int, Iterable[int]],
         maxlen: int
     ) -> None:
-        def _rprune(x):
-            return x[:maxlen]
+
+        self.maxlen = maxlen
 
         super().__init__(
             source_dp=source_dp, 
-            fn=_rprune,
+            fn=self._rprune,
             indices=indices
         )
+
+    def _rprune(self, x):
+        return x[:self.maxlen]
 
 
 @dp.functional_datapipe("lshift_")
@@ -253,14 +259,19 @@ class LeftShiftingRow(RowMapper):
         offset: int
     ) -> None:
 
-        def _lshift(x):
-            return list(map(lambda item: item - offset, x))
-
         super().__init__(
             source_dp=source_dp, 
-            fn=_lshift,
+            fn=self._lshift,
             indices=indices,
         )
+
+        self.offset = offset
+
+    def _reduce(self, item):
+        return item - self.offset
+
+    def _lshift(self, x):
+        return list(map(self._reduce, x))
 
 
 @dp.functional_datapipe("rshift_")
@@ -284,14 +295,19 @@ class RightShiftingRow(RowMapper):
         offset: int
     ) -> None:
 
-        def _rshift(x):
-            return list(map(lambda item: item + offset, x))
+        self.offset = offset
 
         super().__init__(
             source_dp=source_dp, 
-            fn=_rshift,
+            fn=self._rshift,
             indices=indices
         )
+
+    def _add(self, item):
+        return item + self.offset
+
+    def _rshift(self, x):
+        return list(map(self._add, x))
 
 
 @dp.functional_datapipe("lpad_")
@@ -317,14 +333,17 @@ class LeftPaddingRow(RowMapper):
         maxlen: int, padding_value: int = 0,
     ) -> None:
 
-        def _lpad(x):
-            return list(chain(repeat(padding_value, maxlen - len(x)), x))
+        self.maxlen = maxlen
+        self.padding_value = padding_value
 
         super().__init__(
             source_dp=source_dp, 
-            fn=_lpad,
+            fn=self._lpad,
             indices=indices
         )
+
+    def _lpad(self, x):
+        return list(chain(repeat(self.padding_value, self.maxlen - len(x)), x))
 
 
 @dp.functional_datapipe("rpad_")
@@ -350,11 +369,14 @@ class RightPaddingRow(RowMapper):
         maxlen: int, padding_value: int = 0,
     ) -> None:
 
-        def _rpad(x):
-            return list(chain(x, repeat(padding_value, maxlen - len(x))))
+        self.maxlen = maxlen
+        self.padding_value = padding_value
 
         super().__init__(
             source_dp=source_dp, 
-            fn=_rpad,
+            fn=self._rpad,
             indices=indices
         )
+
+    def _rpad(self, x):
+        return list(chain(x, repeat(self.padding_value, self.maxlen - len(x))))

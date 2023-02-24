@@ -249,13 +249,19 @@ class Coach(ChiefCoach):
     def prepare_dataloader(self) -> None:
         """Prepare data loaders for training, validation, and testing data."""
         self.trainloader = DataLoader(
-            datapipe=self.trainpipe, num_workers=self.cfg.num_workers
+            datapipe=self.trainpipe, 
+            num_workers=self.cfg.num_workers,
+            pin_memory=self.cfg.pin_memory
         )
         self.validloader = DataLoader(
-            datapipe=self.validpipe, num_workers=self.cfg.num_workers
+            datapipe=self.validpipe, 
+            num_workers=self.cfg.num_workers,
+            pin_memory=self.cfg.pin_memory
         )
         self.testloader = DataLoader(
-            datapipe=self.testpipe, num_workers=self.cfg.num_workers
+            datapipe=self.testpipe, 
+            num_workers=self.cfg.num_workers,
+            pin_memory=self.cfg.pin_memory
         )
     
     @property

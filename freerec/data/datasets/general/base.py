@@ -12,8 +12,8 @@ from ....dict2obj import Config
 __all__ = ['GeneralRecSet', 'UserItemPair']
 
 
-class GeneralRecSet(RecDataSet): ...
-
+class GeneralRecSet(RecDataSet):
+    DATATYPE =  "General"
 
 class _Row2Pairer(dp.iter.IterDataPipe):
 

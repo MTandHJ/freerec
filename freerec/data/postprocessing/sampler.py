@@ -67,7 +67,7 @@ class GenTrainUniformSampler(Postprocessor):
         self.posItems = [tuple(items) for items in self.posItems]
 
     def _check(self, user) -> bool:
-        return len(self.posItems[user]) == 0
+        return len(self.posItems[user]) > 0
 
     def _sample_from_all(self, pool_size: int = 51200):
         r"""
@@ -203,7 +203,7 @@ class GenValidYielder(Postprocessor):
         self.unseenItems = [tuple(items) for items in self.unseenItems]
 
     def _check(self, user) -> bool:
-        return len(self.unseenItems[user]) == 0
+        return len(self.unseenItems[user]) > 0
 
     def __iter__(self):
         r"""

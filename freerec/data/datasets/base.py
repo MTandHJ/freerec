@@ -51,6 +51,13 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         Includes fields of each column.
     DEFAULT_CHUNK_SIZE: int, default 51200 
         Chunk size for saving.
+    DATATYPE: str
+        Dataset type.
+        - `General': for general recommendation.
+        - `Sequential': for sequential recommendation.
+        - `Session': for session-based recommendation.
+        - `Context': for context-aware recommendation.
+        - `Knowledge': for knowledge-based recommendation.
     VALID_IS_TEST: bool 
         The validset and testset are the same one sometimes.
 
@@ -65,10 +72,11 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
 
     DEFAULT_CHUNK_SIZE = 51200 # chunk size
     URL: str
+    DATATYPE: str
     VALID_IS_TEST: bool
 
     def __new__(cls, *args, **kwargs):
-        for attr in ('_cfg', 'VALID_IS_TEST'):
+        for attr in ('_cfg', 'DATATYPE', 'VALID_IS_TEST'):
             if not hasattr(cls, attr):
                 raise RecSetBuildingError(f"'{attr}' should be defined before instantiation ...")
         assert 'fields' in cls._cfg, "the config of fields should be defined in '_cfg' ..."
@@ -88,7 +96,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         self.__mode = 'train'
 
         filename = filename if filename else self.__class__.__name__
-        self.path = os.path.join(root, filename)
+        self.path = os.path.join(root, self.DATATYPE, filename)
         if not os.path.exists(self.path) or not any(True for _ in os.scandir(self.path)):
             if download:
                 extract_archive(

@@ -7,4 +7,5 @@ __all__ = []
 
 
 #TODO:===============================Knowledge-based Recommendation===============================
-class KnowledgeBasedRecSet(RecDataSet): ...
+class KnowledgeBasedRecSet(RecDataSet):
+    DATATYPE =  "Knowledge"
