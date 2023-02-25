@@ -279,9 +279,19 @@ class Coach(ChiefCoach):
         """Return the monitor dictionary for the different modes ('train', 'valid', 'test')."""
         return self.__monitors
 
+    @property
+    def meter4best(self):
+        return self.__best_meter
+
+    @meter4best.setter
+    def meter4best(self, meter: AverageMeter):
+        self.__best_meter = meter
+        infoLogger(f"[Coach] >>> Set best meter: {meter.name} ")
+
     @timemeter("Coach/compile")
     def compile(
-        self, cfg: Config, monitors: List[str]
+        self, cfg: Config, monitors: List[str], 
+        which4best: str = 'LOSS'
     ):
         r"""
         Load the configuration and set up monitors for training.
@@ -292,6 +302,8 @@ class Coach(ChiefCoach):
             A configuration object with the training details.
         monitors : List[str]
             A list of metric names to be monitored during training.
+        which4best : str, defaults `LOSS'
+            The metric used for selecting the best checkpoint.
 
         Examples
         --------
@@ -310,42 +322,46 @@ class Coach(ChiefCoach):
         ):
             """Add a monitor for the specified metric."""
             try:
-                self.__monitors[prefix][lastname].append(
-                    AverageMeter(
+                meter = AverageMeter(
                         name=name,
                         metric=partial(DEFAULT_METRICS[lastname], **kwargs),
                         fmt=DEFAULT_FMTS[lastname],
                         best_caster=DEFAULT_BEST_CASTER[lastname]
                     )
-                )
+                self.__monitors[prefix][lastname].append(meter)
             except KeyError:
                 raise KeyError(
                     f"The metric of {lastname} is not included. "
                     f"You can register by calling `register_metric(...)' ..."
                 )
+            return meter
 
         # UPPER
-        monitors = ['LOSS'] + [name.upper() for name in monitors]
+        which4best = which4best.upper()
+        monitors = ['LOSS'] + [name.upper() for name in monitors] + [which4best]
         monitors = sorted(set(monitors), key=monitors.index)
 
         for name in monitors:
-            if '@' in name:
-                lastname, K = name.split('@')
-                for prefix in ('train', 'valid', 'test'):
-                    set_monitor(
+            for prefix in ('train', 'valid', 'test'):
+                if '@' in name:
+                    lastname, K = name.split('@')
+                    meter = set_monitor(
                         name=name,
                         lastname=lastname,
                         prefix=prefix,
                         k=int(K)
                     )
-            else:
-                lastname = name
-                for prefix in ('train', 'valid', 'test'):
-                    set_monitor(
+                else:
+                    lastname = name
+                    meter = set_monitor(
                         name=name,
                         lastname=lastname,
                         prefix=prefix
                     )
+                if prefix == 'valid' and name == which4best:
+                    self.meter4best = meter
+                    self._best = -float('inf') if meter.caster is max else float('inf')
+                    self._best_epoch = 0
 
         # Prepare data loaders
         self.prepare_dataloader()
@@ -353,6 +369,10 @@ class Coach(ChiefCoach):
     def save(self) -> None:
         """Save the model"""
         torch.save(self.model.state_dict(), os.path.join(self.cfg.LOG_PATH, self.cfg.SAVED_FILENAME))
+
+    def load(self, path: str, filename: Optional[str] = None, **kwargs) -> None:
+        filename = self.cfg.SAVED_FILENAME if filename is None else filename
+        self.model.load_state_dict(torch.load(os.path.join(path, filename), **kwargs))
 
     def save_checkpoint(self, epoch: int) -> None:
         r"""
@@ -391,12 +411,31 @@ class Coach(ChiefCoach):
         return checkpoint['epoch']
 
     def save_best(self) -> None:
-        """Save best model."""
-        ...
+        torch.save(self.model.state_dict(), os.path.join(self.cfg.LOG_PATH, self.cfg.BEST_FILENAME))
 
-    def check_best(self, val: float) -> None:
+    def load_best(self) -> None:
+        infoLogger(f"[Coach] >>> Load best model @Epoch {self._best_epoch:<4d} ")
+        self.model.load_state_dict(torch.load(os.path.join(self.cfg.LOG_PATH, self.cfg.BEST_FILENAME)))
+
+    def check_best(self, epoch: int) -> None:
         """Update best value."""
-        ...
+        if self.meter4best.active:
+            best_ = self.meter4best.which_is_better(self._best)
+            if best_ != self._best:
+                self._best = best_
+                self._best_epoch = epoch
+                infoLogger(f"[Coach] >>> Better ***{self.meter4best.name}*** of ***{self._best:.4f}*** ")
+                self.save_best()
+
+    def eval_at_best(self):
+        try:
+            self.load_best()
+            self.valid()
+            self.test()
+            self.step(self._best_epoch)
+            self.load(self.cfg.LOG_PATH, self.cfg.SAVED_FILENAME)
+        except FileNotFoundError:
+            infoLogger(f"[Coach] >>> No best model was recorded. Skip it ...")
 
     def resume(self) -> int:
         r"""
@@ -457,7 +496,6 @@ class Coach(ChiefCoach):
         --------
         None
         """
-
         metrics: Dict[str, List[AverageMeter]]
         for prefix, metrics in self.monitors.items():
             infos = [f"[Coach] >>> {prefix.upper():5} @Epoch: {epoch:<4d} >>> "]
@@ -521,20 +559,24 @@ class Coach(ChiefCoach):
                 self.save_checkpoint(epoch)
             if epoch % self.cfg.EVAL_FREQ == 0:
                 if self.cfg.EVAL_VALID:
-                    self.check_best(self.valid())
+                    self.valid()
                 if self.cfg.EVAL_TEST:
                     self.test()
             self.train()
 
+            self.check_best(epoch)
             self.step(epoch)
         self.save()
 
         # last epoch
-        self.check_best(self.valid())
+        self.valid()
         self.test()
+        self.check_best(epoch)
         self.step(self.cfg.epochs)
 
         self.summary()
+
+        self.eval_at_best()
 
 
 class Adapter:

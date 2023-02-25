@@ -54,6 +54,8 @@ log2console : bool
     If True, display logs on the console.
 SAVED_FILENAME : str
     The filename of saved model parameters.
+BEST_FILENAME : str
+    The filename of saved best model parameters.
 CHECKPOINT_FREQ : int
     The frequency of saving checkpoints.
 CHECKPOINT_MODULES : list
@@ -103,6 +105,7 @@ CONFIG = Config(
 
     # path|file
     SAVED_FILENAME = "model.pt",
+    BEST_FILENAME = "best.pt",
     CHECKPOINT_FREQ = 1,
     CHECKPOINT_MODULES = ['model', 'optimizer', 'lr_scheduler'],
     CHECKPOINT_FILENAME = "checkpoint.tar",

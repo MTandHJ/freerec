@@ -181,6 +181,9 @@ class AverageMeter:
         self.fp.savefig(os.path.join(path, filename))
         return filename
 
+    def which_is_better(self, other: float) -> bool:
+        return self.caster(self.avg, other)
+
     def argbest(self, freq: int = 1) -> float:
         r"""
         Return the index and value of the best result in history.
