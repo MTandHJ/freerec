@@ -50,12 +50,7 @@ class UserItemTimeTriplet(SequentialRecSet):
     open_kw = Config(mode='rt', delimiter=' ', skip_lines=1)
 
     def file_filter(self, filename: str):
-        if self.mode == 'train':
-            return 'train' in filename
-        elif self.mode == 'valid':
-            return 'valid' in filename
-        else:
-            return 'test' in filename
+        return self.mode in filename
 
     def raw2data(self) -> dp.iter.IterableWrapper:
         datapipe = dp.iter.FileLister(self.path)

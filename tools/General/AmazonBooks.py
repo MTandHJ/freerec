@@ -1,14 +1,13 @@
 
 
-
 # Refer to
-# https://github.com/RUCAIBox/RecSysDatasets/blob/master/conversion_tools/usage/Gowalla.md
-# for gowalla.inter:
-# user_id:token item_id:token timestamp:float latitude:float longitude:float num_repeat:float
+# https://github.com/RUCAIBox/RecSysDatasets/blob/master/conversion_tools/usage/Amazon.md
+# for Amazon_XXX.inter:
+# user_id:token item_id:token rating:float timestamp:float
 # %%
 
-import os
 import numpy as np
+import os
 import pandas as pd
 import torchdata.datapipes as dp
 from math import ceil, floor
@@ -19,32 +18,33 @@ from itertools import chain
 
 #==============================Config==============================
 
-path = r"E:\Desktop\data\General\Gowalla"
-dataset = "gowalla.inter"
+path = r"E:\Desktop\data\General\AmazonBooks"
+dataset = "Amazon_Books.inter"
 kcore_user = 10 # select the user interacted >=k items
 kcore_item = 10 # select the item interacted >=k users
+threshold_of_star = 4 # select pairs with star >= k
 ratios = (8, 1, 1) # train:valid:test
 # %%
-
 datapipe = dp.iter.FileLister(path)
 datapipe = datapipe.filter(filter_fn=lambda file_: file_.endswith(dataset))
 datapipe = datapipe.open_files(mode='rt')
 datapipe = datapipe.parse_csv(delimiter='\t', skip_lines=1)
-datapipe = datapipe.map(lambda row: (int(row[0]), int(row[1]), float(row[2]))) # (User, Item, Timestamp)
+datapipe = datapipe.map(lambda row: (str(row[0]), str(row[1]), float(row[2]), float(row[3]))) # (User, Item, star, Timestamp)
+
 
 # %%
 
-#==============================filter out repeated pairs==============================
+#==============================filter out repeated pairs and low-star pairs==============================
 
 data = []
 visited = set()
 
-for row in datapipe:
-    if (row[0], row[1]) in visited:
+for user, item, star, timestamp in datapipe:
+    if (user, item) in visited:
         continue
-    else:
-        data.append(row)
-        visited.add((int(row[0]), int(row[1])))
+    elif star >= threshold_of_star:
+        data.append((user, item, timestamp))
+        visited.add((user, item))
 
 # %%
 
@@ -73,35 +73,34 @@ while datasize != len(data):
     ))
 
 # Out:
-# datasize: 3981334
-# datasize: 1339108
-# datasize: 1174010
-# datasize: 1090400
-# datasize: 1064843
-# datasize: 1047467
-# datasize: 1040489
-# datasize: 1035097
-# datasize: 1032424
-# datasize: 1030383
-# datasize: 1029389
-# datasize: 1028665
-# datasize: 1028355
-# datasize: 1028010
-# datasize: 1027851
-# datasize: 1027680
-# datasize: 1027563
-# datasize: 1027491
-# datasize: 1027473
-# datasize: 1027464
-
+# datasize: 18489343
+# datasize: 4910711
+# datasize: 3780896
+# datasize: 3425241
+# datasize: 3296761
+# datasize: 3236548
+# datasize: 3210089
+# datasize: 3196425
+# datasize: 3189744
+# datasize: 3186268
+# datasize: 3184354
+# datasize: 3183290
+# datasize: 3182746
+# datasize: 3182358
+# datasize: 3182102
+# datasize: 3181979
+# datasize: 3181828
+# datasize: 3181777
+# datasize: 3181759
 
 # %%
 
-#==============================Sort by timestamp==============================
+#==============================sort by timestamp==============================
 
 data = sorted(data, key=lambda row: (row[0], row[2])) # (User, Item)
 
-#==============================Map int to id==============================
+
+#==============================map str to int==============================
 
 users, items, _ = zip(*data)
 users, items = set(users), set(items)
@@ -112,17 +111,22 @@ itemCount = len(items)
 
 print(f"#Users: {len(users)} #Items: {len(items)}")
 # Out: 
-# #Users: 29858 #Items: 40988
+# #Users: 109730 #Items: 96421
 
 data = list(map(
     lambda row: (userMap[row[0]], itemMap[row[1]]),
     data
 ))
 
-#==============================Group by user==============================
+#==============================group by user==============================
+
 data_by_user = defaultdict(list)
 for row in data:
     data_by_user[row[0]].append((row[0], row[1])) # (User, Item)
+
+
+# %%
+
 
 
 # %%
@@ -153,9 +157,10 @@ testset = list(chain(*testset))
 print(f"#Train: {len(trainset)} #Valid: {len(validset)} #Test: {len(testset)}")
 
 # Out:
-# #Train: 810128 #Valid: 100508 #Test: 116828
+# #Train: 2502323 #Valid: 308885 #Test: 370551
 
 # %%
+
 
 #==============================Saving==============================
 
@@ -167,3 +172,4 @@ df.to_csv(os.path.join(path, 'valid.txt'), sep='\t', index=False)
 
 df = pd.DataFrame(testset, columns=['User', 'Item'])
 df.to_csv(os.path.join(path, 'test.txt'), sep='\t', index=False)
+# %%

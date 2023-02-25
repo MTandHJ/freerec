@@ -1,12 +1,15 @@
 
 
-from .base import UserItemPair
+from .base import UserItemPair, BARSUserItemPair
 
 
-__all__ = ['Gowalla_m1']
+__all__ = ['Gowalla', 'Gowalla_m1']
 
 
-class Gowalla_m1(UserItemPair):
+class Gowalla(UserItemPair): ...
+
+
+class Gowalla_m1(BARSUserItemPair):
     r""" 
     GowallaM1: (user, items).
     |  Dataset   | #Users | #Items | #Interactions | #Train  |  #Test  | Density |

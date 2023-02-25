@@ -1,12 +1,14 @@
 
 
-from .base import UserItemPair
+from .base import UserItemPair, BARSUserItemPair
 
 
-__all__ = ['MovieLens1M_m2']
+__all__ = ['MovieLens1M', 'MovieLens1M_m2']
 
 
-class MovieLens1M_m2(UserItemPair):
+class MovieLens1M(UserItemPair): ...
+
+class MovieLens1M_m2(BARSUserItemPair):
     r"""
     MovieLens1M: (user, item, rating, timestamp)
     |    Dataset     | #Users | #Items | #Interactions | #Train  | #Test  | Density |

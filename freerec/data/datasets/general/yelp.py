@@ -1,12 +1,15 @@
 
 
-from .base import UserItemPair
+from .base import UserItemPair, BARSUserItemPair
 
 
-__all__ = ['Yelp18_m1']
+__all__ = ['Yelp2018', 'Yelp18_m1']
 
 
-class Yelp18_m1(UserItemPair):
+class Yelp2018(UserItemPair): ...
+
+
+class Yelp18_m1(BARSUserItemPair):
     r"""
     Yelp 2018 dataset.
     |  Dataset  | #Users | #Items | #Interactions |  #Train   |  #Test  | Density |

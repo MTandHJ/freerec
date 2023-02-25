@@ -1,12 +1,18 @@
 
 
-from .base import UserItemPair
+from .base import UserItemPair, BARSUserItemPair
 
 
-__all__ = ['AmazonBooks_m1', 'AmazonCDs_m1', 'AmazonMovies_m1', 'AmazonBeauty_m1', 'AmazonElectronics_m1']
+__all__ = [
+    'AmazonBooks',
+    'AmazonBooks_m1', 'AmazonCDs_m1', 'AmazonMovies_m1', 'AmazonBeauty_m1', 'AmazonElectronics_m1'
+]
 
 
-class AmazonBooks_m1(UserItemPair):
+class AmazonBooks(UserItemPair): ...
+
+
+class AmazonBooks_m1(BARSUserItemPair):
     r"""
     Amazon-Books dataset.
     |    Dataset     | #Users | #Items | #Interactions |  #Train   |  #Test  | Density |
@@ -32,7 +38,7 @@ class AmazonBooks_m1(UserItemPair):
     URL = "https://zenodo.org/record/7297855/files/AmazonBooks_m1.zip"
 
 
-class AmazonCDs_m1(UserItemPair):
+class AmazonCDs_m1(BARSUserItemPair):
     r"""
     Amazon-CDs dataset.
     |   Dataset    | #Users | #Items | #Interactions | #Train  |  #Test  | Density |
@@ -58,7 +64,7 @@ class AmazonCDs_m1(UserItemPair):
 
 
 
-class AmazonMovies_m1(UserItemPair):
+class AmazonMovies_m1(BARSUserItemPair):
     r"""
     Amazon-Movies dataset.
     |     Dataset     | #Users | #Items | #Interactions | #Train  |  #Test  | Density |
@@ -83,7 +89,7 @@ class AmazonMovies_m1(UserItemPair):
     URL = "https://zenodo.org/record/7297855/files/AmazonMovies_m1.zip"
 
 
-class AmazonBeauty_m1(UserItemPair):
+class AmazonBeauty_m1(BARSUserItemPair):
     r"""
     Amazon-Beauty dataset.
     |     Dataset     | #Users | #Items | #Interactions | #Train | #Test  | Density |
@@ -108,7 +114,7 @@ class AmazonBeauty_m1(UserItemPair):
     URL = "https://zenodo.org/record/7297855/files/AmazonBeauty_m1.zip"
 
 
-class AmazonElectronics_m1(UserItemPair):
+class AmazonElectronics_m1(BARSUserItemPair):
     r"""
     Amazon-Beauty dataset.
     |       Dataset        | #Users | #Items | #Interactions | #Train | #Test | Density |

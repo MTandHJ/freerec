@@ -6,9 +6,11 @@
 # user_id:token item_id:token rating:float timestamp:float useful:float funny:float cool:float review_id:token
 # %%
 
+import numpy as np
 import os
 import pandas as pd
 import torchdata.datapipes as dp
+from math import ceil, floor
 from collections import defaultdict
 from itertools import chain
 
@@ -16,11 +18,12 @@ from itertools import chain
 
 #==============================Config==============================
 
-path = "..."
+path = r"E:\Desktop\data\General\Yelp2018"
 dataset = "yelp2018.inter"
 kcore_user = 10 # select the user interacted >=k items
-kcore_item = 10 # select the item interacted >=k more users
+kcore_item = 10 # select the item interacted >=k users
 threshold_of_star = 4 # select pairs with star >= k
+ratios = (8, 1, 1) # train:valid:test
 # %%
 datapipe = dp.iter.FileLister(path)
 datapipe = datapipe.filter(filter_fn=lambda file_: file_.endswith(dataset))
@@ -98,6 +101,8 @@ users, items, _ = zip(*data)
 users, items = set(users), set(items)
 userMap = dict(zip(users, range(len(users))))
 itemMap = dict(zip(items, range(len(items))))
+userCount = len(users)
+itemCount = len(items)
 
 print(f"#Users: {len(users)} #Items: {len(items)}")
 # Out: 
@@ -126,18 +131,18 @@ for row in data:
 trainset = []
 validset = []
 testset = []
-
-for user, pairs in data_by_user.items():
-    testset.append(
-        pairs[-len(pairs) // 10:]
-    )
-    pairs = pairs[:-len(pairs) // 10]
-    validset.append(
-        pairs[-len(pairs) // 9:]
-    )
-    trainset.append(
-        pairs[:-len(pairs) // 9]
-    )
+markers = np.cumsum(ratios)
+for user in range(userCount):
+    pairs = data_by_user[user]
+    if len(pairs) == 0:
+        continue
+    l = max(floor(markers[0] * len(pairs) / markers[-1]), 1)
+    r = floor(markers[1] * len(pairs) / markers[-1])
+    trainset.append(pairs[:l])
+    if l < r:
+        validset.append(pairs[l:r])
+    if r < len(pairs):
+        testset.append(pairs[r:])
 # %%
 
 trainset = list(chain(*trainset))
@@ -147,7 +152,7 @@ testset = list(chain(*testset))
 print(f"#Train: {len(trainset)} #Valid: {len(validset)} #Test: {len(testset)}")
 
 # Out:
-# #Train: 784296 #Valid: 116047 #Test: 122261
+# #Train: 832513 #Valid: 102190 #Test: 87901
 
 # %%
 
