@@ -1,4 +1,4 @@
-__version__ = '0.1.1'
+__version__ = '0.2.0'
 
 from . import data, models, layers, criterions, launcher, metrics, utils
 from freerec.dict2obj import Config
