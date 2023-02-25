@@ -4,7 +4,7 @@ import torchdata.datapipes as dp
 
 from ..base import RecDataSet
 from ...tags import TIMESTAMP, USER, ITEM, ID
-from ...fields import Field, SparseField
+from ...fields import Field, SparseField, DenseField
 from ....utils import infoLogger
 from ....dict2obj import Config
 
@@ -43,7 +43,7 @@ class UserItemTimeTriplet(SequentialRecSet):
         fields = [
             (SparseField, Config(name='UserID', na_value=None, dtype=int, tags=[USER, ID])),
             (SparseField, Config(name='ItemID', na_value=None, dtype=int, tags=[ITEM, ID])),
-            (SparseField, Config(name='Timestamp', na_value=None, dtype=int, tags=[TIMESTAMP]))
+            (DenseField, Config(name='Timestamp', na_value=None, dtype=int, tags=[TIMESTAMP], transformer='none'))
         ]
     )
 
