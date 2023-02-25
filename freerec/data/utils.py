@@ -47,7 +47,7 @@ def safe_cast(val: T, dest_type: Callable[[T], T], default: T) -> T:
                 raise ValueError
             return dest_type(default)
     except (ValueError, TypeError):
-        ValueError(
+        raise ValueError(
             f"Using '{dest_type.__name__}' to convert '{val}' where the default value is {default} ..." \
             f"This happens when the value (or the default value: {default}) to be cast is not of the type {dest_type.__name__}.",
         )
@@ -115,13 +115,13 @@ def download_from_url(
                     infoLogger('[DataSet] >>> Downloading %s from %s...' % (file_, url))
                 r = requests.get(url, stream=True, verify=verify_ssl)
                 if r.status_code != 200:
-                    RuntimeError("Failed downloading url %s" % url)
+                    raise RuntimeError("Failed downloading url %s" % url)
                 with open(file_, 'wb') as f:
                     for chunk in tqdm.tqdm(r.iter_content(chunk_size=1024), leave=False, desc="վ'ᴗ' ի-"):
                         if chunk:  # filter out keep-alive new chunks
                             f.write(chunk)
                 if sha1_hash and not check_sha1(file_, sha1_hash):
-                    DataSetLoadingError(
+                    raise DataSetLoadingError(
                         'File {} is downloaded but the content hash does not match.'
                         ' The repo may be outdated or download may be incomplete. '
                         'If the "repo_url" is overridden, consider switching to '
@@ -180,7 +180,7 @@ def extract_archive(file_, target_dir, overwrite=False):
         with zipfile.ZipFile(file_, 'r') as archive:
             archive.extractall(path=target_dir)
     else:
-        DataSetLoadingError('Unrecognized file type: ' + file_)
+        raise DataSetLoadingError('Unrecognized file type: ' + file_)
 
 
 def check_sha1(filename, sha1_hash):

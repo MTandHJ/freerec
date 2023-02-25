@@ -138,7 +138,7 @@ class AverageMeter:
         else:
             val = np.array(val)
         if np.isnan(val) or np.isinf(val):
-            ValueError(
+            raise ValueError(
                 f"The metric of {self.name} got an unexpected value: {val.item()}."
             )
         return val.item()

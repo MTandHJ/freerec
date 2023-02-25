@@ -24,7 +24,7 @@ cfg.add_argument("--layers", type=int, default=3)
 cfg.set_defaults(
     description="LightGCN",
     root="../data",
-    dataset='AmazonElectronics_m1',
+    dataset='MovieLens1M',
     epochs=1000,
     batch_size=2048,
     optimizer='adam',

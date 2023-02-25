@@ -76,7 +76,7 @@ def _reduce(reduction='mean'):
             elif reduction == 'sum':
                 return results.sum()
             else:
-                ValueError(f"reduction should be 'none'|'mean'|'sum' but {reduction} is received ...")
+                raise ValueError(f"reduction should be 'none'|'mean'|'sum' but {reduction} is received ...")
         wrapper.__name__ = func.__name__
         wrapper.__doc__ = func.__doc__
         return wrapper

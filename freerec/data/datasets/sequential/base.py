@@ -47,7 +47,7 @@ class UserItemTimeTriplet(SequentialRecSet):
         ]
     )
 
-    open_kw = Config(mode='rt', delimiter=' ', skip_lines=1)
+    open_kw = Config(mode='rt', delimiter='\t', skip_lines=1)
 
     def file_filter(self, filename: str):
         return self.mode in filename

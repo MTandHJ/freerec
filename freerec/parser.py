@@ -245,7 +245,7 @@ class Parser(Config):
                     elif key in self:
                         self[key] = val
                     else:
-                        KeyError(f"Unexpected parameter of {key} from {args.config} ...")
+                        raise KeyError(f"Unexpected parameter of {key} from {args.config} ...")
 
     @timemeter("Parser/compile")
     def compile(self):
@@ -358,10 +358,10 @@ class CoreParser(Config):
             'defaults' is required for clear comparsions in tensorbaord.
         """
         if self.COMMAND is None:
-            ValueError(template)
+            raise ValueError(template)
         for key in ('root', 'device'):
             if self.ENVS.get(key, None) is None:
-                KeyError(f"No {key} is allocated, calling '--{key}' to specify it")
+                raise KeyError(f"No {key} is allocated, calling '--{key}' to specify it")
 
         if self.ENVS.get('dataset', None) is None:
             self.ENVS['dataset'] = "RecDataSet"

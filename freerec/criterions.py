@@ -59,8 +59,7 @@ class BaseCriterion(nn.Module):
         elif rtype == 'l2':
             return sum(param.pow(2).sum() for param in params) / 2
         else:
-            torch.norm()
-            NotImplementedError(f"{rtype} regularization is not supported ...")
+            raise NotImplementedError(f"{rtype} regularization is not supported ...")
 
 
 class BCELoss4Logits(BaseCriterion):

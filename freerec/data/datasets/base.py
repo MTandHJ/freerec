@@ -104,7 +104,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
                     self.path
                 )
             else:
-                FileNotFoundError(f"No such file of {self.path}, or this dir is empty ...")
+                raise FileNotFoundError(f"No such file of {self.path}, or this dir is empty ...")
 
         self.compile()
         self.check()
