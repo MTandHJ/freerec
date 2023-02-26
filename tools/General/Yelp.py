@@ -13,6 +13,7 @@ import torchdata.datapipes as dp
 from math import ceil, floor
 from collections import defaultdict
 from itertools import chain
+from freerec.utils import mkdirs
 
 # %%
 
@@ -20,6 +21,7 @@ from itertools import chain
 
 path = r"E:\Desktop\data\General\Yelp2018"
 dataset = "yelp2018.inter"
+saved_path = r"E:\Desktop\data\General\Gowalla"
 kcore_user = 10 # select the user interacted >=k items
 kcore_item = 10 # select the item interacted >=k users
 threshold_of_star = 4 # select pairs with star >= k
@@ -159,12 +161,13 @@ print(f"#Train: {len(trainset)} #Valid: {len(validset)} #Test: {len(testset)}")
 
 #==============================Saving==============================
 
+mkdirs(saved_path)
+
 df = pd.DataFrame(trainset, columns=['User', 'Item'])
-df.to_csv(os.path.join(path, 'train.txt'), sep='\t', index=False)
+df.to_csv(os.path.join(saved_path, 'train.txt'), sep='\t', index=False)
 
 df = pd.DataFrame(validset, columns=['User', 'Item'])
-df.to_csv(os.path.join(path, 'valid.txt'), sep='\t', index=False)
+df.to_csv(os.path.join(saved_path, 'valid.txt'), sep='\t', index=False)
 
 df = pd.DataFrame(testset, columns=['User', 'Item'])
-df.to_csv(os.path.join(path, 'test.txt'), sep='\t', index=False)
-# %%
+df.to_csv(os.path.join(saved_path, 'test.txt'), sep='\t', index=False)

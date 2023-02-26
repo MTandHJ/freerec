@@ -1,8 +1,8 @@
 
 
 # Refer to
-# https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/Yelp.md
-# for yelp2018.inter:
+# https://github.com/RUCAIBox/RecSysDatasets/blob/master/conversion_tools/usage/MovieLens.md
+# for ml-1m.inter:
 # user_id:token item_id:token rating:float timestamp:float
 # %%
 
@@ -13,6 +13,7 @@ import torchdata.datapipes as dp
 from math import ceil, floor
 from collections import defaultdict
 from itertools import chain
+from freerec.utils import mkdirs
 
 # %%
 
@@ -20,6 +21,7 @@ from itertools import chain
 
 path = r"E:\Desktop\data\General\MovieLens1M"
 dataset = "ml-1m.inter"
+saved_path = r"E:\Desktop\data\General\MovieLens1M"
 kcore_user = 10 # select the user interacted >=k items
 kcore_item = 10 # select the item interacted >=k users
 threshold_of_star = 1 # select pairs with star >= k
@@ -147,12 +149,13 @@ print(f"#Train: {len(trainset)} #Valid: {len(validset)} #Test: {len(testset)}")
 
 #==============================Saving==============================
 
+mkdirs(saved_path)
+
 df = pd.DataFrame(trainset, columns=['User', 'Item'])
-df.to_csv(os.path.join(path, 'train.txt'), sep='\t', index=False)
+df.to_csv(os.path.join(saved_path, 'train.txt'), sep='\t', index=False)
 
 df = pd.DataFrame(validset, columns=['User', 'Item'])
-df.to_csv(os.path.join(path, 'valid.txt'), sep='\t', index=False)
+df.to_csv(os.path.join(saved_path, 'valid.txt'), sep='\t', index=False)
 
 df = pd.DataFrame(testset, columns=['User', 'Item'])
-df.to_csv(os.path.join(path, 'test.txt'), sep='\t', index=False)
-# %%
+df.to_csv(os.path.join(saved_path, 'test.txt'), sep='\t', index=False)
