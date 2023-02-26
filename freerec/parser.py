@@ -341,12 +341,12 @@ class CoreParser(Config):
             num_workers: 0
         params:
             optimizer: [adam, sgd]
-            learning_rate: [1e-3, 1e-2, 1e-1]
-            weight_decay: [0, 1e-4, 2e-4, 5e-4]
+            learning_rate: [1.e-3, 1.e-2, 1.e-1]
+            weight_decay: [0, 1.e-4, 2.e-4, 5.e-4]
             batch_size: [128, 256, 512, 1024]
         defaults:
             optimizer: adam
-            learning_rate: 1e-3
+            learning_rate: 1.e-3
             weight_decay: 0
             batch_size: 256
             epochs: 100
