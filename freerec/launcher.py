@@ -526,7 +526,7 @@ class Coach(ChiefCoach):
             freq = 1 if prefix == 'train' else self.cfg.EVAL_FREQ
             for lastname, meters in metrics.items():
                 for meter in meters:
-                    # Skip those meters never been activated.
+                    # Skip those meters never activated.
                     if len(meter.history) == 0:
                         continue
                     meter.plot(freq=freq)
@@ -537,6 +537,8 @@ class Coach(ChiefCoach):
                         val=val, epoch=epoch, img=f"![]({imgname})"
                     )
                     data.append([prefix, meter.name, val, epoch])
+                    if val != -1: # Only save available data.
+                        best[prefix][meter.name] = val
 
         file_ = os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR, self.cfg.SUMMARY_FILENAME)
         with open(file_, "w", encoding="utf8") as fh:
