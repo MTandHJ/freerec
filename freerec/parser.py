@@ -1,5 +1,7 @@
 
 
+from typing import Any
+
 import torch
 import os, argparse, time, yaml
 from argparse import ArgumentParser
@@ -91,13 +93,13 @@ CORE_LOG_PATH = "./logs/{description}/core"
 TIME = "%m%d%H%M%S"
 
 CONFIG = Config(
-    BENCHMARK = True,
+    BENCHMARK = None,
     SEED = 1,
 
     # evaluation
     EVAL_FREQ = 5,
-    EVAL_VALID = True,
-    EVAL_TEST = False,
+    EVAL_VALID = None,
+    EVAL_TEST = None,
 
     # logger
     log2file = True,
@@ -136,6 +138,10 @@ class Parser(Config):
         super().__init__(**CONFIG)
         self.parse()
 
+    def __setitem__(self, key: str, value: Any) -> None:
+        key = key.upper() if key.upper() in self else key
+        return super().__setitem__(key, value)
+
     def readme(self, path: str, mode: str = "w") -> None:
         """Add README.md to the path."""
         time_ = time.strftime("%Y-%m-%d-%H:%M:%S")
@@ -160,37 +166,37 @@ class Parser(Config):
 
         self.parser = argparse.ArgumentParser()
 
-        self.parser.add_argument("--root", type=str, default=".", help="data")
-        self.parser.add_argument("--dataset", type=str, default="RecDataSet", help="useless if no need to automatically select a dataset")
-        self.parser.add_argument("--config", type=str, default=None, help="config.yml")
+        self.add_argument("--root", type=str, default=".", help="data")
+        self.add_argument("--dataset", type=str, default="RecDataSet", help="useless if no need to automatically select a dataset")
+        self.add_argument("--config", type=str, default=None, help="config.yml")
 
-        self.parser.add_argument("--device", default=torch.cuda.current_device() if torch.cuda.is_available() else 'cpu', help="device")
+        self.add_argument("--device", default=torch.cuda.current_device() if torch.cuda.is_available() else 'cpu', help="device")
 
         # model
-        self.parser.add_argument("--optimizer", type=str, default="adam", help="Optimizer: adam (default), sgd, ...")
-        self.parser.add_argument("--nesterov", action="store_true", default=False, help="nesterov for SGD")
-        self.parser.add_argument("-mom", "--momentum", type=float, default=0.9, help="the momentum used for SGD")
-        self.parser.add_argument("-beta1", "--beta1", type=float, default=0.9, help="the first beta argument for Adam")
-        self.parser.add_argument("-beta2", "--beta2", type=float, default=0.999, help="the second beta argument for Adam")
-        self.parser.add_argument("-wd", "--weight-decay", type=float, default=None, help="weight for 'l1|l2|...' regularzation")
-        self.parser.add_argument("-lr", "--lr", "--LR", "--learning-rate", type=float, default=None)
-        self.parser.add_argument("-b", "--batch-size", type=int, default=None)
-        self.parser.add_argument("--epochs", type=int, default=None)
+        self.add_argument("--optimizer", type=str, default="adam", help="Optimizer: adam (default), sgd, ...")
+        self.add_argument("--nesterov", action="store_true", default=False, help="nesterov for SGD")
+        self.add_argument("-mom", "--momentum", type=float, default=0.9, help="the momentum used for SGD")
+        self.add_argument("-beta1", "--beta1", type=float, default=0.9, help="the first beta argument for Adam")
+        self.add_argument("-beta2", "--beta2", type=float, default=0.999, help="the second beta argument for Adam")
+        self.add_argument("-wd", "--weight-decay", type=float, default=None, help="weight for 'l1|l2|...' regularzation")
+        self.add_argument("-lr", "--lr", "--LR", "--learning-rate", type=float, default=None)
+        self.add_argument("-b", "--batch-size", type=int, default=None)
+        self.add_argument("--epochs", type=int, default=None)
 
         # eval
-        self.parser.add_argument("--eval-valid", action="store_false", default=True, help="evaluate validset")
-        self.parser.add_argument("--eval-test", action="store_true", default=False, help="evaluate testset")
-        self.parser.add_argument("--eval-freq", type=int, default=CONFIG.EVAL_FREQ, help="the evaluation frequency")
+        self.add_argument("--eval-valid", action="store_false", default=True, help="evaluate validset")
+        self.add_argument("--eval-test", action="store_true", default=False, help="evaluate testset")
+        self.add_argument("--eval-freq", type=int, default=CONFIG.EVAL_FREQ, help="the evaluation frequency")
 
-        self.parser.add_argument("--num-workers", type=int, default=4)
-        self.parser.add_argument("--pin-memory", action="store_false", default=True)
+        self.add_argument("--num-workers", type=int, default=4)
+        self.add_argument("--pin-memory", action="store_true", default=False)
 
-        self.parser.add_argument("--seed", type=int, default=CONFIG.SEED, help="calling --seed=-1 for a random seed")
-        self.parser.add_argument("--benchmark", action="store_false", default=True, help="cudnn.deterministic == True ?")
-        self.parser.add_argument("--resume", action="store_true", default=False, help="resume the training from the recent checkpoint")
+        self.add_argument("--seed", type=int, default=CONFIG.SEED, help="calling --seed=-1 for a random seed")
+        self.add_argument("--benchmark", action="store_true", default=False, help="cudnn.benchmark == True ?")
+        self.add_argument("--resume", action="store_true", default=False, help="resume the training from the recent checkpoint")
 
-        self.parser.add_argument("--id", type=str, default=time.strftime(TIME))
-        self.parser.add_argument("-m", "--description", type=str, default=CONFIG.description)
+        self.add_argument("--id", type=str, default=time.strftime(TIME))
+        self.add_argument("-m", "--description", type=str, default=CONFIG.description)
 
     def add_argument(self, *args: str, **kwargs):
         r"""
@@ -208,7 +214,8 @@ class Parser(Config):
         Any character `_' will be replaced by `-'.
         """
         args = (arg.replace('_', '-') for arg in args) # user '-' instead of '_'
-        self.parser.add_argument(*args, **kwargs)
+        action = self.parser.add_argument(*args, **kwargs)
+        self[action.dest] = action.default
 
     def set_defaults(self, **kwargs):
         r"""
@@ -220,6 +227,8 @@ class Parser(Config):
             The default values to set.
         """
         self.parser.set_defaults(**kwargs)
+        for key, val in kwargs.items():
+            self[key] = val
 
     @timemeter("Parser/load")
     def load(self, args: ArgumentParser):
@@ -237,15 +246,17 @@ class Parser(Config):
         KeyError
             If the parameter key is not recognized.
         """
+        defaults = dict()
         if hasattr(args, 'config') and args.config:
             with open(args.config, encoding="UTF-8", mode='r') as f:
                 for key, val in yaml.full_load(f).items():
                     if key.upper() in self:
-                        self[key.upper()] = val
+                        defaults[key.upper()] = val
                     elif key in self:
-                        self[key] = val
+                        defaults[key] = val
                     else:
-                        raise KeyError(f"Unexpected parameter of {key} from {args.config} ...")
+                        raise KeyError(f"Unexpected parameter of `{key}' in `{args.config}' ...")
+        return defaults
 
     @timemeter("Parser/compile")
     def compile(self):
@@ -254,9 +265,10 @@ class Parser(Config):
 
         Flows:
         ------
-        1. Load the default settings from the parsed command-line arguments (ArgumentParser).
-        2. If the `--config` flag has been specified, load settings from a .yaml file, which may override the 
-        default settings.
+        1. If the `--config` flag has been specified, load settings from a .yaml file, 
+            which returns default settings.
+        2. Load the modified settings from the parsed command-line arguments (ArgumentParser).
+            Note that non-default arguments will overwrite the defaults above !
         3. Generate the paths for saving checkpoints and collecting training information:
             - CHECKPOINT_PATH: the path where checkpoints will be saved.
             - LOG_PATH: the path where training information will be collected.
@@ -264,12 +276,15 @@ class Parser(Config):
         5. Add a README.md file under CHECKPOINT_PATH and LOG_PATH.
         """
         args = self.parser.parse_args()
-        self.load(args) # loading config (.yaml) first ...
+        defaults = self.load(args)
         for key, val in args._get_kwargs():
             if key.upper() in self:
-                self[key.upper()] = val
+                if self[key.upper()] != val:
+                    defaults[key.upper()] = val
             else:
-                self[key] = val
+                if self[key] != val:
+                    defaults[key] = val
+        self.update(**defaults)
 
         try:
             self.device = int(self.device)
@@ -361,7 +376,7 @@ class CoreParser(Config):
             raise ValueError(template)
         for key in ('root', 'device'):
             if self.ENVS.get(key, None) is None:
-                raise KeyError(f"No {key} is allocated, calling '--{key}' to specify it")
+                raise KeyError(f"No `{key}' is allocated, calling '--{key}' to specify it")
 
         if self.ENVS.get('dataset', None) is None:
             self.ENVS['dataset'] = "RecDataSet"

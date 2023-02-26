@@ -571,7 +571,7 @@ class Coach(ChiefCoach):
         # last epoch
         self.valid()
         self.test()
-        self.check_best(epoch)
+        self.check_best(self.cfg.epochs)
         self.step(self.cfg.epochs)
 
         self.summary()

@@ -481,11 +481,11 @@ def activate_benchmark(benchmark: bool) -> None:
     """
     from torch.backends import cudnn
     if benchmark:
-        infoLogger(f"[Benchmark] >>> cudnn.deterministic == True")
-        cudnn.benchmark, cudnn.deterministic = False, True
-    else:
-        infoLogger(f"[Benchmark] >>> cudnn.deterministic == False")
+        infoLogger(f"[Benchmark] >>> cudnn.benchmark == True | cudnn.deterministic == False")
         cudnn.benchmark, cudnn.deterministic = True, False
+    else:
+        infoLogger(f"[Benchmark] >>> cudnn.benchmark == False | cudnn.deterministic == True")
+        cudnn.benchmark, cudnn.deterministic = False, True
 
 def set_seed(seed: int) -> int:
     r"""
