@@ -1,187 +1,266 @@
 
 
-from typing import List
 
-import math
+from typing import Callable, Iterable, List, Tuple
+
 import numpy as np
+import os
+import pandas as pd
+import torchdata.datapipes as dp
+from math import ceil, floor
+from collections import defaultdict
+from itertools import chain
+
+from ..utils import mkdirs
 
 
-__all__ = ['Identifier', 'Indexer', 'StandardScaler', 'MinMaxScaler']
+
+def reporter(*attributes: str):
+    def decorator(func: Callable):
+        def wrapper(self, *args, **kwargs) -> Iterable:
+            infos = [f"[{attr}: {getattr(self, attr)}]" for attr in attributes]
+            infos = "  ".join(infos)
+            print(f">>> Do `{func.__name__}' under the settings: {infos}")
+            return func(self, *args, **kwargs)
+        wrapper.__name__ = func.__name__
+        wrapper.__doc__ = func.__doc__
+        return wrapper
+    return decorator
+
+class Inter2Txt:
+
+    def __init__(
+        self,
+        root: str, dataset: str,
+        kcore4user: int = 10, kcore4item: int = 10, star4pos: float = 4.,
+        ratios: Iterable = (8, 1, 1)
+    ) -> None:
+
+        self.root = root
+        self.dataset = dataset
+        self.kcore4user = kcore4user
+        self.kcore4item = kcore4item
+        self.star4pos = star4pos
+        self.ratios = ratios
+
+    @staticmethod
+    def listmap(func: Callable, *args):
+        return list(map(
+            func, *args
+        ))
+
+    @staticmethod
+    def where_is_(xxx: str, names: Iterable[str]):
+        for i, name in enumerate(names):
+            if name.startswith(xxx):
+                return i
+        return None
+    
+    @reporter()
+    def load_data(self):
+        datapipe = dp.iter.FileLister(os.path.join(self.root, self.dataset))
+        datapipe = datapipe.filter(filter_fn=lambda file_: file_.endswith('.inter'))
+        datapipe = datapipe.open_files(mode='rt')
+        names = next(iter(
+            datapipe.parse_csv(delimiter='\t', skip_lines=0)
+        ))
+        userIdx = self.where_is_('user', names)
+        itemIdx = self.where_is_('item', names)
+        starIdx = self.where_is_('rating', names)
+        timestampIdx = self.where_is_('timestamp', names)
+        datapipe = datapipe.parse_csv(delimiter='\t', skip_lines=1)
+        if starIdx is None: # (User, Item, Time)
+            datapipe = datapipe.map(
+                lambda row: (str(row[userIdx]), str(row[itemIdx]), float(row[timestampIdx]))
+            )
+            data = list(datapipe)
+        else: # (User, Item, Star, Time)
+            datapipe = datapipe.map(
+                lambda row: (str(row[userIdx]), str(row[itemIdx]), float(row[timestampIdx]), float(row[starIdx]))
+            )
+            data = self.filter_by_star(list(datapipe))
+        return data
+
+    @reporter('star4pos')
+    def filter_by_star(self, data: Iterable) -> List:
+        filtered = []
+        for row in data:
+            if row[2] >= self.star4pos:
+                filtered.append(row)
+        return filtered
+
+    @reporter('kcore4user', 'kcore4item')
+    def filter_by_core(self, data: Iterable) -> List:
+        datasize = 0
+
+        while datasize != len(data):
+            datasize = len(data)
+            print(f"datasize: {datasize}")
+
+            count_per_user = defaultdict(int)
+            count_per_item = defaultdict(int)
+            users, items = set(), set()
+
+            for row in data:
+                user, item = row[0], row[1]
+                count_per_user[user] += 1
+                count_per_item[item] += 1
+                if count_per_user[user] >= self.kcore4user:
+                    users.add(user)
+                if count_per_item[item] >= self.kcore4item:
+                    items.add(item)
+            data = list(filter(
+                lambda row: row[0] in users and row[1] in items,
+                data
+            ))
+        
+        return data
+
+    @reporter()
+    def sort_by_timestamp(self, data: List) -> List:
+        return sorted(data, key=lambda row: (row[0], row[2]))
+
+    @reporter()
+    def UI2ID(self, data: List) -> List:
+        users, items = list(zip(*data))[:2]
+        users, items = set(users), set(items)
+        userMap = dict(zip(users, range(len(users))))
+        itemMap = dict(zip(items, range(len(items))))
+        self.userCount = len(users)
+        self.itemCount = len(items)
+
+        data = list(map(
+            lambda row: (userMap[row[0]], itemMap[row[1]], row[2]),
+            data
+        ))
+
+        return data
+
+    @reporter()
+    def user_item_only(self, data: List) -> List:
+        return self.listmap(lambda row: (row[0], row[1]), data)
+
+    @reporter()
+    def user_item_time_only(self, data: List) -> List:
+        return self.listmap(lambda row: (row[0], row[1], row[2]), data)
+
+    @reporter()
+    def group_by_user(self, data: Iterable) -> List:
+        data_by_user = defaultdict(list)
+        for row in data:
+            data_by_user[row[0]].append(row) # (User, Item, TimeStamp)
+        return data_by_user
+
+    def summary(self):
+        from prettytable import PrettyTable
+        table = PrettyTable(['#User', '#Item', '#Interactions', '#Train', '#Valid', '#Test', 'Density'])
+        table.add_row([
+            self.userCount, self.itemCount, self.trainsize + self.validsize + self.testsize,
+            self.trainsize, self.validsize, self.testsize,
+            (self.trainsize + self.validsize + self.testsize) / (self.userCount * self.itemCount)
+        ])
 
 
-class TransformError(Exception): ...
+class GenInter2Txt(Inter2Txt):
 
+    @reporter('ratios')
+    def split_by_ratio(self, data_by_user: List) -> Tuple[List, List, List]:
+        trainset = []
+        validset = []
+        testset = []
+        markers = np.cumsum(self.ratios)
+        for user in range(self.userCount):
+            pairs = data_by_user[user]
+            if len(pairs) == 0:
+                continue
+            l = max(floor(markers[0] * len(pairs) / markers[-1]), 1)
+            r = floor(markers[1] * len(pairs) / markers[-1])
+            trainset.append(pairs[:l])
+            if l < r:
+                validset.append(pairs[l:r])
+            if r < len(pairs):
+                testset.append(pairs[r:])
+        trainset = list(chain(*trainset))
+        validset = list(chain(*validset))
+        testset = list(chain(*testset))
 
-class Identifier:
-    r"""
-    Transform X into X identically.
+        self.trainsize = len(trainset)
+        self.validsize = len(validset)
+        self.testsize = len(testset) 
+        return trainset, validset, testset
 
-    Parameters:
-    -----------
-    X : Any
-        The input data to be transformed.
+    @reporter('root')
+    def save(self, trainset, validset, testset):
+        path = os.path.join(self.root, 'General', self.dataset)
+        mkdirs(path)
 
-    Returns:
-    --------
-    Any
-        The transformed data.
+        df = pd.DataFrame(trainset, columns=['User', 'Item'])
+        df.to_csv(os.path.join(path, 'train.txt'), sep='\t', index=False)
 
-    Examples:
-    ---------
-    >>> import torcharrow.dtypes as dt
-    >>> col = [3, 2, 1]
-    >>> transformer = Identifier()
-    >>> transformer.transform(col)
-    [3, 2, 1]
-    """
+        df = pd.DataFrame(validset, columns=['User', 'Item'])
+        df.to_csv(os.path.join(path, 'valid.txt'), sep='\t', index=False)
 
-    def __init__(self) -> None:
-        self.reset()
+        df = pd.DataFrame(testset, columns=['User', 'Item'])
+        df.to_csv(os.path.join(path, 'test.txt'), sep='\t', index=False)
 
-    def reset(self): ...
+    def compile(self):
+        data = self.load_data()
+        data = self.filter_by_core(data)
+        data = self.UI2ID(data)
+        data = self.sort_by_timestamp(data)
+        data = self.user_item_only(data)
+        data = self.group_by_user(data)
+        self.save(*self.split_by_ratio(data))
+        self.summary()
+    
+class SeqInter2Txt(Inter2Txt):
 
-    def partial_fit(self, col: List): ...
+    @reporter()
+    def split(self, data_by_user: List) -> Tuple[List, List, List]:
+        trainset = []
+        validset = []
+        testset = []
+        for user in range(self.userCount):
+            pairs = data_by_user[user]
+            if len(pairs) == 0:
+                continue
+            if len(pairs) <= 3:
+                trainset.append(pairs)
+            else:
+                trainset.append(pairs[:-2])
+                validset.append(pairs[-2:-1])
+                testset.append(pairs[-1:])
 
-    def transform(self, col: List) -> List:
-        return col
+        trainset = list(chain(*trainset))
+        validset = list(chain(*validset))
+        testset = list(chain(*testset))
 
+        self.trainsize = len(trainset)
+        self.validsize = len(validset)
+        self.testsize = len(testset) 
+        return trainset, validset, testset
 
-class Indexer(Identifier):
-    r"""
-    Transform sparse items into indices.
+    @reporter('root')
+    def save(self, trainset, validset, testset):
+        path = os.path.join(self.root, 'Sequential', self.dataset)
+        mkdirs(path)
 
-    classes: set
-        Set of unique classes seen during `fit`.
-    maper: dict
-        Mapping of input values to output indices.
+        df = pd.DataFrame(trainset, columns=['User', 'Item', 'Timestamp'])
+        df.to_csv(os.path.join(path, 'train.txt'), sep='\t', index=False)
 
-    Examples:
-    ---------
-    >>> col = [3, 2, 1]
-    >>> col2 = [4, 5, 6]
-    >>> transformer = Indexer()
-    >>> transformer.partial_fit(col)
-    >>> transformer.classes
-    {1, 2, 3}
-    >>> transformer.maper
-    {1: 0, 2: 1, 3: 2}
-    >>> transformer.partial_fit(col2)
-    >>> transformer.classes
-    {1, 2, 3, 4, 5, 6}
-    >>> transformer.maper
-    {1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5}
-    >>> transformer.transform(col2)
-    [3, 4, 5]
-    """
+        df = pd.DataFrame(validset, columns=['User', 'Item', 'Timestamp'])
+        df.to_csv(os.path.join(path, 'valid.txt'), sep='\t', index=False)
 
-    def reset(self):
-        self.classes = set()
-        self.maper = None
-        self.enums = None
+        df = pd.DataFrame(testset, columns=['User', 'Item', 'Timestamp'])
+        df.to_csv(os.path.join(path, 'test.txt'), sep='\t', index=False)
 
-    def partial_fit(self, col: List):
-        self.classes |= set(col)
-        ordered = sorted(self.classes)
-        self.count = len(ordered)
-        self.enums = tuple(range(self.count))
-        self.maper = dict(zip(ordered, self.enums))
-
-    def _map(self, x):
-        return self.maper[x]
-
-    def transform(self, col: List) -> List:
-        if self.maper:
-            return list(map(self._map, col))
-        else:
-            raise TransformError("Indexer should be (partially) fitted before using ...")
-
-
-class StandardScaler(Identifier):
-    r"""
-    Normalize dense items using the standard scaler.
-
-    Attributes:
-    -----------
-    field: dt.Field or the Field defined in torcharrow.fields
-        The field type of the dense items.
-    n_samples: int
-        The number of fitted items.
-    sum_: float
-        The summation of the fitted items.
-    sum_of_squares: float 
-        The summation of the squared fitted items.
-
-    Examples:
-    ---------
-    >>> import torcharrow.dtypes as dt
-    >>> col = [3., 2., 1.]
-    >>> transformer = StandardScaler()
-    >>> transformer.partial_fit(col)
-    >>> transformer.transform(col)
-    [1.2247448713915887, 0.0, -1.2247448713915887]
-    """
-
-    def reset(self):
-        self.nums = 0
-        self.sum = 0
-        self.ssum = 0 # sum of squared
-
-    @property
-    def mean(self):
-        return self.sum / self.nums
-
-    @property
-    def std(self):
-        return math.sqrt(self.ssum / self.nums - self.mean ** 2)
-
-    def partial_fit(self, col: List):
-        col = np.array(col)
-        self.nums += len(col)
-        self.sum += col.sum().item()
-        self.ssum += (col ** 2).sum().item()
-
-    def transform(self, col: List) -> List:
-        if self.nums:
-            return ((np.array(col) - self.mean) / self.std).tolist()
-        else:
-            raise TransformError("StandardScaler should be (partially) fitted before using ...")
-
-
-class MinMaxScaler(Identifier):
-    r"""
-    Scale data to the range [0, 1].
-
-    Attributes:
-    -----------
-    min: float
-        The minimum value in the data.
-    max: float
-        The maximum value in the data.
-
-    Examples:
-    ---------
-    >>> col = [3., 2., 1.]
-    >>> transformer = MinMaxScaler()
-    >>> transformer.partial_fit(col)
-    >>> transformer.transform(col)
-    [1.0, 0.5, 0.0]
-    """
-
-    def reset(self):
-        self.min = float('inf')
-        self.max = float('-inf')
-
-    def partial_fit(self, col: List):
-        self.min = min(np.min(col).item(), self.min)
-        self.max = max(np.max(col).item(), self.max)
-
-    def transform(self, col: List) -> List:
-        if self.min < self.max:
-            return ((np.array(col) - self.min) / (self.max - self.min)).tolist()
-        else: # Same
-            return col
-
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
+    def compile(self):
+        data = self.load_data()
+        data = self.filter_by_core(data)
+        data = self.UI2ID(data)
+        data = self.sort_by_timestamp(data)
+        data = self.user_item_time_only(data)
+        data = self.group_by_user(data)
+        self.save(*self.split(data))
+        self.summary()
+  

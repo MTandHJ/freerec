@@ -1,0 +1,6 @@
+dataset: MovieLens1M
+datatype: seq
+kcore_user: 1
+kcore_item: 1
+star4pos: 1
+ratios: '8,1,1'

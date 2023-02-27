@@ -7,7 +7,7 @@ import numpy as np
 from functools import partial, lru_cache, reduce
 
 from .utils import safe_cast
-from .preprocessing import Identifier, Indexer, StandardScaler, MinMaxScaler
+from .transformation import Identifier, Indexer, StandardScaler, MinMaxScaler
 from .tags import FieldTags, SPARSE, DENSE
 from ..utils import warnLogger
 
