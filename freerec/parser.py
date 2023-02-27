@@ -374,12 +374,10 @@ class CoreParser(Config):
         """
         if self.COMMAND is None:
             raise ValueError(template)
-        for key in ('root', 'device'):
+        for key in ('root', 'dataset', 'device'):
             if self.ENVS.get(key, None) is None:
                 raise KeyError(f"No `{key}' is allocated, calling '--{key}' to specify it")
 
-        if self.ENVS.get('dataset', None) is None:
-            self.ENVS['dataset'] = "RecDataSet"
         self.ENVS = Config(self.ENVS)
         self.PARAMS = Config(self.PARAMS)
 

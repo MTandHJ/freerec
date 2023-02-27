@@ -4,12 +4,16 @@ from .base import UserItemPair, BARSUserItemPair
 
 
 __all__ = [
-    'AmazonBooks',
+    'AmazonBooks', 'AmazonCDs', 'AmazonMovies', 'AmazonBeauty', 'AmazonElectronics',
     'AmazonBooks_m1', 'AmazonCDs_m1', 'AmazonMovies_m1', 'AmazonBeauty_m1', 'AmazonElectronics_m1'
 ]
 
 
 class AmazonBooks(UserItemPair): ...
+class AmazonCDs(UserItemPair): ...
+class AmazonMovies(UserItemPair): ...
+class AmazonBeauty(UserItemPair): ...
+class AmazonElectronics(UserItemPair): ...
 
 
 class AmazonBooks_m1(BARSUserItemPair):
