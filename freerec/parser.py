@@ -1,9 +1,9 @@
 
 
-from typing import Any
+from typing import Any, Set
 
 import torch
-import os, argparse, time, yaml
+import os, sys, argparse, time, yaml
 from argparse import ArgumentParser
 
 from .dict2obj import Config
@@ -230,6 +230,21 @@ class Parser(Config):
         for key, val in kwargs.items():
             self[key] = val
 
+    
+    def _command_line_args(self) -> Set:
+        """return the activated args in command line"""
+        args = set()
+        for arg in sys.argv[1:]:
+            if not arg.startswith("-"):
+                continue
+            arg = arg.lstrip("-")
+            if '=' in arg:
+                key = arg.split('=')[0]
+            else:
+                key = arg.split(' ')[0]
+            args.add(key.replace("-", "_"))
+        return args
+
     @timemeter("Parser/load")
     def load(self, args: ArgumentParser):
         r"""
@@ -268,7 +283,7 @@ class Parser(Config):
         1. If the `--config` flag has been specified, load settings from a .yaml file, 
             which returns default settings.
         2. Load the modified settings from the parsed command-line arguments (ArgumentParser).
-            Note that non-default arguments will overwrite the defaults above !
+            Note that the activated arguments will overwrite the defaults above !
         3. Generate the paths for saving checkpoints and collecting training information:
             - CHECKPOINT_PATH: the path where checkpoints will be saved.
             - LOG_PATH: the path where training information will be collected.
@@ -277,12 +292,13 @@ class Parser(Config):
         """
         args = self.parser.parse_args()
         defaults = self.load(args)
+        activated_args = self._command_line_args()
         for key, val in args._get_kwargs():
             if key.upper() in self:
-                if self[key.upper()] != val:
+                if self[key.upper()] != val or key in activated_args:
                     defaults[key.upper()] = val
             else:
-                if self[key] != val:
+                if self[key] != val or key in activated_args:
                     defaults[key] = val
         self.update(**defaults)
 

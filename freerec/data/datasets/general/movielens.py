@@ -8,6 +8,16 @@ __all__ = ['MovieLens1M', 'MovieLens1M_m2']
 
 class MovieLens1M(UserItemPair): ...
 
+
+#======================================Chronological======================================
+
+
+class MovieLesn1MChron811(UserItemPair): ...
+
+
+#======================================BARS======================================
+
+
 class MovieLens1M_m2(BARSUserItemPair):
     r"""
     MovieLens1M: (user, item, rating, timestamp)

@@ -9,6 +9,15 @@ __all__ = ['Gowalla', 'Gowalla_m1']
 class Gowalla(UserItemPair): ...
 
 
+#======================================Chronological======================================
+
+
+class GowallaChron811(UserItemPair): ...
+
+
+#======================================BARS======================================
+
+
 class Gowalla_m1(BARSUserItemPair):
     r""" 
     GowallaM1: (user, items).

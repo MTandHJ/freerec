@@ -9,6 +9,15 @@ __all__ = ['Yelp2018', 'Yelp18_m1']
 class Yelp2018(UserItemPair): ...
 
 
+#======================================Chronological======================================
+
+
+class Yelp2018Chron811(UserItemPair): ...
+
+
+#======================================BARS======================================
+
+
 class Yelp18_m1(BARSUserItemPair):
     r"""
     Yelp 2018 dataset.
