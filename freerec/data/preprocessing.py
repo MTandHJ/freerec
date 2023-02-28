@@ -31,17 +31,19 @@ class Inter2Txt:
 
     def __init__(
         self,
-        root: str, dataset: str,
-        kcore4user: int = 10, kcore4item: int = 10, star4pos: float = 4.,
+        root: str, filename: str, dataset: str,
+        kcore4user: int = 1, kcore4item: int = 1, star4pos: int = 0,
         ratios: Iterable = (8, 1, 1)
     ) -> None:
 
         self.root = root
+        self.filename = filename
         self.dataset = dataset
-        self.kcore4user = kcore4user
-        self.kcore4item = kcore4item
-        self.star4pos = star4pos
+        self.kcore4user = int(kcore4user)
+        self.kcore4item = int(kcore4item)
+        self.star4pos = int(star4pos)
         self.ratios = ratios
+        self.code = f"{self.kcore4user}{self.kcore4item}{self.star4pos}{''.join(map(str, self.ratios))}"
 
     @staticmethod
     def listmap(func: Callable, *args):
@@ -58,7 +60,7 @@ class Inter2Txt:
     
     @reporter()
     def load_data(self):
-        datapipe = dp.iter.FileLister(os.path.join(self.root, self.dataset))
+        datapipe = dp.iter.FileLister(os.path.join(self.root, self.filename))
         datapipe = datapipe.filter(filter_fn=lambda file_: file_.endswith('.inter'))
         datapipe = datapipe.open_files(mode='rt')
         names = next(iter(
@@ -68,13 +70,16 @@ class Inter2Txt:
         itemIdx = self.where_is_('item', names)
         starIdx = self.where_is_('rating', names)
         timestampIdx = self.where_is_('timestamp', names)
+        print(f"The .inter file includes columns: {names}")
+        print(f"Eg. User@{userIdx} Item@{itemIdx} Timestamp@{timestampIdx} Rating@{starIdx}")
+
         datapipe = datapipe.parse_csv(delimiter='\t', skip_lines=1)
         if starIdx is None: # (User, Item, Time)
             datapipe = datapipe.map(
                 lambda row: (str(row[userIdx]), str(row[itemIdx]), float(row[timestampIdx]))
             )
             data = list(datapipe)
-        else: # (User, Item, Star, Time)
+        else: # (User, Item, Time, Star)
             datapipe = datapipe.map(
                 lambda row: (str(row[userIdx]), str(row[itemIdx]), float(row[timestampIdx]), float(row[starIdx]))
             )
@@ -85,8 +90,8 @@ class Inter2Txt:
     def filter_by_star(self, data: Iterable) -> List:
         filtered = []
         for row in data:
-            if row[2] >= self.star4pos:
-                filtered.append(row)
+            if row[3] >= self.star4pos:
+                filtered.append(row[:3])
         return filtered
 
     @reporter('kcore4user', 'kcore4item')
@@ -129,10 +134,10 @@ class Inter2Txt:
         self.userCount = len(users)
         self.itemCount = len(items)
 
-        data = list(map(
+        data = self.listmap(
             lambda row: (userMap[row[0]], itemMap[row[1]], row[2]),
             data
-        ))
+        )
 
         return data
 
@@ -159,6 +164,7 @@ class Inter2Txt:
             self.trainsize, self.validsize, self.testsize,
             (self.trainsize + self.validsize + self.testsize) / (self.userCount * self.itemCount)
         ])
+        print(table)
 
 
 class GenInter2Txt(Inter2Txt):
@@ -191,7 +197,10 @@ class GenInter2Txt(Inter2Txt):
 
     @reporter('root')
     def save(self, trainset, validset, testset):
-        path = os.path.join(self.root, 'General', self.dataset)
+        path = os.path.join(
+            self.root, 'General', 
+            '_'.join([self.dataset, self.code, 'Chron'])
+        )
         mkdirs(path)
 
         df = pd.DataFrame(trainset, columns=['User', 'Item'])

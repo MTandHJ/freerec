@@ -5,6 +5,8 @@ from .base import UserItemPair, BARSUserItemPair
 
 __all__ = [
     'AmazonBooks', 'AmazonCDs', 'AmazonMovies', 'AmazonBeauty', 'AmazonElectronics',
+    'AmazonBooks_10104811_Chron', 'AmazonCDs_10104811_Chron', 'AmazonMovies_10104811_Chron', 'AmazonBeauty_10104811_Chron', 'AmazonElectronics_10104811_Chron',
+    'AmazonBooks_10104712_Chron', 'AmazonCDs_10104712_Chron', 'AmazonMovies_10104712_Chron', 'AmazonBeauty_10104712_Chron', 'AmazonElectronics_10104712_Chron',
     'AmazonBooks_m1', 'AmazonCDs_m1', 'AmazonMovies_m1', 'AmazonBeauty_m1', 'AmazonElectronics_m1'
 ]
 
@@ -17,11 +19,245 @@ class AmazonElectronics(UserItemPair): ...
 
 #======================================BARS======================================
 
-class AmazonBooksChron811(UserItemPair): ...
-class AmazonCDsChron811(UserItemPair): ...
-class AmazonMoviesChron811(UserItemPair): ...
-class AmazonBeautyChron811(UserItemPair): ...
-class AmazonElectronicsChron811(UserItemPair): ...
+
+class AmazonBooks_10104811_Chron(UserItemPair):
+    r"""
+    Chronologically-ordered Amazon Books dataset.
+
+    Config:
+    -------
+    filename: Amazon_Books
+    dataset: AmazonBooks
+    kcore4user: 10
+    kcore4item: 10
+    star4pos: 4
+    ratios: (8, 1, 1)
+
+    Statistics:
+    -----------
+    +--------+-------+---------------+---------+--------+--------+------------------------+
+    | #User  | #Item | #Interactions |  #Train | #Valid | #Test  |        Density         |
+    +--------+-------+---------------+---------+--------+--------+------------------------+
+    | 109730 | 96421 |    3181759    | 2502323 | 308885 | 370551 | 0.00030072551044609626 |
+    +--------+-------+---------------+---------+--------+--------+------------------------+
+    """
+    URL = "https://zenodo.org/record/7683693/files/AmazonBooks_10104811_Chron.zip"
+
+
+class AmazonCDs_10104811_Chron(UserItemPair):
+    r"""
+    Chronologically-ordered Amazon Books dataset.
+
+    Config:
+    -------
+    filename: Amazon_CDs_and_Vinyl
+    dataset: AmazonCDs
+    kcore4user: 10
+    kcore4item: 10
+    star4pos: 4
+    ratios: (8, 1, 1)
+
+    Statistics:
+    -----------
+    +-------+-------+---------------+--------+--------+-------+----------------------+
+    | #User | #Item | #Interactions | #Train | #Valid | #Test |       Density        |
+    +-------+-------+---------------+--------+--------+-------+----------------------+
+    |  9954 | 10877 |     272086    | 213755 | 26342  | 31989 | 0.002513040172344499 |
+    +-------+-------+---------------+--------+--------+-------+----------------------+
+    """
+    URL = "https://zenodo.org/record/7683693/files/AmazonCDs_10104811_Chron.zip"
+
+
+class AmazonMovies_10104811_Chron(UserItemPair):
+    r"""
+    Chronologically-ordered Amazon Books dataset.
+
+    Config:
+    -------
+    filename: Amazon_Movies_and_TV
+    dataset: AmazonMovies
+    kcore4user: 10
+    kcore4item: 10
+    star4pos: 4
+    ratios: (8, 1, 1)
+
+    Statistics:
+    -----------
+    +-------+-------+---------------+--------+--------+-------+-----------------------+
+    | #User | #Item | #Interactions | #Train | #Valid | #Test |        Density        |
+    +-------+-------+---------------+--------+--------+-------+-----------------------+
+    | 21506 | 15269 |     580420    | 455956 | 56162  | 68302 | 0.0017675517274430242 |
+    +-------+-------+---------------+--------+--------+-------+-----------------------+
+    """
+    URL = "https://zenodo.org/record/7683693/files/AmazonMovies_10104811_Chron.zip"
+
+
+class AmazonBeauty_10104811_Chron(UserItemPair):
+    r"""
+    Chronologically-ordered Amazon Books dataset.
+
+    Config:
+    -------
+    filename: Amazon_Beauty
+    dataset: AmazonBeauty
+    kcore4user: 10
+    kcore4item: 10
+    star4pos: 4
+    ratios: (8, 1, 1)
+
+    Statistics:
+    -----------
+    +-------+-------+---------------+--------+--------+-------+----------------------+
+    | #User | #Item | #Interactions | #Train | #Valid | #Test |       Density        |
+    +-------+-------+---------------+--------+--------+-------+----------------------+
+    |  973  |  645  |     19263     | 15008  |  1845  |  2410 | 0.030693850235426277 |
+    +-------+-------+---------------+--------+--------+-------+----------------------+
+    """
+    URL = "https://zenodo.org/record/7683693/files/AmazonBeauty_10104811_Chron.zip"
+
+
+class AmazonElectronics_10104811_Chron(UserItemPair):
+    r"""
+    Chronologically-ordered Amazon Books dataset.
+
+    Config:
+    -------
+    filename: Amazon_Electronics
+    dataset: AmazonElectronics
+    kcore4user: 10
+    kcore4item: 10
+    star4pos: 4
+    ratios: (8, 1, 1)
+
+    Statistics:
+    -----------
+    +-------+-------+---------------+--------+--------+-------+----------------------+
+    | #User | #Item | #Interactions | #Train | #Valid | #Test |       Density        |
+    +-------+-------+---------------+--------+--------+-------+----------------------+
+    |  9279 |  6065 |     158979    | 123648 | 14988  | 20343 | 0.002824930586818252 |
+    +-------+-------+---------------+--------+--------+-------+----------------------+
+    """
+    URL = "https://zenodo.org/record/7683693/files/AmazonElectronics_10104811_Chron.zip"
+
+
+class AmazonBooks_10104712_Chron(UserItemPair):
+    r"""
+    Chronologically-ordered Amazon Books dataset.
+
+    Config:
+    -------
+    filename: Amazon_Books
+    dataset: AmazonBooks
+    kcore4user: 10
+    kcore4item: 10
+    star4pos: 4
+    ratios: (7, 1, 2)
+
+    Statistics:
+    -----------
+    +--------+-------+---------------+---------+--------+--------+------------------------+
+    | #User  | #Item | #Interactions |  #Train | #Valid | #Test  |        Density         |
+    +--------+-------+---------------+---------+--------+--------+------------------------+
+    | 109730 | 96421 |    3181759    | 2181889 | 320434 | 679436 | 0.00030072551044609626 |
+    +--------+-------+---------------+---------+--------+--------+------------------------+
+    """
+    URL = "https://zenodo.org/record/7683693/files/AmazonBooks_10104712_Chron.zip"
+
+
+class AmazonCDs_10104712_Chron(UserItemPair):
+    r"""
+    Chronologically-ordered Amazon Books dataset.
+
+    Config:
+    -------
+    filename: Amazon_CDs_and_Vinyl
+    dataset: AmazonCDs
+    kcore4user: 10
+    kcore4item: 10
+    star4pos: 4
+    ratios: (7, 1, 2)
+
+    Statistics:
+    -----------
+    +-------+-------+---------------+--------+--------+-------+----------------------+
+    | #User | #Item | #Interactions | #Train | #Valid | #Test |       Density        |
+    +-------+-------+---------------+--------+--------+-------+----------------------+
+    |  9954 | 10877 |     272086    | 186347 | 27408  | 58331 | 0.002513040172344499 |
+    +-------+-------+---------------+--------+--------+-------+----------------------+
+    """
+    URL = "https://zenodo.org/record/7683693/files/AmazonCDs_10104712_Chron.zip"
+
+
+class AmazonMovies_10104712_Chron(UserItemPair):
+    r"""
+    Chronologically-ordered Amazon Books dataset.
+
+    Config:
+    -------
+    filename: Amazon_Movies_and_TV
+    dataset: AmazonMovies
+    kcore4user: 10
+    kcore4item: 10
+    star4pos: 4
+    ratios: (7, 1, 2)
+
+    Statistics:
+    -----------
+    +-------+-------+---------------+--------+--------+-------+-----------------------+
+    | #User | #Item | #Interactions | #Train | #Valid | #Test  |        Density        |
+    +-------+-------+---------------+--------+--------+--------+-----------------------+
+    | 21506 | 15269 |     580420    | 397557 | 58399  | 124464 | 0.0017675517274430242 |
+    +-------+-------+---------------+--------+--------+--------+-----------------------+
+    """
+    URL = "https://zenodo.org/record/7683693/files/AmazonMovies_10104712_Chron.zip"
+
+
+class AmazonBeauty_10104712_Chron(UserItemPair):
+    r"""
+    Chronologically-ordered Amazon Books dataset.
+
+    Config:
+    -------
+    filename: Amazon_Beauty
+    dataset: AmazonBeauty
+    kcore4user: 10
+    kcore4item: 10
+    star4pos: 4
+    ratios: (8, 1, 1)
+
+    Statistics:
+    -----------
+    +-------+-------+---------------+--------+--------+-------+----------------------+
+    | #User | #Item | #Interactions | #Train | #Valid | #Test |       Density        |
+    +-------+-------+---------------+--------+--------+-------+----------------------+
+    |  973  |  645  |     19263     | 13063  |  1945  |  4255 | 0.030693850235426277 |
+    +-------+-------+---------------+--------+--------+-------+----------------------+
+    """
+    URL = "https://zenodo.org/record/7683693/files/AmazonBeauty_10104712_Chron.zip"
+
+
+class AmazonElectronics_10104712_Chron(UserItemPair):
+    r"""
+    Chronologically-ordered Amazon Books dataset.
+
+    Config:
+    -------
+    filename: Amazon_Electronics
+    dataset: AmazonElectronics
+    kcore4user: 10
+    kcore4item: 10
+    star4pos: 4
+    ratios: (7, 1, 2)
+
+    Statistics:
+    -----------
+    +-------+-------+---------------+--------+--------+-------+----------------------+
+    | #User | #Item | #Interactions | #Train | #Valid | #Test |       Density        |
+    +-------+-------+---------------+--------+--------+-------+----------------------+
+    |  9279 |  6065 |     158979    | 107674 | 15974  | 35331 | 0.002824930586818252 |
+    +-------+-------+---------------+--------+--------+-------+----------------------+
+    """
+    URL = "https://zenodo.org/record/7683693/files/AmazonElectronics_10104712_Chron.zip"
 
 
 #======================================BARS======================================
