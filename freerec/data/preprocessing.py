@@ -71,7 +71,7 @@ class Inter2Txt:
         starIdx = self.where_is_('rating', names)
         timestampIdx = self.where_is_('timestamp', names)
         print(f"The .inter file includes columns: {names}")
-        print(f"Eg. User@{userIdx} Item@{itemIdx} Timestamp@{timestampIdx} Rating@{starIdx}")
+        print(f"User@{userIdx} Item@{itemIdx} Timestamp@{timestampIdx} Rating@{starIdx}")
 
         datapipe = datapipe.parse_csv(delimiter='\t', skip_lines=1)
         if starIdx is None: # (User, Item, Time)
@@ -222,6 +222,7 @@ class GenInter2Txt(Inter2Txt):
         self.save(*self.split_by_ratio(data))
         self.summary()
     
+
 class SeqInter2Txt(Inter2Txt):
 
     @reporter()
