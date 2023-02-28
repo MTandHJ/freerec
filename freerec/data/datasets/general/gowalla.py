@@ -29,6 +29,7 @@ class Gowalla_10100811_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 0
     ratios: (8, 1, 1)
+    strict: True
 
     Statistics:
     -----------
@@ -53,6 +54,7 @@ class Gowalla_10100712_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 0
     ratios: (8, 1, 1)
+    strict: True
 
     Statistics:
     -----------

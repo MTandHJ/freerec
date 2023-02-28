@@ -29,6 +29,7 @@ class Yelp2018_10104811_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 4
     ratios: (8, 1, 1)
+    strict: True
 
     Statistics:
     -----------
@@ -53,6 +54,7 @@ class Yelp2018_10104712_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 4
     ratios: (7, 1, 2)
+    strict: True
 
     Statistics:
     -----------

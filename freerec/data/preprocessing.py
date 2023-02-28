@@ -1,7 +1,7 @@
 
 
 
-from typing import Callable, Iterable, List, Tuple
+from typing import Callable, Iterable, List, Tuple, Optional
 
 import numpy as np
 import os
@@ -33,7 +33,7 @@ class Inter2Txt:
         self,
         root: str, filename: str, dataset: str,
         kcore4user: int = 1, kcore4item: int = 1, star4pos: int = 0,
-        ratios: Iterable = (8, 1, 1)
+        ratios: Iterable = (8, 1, 1), strict: bool = True
     ) -> None:
 
         self.root = root
@@ -43,7 +43,7 @@ class Inter2Txt:
         self.kcore4item = int(kcore4item)
         self.star4pos = int(star4pos)
         self.ratios = ratios
-        self.code = f"{self.kcore4user}{self.kcore4item}{self.star4pos}{''.join(map(str, self.ratios))}"
+        self.strict = strict
 
     @staticmethod
     def listmap(func: Callable, *args):
@@ -58,7 +58,7 @@ class Inter2Txt:
                 return i
         return None
     
-    @reporter()
+    @reporter('root', 'filename')
     def load_data(self):
         datapipe = dp.iter.FileLister(os.path.join(self.root, self.filename))
         datapipe = datapipe.filter(filter_fn=lambda file_: file_.endswith('.inter'))
@@ -67,7 +67,7 @@ class Inter2Txt:
             datapipe.parse_csv(delimiter='\t', skip_lines=0)
         ))
         userIdx = self.where_is_('user', names)
-        itemIdx = self.where_is_('item', names)
+        itemIdx = self.where_is_('item', names) # TODO: steam: product_id ?
         starIdx = self.where_is_('rating', names)
         timestampIdx = self.where_is_('timestamp', names)
         print(f"The .inter file includes columns: {names}")
@@ -94,7 +94,7 @@ class Inter2Txt:
                 filtered.append(row[:3])
         return filtered
 
-    @reporter('kcore4user', 'kcore4item')
+    @reporter('kcore4user', 'kcore4item', 'strict')
     def filter_by_core(self, data: Iterable) -> List:
         datasize = 0
 
@@ -118,6 +118,9 @@ class Inter2Txt:
                 lambda row: row[0] in users and row[1] in items,
                 data
             ))
+
+            if not self.strict:
+                break
         
         return data
 
@@ -197,9 +200,10 @@ class GenInter2Txt(Inter2Txt):
 
     @reporter('root')
     def save(self, trainset, validset, testset):
+        code = f"{self.kcore4user}{self.kcore4item}{self.star4pos}{''.join(map(str, self.ratios))}"
         path = os.path.join(
             self.root, 'General', 
-            '_'.join([self.dataset, self.code, 'Chron'])
+            '_'.join([self.dataset, code, 'Chron'])
         )
         mkdirs(path)
 
@@ -252,7 +256,11 @@ class SeqInter2Txt(Inter2Txt):
 
     @reporter('root')
     def save(self, trainset, validset, testset):
-        path = os.path.join(self.root, 'Sequential', self.dataset)
+        code = f"{self.kcore4user}{self.kcore4item}{self.star4pos}"
+        path = os.path.join(
+            self.root, 'Sequential', 
+            '_'.join([self.dataset, code, 'Chron'])
+        )
         mkdirs(path)
 
         df = pd.DataFrame(trainset, columns=['User', 'Item', 'Timestamp'])
@@ -273,4 +281,3 @@ class SeqInter2Txt(Inter2Txt):
         data = self.group_by_user(data)
         self.save(*self.split(data))
         self.summary()
-  

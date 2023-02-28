@@ -20,7 +20,7 @@ class MovieLens1M(UserItemPair): ...
 
 class MovieLens100K_10101811_Chron(UserItemPair):
     r"""
-    Chronologically-ordered MovieLens1M dataset.
+    Chronologically-ordered MovieLens100K dataset.
 
     Config:
     -------
@@ -30,6 +30,7 @@ class MovieLens100K_10101811_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 1
     ratios: (8, 1, 1)
+    strict: True
 
     Statistics:
     -----------
@@ -40,6 +41,31 @@ class MovieLens100K_10101811_Chron(UserItemPair):
     +-------+-------+---------------+--------+--------+-------+---------------------+
     """
     URL = "https://zenodo.org/record/7683693/files/MovieLens100K_10101811_Chron.zip"
+
+
+class MovieLens100K_10101712_Chron(UserItemPair):
+    r"""
+    Chronologically-ordered MovieLens100K dataset.
+
+    Config:
+    -------
+    filename: ml-100k
+    dataset: MovieLens100K
+    kcore4user: 10
+    kcore4item: 10
+    star4pos: 1
+    ratios: (8, 1, 1)
+    strict: True
+
+    Statistics:
+    -----------
+    +-------+-------+---------------+--------+--------+-------+---------------------+
+    | #User | #Item | #Interactions | #Train | #Valid | #Test |       Density       |
+    +-------+-------+---------------+--------+--------+-------+---------------------+
+    |  943  |  1152 |     97953     | 68156  |  9824  | 19973 | 0.09016823524213503 |
+    +-------+-------+---------------+--------+--------+-------+---------------------+
+    """
+    URL = "https://zenodo.org/record/7683693/files/MovieLens100K_10101712_Chron.zip"
 
 
 class MovieLens1M_10101811_Chron(UserItemPair):
@@ -54,6 +80,7 @@ class MovieLens1M_10101811_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 1
     ratios: (8, 1, 1)
+    strict: True
 
     Statistics:
     -----------
@@ -64,30 +91,6 @@ class MovieLens1M_10101811_Chron(UserItemPair):
     +-------+-------+---------------+--------+--------+--------+---------------------+
     """
     URL = "https://zenodo.org/record/7683693/files/MovieLens1M_10101811_Chron.zip"
-
-
-class MovieLens100K_10101712_Chron(UserItemPair):
-    r"""
-    Chronologically-ordered MovieLens1M dataset.
-
-    Config:
-    -------
-    filename: ml-100k
-    dataset: MovieLens100K
-    kcore4user: 10
-    kcore4item: 10
-    star4pos: 1
-    ratios: (8, 1, 1)
-
-    Statistics:
-    -----------
-    +-------+-------+---------------+--------+--------+-------+---------------------+
-    | #User | #Item | #Interactions | #Train | #Valid | #Test |       Density       |
-    +-------+-------+---------------+--------+--------+-------+---------------------+
-    |  943  |  1152 |     97953     | 68156  |  9824  | 19973 | 0.09016823524213503 |
-    +-------+-------+---------------+--------+--------+-------+---------------------+
-    """
-    URL = "https://zenodo.org/record/7683693/files/MovieLens100K_10101712_Chron.zip"
 
 
 class MovieLens1M_10101712_Chron(UserItemPair):
@@ -102,6 +105,7 @@ class MovieLens1M_10101712_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 1
     ratios: (7, 1, 2)
+    strict: True
 
     Statistics:
     -----------

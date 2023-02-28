@@ -13,6 +13,7 @@ parser.add_argument("--kcore4user", type=int, default=10, help="select the user 
 parser.add_argument("--kcore4item", type=int, default=10, help="select the item interacted >=k users")
 parser.add_argument("--star4pos", type=int, default=4, help="select pairs with star >= k")
 parser.add_argument("--ratios", type=str, default='8,1,1', help="train:valid:text for gen")
+parser.add_argument("--strict", action="store_true", default=False, help="filter once if false")
 args = parser.parse_args()
 
 args.ratios = list(map(int, args.ratios.split(',')))
@@ -28,7 +29,7 @@ elif args.datatype == 'seq':
 processor = args.datatype(
     root=args.root, filename=args.filename, dataset=args.dataset,
     kcore4user=args.kcore4user, kcore4item=args.kcore4item,
-    star4pos=args.star4pos, ratios=args.ratios
+    star4pos=args.star4pos, ratios=args.ratios, strict=args.strict
 )
 
 processor.compile()
