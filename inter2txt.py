@@ -5,6 +5,7 @@ import argparse
 from freerec.data.preprocessing import GenInter2Txt, SeqInter2Txt
 
 parser = argparse.ArgumentParser()
+parser.add_argument("filename", type=str)
 parser.add_argument("dataset", type=str)
 parser.add_argument("--root", type=str, default="../data")
 parser.add_argument("--datatype", type=str, choices=('gen', 'seq'), default="gen")
@@ -25,7 +26,7 @@ elif args.datatype == 'seq':
 
 
 processor = args.datatype(
-    root=args.root, dataset=args.dataset,
+    root=args.root, filename=args.filename, dataset=args.dataset,
     kcore4user=args.kcore4user, kcore4item=args.kcore4item,
     star4pos=args.star4pos, ratios=args.ratios
 )
