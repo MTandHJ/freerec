@@ -43,7 +43,7 @@ class UserItemTimeTriplet(SequentialRecSet):
         fields = [
             (SparseField, Config(name='UserID', na_value=None, dtype=int, tags=[USER, ID])),
             (SparseField, Config(name='ItemID', na_value=None, dtype=int, tags=[ITEM, ID])),
-            (DenseField, Config(name='Timestamp', na_value=None, dtype=int, tags=[TIMESTAMP], transformer='none'))
+            (DenseField, Config(name='Timestamp', na_value=None, dtype=float, tags=[TIMESTAMP], transformer='none'))
         ]
     )
 
