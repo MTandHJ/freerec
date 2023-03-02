@@ -261,7 +261,7 @@ def recall(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = Non
 
     .. math::
 
-        \phi(x_i, y_i) = (|Topk(x_i) \cap Topk(y_i)|) / |Topk(y_i)|,
+        \phi(x_i, y_i) = (|Topk(x_i) \cap Topk(y_i)|) / |y_i|,
 
     where :math:`Topk(\cdot)` returns the Top-K (predicted or ideal) items of the query :math:`i`,
     and :math:`|\cdot|` measures the cardinality of the set.
