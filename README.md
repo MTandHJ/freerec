@@ -1,5 +1,7 @@
 
 
+FreeRec is a personal repository designed for fast data pre-processing and model training.
+I am a beginner in the field of recommender systems, so much of FreeRec's design may not be as effective. In addition, you are free to specify your own framework based on FreeRec.
 
 
 ## Requirements: 
@@ -25,3 +27,6 @@ or (for latest)
 
 
 
+## Acknowledgements
+
+Thanks to ChatGPT for the annotation of some code. For this reason, some of the comments may be illogical.
