@@ -388,7 +388,13 @@ class SparseField(FieldModule):
         """Return the tuple of IDs|..."""
         return self.transformer.enums
 
-    def embed(self, dim: int, padding_idx: Optional[int] = None, **kwargs) -> None:
+    def embed(
+        self, 
+        dim: int, 
+        num_embeddings: Optional[int] = None,
+        padding_idx: Optional[int] = None,
+        **kwargs
+    ) -> None:
         r"""
         Create an nn.Embedding layer for the sparse field.
 
@@ -397,6 +403,10 @@ class SparseField(FieldModule):
         -----------
         dim: int 
             The embedding dimension.
+        num_embeddings: int, optional
+            The number of embeddings.
+            - `None`: Set the number of embeddings to `count` or `count + 1` (if padding_idx is not None).
+            - `int`: Set the number of embeddings to `int`.
         **kwargs: 
             Other keyword arguments to be passed to nn.Embedding.
 
@@ -405,8 +415,13 @@ class SparseField(FieldModule):
         None
         """
         self.dimension = dim
-        nums = self.count if padding_idx is None else self.count + 1
-        self.embeddings = torch.nn.Embedding(nums, dim, padding_idx=padding_idx, **kwargs)
+        if num_embeddings is None:
+            nums = self.count if padding_idx is None else self.count + 1
+        else:
+            nums = num_embeddings
+        self.embeddings = torch.nn.Embedding(
+            nums, dim, padding_idx=padding_idx, **kwargs
+        )
 
     def look_up(self, x: torch.Tensor) -> torch.Tensor:
         r"""
