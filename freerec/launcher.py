@@ -564,9 +564,9 @@ class Coach(ChiefCoach):
                     self.valid()
                 if self.cfg.EVAL_TEST:
                     self.test()
-            self.train()
 
             self.check_best(epoch)
+            self.train()
             self.step(epoch)
         self.save()
 
