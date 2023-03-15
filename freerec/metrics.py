@@ -7,7 +7,6 @@ for formal definitions.
 The implementations below are fully due to torchmetrics.
 """
 
-from multiprocessing import reduction
 from typing import Optional, Union, List 
 from functools import  partial
 
