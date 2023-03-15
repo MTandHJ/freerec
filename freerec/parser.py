@@ -136,6 +136,7 @@ class Parser(Config):
 
     def __init__(self) -> None:
         super().__init__(**CONFIG)
+        self._options = dict()
         self.parse()
 
     def __setitem__(self, key: str, value: Any) -> None:
@@ -216,6 +217,8 @@ class Parser(Config):
         args = (arg.replace('_', '-') for arg in args) # user '-' instead of '_'
         action = self.parser.add_argument(*args, **kwargs)
         self[action.dest] = action.default
+        for option in action.option_strings:
+            self._options[option] = action.dest
 
     def set_defaults(self, **kwargs):
         r"""
@@ -237,12 +240,11 @@ class Parser(Config):
         for arg in sys.argv[1:]:
             if not arg.startswith("-"):
                 continue
-            arg = arg.lstrip("-")
             if '=' in arg:
                 key = arg.split('=')[0]
             else:
                 key = arg.split(' ')[0]
-            args.add(key.replace("-", "_"))
+            args.add(self._options[key])
         return args
 
     @timemeter("Parser/load")

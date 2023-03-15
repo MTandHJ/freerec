@@ -1,6 +1,6 @@
 
 
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 import torch
 import torch_geometric.transforms as T
@@ -18,13 +18,16 @@ from freerec.data.fields import FieldModuleList
 from freerec.data.tags import USER, ITEM, ID, UNSEEN, SEEN
 
 
+freerec.decalre(version='0.2.3')
+
+
 cfg = Parser()
 cfg.add_argument("-eb", "--embedding-dim", type=int, default=64)
 cfg.add_argument("--layers", type=int, default=3)
 cfg.set_defaults(
     description="LightGCN",
     root="../data",
-    dataset='MovieLens1M',
+    dataset='Gowalla_m1',
     epochs=1000,
     batch_size=2048,
     optimizer='adam',
@@ -162,11 +165,20 @@ def main():
         dataset, num_negatives=1
     ).batch(cfg.batch_size).column_().tensor_()
 
-    #validpipe
+    # validpipe
     validpipe = OrderedIDs(
         field=User
     ).sharding_filter().gen_valid_yielding_(
         dataset # return (user, unseen, seen)
+    ).batch(1024).column_().tensor_().field_(
+        User.buffer(), Item.buffer(tags=UNSEEN), Item.buffer(tags=SEEN)
+    )
+
+    # testpipe
+    testpipe = OrderedIDs(
+        field=User
+    ).sharding_filter().gen_test_yielding_(
+        dataset
     ).batch(1024).column_().tensor_().field_(
         User.buffer(), Item.buffer(tags=UNSEEN), Item.buffer(tags=SEEN)
     )
@@ -195,7 +207,7 @@ def main():
     coach = CoachForLightGCN(
         trainpipe=trainpipe,
         validpipe=validpipe,
-        testpipe=validpipe,
+        testpipe=testpipe,
         fields=dataset.fields,
         model=model,
         criterion=criterion,
@@ -204,7 +216,8 @@ def main():
         device=cfg.device
     )
     coach.compile(
-        cfg, monitors=['loss', 'recall@10', 'recall@20', 'ndcg@10', 'ndcg@20'],
+        cfg, 
+        monitors=['loss', 'recall@10', 'recall@20', 'ndcg@10', 'ndcg@20'],
         which4best='ndcg@20'
     )
     coach.fit()
@@ -212,4 +225,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
