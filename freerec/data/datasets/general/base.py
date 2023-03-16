@@ -79,7 +79,7 @@ class BARSUserItemPair(GeneralRecSet):
     each row represents a user's interacted items.
     """
 
-    # Same validset and testset are the same now !
+    # Validset and testset are the same now !
     VALID_IS_TEST = True
 
     _cfg = Config(

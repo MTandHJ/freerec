@@ -62,6 +62,13 @@ class BaseCriterion(nn.Module):
             raise NotImplementedError(f"{rtype} regularization is not supported ...")
 
 
+class CrossEntropy4Logits(BaseCriterion):
+    """Cross entropy loss with logits."""
+
+    def forward(self, logits: torch.Tensor, targets: torch.Tensor):
+        return F.cross_entropy(logits, targets)
+
+
 class BCELoss4Logits(BaseCriterion):
     """Binary Cross Entropy with logits !!!"""
 

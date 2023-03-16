@@ -1,6 +1,6 @@
 
 
-from typing import Callable, Optional, Dict, List, Union
+from typing import Callable, Dict, List, Union
 import torch
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
