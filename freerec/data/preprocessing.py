@@ -1,7 +1,6 @@
 
 
-
-from typing import Callable, Iterable, List, Tuple, Optional
+from typing import Callable, Iterable, List, Tuple
 
 import numpy as np
 import os

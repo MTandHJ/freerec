@@ -1,6 +1,6 @@
 
 
-from typing import TypeVar, Callable, List, Optional
+from typing import TypeVar, Callable, Optional
 
 import os, requests, warnings, hashlib, tqdm
 

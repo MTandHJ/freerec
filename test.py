@@ -1,6 +1,6 @@
 
 
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
 import torch
 import torch_geometric.transforms as T
