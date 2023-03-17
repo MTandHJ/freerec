@@ -21,11 +21,13 @@ or (for latest)
 
 ## Data Pipeline
 
-![](README/2023-03-16-21-45-26.png)
+![](docs/src/pipeline.png)
 
 ## Training Flow
 
-![](README/2023-03-17-20-15-08.png)
+
+![](docs/src/flow.png)
+
 
 ## Reference Code
 
