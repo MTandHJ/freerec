@@ -18,12 +18,22 @@ or (for latest)
     pip install git+https://github.com/MTandHJ/freerec.git
 
 
+
+## Data Pipeline
+
+![](README/2023-03-16-21-45-26.png)
+
+## Training Flow
+
+![](README/2023-03-17-20-15-08.png)
+
 ## Reference Code
 
 - TorchRec: https://github.com/pytorch/torchrec 
 - DeepCTR-Torch: https://github.com/shenweichen/DeepCTR-Torch
 - FuxiCTR: https://github.com/xue-pai/FuxiCTR
 - BARS: https://github.com/openbenchmark/BARS
+- RecBole: https://github.com/RUCAIBox/RecBole
 
 
 

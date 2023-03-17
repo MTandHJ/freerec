@@ -217,7 +217,11 @@ def main():
     )
     coach.compile(
         cfg, 
-        monitors=['loss', 'recall@10', 'recall@20', 'ndcg@10', 'ndcg@20'],
+        monitors=[
+            'loss', 
+            'recall@10', 'recall@20', 
+            'ndcg@10', 'ndcg@20'
+        ],
         which4best='ndcg@20'
     )
     coach.fit()
