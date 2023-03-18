@@ -139,6 +139,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
 
         self.fields: FieldTuple[FieldModule] = FieldTuple(fields)
         self.device = torch.device(device)
+        torch.cuda.set_device(self.device)
 
         self._set_datapipe(trainpipe, validpipe, testpipe)
         self._set_other(model, criterion, optimizer, lr_scheduler)
