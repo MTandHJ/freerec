@@ -2,7 +2,7 @@
 
 from typing import Any, Callable, Iterable, List, Dict, Optional, Tuple, Union
 
-import torch, abc, os, subprocess, shlex, time, sys
+import torch, abc, os, subprocess, shlex, time, sys, signal
 import pandas as pd
 from torchdata.datapipes.iter import IterDataPipe
 from torch.utils.tensorboard import SummaryWriter
@@ -808,6 +808,14 @@ class Adapter:
         """Grid search."""
         self.source = self.resume()
         tasks = dict()
+
+        def signal_handler(sig, frame):
+            for device in tasks:
+                process_, id_, logPath, params = tasks[device]
+                process_.terminate()
+            sys.exit(0)
+        signal.signal(signal.SIGINT, signal_handler)
+
         try:
             while self.source:
                 self.poll(tasks)
