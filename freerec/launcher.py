@@ -558,7 +558,7 @@ class Coach(ChiefCoach):
     def fit(self):
 
         def signal_handler(sig, frame):
-            infoLogger(f"\033[0;31;47m===============================Terminate Current Process===============================\033[0m")
+            infoLogger(f"\033[0;31;47m===============================TERMINATE CURRENT PROCESS===============================\033[0m")
             sys.exit(0)
         signal.signal(signal.SIGINT, signal_handler)
 
@@ -817,7 +817,7 @@ class Adapter:
         tasks = dict()
 
         def signal_handler(sig, frame):
-            infoLogger(f"\033[0;31;47m===============================Terminate Subprocesses===============================\033[0m")
+            infoLogger(f"\033[0;31;47m===============================TERMINATE ALL SUBPROCESSES===============================\033[0m")
             for device in tasks:
                 process_, id_, logPath, params = tasks[device]
                 process_.terminate()
