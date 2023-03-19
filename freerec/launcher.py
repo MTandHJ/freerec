@@ -556,6 +556,12 @@ class Coach(ChiefCoach):
     
     @timemeter("Coach/fit")
     def fit(self):
+
+        def signal_handler(sig, frame):
+            infoLogger(f"\033[0;31;47m===============================Terminate Current Process===============================\033[0m")
+            sys.exit(0)
+        signal.signal(signal.SIGINT, signal_handler)
+
         start_epoch = self.resume()
         for epoch in range(start_epoch, self.cfg.epochs):
             if epoch % self.cfg.CHECKPOINT_FREQ == 0:
@@ -811,6 +817,7 @@ class Adapter:
         tasks = dict()
 
         def signal_handler(sig, frame):
+            infoLogger(f"\033[0;31;47m===============================Terminate Subprocesses===============================\033[0m")
             for device in tasks:
                 process_, id_, logPath, params = tasks[device]
                 process_.terminate()
