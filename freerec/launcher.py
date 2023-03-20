@@ -810,6 +810,14 @@ class Adapter:
                     buffer_source.append(params)
         self.save_checkpoint(self.source + buffer_source)
 
+    def terminate(self, tasks):
+        time.sleep(5)
+        for device in tasks:
+            process_, id_, logPath, params = tasks[device]
+            if process_.poll() is None:
+                process_.terminate()
+        sys.exit()
+
     @timemeter("Adapter/fit")
     def fit(self):
         """Grid search."""
@@ -818,10 +826,7 @@ class Adapter:
 
         def signal_handler(sig, frame):
             infoLogger(f"\033[0;31;47m===============================TERMINATE ALL SUBPROCESSES===============================\033[0m")
-            for device in tasks:
-                process_, id_, logPath, params = tasks[device]
-                process_.terminate()
-            sys.exit(0)
+            self.terminate(tasks)
         signal.signal(signal.SIGINT, signal_handler)
 
         try:
@@ -836,4 +841,4 @@ class Adapter:
             print(e)
         finally:
             self.wait(tasks)
-            sys.exit()
+            self.terminate(tasks)
