@@ -559,7 +559,7 @@ class Coach(ChiefCoach):
 
         def signal_handler(sig, frame):
             infoLogger(f"\033[0;31;47m===============================TERMINATE CURRENT PROCESS===============================\033[0m")
-            sys.exit(0)
+            sys.exit()
         signal.signal(signal.SIGINT, signal_handler)
 
         start_epoch = self.resume()
@@ -811,11 +811,16 @@ class Adapter:
         self.save_checkpoint(self.source + buffer_source)
 
     def terminate(self, tasks):
-        time.sleep(5)
+        time.sleep(3)
         for device in tasks:
             process_, id_, logPath, params = tasks[device]
             if process_.poll() is None:
                 process_.terminate()
+        time.sleep(2)
+        for device in tasks:
+            process_, id_, logPath, params = tasks[device]
+            if process_.poll() is None:
+                process_.kill()
         sys.exit()
 
     @timemeter("Adapter/fit")
