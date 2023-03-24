@@ -23,6 +23,9 @@ or (for latest)
 
 ![](docs/src/pipeline.png)
 
+**Note:** To make dataset, please download corresponding Atomic files from [[RecBole](https://drive.google.com/drive/folders/1so0lckI6N6_niVEYaBu-LIcpOdZf99kj)]. 
+Then, run `make_dataset.ipynb'.
+
 ## Training Flow
 
 

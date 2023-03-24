@@ -1,7 +1,0 @@
-dataset: AmazonCDs
-datatype: gen
-kcore_user: 10
-kcore_item: 10
-star4pos: 4
-ratios: '8,1,1'
-
