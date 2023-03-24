@@ -1,0 +1,7 @@
+command: python test.py
+envs:
+  root: ../data
+  dataset: Gowalla_m1
+  num_workers: 0
+params:
+  seed: [0, 1]

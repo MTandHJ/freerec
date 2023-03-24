@@ -22,6 +22,11 @@ def get_property(prop, project):
 
 setuptools.setup(
   name="freerec",
+  entry_points={
+    'console_scripts': [
+      'freerec=freerec.__main__:main',
+    ],
+  },
   version=get_property('__version__', 'freerec'),
   author="MTandHJ",
   author_email="congxueric@gmail.com",

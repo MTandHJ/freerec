@@ -337,28 +337,6 @@ class CoreParser(Config):
 
     def __init__(self) -> None:
         super().__init__(**CORE_CONFIG)
-        self.parse()
-
-    @timemeter("CoreParser/parse")
-    def parse(self):
-        """Parse command-line arguments."""
-
-        self.parser = argparse.ArgumentParser()
-
-        self.parser.add_argument("description", type=str, help="...")
-        self.parser.add_argument("config", type=str, help="config.yml")
-        self.parser.add_argument("--exclusive", action="store_true", default=False, help="one by one or one for all")
-
-        self.parser.add_argument("--root", type=str, default=None, help="data")
-        self.parser.add_argument("--dataset", type=str, default=None, help="useless if no need to automatically select a dataset")
-        self.parser.add_argument("--device", type=str, default=None, help="device")
-
-        self.parser.add_argument("--eval-freq", type=int, default=None, help="the evaluation frequency")
-
-        self.parser.add_argument("--num-workers", type=int, default=None)
-
-        self.parser.add_argument("--resume", action="store_true", default=False, help="resume the search from the recent checkpoint")
-
 
     def check(self) -> None:
         """Check the validity of the given config."""
@@ -423,7 +401,7 @@ class CoreParser(Config):
                 self.ENVS[key] = val
 
     @timemeter("CoreParser/compile")
-    def compile(self) -> None:
+    def compile(self, args) -> None:
         r"""
         Generate config file according to settings.
 
@@ -439,7 +417,6 @@ class CoreParser(Config):
         4. Set Logger, and then you can log information by info|debug|warnLogger ...
         5. Finally, READMD.md will be added under CHECKPOINT_PATH and LOG_PATH both.
         """
-        args = self.parser.parse_args()
         self.load(args)
         self.check()
 
