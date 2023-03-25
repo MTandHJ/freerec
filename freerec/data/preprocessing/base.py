@@ -123,7 +123,7 @@ class AtomicConverter:
             df = pd.read_csv(file_, delimiter='\t')
             infoLogger(f"[Converter] >>> Load `{filename}' ...")
             return self.convert_by_column(df)
-        infoLogger(f"[Converter] >>> No file ends with `.user' ...")
+        infoLogger(f"[Converter] >>> No file ends with `.item' ...")
 
     def load_kg_file(self):
         raise NotImplementedError()
@@ -392,7 +392,7 @@ class AtomicConverter:
         kcore4user: int = 10,
         kcore4item: int = 10,
         ratios: Tuple[int, int, int] = (8, 1, 1),
-        fields: Iterable[str] = (USER.name, ITEM.name)
+        fields: Optional[Iterable[str]] = (USER.name, ITEM.name)
     ):
         r"""
         Make general dataset.
@@ -417,7 +417,8 @@ class AtomicConverter:
         self.user2token()
         self.item2token()
         self.sort_by_timestamp()
-        self.reserve(fields)
+        if fields:
+            self.reserve(fields)
         self.gen_split_by_ratio(ratios)
 
         code = f"{kcore4user}{kcore4item}{star4pos}{''.join(map(str, ratios))}"
@@ -433,7 +434,7 @@ class AtomicConverter:
         star4pos: int = 0,
         kcore4user: int = 5,
         kcore4item: int = 5,
-        fields: Iterable[str] = (USER.name, ITEM.name)
+        fields: Optional[Iterable[str]] = (USER.name, ITEM.name)
     ):
         r"""
         Make sequential dataset by leaving last two as validation|test samples.
@@ -457,7 +458,8 @@ class AtomicConverter:
         self.user2token()
         self.item2token()
         self.sort_by_timestamp()
-        self.reserve(fields)
+        if fields:
+            self.reserve(fields)
         self.seq_split_by_last_two()
 
         code = f"{kcore4user}{kcore4item}{star4pos}"
@@ -474,7 +476,7 @@ class AtomicConverter:
         kcore4user: int = 5,
         kcore4item: int = 5,
         ratios: Tuple[int, int, int] = (8, 1, 1),
-        fields: Iterable[str] = (USER.name, ITEM.name),
+        fields: Optional[Iterable[str]] = (USER.name, ITEM.name),
         seed: int = 0
     ):
         r"""
@@ -499,7 +501,8 @@ class AtomicConverter:
         self.user2token()
         self.item2token()
         self.sort_by_timestamp()
-        self.reserve(fields)
+        if fields:
+            self.reserve(fields)
         self.seq_split_by_ratio(ratios, seed=seed)
 
         code = f"{kcore4user}{kcore4item}{star4pos}{''.join(map(str, ratios))}"
