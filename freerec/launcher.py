@@ -2,7 +2,7 @@
 
 from typing import Any, Callable, Iterable, List, Dict, Optional, Tuple, Union
 
-import torch, abc, os, subprocess, shlex, time, sys, signal
+import torch, abc, os, subprocess, shlex, time, sys, signal, psutil, atexit
 import pandas as pd
 from torchdata.datapipes.iter import IterDataPipe
 from torch.utils.tensorboard import SummaryWriter
@@ -139,14 +139,21 @@ class ChiefCoach(metaclass=abc.ABCMeta):
 
         self.fields: FieldTuple[FieldModule] = FieldTuple(fields)
         self.device = torch.device(device)
-        try:
-            torch.cuda.set_device(self.device)
-        except ValueError:
-            pass
+        torch.cuda.set_device(self.device)
+
         self._set_datapipe(trainpipe, validpipe, testpipe)
         self._set_other(model, criterion, optimizer, lr_scheduler)
 
         self.__mode = 'train'
+
+        def clean():
+            parent = psutil.Process(os.getpid())
+            children = parent.children(recursive=True)
+            for process in children:
+                process.send_signal(signal.SIGTERM)
+            psutil.wait_procs(children, timeout=5)
+
+        atexit.register(clean)
 
     def _set_datapipe(
         self,
@@ -555,12 +562,14 @@ class Coach(ChiefCoach):
 
         self.monitors.save(os.path.join(self.cfg.LOG_PATH, self.cfg.DATA_DIR), self.cfg.MONITOR_FILENAME)
         export_pickle(best, os.path.join(self.cfg.LOG_PATH, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME))
-    
+
+            
     @timemeter("Coach/fit")
     def fit(self):
 
         def signal_handler(sig, frame):
             infoLogger(f"\033[0;31;47m===============================TERMINATE CURRENT PROCESS===============================\033[0m")
+            self.clean()
             sys.exit()
         signal.signal(signal.SIGINT, signal_handler)
 
@@ -588,7 +597,7 @@ class Coach(ChiefCoach):
         self.summary()
 
         self.eval_at_best()
-
+        self.clean()
 
 class Adapter:
     r"""
@@ -616,6 +625,15 @@ class Adapter:
         self.params = []
         self.values = []
         self.devices = []
+
+        def clean():
+            parent = psutil.Process(os.getpid())
+            children = parent.children(recursive=True)
+            for process in children:
+                process.send_signal(signal.SIGTERM)
+            psutil.wait_procs(children, timeout=5)
+
+        atexit.register(clean)
 
     @property
     def COMMAND(self):
@@ -813,14 +831,13 @@ class Adapter:
         self.save_checkpoint(self.source + buffer_source)
 
     def terminate(self, tasks):
-        time.sleep(3)
         for device in tasks:
-            process_, id_, logPath, params = tasks[device]
+            process_, _, _, _ = tasks[device]
             if process_.poll() is None:
                 process_.terminate()
-        time.sleep(2)
+        time.sleep(3)
         for device in tasks:
-            process_, id_, logPath, params = tasks[device]
+            process_, _, _, _ = tasks[device]
             if process_.poll() is None:
                 process_.kill()
         sys.exit()
