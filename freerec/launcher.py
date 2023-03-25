@@ -569,7 +569,6 @@ class Coach(ChiefCoach):
 
         def signal_handler(sig, frame):
             infoLogger(f"\033[0;31;47m===============================TERMINATE CURRENT PROCESS===============================\033[0m")
-            self.clean()
             sys.exit()
         signal.signal(signal.SIGINT, signal_handler)
 
@@ -597,7 +596,7 @@ class Coach(ChiefCoach):
         self.summary()
 
         self.eval_at_best()
-        self.clean()
+
 
 class Adapter:
     r"""
