@@ -24,7 +24,7 @@ def make(args):
     #    freerec make DATASET --root=../data
     #
     from .data.preprocessing import datasets
-    from .data.tags import USER, ITEM
+    from .data.tags import USER, ITEM, TIMESTAMP
 
     converter = getattr(datasets, args.dataset)(
         root=args.root,
@@ -35,9 +35,9 @@ def make(args):
     kcore4user = args.kcore4user
     kcore4item = args.kcore4item
     ratios = tuple(map(int, args.ratios.split(',')))
-    fields = None if args.all else (USER.name, ITEM.name)
     
     if args.datatype == 'gen' and args.by == 'ratio':
+        fields = None if args.all else (USER.name, ITEM.name)
         converter.make_general_dataset(
             star4pos=star4pos,
             kcore4user=kcore4user,
@@ -46,6 +46,7 @@ def make(args):
             fields=fields
         )
     elif args.datatype == 'seq' and args.by == 'last-two':
+        fields = None if args.all else (USER.name, ITEM.name, TIMESTAMP.name)
         converter.make_sequential_dataset(
             star4pos=star4pos,
             kcore4user=kcore4user,
@@ -53,6 +54,7 @@ def make(args):
             fields=fields
         )
     elif args.datatype == 'seq' and args.by == 'ratio':
+        fields = None if args.all else (USER.name, ITEM.name, TIMESTAMP.name)
         converter.make_sequential_dataset_by_ratio(
             star4pos=star4pos,
             kcore4user=kcore4user,

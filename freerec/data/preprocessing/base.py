@@ -434,7 +434,7 @@ class AtomicConverter:
         star4pos: int = 0,
         kcore4user: int = 5,
         kcore4item: int = 5,
-        fields: Optional[Iterable[str]] = (USER.name, ITEM.name)
+        fields: Optional[Iterable[str]] = (USER.name, ITEM.name, TIMESTAMP.name)
     ):
         r"""
         Make sequential dataset by leaving last two as validation|test samples.
@@ -447,7 +447,7 @@ class AtomicConverter:
             Select kcore interactions according to User.
         kcore4item: int, default to 10
             Select kcore interactions according to Item.
-        fields: Iterable[str], default to (User, Item)
+        fields: Iterable[str], default to (User, Item, TimeStamp)
             The fields reserved.
         """
 
@@ -476,7 +476,7 @@ class AtomicConverter:
         kcore4user: int = 5,
         kcore4item: int = 5,
         ratios: Tuple[int, int, int] = (8, 1, 1),
-        fields: Optional[Iterable[str]] = (USER.name, ITEM.name),
+        fields: Optional[Iterable[str]] = (USER.name, ITEM.name, TIMESTAMP.name),
         seed: int = 0
     ):
         r"""
@@ -492,7 +492,7 @@ class AtomicConverter:
             Select kcore interactions according to Item.
         ratios: Tuple[int, int, int], default to (8, 1, 1)
             The ratios of training|validation|test set.
-        fields: Iterable[str], default to (User, Item)
+        fields: Iterable[str], default to (User, Item, Timestamp)
             The fields reserved.
         """
         self.load()
