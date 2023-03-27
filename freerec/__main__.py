@@ -96,12 +96,12 @@ def main():
     make_parser.add_argument("--datatype", type=str, choices=('gen', 'seq'), default='gen')
     make_parser.add_argument("--by", type=str, choices=('ratio', 'last-two'), default='ratio')
 
-    make_parser.add_argument("--star4pos", type=int, default=0)
-    make_parser.add_argument("--kcore4user", type=int, default=10)
-    make_parser.add_argument("--kcore4item", type=int, default=10)
-    make_parser.add_argument("--ratios", type=str, default="8,1,1")
+    make_parser.add_argument("--star4pos", type=int, default=0, help="select interactions with `Rating > star4pos'")
+    make_parser.add_argument("--kcore4user", type=int, default=10, help="select kcore interactions according to User")
+    make_parser.add_argument("--kcore4item", type=int, default=10, help="select kcore interactions according to Item")
+    make_parser.add_argument("--ratios", type=str, default="8,1,1", help="the ratios of training|validation|test set")
 
-    make_parser.add_argument("--all", action="store_true", default=False)
+    make_parser.add_argument("--all", action="store_true", default=False, help="reserve all fields if True")
 
     args = parser.parse_args()
     args.func(args)
