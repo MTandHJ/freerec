@@ -59,6 +59,7 @@ def _reduce(reduction='mean'):
         def wrapper(
             preds: Union[List[torch.Tensor], torch.Tensor], 
             targets: Union[List[torch.Tensor], torch.Tensor], 
+            *,
             reduction: str = reduction, **kwargs
         ):
             func_ = partial(func, **kwargs)
