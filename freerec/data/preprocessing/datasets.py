@@ -21,7 +21,7 @@ class AmazonBooks(AtomicConverter):
     item:
         item_id:token	sales_type:token	sales_rank:float	categories:token_seq	title:token     price:float    brand:token
     """
-    filename = "Amazon_Beauty"
+    filename = "Amazon_Books"
 
 
 class AmazonCDs(AtomicConverter):
@@ -101,7 +101,7 @@ class LastFM(AtomicConverter):
     item:
         artist_id:token	    name:token	    url:token	    picture_url:token
     """
-    filename = "gowalla"
+    filename = "lastfm"
 
 
 class MovieLens1M(AtomicConverter):
