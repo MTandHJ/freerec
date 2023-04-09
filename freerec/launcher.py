@@ -182,36 +182,36 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         return self.__mode
 
     @timemeter("Coach/train")
-    def train(self):
+    def train(self, epoch: int):
         """Start training and return the training loss."""
         self.__mode = 'train'
         self.model.train()
-        return self.train_per_epoch()
+        return self.train_per_epoch(epoch)
 
     @timemeter("Coach/valid")
     @torch.no_grad()
-    def valid(self):
+    def valid(self, epoch: int):
         """Start validation and return the validation metrics."""
         self.__mode = 'valid'
         self.model.eval()
-        return self.evaluate(prefix='valid')
+        return self.evaluate(epoch=epoch, prefix='valid')
 
     @timemeter("Coach/test")
     @torch.no_grad()
-    def test(self):
+    def test(self, epoch: int):
         """Start testing and return the test metrics."""
         self.__mode = 'test'
         self.model.eval()
-        return self.evaluate(prefix='test')
+        return self.evaluate(epoch=epoch, prefix='test')
 
     @abc.abstractmethod
-    def train_per_epoch(self):
+    def train_per_epoch(self, epoch: int):
         raise NotImplementedError(
             f"{self.__class__.__name__}.train_per_epoch() should be implemented ..."
         )
 
     @abc.abstractmethod
-    def evaluate(self, prefix: str = 'valid'):
+    def evaluate(self, epoch: int, prefix: str = 'valid'):
         raise NotImplementedError(
             f"{self.__class__.__name__}.evaluate() should be implemented ..."
         )
@@ -440,8 +440,8 @@ class Coach(ChiefCoach):
     def eval_at_best(self):
         try:
             self.load_best()
-            self.valid()
-            self.test()
+            self.valid(self._best_epoch)
+            self.test(self._best_epoch)
             self.step(self._best_epoch)
             self.load(self.cfg.LOG_PATH, self.cfg.SAVED_FILENAME)
         except FileNotFoundError:
@@ -578,18 +578,18 @@ class Coach(ChiefCoach):
                 self.save_checkpoint(epoch)
             if epoch % self.cfg.EVAL_FREQ == 0:
                 if self.cfg.EVAL_VALID:
-                    self.valid()
+                    self.valid(epoch)
                 if self.cfg.EVAL_TEST:
-                    self.test()
+                    self.test(epoch)
             self.check_best(epoch)
             self.step(epoch)
-            self.train()
+            self.train(epoch)
 
         self.save()
 
         # last epoch
-        self.valid()
-        self.test()
+        self.valid(self.cfg.epochs)
+        self.test(self.cfg.epochs)
         self.check_best(self.cfg.epochs)
         self.step(self.cfg.epochs)
 
