@@ -9,9 +9,11 @@ requires = [
     "torchmetrics>=0.9.2",
     "tqdm>=4.64.0",
     'scipy>=1.9.1',
-    "freeplot>=0.3.0",
+    "freeplot>=0.3.1",
     "PyYAML>=6.0",
     "tensorboard>=2.10.0",
+    "psutil==5.9.0",
+    "prettytable==3.4.1"
 ]
 
 

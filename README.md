@@ -8,6 +8,17 @@ I am a beginner in the field of recommender systems, so much of FreeRec's design
 
 Python == 3.9 | [PyTorch == 1.12.1](https://pytorch.org/) | [TorchData == 0.4.1](https://github.com/pytorch/data) | [PyG](https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html#)
 
+
+```
+conda create --name=PyT12 python=3.9
+conda activate PyT12
+```
+
+```
+pip install torch==1.12.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113
+pip install torchdata==0.4.1
+```
+
 - Linux
 
 ```
