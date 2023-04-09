@@ -8,6 +8,23 @@ I am a beginner in the field of recommender systems, so much of FreeRec's design
 
 Python == 3.9 | [PyTorch == 1.12.1](https://pytorch.org/) | [TorchData == 0.4.1](https://github.com/pytorch/data) | [PyG](https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html#)
 
+- Linux
+
+```
+pip install torch_geometric==2.1.0.post1
+pip install https://data.pyg.org/whl/torch-1.12.0%2Bcu116/torch_scatter-2.0.9-cp39-cp39-linux_x86_64.whl
+pip install https://data.pyg.org/whl/torch-1.12.0%2Bcu116/torch_sparse-0.6.15%2Bpt112cu116-cp39-cp39-linux_x86_64.whl
+```
+
+- Windows
+
+```
+pip install torch_geometric==2.1.0.post1
+pip install https://data.pyg.org/whl/torch-1.12.0%2Bcu116/torch_scatter-2.0.9-cp39-cp39-win_amd64.whl
+pip install https://data.pyg.org/whl/torch-1.12.0%2Bcu116/torch_sparse-0.6.15%2Bpt112cu116-cp39-cp39-win_amd64.whl
+```
+
+
 
 ## Installation
 
