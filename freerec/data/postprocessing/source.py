@@ -11,7 +11,7 @@ from ..fields import SparseField
 
 
 __all__ = [
-    'RandomSource', 'OrderedSource',
+    'RandomSource', 'RandomShuffledSource', 'OrderedSource',
     'RandomIDs', 'OrderedIDs', 'DummySource'
 ]
 
@@ -41,6 +41,29 @@ class RandomSource(BaseProcessor):
     def __iter__(self):
         for _ in range(self.datasize):
             yield self._rng()
+
+
+class RandomShuffledSource(BaseProcessor):
+    r"""
+    DataPipe that generates shuffled source.
+
+    Parameters:
+    -----------
+    source: Iterable 
+        The source data to start.
+    """
+
+    def __init__(self, source) -> None:
+        super().__init__(None)
+
+        self.source = list(source)
+        self._rng = partial(
+            random.shuffle, x=self.source
+        )
+
+    def __iter__(self):
+        self._rng()
+        yield from iter(self.source)
 
 
 class OrderedSource(BaseProcessor):
