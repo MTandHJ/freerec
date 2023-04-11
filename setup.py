@@ -12,8 +12,8 @@ requires = [
     "freeplot>=0.3.1",
     "PyYAML>=6.0",
     "tensorboard>=2.10.0",
-    "psutil==5.9.0",
-    "prettytable==3.4.1"
+    "psutil>=5.9.0",
+    "prettytable>=3.4.1"
 ]
 
 
