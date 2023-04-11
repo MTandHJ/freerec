@@ -151,8 +151,8 @@ class Parser(Config):
         info = "\n## {0} \n\n\n".format(time_)
         info += "|  Attribute   |   Value   |\n"
         info += "| :-------------: | :-----------: |\n"
-        for key, val in self.items():
-            info += s.format(key=key, val=val)
+        for key in sorted(self.keys(), key=lambda x: x.upper()):
+            info += s.format(key=key, val=self[key])
         with open(file_, mode, encoding="utf8") as fh:
             fh.write(info)
 
