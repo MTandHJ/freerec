@@ -73,8 +73,12 @@ class AtomicConverter:
         self.root = root
         self.dataset = dataset if dataset else self.__class__.__name__
 
-        self._name_format_dict.update(NAME_FORMAT_DICT)
-        self._type_format_dict.update(TYPE_FORMAT_DICT)
+        for key, val in NAME_FORMAT_DICT.items():
+            if self._name_format_dict.get(key, None) is None:
+                self._name_format_dict[key] = val
+        for key, val in TYPE_FORMAT_DICT.items():
+            if self._type_format_dict.get(key, None) is None:
+                self._type_format_dict[key] = val
 
     def convert_by_column(self, df: pd.DataFrame):
         old_columns = df.columns
@@ -226,8 +230,8 @@ class AtomicConverter:
         )
         infoLogger(f"[Converter] >>> Current datasize: {len(df)} ...")
         while dsz != len(df):
-            # filter by user
             dsz = len(df)
+            # filter by user
             users = df[USER.name]
             counts = users.value_counts()
             bool_indices = users.isin(
