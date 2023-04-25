@@ -186,7 +186,7 @@ class BufferField(Field):
             self.data = self.data.to(device, dtype, non_blocking)
         return self
 
-    def to_csr(self) -> torch.Tensor:
+    def to_csr(self, length: Optional[int] = None) -> torch.Tensor:
         r"""
         Convert List to CSR Tensor.
 
@@ -194,16 +194,24 @@ class BufferField(Field):
         ------
         Each row in self.data should be the col indices !
         """
+        data = self.data
+        if isinstance(data, torch.Tensor):
+            data = data.tolist()
+        elif isinstance(data, np.ndarray):
+            data = data.tolist()
+        assert isinstance(data[0], (list, tuple)), f"Each row of data should be `list'|`tuple' but `{type(data[0])}' received ..."
+
+        length = self.count if length is None else length
         crow_indices = np.cumsum([0] + list(map(len, self.data)), dtype=np.int64)
         col_indices = reduce(
-            lambda x, y: x + y, self.data
+            lambda x, y: x + y, data
         )
         values = np.ones_like(col_indices, dtype=np.int64)
         return torch.sparse_csr_tensor(
             crow_indices=crow_indices,
             col_indices=col_indices,
             values=values,
-            size=(len(self.data), self.count) # B x Num of Items
+            size=(len(data), length) # B x Num of Items
         )
 
 
