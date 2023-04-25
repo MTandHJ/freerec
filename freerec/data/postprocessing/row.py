@@ -172,7 +172,6 @@ class RowMapper(dp.iter.IterDataPipe):
             yield self._apply_fn(row)
 
 
-dp.iter.Mapper
 @dp.functional_datapipe("lprune_")
 class LeftPruningRow(RowMapper):
     r"""

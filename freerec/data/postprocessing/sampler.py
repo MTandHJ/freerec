@@ -338,6 +338,13 @@ class SeqValidYielder(SeqTrainYielder):
             )
         self.posItems = [tuple(items) for items in self.posItems]
 
+    def __iter__(self):
+        for user in self.source:
+            if self._check(user):
+                posItems = self.posItems[user]
+                # (user, seqs, unseen, seen)
+                yield [user, posItems[:-1], posItems[-1:], posItems[:-1]]
+
 
 @dp.functional_datapipe("seq_test_yielding_")
 class SeqTestYielder(SeqValidYielder):
