@@ -1,4 +1,4 @@
-__version__ = '0.3.1'
+__version__ = '0.3.5'
 
 from . import data, models, criterions, launcher, metrics, utils
 from freerec.dict2obj import Config
@@ -10,4 +10,4 @@ def decalre(*, version: str):
     If they do not match, a warning message would be printed.
     """
     if version != __version__:
-        print(f"\033[1;31m [Warning] FreeRec version of {version} is required but current version is {__version__} \033[0m")
+        print(f"\033[1;31m[Warning] FreeRec version of {version} is required but current version is {__version__} \033[0m")
