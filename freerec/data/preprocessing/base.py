@@ -9,7 +9,7 @@ from math import floor, ceil
 
 from ..tags import USER, ITEM, RATING, TIMESTAMP
 
-from ...utils import infoLogger, mkdirs
+from ...utils import infoLogger, warnLogger, mkdirs
 
 
 __all__ = ['AtomicConverter']
@@ -89,8 +89,14 @@ class AtomicConverter:
             name_, type_ = col.split(":")
             name_ =  self._name_format_dict.get(name_, name_.capitalize())
             type_ = self._type_format_dict[type_]
-            df[col] = df[col].astype(type_)
-
+            try:
+                df[col] = df[col].astype(type_)
+            except ValueError as e:
+                warnLogger(
+                    f"`{type_}' cannot address field `{col}': \n"
+                    f"\t {e} \n"
+                    f"Skip it ..."
+                )
             new_columns.append(name_)
         
         df.columns = new_columns

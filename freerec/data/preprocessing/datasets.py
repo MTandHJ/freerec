@@ -44,6 +44,16 @@ class AmazonElectronics(AtomicConverter):
     filename = "Amazon_Electronics"
 
 
+class AmazonHome(AtomicConverter):
+    r"""
+    inter:
+        user_id:token	item_id:token	rating:float	timestamp:float
+    item:
+        item_id:token	sales_type:token	sales_rank:float	categories:token_seq	title:token	price:float	brand:token
+    """
+    filename = "Amazon_Home_and_Kitchen"
+
+
 class AmazonMovies(AtomicConverter):
     r"""
     inter:
@@ -54,12 +64,42 @@ class AmazonMovies(AtomicConverter):
     filename = "Amazon_Movies_and_TV"
 
 
+class AmazonOffice(AtomicConverter):
+    r"""
+    inter:
+        user_id:token	item_id:token	rating:float	timestamp:float
+    item:
+        item_id:token	price:float	sales_type:token	sales_rank:float	categories:token_seq	title:token	brand:token
+    """
+    filename = "Amazon_Office_Products"
+
+
+class AmazonTools(AtomicConverter):
+    r"""
+    inter:
+        user_id:token	item_id:token	rating:float	timestamp:float
+    item:
+        item_id:token	categories:token_seq	title:token	price:float	brand:token	sales_type:token	sales_rank:float
+    """
+    filename = "Amazon_Tools_and_Home_Improvement"
+
+
+class AmazonToys(AtomicConverter):
+    r"""
+    inter:
+        user_id:token	item_id:token	rating:float	timestamp:float
+    item:
+        item_id:token	title:token	price:float	sales_type:token	sales_rank:float	brand:token	categories:token_seq
+    """
+    filename = "Amazon_Toys_and_Games"
+
+
 class AmazonGames(AtomicConverter):
     r"""
     inter:
         user_id:token	item_id:token	rating:float	timestamp:float
     item:
-        item_id:token	price:float	    sales_type:token	sales_rank:float	categories:token_seq	title:token	brand:token
+        item_id:token	price:float	sales_type:token	sales_rank:float	categories:token_seq	title:token	brand:token
     """
     filename = "Amazon_Video_Games"
 

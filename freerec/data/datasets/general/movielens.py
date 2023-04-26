@@ -30,7 +30,6 @@ class MovieLens100K_10101811_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 1
     ratios: (8, 1, 1)
-    strict: True
 
     Statistics:
     -----------
@@ -55,7 +54,6 @@ class MovieLens100K_10101712_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 1
     ratios: (8, 1, 1)
-    strict: True
 
     Statistics:
     -----------
@@ -80,7 +78,6 @@ class MovieLens1M_10101811_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 1
     ratios: (8, 1, 1)
-    strict: True
 
     Statistics:
     -----------
@@ -105,7 +102,6 @@ class MovieLens1M_10101712_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 1
     ratios: (7, 1, 2)
-    strict: True
 
     Statistics:
     -----------

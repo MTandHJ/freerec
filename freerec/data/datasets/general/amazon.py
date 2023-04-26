@@ -33,7 +33,6 @@ class AmazonBooks_10104811_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 4
     ratios: (8, 1, 1)
-    strict: True
 
     Statistics:
     -----------
@@ -58,7 +57,6 @@ class AmazonBooks_10104712_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 4
     ratios: (7, 1, 2)
-    strict: True
 
     Statistics:
     -----------
@@ -83,7 +81,6 @@ class AmazonCDs_10104811_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 4
     ratios: (8, 1, 1)
-    strict: True
 
     Statistics:
     -----------
@@ -108,7 +105,6 @@ class AmazonCDs_10104712_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 4
     ratios: (7, 1, 2)
-    strict: True
 
     Statistics:
     -----------
@@ -133,7 +129,6 @@ class AmazonMovies_10104811_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 4
     ratios: (8, 1, 1)
-    strict: True
 
     Statistics:
     -----------
@@ -158,7 +153,6 @@ class AmazonMovies_10104712_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 4
     ratios: (7, 1, 2)
-    strict: True
 
     Statistics:
     -----------
@@ -183,7 +177,6 @@ class AmazonBeauty_10104811_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 4
     ratios: (8, 1, 1)
-    strict: True
 
     Statistics:
     -----------
@@ -208,7 +201,6 @@ class AmazonBeauty_10104712_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 4
     ratios: (8, 1, 1)
-    strict: True
 
     Statistics:
     -----------
@@ -233,7 +225,6 @@ class AmazonElectronics_10104811_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 4
     ratios: (8, 1, 1)
-    strict: True
 
     Statistics:
     -----------
@@ -258,7 +249,6 @@ class AmazonElectronics_10104712_Chron(UserItemPair):
     kcore4item: 10
     star4pos: 4
     ratios: (7, 1, 2)
-    strict: True
 
     Statistics:
     -----------
