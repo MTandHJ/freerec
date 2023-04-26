@@ -626,7 +626,7 @@ class Adapter:
     def __init__(self) -> None:
         self.params = []
         self.values = []
-        self.devices = []
+        self.devices = tuple()
 
         def clean():
             parent = psutil.Process(os.getpid())
@@ -674,7 +674,7 @@ class Adapter:
         envs, params, defaults = "", "", ""
         for key, val in self.cfg.ENVS.items():
             if key == 'device':
-                self.devices = val.split(',')
+                self.devices = tuple(val.split(','))
             else:
                 self.cfg.COMMAND += self.get_option(key, val)
             envs += piece.format(key=key, vals=val)
@@ -771,7 +771,6 @@ class Adapter:
                 f"\033[0;31;47m[Adapter] >>> Unknown errors happen. This is mainly due to abnormal exits of child processes.\033[0m"
             )
 
-
     def each_grid(self):
         """Grid search for each kind of param."""
         for key, vals in zip(self.params, self.values):
@@ -812,34 +811,38 @@ class Adapter:
         infoLogger(f"\033[0;31;47m{command}\033[0m")
         return subprocess.Popen(shlex.split(command))
 
-    def wait(self, tasks: Dict):
+    def wait(self, tasks: List):
         """Wait util all processes terminate."""
-        for process_, id_, logPath, params in tasks.values():
+        tasks = [task for task in tasks if task is not None]
+        for process_, id_, logPath, params in tasks:
             process_.wait()
             self.write(id_, logPath, params)
 
-    def poll(self, tasks: Dict):
+    def poll(self, tasks: List):
         """Wait util any process terminates."""
-        buffer_source = []
+        def is_null(task):
+            return task is None
+        buffer_source = [task[-1] for task in tasks if task is not None]
         time.sleep(1) # for unique id
-        while len(self.devices) == 0:
+        while not any(map(is_null, tasks)):
             time.sleep(7)
-            for device, (process_, id_, logPath, params) in tasks.items():
+            buffer_source = []
+            for i, (process_, id_, logPath, params) in enumerate(tasks):
                 if process_.poll() is not None:
                     self.write(id_, logPath, params)
-                    self.devices.append(device)
+                    tasks[i] = None
                 else:
                     buffer_source.append(params)
         self.save_checkpoint(self.source + buffer_source)
+        return tasks.index(None)
 
-    def terminate(self, tasks):
-        for device in tasks:
-            process_, _, _, _ = tasks[device]
+    def terminate(self, tasks: List):
+        tasks = [task for task in tasks if task is not None]
+        for process_, _, _, _ in tasks:
             if process_.poll() is None:
                 process_.terminate()
         time.sleep(3)
-        for device in tasks:
-            process_, _, _, _ = tasks[device]
+        for process_, _, _, _ in tasks:
             if process_.poll() is None:
                 process_.kill()
         sys.exit()
@@ -848,7 +851,7 @@ class Adapter:
     def fit(self):
         """Grid search."""
         self.source = self.resume()
-        tasks = dict()
+        tasks = [None for _ in range(len(self.devices))]
 
         def signal_handler(sig, frame):
             infoLogger(f"\033[0;31;47m===============================TERMINATE ALL SUBPROCESSES===============================\033[0m")
@@ -857,12 +860,12 @@ class Adapter:
 
         try:
             while self.source:
-                self.poll(tasks)
+                index = self.poll(tasks)
+                device = self.devices[index]
                 params = self.source.pop()
-                device = self.devices.pop()
                 command, id_, logPath = self.register(device)
                 process_ = self.run(command, params)
-                tasks[device] = (process_, id_, logPath, params)
+                tasks[index] = (process_, id_, logPath, params)
         except Exception as e:
             print(e)
         finally:
