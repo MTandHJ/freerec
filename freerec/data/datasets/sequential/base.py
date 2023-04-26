@@ -65,7 +65,7 @@ class UserItemTimeTriplet(SequentialRecSet):
         from prettytable import PrettyTable
         User, Item = self.fields[USER, ID], self.fields[ITEM, ID]
 
-        table = PrettyTable(['#User', '#Item', '#Interactions', '#Train', '#Valid', '#Test', 'Density'])
+        table = PrettyTable(['#Users', '#Items', '#Interactions', '#Train', '#Valid', '#Test', 'Density'])
         table.add_row([
             User.count, Item.count, self.trainsize + self.validsize + self.testsize,
             self.trainsize, self.validsize, self.testsize,
