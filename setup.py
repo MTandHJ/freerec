@@ -6,7 +6,6 @@ with open("README.md", "r") as fh:
 
 requires = [
     "torchdata==0.4.1",
-    "torchmetrics>=0.9.2",
     "tqdm>=4.64.0",
     'scipy>=1.9.1',
     "freeplot>=0.3.1",

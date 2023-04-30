@@ -11,7 +11,6 @@ from typing import Optional, Union, List
 from functools import  partial
 
 import torch
-import torchmetrics
 
 
 __all__ = [
@@ -530,8 +529,15 @@ def normalized_dcg(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[in
     dcg[~invalid] /= ideal_dcg[~invalid]
     return dcg
 
+def _single_reciprocal_rank(preds: torch.Tensor, targets: torch.Tensor):
+    if not targets.sum():
+        return 0.
+    positions = torch.nonzero(targets).view(-1)
+    res = 1.0 / (positions[0] + 1.0)
+    return res
+
 @_reduce('mean')
-def mean_reciprocal_rank(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+def mean_reciprocal_rank(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
     r"""
     The mean reciprocal rank (MRR) is defined as the average of 
     the reciprocal rank of the first correct item in the predicted ranking of items for each query.
@@ -547,6 +553,9 @@ def mean_reciprocal_rank(preds: torch.Tensor, targets: torch.Tensor) -> torch.Te
         - 'mean': the mean value of the error is returned. Default.
         - 'sum': the sum of the error is returned.
         - 'none': no reduction will be applied and a tensor of shape (n,) will be returned.
+    k: int, optional
+        - `int': Top-(K=k).
+        - `None': Top-(K=d)
 
     Returns:
     --------
@@ -562,14 +571,29 @@ def mean_reciprocal_rank(preds: torch.Tensor, targets: torch.Tensor) -> torch.Te
     >>> mean_reciprocal_rank(preds, targets)
     tensor(0.7500)
     """
-    metric = torchmetrics.functional.retrieval_reciprocal_rank
-    if preds.ndim == 2:
-        return torch.tensor(list(map(metric, preds, targets)))
+    preds, targets = preds.float(), targets.float()
+    if k is None:
+        k = preds.size(-1)
     else:
-        return metric(preds, targets)
+        k = min(k, preds.size(-1))
+    
+    preds, indices = preds.topk(k=k, dim=-1)
+    targets = targets.gather(-1, indices)
+
+    if preds.ndim == 2:
+        return torch.tensor(list(map(_single_reciprocal_rank, preds, targets)))
+    else:
+        return _single_reciprocal_rank(preds, targets)
+
+def _single_adverage_precision(preds: torch.Tensor, targets: torch.Tensor):
+    if not targets.sum():
+        return 0.
+    positions = torch.arange(1, len(targets) + 1, device=targets.device, dtype=torch.float32)[targets > 0]
+    res = torch.div((torch.arange(len(positions), device=positions.device, dtype=torch.float32) + 1), positions).mean()
+    return res
 
 @_reduce('mean')
-def mean_average_precision(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+def mean_average_precision(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
     r"""
     MAP calculates the mean average precision for a set of predictions and targets.
 
@@ -584,6 +608,9 @@ def mean_average_precision(preds: torch.Tensor, targets: torch.Tensor) -> torch.
         - 'mean': the mean value of the error is returned. Default.
         - 'sum': the sum of the error is returned.
         - 'none': no reduction will be applied and a tensor of shape (n,) will be returned.
+    k: int, optional
+        - `int': Top-(K=k).
+        - `None': Top-(K=d)
 
     Returns:
     --------
@@ -598,11 +625,19 @@ def mean_average_precision(preds: torch.Tensor, targets: torch.Tensor) -> torch.
     >>> mean_average_precision(preds, targets)
     tensor(0.6667)
     """
-    metric = torchmetrics.functional.retrieval_average_precision
-    if preds.ndim == 2:
-        return torch.tensor(list(map(metric, preds, targets)))
+    preds, targets = preds.float(), targets.float()
+    if k is None:
+        k = preds.size(-1)
     else:
-        return metric(preds, targets)
+        k = min(k, preds.size(-1))
+    
+    preds, indices = preds.topk(k=k, dim=-1)
+    targets = targets.gather(-1, indices)
+
+    if preds.ndim == 2:
+        return torch.tensor(list(map(_single_adverage_precision, preds, targets)))
+    else:
+        return _single_adverage_precision(preds, targets)
 
 
 if __name__ == "__main__":
