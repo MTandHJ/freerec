@@ -789,19 +789,19 @@ class Adapter:
         checkpoint['source'] = source
         torch.save(checkpoint, path)
 
+    @timemeter("Coach/resume")
     def load_checkpoint(self) -> int:
         """Load the rest of params."""
+        infoLogger(f"[Coach] >>> Load the recent checkpoint ...")
         path = os.path.join(self.cfg.CORE_CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
         checkpoint = torch.load(path)
         return checkpoint['source']
 
-    @timemeter("Coach/resume")
     def resume(self):
         """Resume from the recent checkpoint."""
         source = self.each_grid() if self.cfg.EXCLUSIVE else self.product_grid()
         source = list(source)[::-1]
         source = self.load_checkpoint() if self.cfg.resume else source
-        infoLogger(f"[Coach] >>> Load the recent checkpoint ...")
         return source
 
     def run(self, command: str, params: Dict):
