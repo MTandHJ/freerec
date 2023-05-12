@@ -293,14 +293,14 @@ class Parser(Config):
         5. Add a README.md file under CHECKPOINT_PATH and LOG_PATH.
         """
         args = self.parser.parse_args()
-        defaults = self.load(args)
-        activated_args = self._command_line_args()
+        defaults = self.load(args) # default parameters from config.yaml
+        activated_args = self._command_line_args() # arguments from the command line
         for key, val in args._get_kwargs():
             if key.upper() in self:
-                if self[key.upper()] != val or key in activated_args:
+                if key in activated_args or  key.upper() not in defaults:
                     defaults[key.upper()] = val
             else:
-                if self[key] != val or key in activated_args:
+                if key in activated_args or key not in defaults:
                     defaults[key] = val
         self.update(**defaults)
 
