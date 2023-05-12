@@ -9,7 +9,7 @@ from argparse import ArgumentParser
 from .dict2obj import Config
 from .utils import (
     mkdirs, timemeter, set_color, set_seed, activate_benchmark, 
-    set_logger
+    set_logger, infoLogger
 )
 
 
@@ -326,6 +326,8 @@ class Parser(Config):
 
         self.readme(self.CHECKPOINT_PATH) # create README.md
         self.readme(self.LOG_PATH)
+
+        infoLogger(str(self))
 
 
 class CoreParser(Config):
