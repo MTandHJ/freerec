@@ -52,6 +52,12 @@ class AtomicConverter:
     dataset: str, optional
         The filename saving dataset.
         - `None': Use classname instead.
+
+    Notes:
+    ------
+    1. Most of datasets in RecBole have two versions: 
+        merged: remove duplicate interactions.
+        not_merged: not remove duplicate interactions.
     """
     filename: str
 
@@ -85,8 +91,8 @@ class AtomicConverter:
         new_columns = []
 
         for col in old_columns:
-            col = col.lower()
-            name_, type_ = col.split(":")
+            col_ = col.lower()
+            name_, type_ = col_.split(":")
             name_ =  self._name_format_dict.get(name_, name_.capitalize())
             type_ = self._type_format_dict[type_]
             try:
@@ -365,6 +371,23 @@ class AtomicConverter:
         self.validiter = pd.concat(validgroups).reset_index(drop=True)
         self.testiter = pd.concat(testgroups).reset_index(drop=True)
 
+    def sess_split_by_ratio(self, ratios: Iterable = (8, 1, 1)):
+        infoLogger(f"[Converter] >>> Split by ratios: {ratios} ...")
+
+        groups = list(self.interactions.groupby(USER.name)[TIMESTAMP.name].min().sort_values().index)
+
+        markers = np.cumsum(ratios)
+        l = max(floor(markers[0] * len(groups) / markers[-1]), 1)
+        r = floor(markers[1] * len(groups) / markers[-1])
+
+        traingroups = groups[:l]
+        validgroups = groups[l:r]
+        testgroups = groups[r:]
+
+        self.trainiter = self.interactions[self.interactions[USER.name].isin(traingroups)]
+        self.validiter = self.interactions[self.interactions[USER.name].isin(validgroups)]
+        self.testiter = self.interactions[self.interactions[USER.name].isin(testgroups)]
+
     def save(self, path: str):
         mkdirs(path)
 
@@ -518,6 +541,54 @@ class AtomicConverter:
         code = f"{kcore4user}{kcore4item}{star4pos}{''.join(map(str, ratios))}"
         path = os.path.join(
             self.root, 'Sequential', 
+            '_'.join([self.dataset, code, 'Chron'])
+        )
+
+        self.save(path)
+
+
+    def make_session_dataset(
+        self,
+        star4pos: int = 0,
+        kcore4user: int = 2,
+        kcore4item: int = 5,
+        ratios: Tuple[int, int, int] = (8, 1, 1),
+        fields: Optional[Iterable[str]] = (USER.name, ITEM.name, TIMESTAMP.name),
+    ):
+        r"""
+        Make session dataset by ratios.
+
+        Flows:
+        ------
+        1. filter out `inactive' items and short sessions;
+        2. training|validation|test set will be splited according to the start time of each session.
+
+        Parameters:
+        -----------
+        star4pos: int, default to 0
+            Select interactions with `Rating > star4pos'.
+        kcore4user: int, default to 10
+            Select kcore interactions according to User.
+        kcore4item: int, default to 10
+            Select kcore interactions according to Item.
+        ratios: Tuple[int, int, int], default to (8, 1, 1)
+            The ratios of training|validation|test set.
+        fields: Iterable[str], default to (User, Item, Timestamp)
+            The fields reserved.
+        """
+        self.load()
+        self.filter_by_rating(low=star4pos, high=None)
+        self.filter_by_core(low4user=kcore4user, low4item=kcore4item)
+        self.user2token()
+        self.item2token()
+        self.sort_by_timestamp()
+        if fields:
+            self.reserve(fields)
+        self.sess_split_by_ratio(ratios)
+
+        code = f"{kcore4user}{kcore4item}{star4pos}{''.join(map(str, ratios))}"
+        path = os.path.join(
+            self.root, 'Session', 
             '_'.join([self.dataset, code, 'Chron'])
         )
 

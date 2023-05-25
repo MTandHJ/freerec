@@ -2,7 +2,7 @@
 
 from typing import Any, Callable, Iterable, List, Dict, Optional, Tuple, Union
 
-import torch, abc, os, subprocess, shlex, time, sys, signal, psutil, atexit
+import torch, abc, os, time, sys, signal, psutil, atexit
 import pandas as pd
 from torchdata.datapipes.iter import IterDataPipe
 from torch.utils.tensorboard import SummaryWriter
@@ -142,6 +142,8 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         try:
             torch.cuda.set_device(self.device)
         except ValueError:
+            pass
+        except AttributeError:
             pass
 
         self._set_datapipe(trainpipe, validpipe, testpipe)
@@ -806,6 +808,7 @@ class Adapter:
 
     def run(self, command: str, params: Dict):
         """Start a new subprocess"""
+        import subprocess, shlex
         for option, val in params.items():
             command += self.get_option(option, val)
         infoLogger(f"\033[0;31;47m{command}\033[0m")

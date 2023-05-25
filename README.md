@@ -14,6 +14,8 @@ conda create --name=PyT12 python=3.9
 conda activate PyT12
 ```
 
+### GPU
+
 ```
 pip install torch==1.12.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113
 pip install torchdata==0.4.1
@@ -33,6 +35,31 @@ pip install https://data.pyg.org/whl/torch-1.12.0%2Bcu116/torch_sparse-0.6.15%2B
 pip install torch_geometric==2.1.0.post1
 pip install https://data.pyg.org/whl/torch-1.12.0%2Bcu116/torch_scatter-2.0.9-cp39-cp39-win_amd64.whl
 pip install https://data.pyg.org/whl/torch-1.12.0%2Bcu116/torch_sparse-0.6.15%2Bpt112cu116-cp39-cp39-win_amd64.whl
+```
+
+### CPU
+
+
+```
+conda install pytorch==1.12.1 cpuonly -c pytorch
+pip install torchdata==0.4.1
+```
+
+- Linux
+
+```
+pip install torch_geometric==2.1.0.post1
+pip install https://data.pyg.org/whl/torch-1.12.0%2Bcpu/torch_scatter-2.0.9-cp39-cp39-linux_x86_64.whl
+pip install https://data.pyg.org/whl/torch-1.12.0%2Bcpu/torch_sparse-0.6.15%2Bpt112cpu-cp39-cp39-linux_x86_64.whl
+```
+
+
+- Windows
+
+```
+pip install torch_geometric==2.1.0.post1
+pip install https://data.pyg.org/whl/torch-1.12.0%2Bcpu/torch_scatter-2.0.9-cp39-cp39-win_amd64.whl
+pip install https://data.pyg.org/whl/torch-1.12.0%2Bcpu/torch_sparse-0.6.15%2Bpt112cpu-cp39-cp39-win_amd64.whl
 ```
 
 

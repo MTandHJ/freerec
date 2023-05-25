@@ -5,8 +5,6 @@ from typing import Iterator, Optional, TypeVar, Tuple
 import torch, os, abc
 import numpy as np
 import torchdata.datapipes as dp
-from torch_geometric.data import Data, HeteroData
-from torch_geometric.utils import to_undirected
 from freeplot.utils import import_pickle, export_pickle
 
 from ..tags import FieldTags, SPARSE, USER, ITEM, ID
@@ -186,7 +184,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         infoLogger(str(self))
 
     @timemeter("DataSet/to_graph")
-    def to_heterograph(self, *edge_types: Tuple[Tuple[FieldTags], Optional[str], Tuple[FieldTags]]) -> HeteroData:
+    def to_heterograph(self, *edge_types: Tuple[Tuple[FieldTags], Optional[str], Tuple[FieldTags]]):
         r"""
         Convert datapipe to a heterograph.
 
@@ -226,6 +224,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
             (ItemID, ItemID2UserID, UserID)={ edge_index=[2, 810128] }
         )
         """
+        from torch_geometric.data import HeteroData
 
         # check mode and raise warning if not in 'train' mode
         if self.mode != 'train':
@@ -262,7 +261,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         src: Tuple[FieldTags] = (USER, ID),
         dst: Tuple[FieldTags] = (ITEM, ID),
         edge_type: Optional[str] = None
-    ) -> HeteroData:
+    ):
         r"""
         Convert datapipe to a bipartite graph.
 
@@ -302,7 +301,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         """
         return self.to_heterograph((src, edge_type, dst))
    
-    def to_graph(self, src: Tuple[FieldTags], dst: Tuple[FieldTags]) -> Data:
+    def to_graph(self, src: Tuple[FieldTags], dst: Tuple[FieldTags]):
         r"""
         Convert datapipe to a homogeneous graph.
 
@@ -334,6 +333,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         >>> graph
         Data(edge_index=[2, 1620256], x=[70839, 0])
         """
+        from torch_geometric.utils import to_undirected
         graph = self.to_heterograph((src, None, dst)).to_homogeneous()
         graph.edge_index = to_undirected(graph.edge_index)
         return graph

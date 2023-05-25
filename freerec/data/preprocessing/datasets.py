@@ -104,6 +104,17 @@ class AmazonGames(AtomicConverter):
     filename = "Amazon_Video_Games"
 
 
+class Diginetica(AtomicConverter):
+    r"""
+    inter:
+        session_id:token	item_id:token	timestamp:float
+    item:
+        item_id:token	item_priceLog2:float	item_name:token	item_category:token
+    """
+    filename = "diginetica"
+    _name_format_dict = {'session_id': USER.name}
+
+
 class FourSquareNYC(AtomicConverter):
     r"""
     inter:
@@ -246,17 +257,16 @@ class Yelp2022(AtomicConverter):
 class YooChooseBuys(AtomicConverter):
     r"""
     inter: 
-        session_id:token	item_id:token	count:float	    timestamp:float
+        session_id:token	timestamp:float	item_id:token	price:float	quantity:float
     """
     filename = "yoochoose-buys"
-    _name_format_dict = {'session_id': USER.name, 'count': RATING.name}
+    _name_format_dict = {'session_id': USER.name}
 
 
 class YooChooseClicks(AtomicConverter):
     r"""
     inter: 
-        session_id:token	item_id:token	count:float	timestamp:float
+        session_id:token	timestamp:float	item_id:token	category:token
     """
     filename = "yoochoose-clicks"
-    _name_format_dict = {'session_id': USER.name, 'count': RATING.name}
-
+    _name_format_dict = {'session_id': USER.name}
