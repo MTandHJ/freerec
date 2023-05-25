@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from math import floor, ceil
 
-from ..tags import USER, ITEM, RATING, TIMESTAMP
+from ..tags import USER, ITEM, SESSION, RATING, TIMESTAMP
 
 from ...utils import infoLogger, warnLogger, mkdirs
 
@@ -17,6 +17,7 @@ __all__ = ['AtomicConverter']
 
 NAME_FORMAT_DICT = {
     'user_id': USER.name,
+    'session_id': SESSION.name,
     'item_id': ITEM.name,
     'venue_id': ITEM.name, # FourSquare
     'rating': RATING.name,
@@ -209,7 +210,8 @@ class AtomicConverter:
         low4user: Union[None, int, float] = None, 
         high4user: Union[None, int, float] = None,
         low4item: Union[None, int, float] = None, 
-        high4item: Union[None, int, float] = None
+        high4item: Union[None, int, float] = None,
+        master: str = USER.name
     ):
         r"""
         Filter (user, item) by k-core settings.
@@ -237,14 +239,14 @@ class AtomicConverter:
         dsz = -1
         infoLogger(
             f"[Converter] >>> Filter dataframe: "
-            f"User in [{low4user}, {high4user}]; "
+            f"{master} in [{low4user}, {high4user}]; "
             f"Item in [{low4item}, {high4item}] ..."
         )
         infoLogger(f"[Converter] >>> Current datasize: {len(df)} ...")
         while dsz != len(df):
             dsz = len(df)
             # filter by user
-            users = df[USER.name]
+            users = df[master]
             counts = users.value_counts()
             bool_indices = users.isin(
                 counts[(low4user <= counts) & (counts <= high4user)].index
@@ -263,9 +265,9 @@ class AtomicConverter:
 
         self.interactions = df
 
-    def user2token(self):
+    def user2token(self, master: str = USER.name):
         infoLogger(f"[Converter] >>> Map user ID to Token ...")
-        user_ids = sorted(self.interactions[USER.name].unique().tolist())
+        user_ids = sorted(self.interactions[master].unique().tolist())
         self.userCount = len(user_ids)
 
         user_tokens = list(range(len(user_ids)))
@@ -274,11 +276,11 @@ class AtomicConverter:
         )
 
         if self.userFeats is not None:
-            self.userFeats = self.userFeats[self.userFeats[USER.name].isin(user_ids)]
-            self.userFeats = self.userFeats.sort_values([USER.name])
+            self.userFeats = self.userFeats[self.userFeats[master].isin(user_ids)]
+            self.userFeats = self.userFeats.sort_values([master])
 
         self.map_col(
-            USER.name, self.userMaps, 
+            master, self.userMaps, 
             pools=(self.interactions, self.userFeats)
         )
 
@@ -301,14 +303,14 @@ class AtomicConverter:
             pools=(self.interactions, self.itemFeats)
         )
 
-    def sort_by_timestamp(self):
+    def sort_by_timestamp(self, master: str = USER.name):
         df = self.interactions
         try:
-            df = df.sort_values(by=[USER.name, TIMESTAMP.name])
-            infoLogger(f"[Converter] >>> Sort by [{USER.name}] [{TIMESTAMP.name}] ...")
+            df = df.sort_values(by=[master, TIMESTAMP.name])
+            infoLogger(f"[Converter] >>> Sort by [{master}] [{TIMESTAMP.name}] ...")
         except KeyError:
-            df = df.sort_values(by=[USER.name])
-            infoLogger(f"[Converter] >>> Sort by [{USER.name}] ...")
+            df = df.sort_values(by=[master])
+            infoLogger(f"[Converter] >>> Sort by [{master}] ...")
         finally:
             self.interactions = df
 
@@ -374,7 +376,7 @@ class AtomicConverter:
     def sess_split_by_ratio(self, ratios: Iterable = (8, 1, 1)):
         infoLogger(f"[Converter] >>> Split by ratios: {ratios} ...")
 
-        groups = list(self.interactions.groupby(USER.name)[TIMESTAMP.name].min().sort_values().index)
+        groups = list(self.interactions.groupby(SESSION.name)[TIMESTAMP.name].min().sort_values().index)
 
         markers = np.cumsum(ratios)
         l = max(floor(markers[0] * len(groups) / markers[-1]), 1)
@@ -384,9 +386,9 @@ class AtomicConverter:
         validgroups = groups[l:r]
         testgroups = groups[r:]
 
-        self.trainiter = self.interactions[self.interactions[USER.name].isin(traingroups)]
-        self.validiter = self.interactions[self.interactions[USER.name].isin(validgroups)]
-        self.testiter = self.interactions[self.interactions[USER.name].isin(testgroups)]
+        self.trainiter = self.interactions[self.interactions[SESSION.name].isin(traingroups)]
+        self.validiter = self.interactions[self.interactions[SESSION.name].isin(validgroups)]
+        self.testiter = self.interactions[self.interactions[SESSION.name].isin(testgroups)]
 
     def save(self, path: str):
         mkdirs(path)
@@ -546,14 +548,13 @@ class AtomicConverter:
 
         self.save(path)
 
-
     def make_session_dataset(
         self,
         star4pos: int = 0,
         kcore4user: int = 2,
         kcore4item: int = 5,
         ratios: Tuple[int, int, int] = (8, 1, 1),
-        fields: Optional[Iterable[str]] = (USER.name, ITEM.name, TIMESTAMP.name),
+        fields: Optional[Iterable[str]] = (SESSION.name, ITEM.name, TIMESTAMP.name),
     ):
         r"""
         Make session dataset by ratios.
@@ -578,10 +579,10 @@ class AtomicConverter:
         """
         self.load()
         self.filter_by_rating(low=star4pos, high=None)
-        self.filter_by_core(low4user=kcore4user, low4item=kcore4item)
-        self.user2token()
+        self.filter_by_core(low4user=kcore4user, low4item=kcore4item, master=SESSION.name)
+        self.user2token(master=SESSION.name)
         self.item2token()
-        self.sort_by_timestamp()
+        self.sort_by_timestamp(master=SESSION.name)
         if fields:
             self.reserve(fields)
         self.sess_split_by_ratio(ratios)

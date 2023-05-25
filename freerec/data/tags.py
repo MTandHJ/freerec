@@ -8,6 +8,7 @@ class FieldTags(Enum):
     Dense = 'Dense'
     User = 'User'
     Item = 'Item'
+    Session = 'Session'
     Interaction = 'Interaction'
     Timestamp = 'Timestamp'
     Rating = 'Rating'
@@ -24,6 +25,7 @@ SPARSE = FieldTags('Sparse')
 DENSE = FieldTags('Dense')
 USER = FieldTags('User')
 ITEM = FieldTags('Item')
+SESSION = FieldTags('Session')
 INTERACTION = FieldTags('Interaction')
 TIMESTAMP = FieldTags('Timestamp')
 RATING = FieldTags('Rating')
