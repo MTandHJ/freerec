@@ -24,7 +24,7 @@ def make(args):
     #    freerec make DATASET --root=../data
     #
     from .data.preprocessing import datasets
-    from .data.tags import USER, ITEM, TIMESTAMP
+    from .data.tags import USER, SESSION, ITEM, TIMESTAMP
 
     converter = getattr(datasets, args.dataset)(
         root=args.root,
@@ -56,6 +56,14 @@ def make(args):
     elif args.datatype == 'seq' and args.by == 'ratio':
         fields = None if args.all else (USER.name, ITEM.name, TIMESTAMP.name)
         converter.make_sequential_dataset_by_ratio(
+            star4pos=star4pos,
+            kcore4user=kcore4user,
+            kcore4item=kcore4item,
+            fields=fields
+        )
+    elif args.datatype == 'sess' and args.by == 'ratio':
+        fields = None if args.all else (SESSION.name, ITEM.name, TIMESTAMP.name)
+        converter.make_session_dataset(
             star4pos=star4pos,
             kcore4user=kcore4user,
             kcore4item=kcore4item,
@@ -93,7 +101,7 @@ def main():
     make_parser.add_argument("--root", type=str, default=".", help="data")
     make_parser.add_argument("--filename", type=str, default=None, help="filename of Atomic files")
 
-    make_parser.add_argument("--datatype", type=str, choices=('gen', 'seq'), default='gen')
+    make_parser.add_argument("--datatype", type=str, choices=('gen', 'seq', 'sess'), default='gen')
     make_parser.add_argument("--by", type=str, choices=('ratio', 'last-two'), default='ratio')
 
     make_parser.add_argument("--star4pos", type=int, default=0, help="select interactions with `Rating > star4pos'")
