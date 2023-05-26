@@ -2,6 +2,7 @@
 
 from typing import Tuple
 
+import numpy as np
 import torchdata.datapipes as dp
 
 from ..base import RecDataSet
@@ -57,9 +58,16 @@ class SessionItemTimeTriplet(SessionBasedRecSet):
         from prettytable import PrettyTable
         Session, Item = self.fields[SESSION, ID], self.fields[ITEM, ID]
 
-        table = PrettyTable(['#Sessions', '#Items', '#Interactions', '#Train', '#Valid', '#Test', 'Density'])
+        table = PrettyTable(['#Sessions', '#Items', 'Avg.Len', '#Interactions', '#Train', '#Valid', '#Test', 'Density'])
+        trainlens =  list(filter(lambda x: x > 0, [len(items) for items in self.train().to_seqs()]))
+        validlens =  list(filter(lambda x: x > 0, [len(items) for items in self.valid().to_seqs()]))
+        testlens =  list(filter(lambda x: x > 0, [len(items) for items in self.test().to_seqs()]))
         table.add_row([
-            Session.count, Item.count, self.trainsize + self.validsize + self.testsize,
+            Session.count, Item.count,
+            np.mean(
+                trainlens + validlens + testlens
+            ).item(),
+            self.trainsize + self.validsize + self.testsize,
             self.trainsize, self.validsize, self.testsize,
             (self.trainsize + self.validsize + self.testsize) / (Session.count * Item.count)
         ])

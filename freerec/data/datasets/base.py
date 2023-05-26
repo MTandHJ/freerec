@@ -597,7 +597,7 @@ class RecDataSet(BaseSet):
 
         roll_seqs = []
         for id_, items in seqs:
-            for k in range(minlen, len(items)):
+            for k in range(minlen, len(items) + 1):
                 roll_seqs.append(
                     (id_, items[:k])
                 )

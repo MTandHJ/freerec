@@ -1,5 +1,6 @@
 
 
+import numpy as np
 import torchdata.datapipes as dp
 
 from ..base import RecDataSet
@@ -65,9 +66,14 @@ class UserItemTimeTriplet(SequentialRecSet):
         from prettytable import PrettyTable
         User, Item = self.fields[USER, ID], self.fields[ITEM, ID]
 
-        table = PrettyTable(['#Users', '#Items', '#Interactions', '#Train', '#Valid', '#Test', 'Density'])
+        table = PrettyTable(['#Users', '#Items', 'Avg.Len', '#Interactions', '#Train', '#Valid', '#Test', 'Density'])
+        trainlens =  list(filter(lambda x: x > 0, [len(items) for items in self.train().to_seqs()]))
         table.add_row([
-            User.count, Item.count, self.trainsize + self.validsize + self.testsize,
+            User.count, Item.count, 
+            np.mean(
+                trainlens
+            ).item() + 2,
+            self.trainsize + self.validsize + self.testsize,
             self.trainsize, self.validsize, self.testsize,
             (self.trainsize + self.validsize + self.testsize) / (User.count * Item.count)
         ])

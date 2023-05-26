@@ -1,6 +1,6 @@
 
 
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import random
 import torchdata.datapipes as dp
@@ -15,7 +15,7 @@ from ...utils import timemeter
 __all__ = [
     'GenTrainUniformSampler', 'GenValidYielder', 'GenTestYielder',
     'SeqTrainYielder', 'SeqValidYielder', 'SeqTestYielder', 
-    'SeqTrainUniformSampler', 'SeqValidSampler', 'SeqTestSampler'
+    'SeqTrainUniformSampler', 'SeqValidSampler', 'SeqTestSampler',
     'SessTrainYielder', 'SessValidYielder', 'SessTestYielder', 
 ]
 
@@ -563,7 +563,7 @@ class SessTrainYielder(Postprocessor):
 
     def __init__(
         self, source_dp: dp.iter.IterableWrapper,
-        dataset: RecDataSet,
+        dataset: Optional[RecDataSet] = None,
     ) -> None:
         super().__init__(source_dp)
 
