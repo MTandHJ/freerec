@@ -7,7 +7,7 @@ import numpy as np
 import torchdata.datapipes as dp
 from freeplot.utils import import_pickle, export_pickle
 
-from ..tags import FieldTags, SPARSE, USER, ITEM, ID
+from ..tags import FieldTags, SPARSE, USER, SESSION, ITEM, ID
 from ..fields import Field, BufferField, FieldList, FieldTuple
 from ..utils import download_from_url, extract_archive
 from ...utils import timemeter, infoLogger, mkdirs, warnLogger
@@ -544,6 +544,65 @@ class RecDataSet(BaseSet):
             return self.validsize
         else:
             return self.testsize
+
+    def to_seqs(self, master: Tuple = (USER, ID), keepid: bool = False):
+        r"""
+        Return dataset in sequence.
+
+        Parameters:
+        -----------
+        master: Tuple
+            Tuple of tags to spefic a field, e.g., (USER, ID), (SESSION, ID)
+        keepid: bool, default to False
+            `True`: return list of (id, items)
+            `False`: return list of items
+        
+        Returns:
+        --------
+        List
+        """
+        Master = self.fields[master]
+        assert Master is not None, f"{Master} is not in fields ..."
+        seqs = [[] for id_ in range(Master.count)]
+
+        for chunk in self:
+            list(map(
+                lambda id_, item: seqs[id_].append(item),
+                chunk[master], chunk[ITEM, ID]
+            ))
+
+        if keepid:
+            seqs = [(id_, tuple(items)) for id_, items in enumerate(seqs)]
+        else:
+            seqs = [tuple(items) for items in seqs]
+
+        return seqs
+
+    def to_roll_seqs(self, master: Tuple = (USER, ID), minlen: int = 2):
+        r"""
+        Rolling dataset in sequence.
+
+        Parameters:
+        -----------
+        master: Tuple
+            Tuple of tags to spefic a field, e.g., (USER, ID), (SESSION, ID)
+        minlen: int
+            Shorest sequence
+       
+        Returns:
+        --------
+        List
+        """
+        seqs = self.to_seqs(master=master, keepid=True)
+
+        roll_seqs = []
+        for id_, items in seqs:
+            for k in range(minlen, len(items)):
+                roll_seqs.append(
+                    (id_, items[:k])
+                )
+
+        return roll_seqs
 
     def __str__(self) -> str:
         cfg = '\n'.join(map(str, self.fields))

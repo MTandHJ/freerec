@@ -1,5 +1,7 @@
 
 
+from typing import Tuple
+
 import torchdata.datapipes as dp
 
 from ..base import RecDataSet
@@ -17,6 +19,12 @@ class SessionBasedRecSet(RecDataSet):
 
     def check(self):
         assert isinstance(self.fields[TIMESTAMP], Field), "SessionRecSet must have `TIMESTAMP' field."
+
+    def to_seqs(self, master: Tuple = (SESSION, ID), keepid: bool = False):
+        return super().to_seqs(master, keepid)
+
+    def to_roll_seqs(self, master: Tuple = (SESSION, ID), minlen: int = 2):
+        return super().to_roll_seqs(master, minlen)
 
 
 class SessionItemTimeTriplet(SessionBasedRecSet):

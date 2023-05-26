@@ -8,7 +8,7 @@ import torchdata.datapipes as dp
 from .base import Postprocessor
 from ..datasets.base import RecDataSet
 from ..fields import SparseField
-from ..tags import USER, ITEM, ID
+from ..tags import USER, SESSION, ITEM, ID
 from ...utils import timemeter
 
 
@@ -16,6 +16,7 @@ __all__ = [
     'GenTrainUniformSampler', 'GenValidYielder', 'GenTestYielder',
     'SeqTrainYielder', 'SeqValidYielder', 'SeqTestYielder', 
     'SeqTrainUniformSampler', 'SeqValidSampler', 'SeqTestSampler'
+    'SessTrainYielder', 'SessValidYielder', 'SessTestYielder', 
 ]
 
 
@@ -348,16 +349,6 @@ class SeqValidYielder(SeqTrainYielder):
 
 @dp.functional_datapipe("seq_test_yielding_")
 class SeqTestYielder(SeqValidYielder):
-    r"""
-    A functional datapipe for yielding (user, positives, targets).
-
-    Parameters:
-    -----------
-    source_dp: dp.iter.IterableWrapper 
-        A datapipe that yields users.
-    dataset: RecDataSet 
-        The dataset object that contains field objects.
-    """
 
     @timemeter("SeqTestYielder/prepare")
     def prepare(self, dataset: RecDataSet):
@@ -552,3 +543,48 @@ class SeqTestSampler(SeqValidSampler):
                 chunk[USER, ID], chunk[ITEM, ID]
             )
         self.posItems = [tuple(items) for items in self.posItems]
+
+
+#===============================For Session Recommendation===============================
+
+
+@dp.functional_datapipe("sess_train_yielding_")
+class SessTrainYielder(Postprocessor):
+    r"""
+    A functional datapipe for yielding (sess, sequences, targets).
+
+    Parameters:
+    -----------
+    source_dp: dp.iter.IterableWrapper 
+        A datapipe that yields users.
+    dataset: RecDataSet 
+        The dataset object that contains field objects.
+    """
+
+    def __init__(
+        self, source_dp: dp.iter.IterableWrapper,
+        dataset: RecDataSet,
+    ) -> None:
+        super().__init__(source_dp)
+
+    def _check(self, sequence) -> bool:
+        return len(sequence) > 1
+
+    def __iter__(self):
+        for sess, sequence in self.source:
+            if self._check(sequence):
+                yield [sess, sequence[:-1], sequence[-1:]]
+
+
+@dp.functional_datapipe("sess_valid_yielding_")
+class SessValidYielder(SessTrainYielder):
+
+    def __iter__(self):
+        for sess, sequence in self.source:
+            if self._check(sequence):
+                # (user, seqs, unseen, seen)
+                yield [sess, sequence[:-1], sequence[-1:], sequence[:-1]]
+
+
+@dp.functional_datapipe("sess_test_yielding_")
+class SessTestYielder(SessValidYielder): ...
