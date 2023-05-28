@@ -3,7 +3,6 @@
 from typing import Any, Callable, Iterable, List, Dict, Optional, Tuple, Union
 
 import torch, abc, os, time, sys, signal, psutil, atexit
-import pandas as pd
 from torchdata.datapipes.iter import IterDataPipe
 from torch.utils.tensorboard import SummaryWriter
 from functools import partial
@@ -159,6 +158,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
             psutil.wait_procs(children, timeout=5)
 
         atexit.register(clean)
+
 
     def _set_datapipe(
         self,
@@ -529,6 +529,8 @@ class Coach(ChiefCoach):
 
         Additionally, the best historical results are saved to a binary file named `self.cfg.MONITOR_BEST_FILENAME`.
         """
+        import pandas as pd
+
         s = "|  {prefix}  |   {name}   |   {val}   |   {epoch}   |   {img}   |\n"
         info = ""
         info += "|  Prefix  |   Metric   |   Best   |   @Epoch   |   Img   |\n"
@@ -629,15 +631,6 @@ class Adapter:
         self.params = []
         self.values = []
         self.devices = tuple()
-
-        def clean():
-            parent = psutil.Process(os.getpid())
-            children = parent.children(recursive=True)
-            for process in children:
-                process.send_signal(signal.SIGTERM)
-            psutil.wait_procs(children, timeout=5)
-
-        atexit.register(clean)
 
     @property
     def COMMAND(self):
@@ -869,8 +862,6 @@ class Adapter:
                 command, id_, logPath = self.register(device)
                 process_ = self.run(command, params)
                 tasks[index] = (process_, id_, logPath, params)
-        except Exception as e:
-            print(e)
         finally:
             self.wait(tasks)
             self.terminate(tasks)
