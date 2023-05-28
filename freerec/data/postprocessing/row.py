@@ -357,7 +357,7 @@ class LeftPaddingRow(RowMapper):
         The source data pipeline to operate on.
     indices : Iterable[int]
         The indices of the elements in each row to which `fn` should be applied.
-    max_len : int
+    maxlen : int
         The maximum length to pad the sequences to.
     padding_value : int, optional (default=0)
         The value to use for padding.
@@ -393,7 +393,7 @@ class RightPaddingRow(RowMapper):
         The source data pipeline to operate on.
     indices : Iterable[int]
         The indices of the elements in each row to which `fn` should be applied.
-    max_len : int
+    maxlen : int
         The maximum length to right pad the sequences to.
     padding_value : int, optional (default=0)
         The value to use for padding.
