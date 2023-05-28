@@ -475,7 +475,8 @@ class RecDataSet(BaseSet):
                 self.path,
                 DEFAULT_PICKLE_FMT.format(self.__class__.__name__),
                 self.mode
-            )
+            ),
+            non_deterministic=False # return sorted chunks
         )
         for file_ in datapipe:
             yield self.read_pickle(file_)

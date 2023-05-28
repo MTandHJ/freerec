@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from math import floor, ceil
 
-from ..tags import USER, ITEM, SESSION, RATING, TIMESTAMP
+from ..tags import USER, SESSION, ITEM, RATING, TIMESTAMP
 
 from ...utils import infoLogger, warnLogger, mkdirs
 
