@@ -9,6 +9,7 @@ from itertools import repeat, chain
 __all__ = [
     "DropEmpty", 
     "LeftPruningRow", "RightPruningRow",
+    "DropingDuplicates",
     "LeftShiftingRow", "RightShiftingRow",
     "LeftPaddingRow", "RightPaddingRow",
 ]
@@ -235,6 +236,42 @@ class RightPruningRow(RowMapper):
 
     def _rprune(self, x):
         return x[:self.maxlen]
+
+
+@dp.functional_datapipe("drop_duplicates_")
+class DropingDuplicates(RowMapper):
+    r"""
+    A functional datapipe that drop the duplicates.
+
+    Parameters:
+    -----------
+    source_dp: IterDataPipe 
+        The input datapipe to prune.
+    indices : Iterable[int]
+        The indices of the elements in each row to which `fn` should be applied.
+    ordered: bool
+        `True`: keeping order.
+    """
+
+    def __init__(
+        self, source_dp: dp.iter.IterDataPipe, 
+        indices: Union[None, int, Iterable[int]],
+        ordered: bool = True
+    ) -> None:
+
+        self.ordered = ordered
+
+        super().__init__(
+            source_dp=source_dp, 
+            fn=self._drop_in_order if self.ordered else self._drop,
+            indices=indices
+        )
+
+    def _drop(self, x):
+        return list(set(x))
+
+    def _drop_in_order(self, x):
+        return sorted(set(x), key=x.index)
 
 
 @dp.functional_datapipe("lshift_")
