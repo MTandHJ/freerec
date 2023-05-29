@@ -270,7 +270,7 @@ class YooChooseBuys14(YooChooseBuys):
     def sess_split_by_ratio(self, ratios: Iterable = (8, 1, 1)):
         infoLogger(f"[Converter] >>> Split by ratios: {ratios} ...")
 
-        groups = list(self.interactions.groupby(SESSION.name)[TIMESTAMP.name].min().sort_values().index)
+        groups = list(self.interactions.groupby(SESSION.name)[TIMESTAMP.name].max().sort_values().index)
         groups = groups[-ceil(len(groups) / 4):] # recent 1/4 sessions
 
         markers = np.cumsum(ratios)
@@ -291,7 +291,7 @@ class YooChooseBuys164(YooChooseBuys):
     def sess_split_by_ratio(self, ratios: Iterable = (8, 1, 1)):
         infoLogger(f"[Converter] >>> Split by ratios: {ratios} ...")
 
-        groups = list(self.interactions.groupby(SESSION.name)[TIMESTAMP.name].min().sort_values().index)
+        groups = list(self.interactions.groupby(SESSION.name)[TIMESTAMP.name].max().sort_values().index)
         groups = groups[-ceil(len(groups) / 64):] # recent 1/64 sessions
 
         markers = np.cumsum(ratios)
@@ -320,7 +320,7 @@ class YooChooseClicks14(YooChooseClicks):
     def sess_split_by_ratio(self, ratios: Iterable = (8, 1, 1)):
         infoLogger(f"[Converter] >>> Split by ratios: {ratios} ...")
 
-        groups = list(self.interactions.groupby(SESSION.name)[TIMESTAMP.name].min().sort_values().index)
+        groups = list(self.interactions.groupby(SESSION.name)[TIMESTAMP.name].max().sort_values().index)
         groups = groups[-ceil(len(groups) / 4):] # recent 1/4 sessions
 
         markers = np.cumsum(ratios)
@@ -341,7 +341,7 @@ class YooChooseClicks164(YooChooseClicks):
     def sess_split_by_ratio(self, ratios: Iterable = (8, 1, 1)):
         infoLogger(f"[Converter] >>> Split by ratios: {ratios} ...")
 
-        groups = list(self.interactions.groupby(SESSION.name)[TIMESTAMP.name].min().sort_values().index)
+        groups = list(self.interactions.groupby(SESSION.name)[TIMESTAMP.name].max().sort_values().index)
         groups = groups[-ceil(len(groups) / 64):] # recent 1/4 sessions
 
         markers = np.cumsum(ratios)

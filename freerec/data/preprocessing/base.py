@@ -376,7 +376,8 @@ class AtomicConverter:
     def sess_split_by_ratio(self, ratios: Iterable = (8, 1, 1)):
         infoLogger(f"[Converter] >>> Split by ratios: {ratios} ...")
 
-        groups = list(self.interactions.groupby(SESSION.name)[TIMESTAMP.name].min().sort_values().index)
+        # max(): choosing the last timestamp as the timestamp for the session
+        groups = list(self.interactions.groupby(SESSION.name)[TIMESTAMP.name].max().sort_values().index)
 
         markers = np.cumsum(ratios)
         l = max(floor(markers[0] * len(groups) / markers[-1]), 1)
