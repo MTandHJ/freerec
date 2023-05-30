@@ -161,7 +161,7 @@ class Parser(Config):
         for key, val in CONFIG.items():
             self[key] = val
 
-    @timemeter("Parser/parse")
+    @timemeter
     def parse(self):
         """Add command-line arguments to the parser."""
 
@@ -247,7 +247,7 @@ class Parser(Config):
             args.add(self._options[key])
         return args
 
-    @timemeter("Parser/load")
+    @timemeter
     def load(self, args: ArgumentParser):
         r"""
         Load config.yaml.
@@ -275,7 +275,7 @@ class Parser(Config):
                         raise KeyError(f"Unexpected parameter of `{key}' in `{args.config}' ...")
         return defaults
 
-    @timemeter("Parser/compile")
+    @timemeter
     def compile(self):
         r"""
         Generate the configuration file according to the specified settings.
@@ -379,7 +379,7 @@ class CoreParser(Config):
         self.ENVS = Config(self.ENVS)
         self.PARAMS = Config(self.PARAMS)
 
-    @timemeter("Parser/load")
+    @timemeter
     def load(self, args: ArgumentParser) -> None:
         r"""
         Load configuration file.
@@ -402,7 +402,7 @@ class CoreParser(Config):
             if key in self.ALL_ENVS and val is not None:
                 self.ENVS[key] = val
 
-    @timemeter("CoreParser/compile")
+    @timemeter
     def compile(self, args) -> None:
         r"""
         Generate config file according to settings.

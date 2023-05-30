@@ -48,7 +48,7 @@ class GenTrainUniformSampler(Postprocessor):
         self.Item: SparseField = dataset.fields[ITEM, ID]
         self.prepare(dataset)
 
-    @timemeter("GenUniformSampler/prepare")
+    @timemeter
     def prepare(self, dataset: RecDataSet):
         r"""
         Prepare the data before sampling.
@@ -176,7 +176,7 @@ class GenValidYielder(Postprocessor):
 
         self.prepare(dataset)
 
-    @timemeter("GenValidYielder/prepare")
+    @timemeter
     def prepare(self, dataset: RecDataSet):
         r"""
         Prepares the dataset by building sets of seen items for each user.
@@ -227,7 +227,7 @@ class GenTestYielder(GenValidYielder):
     the items that the user has not seen and seen, respectively.
     """
 
-    @timemeter("GenTestYielder/prepare")
+    @timemeter
     def prepare(self, dataset: RecDataSet):
         r"""
         Prepares the dataset by building sets of seen items for each user.
@@ -285,7 +285,7 @@ class SeqTrainYielder(Postprocessor):
         self.Item: SparseField = dataset.fields[ITEM, ID]
         self.prepare(dataset)
 
-    @timemeter("SeqTrainYielder/prepare")
+    @timemeter
     def prepare(self, dataset: RecDataSet):
         r"""
         Prepare the data before yielding.
@@ -316,7 +316,7 @@ class SeqTrainYielder(Postprocessor):
 @dp.functional_datapipe("seq_valid_yielding_")
 class SeqValidYielder(SeqTrainYielder):
 
-    @timemeter("SeqValidYielder/prepare")
+    @timemeter
     def prepare(self, dataset: RecDataSet):
         r"""
         Prepare the data before yielding.
@@ -350,7 +350,7 @@ class SeqValidYielder(SeqTrainYielder):
 @dp.functional_datapipe("seq_test_yielding_")
 class SeqTestYielder(SeqValidYielder):
 
-    @timemeter("SeqTestYielder/prepare")
+    @timemeter
     def prepare(self, dataset: RecDataSet):
         r"""
         Prepare the data before yielding.
@@ -383,7 +383,7 @@ class SeqTestYielder(SeqValidYielder):
 class SeqTrainUniformSampler(SeqTrainYielder):
 
 
-    @timemeter("SeqTrainUniformSampler/prepare")
+    @timemeter
     def prepare(self, dataset: RecDataSet):
         r"""
         Prepare the data before sampling.
@@ -473,7 +473,7 @@ class SeqValidSampler(SeqValidYielder):
         unseen = list(set(self.Item.enums) - set(seen))
         return tuple(random.choices(unseen, k=100))
 
-    @timemeter("SeqValidSampler/prepare")
+    @timemeter
     def prepare(self, dataset: RecDataSet):
         r"""
         Prepare the data before sampling.
@@ -511,7 +511,7 @@ class SeqValidSampler(SeqValidYielder):
 @dp.functional_datapipe("seq_test_sampling_")
 class SeqTestSampler(SeqValidSampler):
 
-    @timemeter("SeqTestSampler/prepare")
+    @timemeter
     def prepare(self, dataset: RecDataSet):
         r"""
         Prepare the data before sampling.
@@ -566,6 +566,11 @@ class SessTrainYielder(Postprocessor):
         dataset: Optional[RecDataSet] = None,
     ) -> None:
         super().__init__(source_dp)
+        self.prepare(dataset)
+
+    @timemeter
+    def prepare(self, dataset: RecDataSet):
+        pass
 
     def _check(self, sequence) -> bool:
         return len(sequence) > 1
@@ -578,6 +583,18 @@ class SessTrainYielder(Postprocessor):
 
 @dp.functional_datapipe("sess_valid_yielding_")
 class SessValidYielder(SessTrainYielder):
+
+    @timemeter
+    def prepare(self, dataset: RecDataSet):
+        self.seenItems = set()
+        for chunk in dataset.train():
+            self.listmap(
+                lambda item: self.seenItems.add(item),
+                chunk[ITEM, ID]
+            )
+
+    def _check(self, sequence) -> bool:
+        return len(sequence) > 1 and sequence[-1] in self.seenItems
 
     def __iter__(self):
         for sess, sequence in self.source:

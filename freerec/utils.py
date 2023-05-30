@@ -429,7 +429,7 @@ def warnLogger(warn: str):
     LOGGER.info(words)
     return words
 
-def timemeter(prefix=""):
+def timemeter(func):
     r"""
     A decorator to measure the running time of a function.
 
@@ -443,17 +443,15 @@ def timemeter(prefix=""):
     wrapper : function
         The decorated function.
     """
-    def decorator(func):
-        def wrapper(*args, **kwargs):
-            start = time.time()
-            results = func(*args, **kwargs)
-            end = time.time()
-            infoLogger(f"[Wall TIME] >>> {prefix} takes {end-start:.6f} seconds ...")
-            return  results
-        wrapper.__doc__ = func.__doc__
-        wrapper.__name__ = func.__name__
-        return wrapper
-    return decorator
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        results = func(*args, **kwargs)
+        end = time.time()
+        infoLogger(f"[Wall TIME] >>> {func.__qualname__} takes {end-start:.6f} seconds ...")
+        return  results
+    wrapper.__doc__ = func.__doc__
+    wrapper.__name__ = func.__name__
+    return wrapper
 
 def mkdirs(*paths: str) -> None:
     r"""

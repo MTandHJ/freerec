@@ -183,7 +183,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         """Print a summary of the dataset."""
         infoLogger(str(self))
 
-    @timemeter("DataSet/to_graph")
+    @timemeter
     def to_heterograph(self, *edge_types: Tuple[Tuple[FieldTags], Optional[str], Tuple[FieldTags]]):
         r"""
         Convert datapipe to a heterograph.
@@ -481,7 +481,7 @@ class RecDataSet(BaseSet):
         for file_ in datapipe:
             yield self.read_pickle(file_)
 
-    @timemeter("DataSet/compile")
+    @timemeter
     def compile(self):
         r"""
         Check current dataset and transformations.

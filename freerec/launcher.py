@@ -186,14 +186,14 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         """Get the current mode of the chief coach."""
         return self.__mode
 
-    @timemeter("Coach/train")
+    @timemeter
     def train(self, epoch: int):
         """Start training and return the training loss."""
         self.__mode = 'train'
         self.model.train()
         return self.train_per_epoch(epoch)
 
-    @timemeter("Coach/valid")
+    @timemeter
     @torch.no_grad()
     def valid(self, epoch: int):
         """Start validation and return the validation metrics."""
@@ -201,7 +201,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         self.model.eval()
         return self.evaluate(epoch=epoch, prefix='valid')
 
-    @timemeter("Coach/test")
+    @timemeter
     @torch.no_grad()
     def test(self, epoch: int):
         """Start testing and return the test metrics."""
@@ -303,7 +303,7 @@ class Coach(ChiefCoach):
         self.__best_meter = meter
         infoLogger(f"[Coach] >>> Set best meter: {meter.name} ")
 
-    @timemeter("Coach/compile")
+    @timemeter
     def compile(
         self, cfg: Config, monitors: List[str], 
         which4best: str = 'LOSS'
@@ -518,7 +518,7 @@ class Coach(ChiefCoach):
                 infos += [meter.step() for meter in meters if meter.active]
             infoLogger(' || '.join(infos))
 
-    @timemeter("Coach/summary")
+    @timemeter
     def summary(self):
         r"""
         Summary the whole training process.
@@ -571,7 +571,7 @@ class Coach(ChiefCoach):
         export_pickle(best, os.path.join(self.cfg.LOG_PATH, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME))
 
             
-    @timemeter("Coach/fit")
+    @timemeter
     def fit(self):
 
         def signal_handler(sig, frame):
@@ -643,7 +643,7 @@ class Adapter:
         command += self.get_option('device', self.cfg.ENVS.device)
         return command, self.cfg.ENVS.id, self.cfg.LOG_PATH.format(**self.cfg.ENVS)
 
-    @timemeter("Adapter/compile")
+    @timemeter
     def compile(self, cfg: Config) -> None:
         r"""
         Configure the command, environments, and parameters for training.
@@ -784,7 +784,7 @@ class Adapter:
         checkpoint['source'] = source
         torch.save(checkpoint, path)
 
-    @timemeter("Coach/resume")
+    @timemeter
     def load_checkpoint(self) -> int:
         """Load the rest of params."""
         infoLogger(f"[Coach] >>> Load the recent checkpoint ...")
@@ -843,7 +843,7 @@ class Adapter:
                 process_.kill()
         sys.exit()
 
-    @timemeter("Adapter/fit")
+    @timemeter
     def fit(self):
         """Grid search."""
         self.source = self.resume()
