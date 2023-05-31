@@ -211,7 +211,8 @@ class AtomicConverter:
         high4user: Union[None, int, float] = None,
         low4item: Union[None, int, float] = None, 
         high4item: Union[None, int, float] = None,
-        master: str = USER.name
+        master: str = USER.name,
+        strict: bool = True
     ):
         r"""
         Filter (user, item) by k-core settings.
@@ -230,6 +231,9 @@ class AtomicConverter:
         max4item: int, float, optional
             Maximum core for item.
             - `None`: float('inf')
+        strict: bool, default to `True`
+            `True`: strictly filter by core
+            `False`: filter by core only once
         """
         low4user = low4user if low4user else float('-inf')
         high4user = high4user if high4user else float('inf')
@@ -245,6 +249,7 @@ class AtomicConverter:
         infoLogger(f"[Converter] >>> Current datasize: {len(df)} ...")
         while dsz != len(df):
             dsz = len(df)
+
             # filter by user
             users = df[master]
             counts = users.value_counts()
@@ -262,6 +267,9 @@ class AtomicConverter:
             df = df[bool_indices]
 
             infoLogger(f"[Converter] >>> Current datasize: {len(df)}")
+
+            if not strict:
+                break
 
         self.interactions = df
 
@@ -391,6 +399,29 @@ class AtomicConverter:
         self.validiter = self.interactions[self.interactions[SESSION.name].isin(validgroups)]
         self.testiter = self.interactions[self.interactions[SESSION.name].isin(testgroups)]
 
+    def sess_split_by_day(self, days: int = 1):
+        infoLogger(f"[Converter] >>> Split by days: {days} ...")
+
+        seconds_per_day = 86400
+        seconds = seconds_per_day * days
+        last_date = self.interactions[TIMESTAMP.name].max().item()
+
+        # Group interactions by session and calculate session timestamps
+        session_timestamps = self.interactions.groupby(SESSION.name)[TIMESTAMP.name].max().sort_values()
+
+        # Split interactions into train, validation, and test sets based on session timestamps
+        traingroups = session_timestamps[session_timestamps < (last_date - 2 * seconds)].index
+        validgroups = session_timestamps[(session_timestamps >= (last_date - 2 * seconds)) & (session_timestamps < (last_date - seconds))].index
+        testgroups = session_timestamps[session_timestamps >= (last_date - seconds)].index
+
+        assert len(traingroups) >= 0, f"The given `days` of {days} leads to zero-size trainsets ..."
+        assert len(validgroups) >= 0, f"The given `days` of {days} leads to zero-size validsets ..."
+        assert len(testgroups) >= 0, f"The given `days` of {days} leads to zero-size testsets ..."
+
+        self.trainiter = self.interactions[self.interactions[SESSION.name].isin(traingroups)]
+        self.validiter = self.interactions[self.interactions[SESSION.name].isin(validgroups)]
+        self.testiter = self.interactions[self.interactions[SESSION.name].isin(testgroups)]
+
     def save(self, path: str):
         mkdirs(path)
 
@@ -427,6 +458,7 @@ class AtomicConverter:
         star4pos: int = 0,
         kcore4user: int = 10,
         kcore4item: int = 10,
+        strict: bool = True,
         ratios: Tuple[int, int, int] = (8, 1, 1),
         fields: Optional[Iterable[str]] = (USER.name, ITEM.name)
     ):
@@ -441,6 +473,9 @@ class AtomicConverter:
             Select kcore interactions according to User.
         kcore4item: int, default to 10
             Select kcore interactions according to Item.
+        strict: bool, default to `True`
+            `True`: strictly filter by core
+            `False`: filter by core only once
         ratios: Tuple[int, int, int], default to (8, 1, 1)
             The ratios of training|validation|test set.
         fields: Iterable[str], default to (User, Item)
@@ -449,7 +484,7 @@ class AtomicConverter:
 
         self.load()
         self.filter_by_rating(low=star4pos, high=None)
-        self.filter_by_core(low4user=kcore4user, low4item=kcore4item)
+        self.filter_by_core(low4user=kcore4user, low4item=kcore4item, strict=strict)
         self.user2token()
         self.item2token()
         self.sort_by_timestamp()
@@ -470,6 +505,7 @@ class AtomicConverter:
         star4pos: int = 0,
         kcore4user: int = 5,
         kcore4item: int = 5,
+        strict: bool = True,
         fields: Optional[Iterable[str]] = (USER.name, ITEM.name, TIMESTAMP.name)
     ):
         r"""
@@ -483,14 +519,16 @@ class AtomicConverter:
             Select kcore interactions according to User.
         kcore4item: int, default to 10
             Select kcore interactions according to Item.
+        strict: bool, default to `True`
+            `True`: strictly filter by core
+            `False`: filter by core only once
         fields: Iterable[str], default to (User, Item, TimeStamp)
             The fields reserved.
         """
 
-
         self.load()
         self.filter_by_rating(low=star4pos, high=None)
-        self.filter_by_core(low4user=kcore4user, low4item=kcore4item)
+        self.filter_by_core(low4user=kcore4user, low4item=kcore4item, strict=strict)
         self.user2token()
         self.item2token()
         self.sort_by_timestamp()
@@ -511,6 +549,7 @@ class AtomicConverter:
         star4pos: int = 0,
         kcore4user: int = 5,
         kcore4item: int = 5,
+        strict: bool = True,
         ratios: Tuple[int, int, int] = (8, 1, 1),
         fields: Optional[Iterable[str]] = (USER.name, ITEM.name, TIMESTAMP.name),
         seed: int = 0
@@ -526,6 +565,9 @@ class AtomicConverter:
             Select kcore interactions according to User.
         kcore4item: int, default to 10
             Select kcore interactions according to Item.
+        strict: bool, default to `True`
+            `True`: strictly filter by core
+            `False`: filter by core only once
         ratios: Tuple[int, int, int], default to (8, 1, 1)
             The ratios of training|validation|test set.
         fields: Iterable[str], default to (User, Item, Timestamp)
@@ -533,7 +575,7 @@ class AtomicConverter:
         """
         self.load()
         self.filter_by_rating(low=star4pos, high=None)
-        self.filter_by_core(low4user=kcore4user, low4item=kcore4item)
+        self.filter_by_core(low4user=kcore4user, low4item=kcore4item, strict=strict)
         self.user2token()
         self.item2token()
         self.sort_by_timestamp()
@@ -549,11 +591,63 @@ class AtomicConverter:
 
         self.save(path)
 
-    def make_session_dataset(
+    def make_session_dataset_by_day(
         self,
         star4pos: int = 0,
         kcore4user: int = 2,
         kcore4item: int = 5,
+        strict: bool = True,
+        days: int = 7,
+        fields: Optional[Iterable[str]] = (SESSION.name, ITEM.name, TIMESTAMP.name),
+    ):
+        r"""
+        Make session dataset by day.
+
+        Flows:
+        ------
+        1. filter out `inactive' items and short sessions;
+        2. training|validation|test set will be splited according to the start time of each session.
+
+        Parameters:
+        -----------
+        star4pos: int, default to 0
+            Select interactions with `Rating > star4pos'.
+        kcore4user: int, default to 10
+            Select kcore interactions according to User.
+        kcore4item: int, default to 10
+            Select kcore interactions according to Item.
+        strict: bool, default to `True`
+            `True`: strictly filter by core
+            `False`: filter by core only once
+        days: int, default to 7
+            the number days used for validation and test
+        fields: Iterable[str], default to (User, Item, Timestamp)
+            The fields reserved.
+        """
+        self.load()
+        self.filter_by_rating(low=star4pos, high=None)
+        self.filter_by_core(low4user=kcore4user, low4item=kcore4item, master=SESSION.name, strict=strict)
+        self.user2token(master=SESSION.name)
+        self.item2token()
+        self.sort_by_timestamp(master=SESSION.name)
+        if fields:
+            self.reserve(fields)
+        self.sess_split_by_day(days)
+
+        code = f"{kcore4user}{kcore4item}{star4pos}{days}"
+        path = os.path.join(
+            self.root, 'Session', 
+            '_'.join([self.dataset, code, 'Chron'])
+        )
+
+        self.save(path)
+
+    def make_session_dataset_by_ratio(
+        self,
+        star4pos: int = 0,
+        kcore4user: int = 2,
+        kcore4item: int = 5,
+        strict: bool = True,
         ratios: Tuple[int, int, int] = (8, 1, 1),
         fields: Optional[Iterable[str]] = (SESSION.name, ITEM.name, TIMESTAMP.name),
     ):
@@ -573,6 +667,9 @@ class AtomicConverter:
             Select kcore interactions according to User.
         kcore4item: int, default to 10
             Select kcore interactions according to Item.
+        strict: bool, default to `True`
+            `True`: strictly filter by core
+            `False`: filter by core only once
         ratios: Tuple[int, int, int], default to (8, 1, 1)
             The ratios of training|validation|test set.
         fields: Iterable[str], default to (User, Item, Timestamp)
@@ -580,7 +677,7 @@ class AtomicConverter:
         """
         self.load()
         self.filter_by_rating(low=star4pos, high=None)
-        self.filter_by_core(low4user=kcore4user, low4item=kcore4item, master=SESSION.name)
+        self.filter_by_core(low4user=kcore4user, low4item=kcore4item, master=SESSION.name, strict=strict)
         self.user2token(master=SESSION.name)
         self.item2token()
         self.sort_by_timestamp(master=SESSION.name)

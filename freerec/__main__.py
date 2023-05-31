@@ -35,6 +35,8 @@ def make(args):
     kcore4user = args.kcore4user
     kcore4item = args.kcore4item
     ratios = tuple(map(int, args.ratios.split(',')))
+    days = args.days
+    strict = not args.not_strict
     
     if args.datatype == 'gen' and args.by == 'ratio':
         fields = None if args.all else (USER.name, ITEM.name)
@@ -42,6 +44,7 @@ def make(args):
             star4pos=star4pos,
             kcore4user=kcore4user,
             kcore4item=kcore4item,
+            strict=strict,
             ratios=ratios,
             fields=fields
         )
@@ -51,6 +54,7 @@ def make(args):
             star4pos=star4pos,
             kcore4user=kcore4user,
             kcore4item=kcore4item,
+            strict=strict,
             fields=fields
         )
     elif args.datatype == 'seq' and args.by == 'ratio':
@@ -59,14 +63,28 @@ def make(args):
             star4pos=star4pos,
             kcore4user=kcore4user,
             kcore4item=kcore4item,
+            strict=strict,
+            ratios=ratios,
+            fields=fields
+        )
+    elif args.datatype == 'sess' and args.by == 'day':
+        fields = None if args.all else (SESSION.name, ITEM.name, TIMESTAMP.name)
+        converter.make_session_dataset_by_day(
+            star4pos=star4pos,
+            kcore4user=kcore4user,
+            kcore4item=kcore4item,
+            strict=strict,
+            days=days,
             fields=fields
         )
     elif args.datatype == 'sess' and args.by == 'ratio':
         fields = None if args.all else (SESSION.name, ITEM.name, TIMESTAMP.name)
-        converter.make_session_dataset(
+        converter.make_session_dataset_by_ratio(
             star4pos=star4pos,
             kcore4user=kcore4user,
             kcore4item=kcore4item,
+            strict=strict,
+            ratios=ratios,
             fields=fields
         )
     else:
@@ -101,13 +119,21 @@ def main():
     make_parser.add_argument("--root", type=str, default=".", help="data")
     make_parser.add_argument("--filename", type=str, default=None, help="filename of Atomic files")
 
-    make_parser.add_argument("--datatype", type=str, choices=('gen', 'seq', 'sess'), default='gen')
-    make_parser.add_argument("--by", type=str, choices=('ratio', 'last-two'), default='ratio')
+    make_parser.add_argument(
+        "--datatype", type=str, choices=('gen', 'seq', 'sess'), default='gen', 
+        help="gen: general; seq: sequential; sess: session"
+    )
+    make_parser.add_argument(
+        "--by", type=str, choices=('ratio', 'last-two', 'day'), default='ratio', 
+        help="gen: ratio; seq: last-two; ratio; sess: ratio, day"
+    )
 
     make_parser.add_argument("--star4pos", type=int, default=0, help="select interactions with `Rating > star4pos'")
     make_parser.add_argument("--kcore4user", type=int, default=10, help="select kcore interactions according to User")
     make_parser.add_argument("--kcore4item", type=int, default=10, help="select kcore interactions according to Item")
+    make_parser.add_argument("--not-strict", action="store_true", default=False, help="filter by kcore once if True")
     make_parser.add_argument("--ratios", type=str, default="8,1,1", help="the ratios of training|validation|test set")
+    make_parser.add_argument("--days", type=int, default=7, help="the second last days for validation and last days for test")
 
     make_parser.add_argument("--all", action="store_true", default=False, help="reserve all fields if True")
 
