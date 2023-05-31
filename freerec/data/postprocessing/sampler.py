@@ -594,6 +594,7 @@ class SessValidYielder(SessTrainYielder):
             )
 
     def _check(self, sequence) -> bool:
+        # filter out the sequence with a target not appearing in training set
         return len(sequence) > 1 and sequence[-1] in self.seenItems
 
     def __iter__(self):
