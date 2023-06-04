@@ -4,7 +4,7 @@ from . import data, models, criterions, launcher, metrics, utils
 from freerec.dict2obj import Config
 
 
-def decalre(*, version: str):
+def declare(*, version: str):
     """
     This function checks whether the provided version matches the current version of FreeRec package. 
     If they do not match, a warning message would be printed.
