@@ -57,19 +57,17 @@ class RecSysArch(nn.Module):
             self.device = device
         return super().to(device, dtype, non_blocking)
 
-    def initialize(self):
-        """Initializes the module parameters."""
+    def reset_parameters(self):
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.xavier_normal_(m.weight)
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0.)
             elif isinstance(m, nn.Embedding):
-                nn.init.normal_(m.weight, std=1e-4)
+                nn.init.xavier_normal_(m.weight)
             elif isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d)):
                 nn.init.constant_(m.weight, 1.)
                 nn.init.constant_(m.bias, 0.)
-
 
     @staticmethod
     def broadcast(*tensors: torch.Tensor):
@@ -99,9 +97,44 @@ class RecSysArch(nn.Module):
         """
         return torch.broadcast_tensors(*tensors)
 
+    @overload
+    def recommend(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        r"""
+        Returns:
+        --------
+        user features: torch.Tensor
+        item features: torch.Tensor
+        """
 
     @overload
-    def recommand(self) -> Tuple[torch.Tensor, torch.Tensor]: ...
+    def recommend(self, seqs: torch.Tensor) -> torch.Tensor:
+        r"""
+        Full ranking recommendation.
+
+        Parameters:
+        -----------
+        seqs: torch.Tensor, (B, S)
+            A batch of sequences.
+        
+        Returns:
+        --------
+        scores: torch.Tensor, (B, N)
+            `N' denotes the number of items.
+        """
 
     @overload
-    def recommand(self, seqs: torch.Tensor, items: torch.Tensor) -> torch.Tensor: ...
+    def recommend(self, seqs: torch.Tensor, items: torch.Tensor) -> torch.Tensor:
+        r"""
+        Sampling-based recommendation.
+
+        Parameters:
+        -----------
+        seqs: torch.Tensor, (B, S)
+            A batch of sequences.
+        items: torch.Tensor, (B, K)
+            A batch of items.
+
+        Returns:
+        --------
+        scores: torch.Tensor, (B, K)
+        """
