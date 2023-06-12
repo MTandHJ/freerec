@@ -1,6 +1,6 @@
 
 
-from typing import Tuple
+from typing import Tuple, List
 
 import numpy as np
 import torchdata.datapipes as dp
@@ -21,11 +21,14 @@ class SessionBasedRecSet(RecDataSet):
     def check(self):
         assert isinstance(self.fields[TIMESTAMP], Field), "SessionRecSet must have `TIMESTAMP' field."
 
-    def to_seqs(self, master: Tuple = (SESSION, ID), keepid: bool = False):
+    def to_seqs(self, master: Tuple = (SESSION, ID), keepid: bool = False) -> List:
         return super().to_seqs(master, keepid)
 
-    def to_roll_seqs(self, master: Tuple = (SESSION, ID), minlen: int = 2):
+    def to_roll_seqs(self, master: Tuple = (SESSION, ID), minlen: int = 2) -> List:
         return super().to_roll_seqs(master, minlen)
+
+    def seqlens(self, master: Tuple = (SESSION, ID)) -> List:
+        return super().seqlens(master)
 
 
 class SessionItemTimeTriplet(SessionBasedRecSet):
@@ -59,9 +62,9 @@ class SessionItemTimeTriplet(SessionBasedRecSet):
         Session, Item = self.fields[SESSION, ID], self.fields[ITEM, ID]
 
         table = PrettyTable(['#Sessions', '#Items', 'Avg.Len', '#Interactions', '#Train', '#Valid', '#Test', 'Density'])
-        trainlens =  list(filter(lambda x: x > 0, [len(items) for items in self.train().to_seqs()]))
-        validlens =  list(filter(lambda x: x > 0, [len(items) for items in self.valid().to_seqs()]))
-        testlens =  list(filter(lambda x: x > 0, [len(items) for items in self.test().to_seqs()]))
+        trainlens =  self.train().seqlens()
+        validlens =  self.valid().seqlens()
+        testlens =  self.test().seqlens()
         table.add_row([
             Session.count, Item.count,
             np.mean(

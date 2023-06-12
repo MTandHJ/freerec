@@ -1,6 +1,6 @@
 
 
-from typing import Iterator, Optional, TypeVar, Tuple
+from typing import Iterator, Optional, TypeVar, Tuple, List
 
 import torch, os, abc
 import numpy as np
@@ -546,7 +546,7 @@ class RecDataSet(BaseSet):
         else:
             return self.testsize
 
-    def to_seqs(self, master: Tuple = (USER, ID), keepid: bool = False):
+    def to_seqs(self, master: Tuple = (USER, ID), keepid: bool = False) -> List:
         r"""
         Return dataset in sequence.
 
@@ -579,7 +579,7 @@ class RecDataSet(BaseSet):
 
         return seqs
 
-    def to_roll_seqs(self, master: Tuple = (USER, ID), minlen: int = 2):
+    def to_roll_seqs(self, master: Tuple = (USER, ID), minlen: int = 2) -> List:
         r"""
         Rolling dataset in sequence.
 
@@ -604,6 +604,22 @@ class RecDataSet(BaseSet):
                 )
 
         return roll_seqs
+
+    def seqlens(self, master: Tuple = (USER, ID)) -> List:
+        seqs = self.to_seqs(master, keepid=False)
+        return list(filter(lambda x: x > 0, [len(items) for items in seqs]))
+
+    @property
+    def maxlen(self) -> int:
+        return np.max(self.seqLens()).item()
+
+    @property
+    def minlen(self) -> int:
+        return np.min(self.seqLens()).item()
+
+    @property
+    def meanlen(self) -> int:
+        return np.mean(self.seqLens()).item()
 
     def __str__(self) -> str:
         cfg = '\n'.join(map(str, self.fields))
