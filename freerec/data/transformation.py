@@ -28,7 +28,6 @@ class Identifier:
 
     Examples:
     ---------
-    >>> import torcharrow.dtypes as dt
     >>> col = [3, 2, 1]
     >>> transformer = Identifier()
     >>> transformer.transform(col)
@@ -52,7 +51,7 @@ class Indexer(Identifier):
 
     classes: set
         Set of unique classes seen during `fit`.
-    maper: dict
+    mapper: dict
         Mapping of input values to output indices.
 
     Examples:
@@ -63,12 +62,12 @@ class Indexer(Identifier):
     >>> transformer.partial_fit(col)
     >>> transformer.classes
     {1, 2, 3}
-    >>> transformer.maper
+    >>> transformer.mapper
     {1: 0, 2: 1, 3: 2}
     >>> transformer.partial_fit(col2)
     >>> transformer.classes
     {1, 2, 3, 4, 5, 6}
-    >>> transformer.maper
+    >>> transformer.mapper
     {1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5}
     >>> transformer.transform(col2)
     [3, 4, 5]
@@ -76,7 +75,7 @@ class Indexer(Identifier):
 
     def reset(self):
         self.classes = set()
-        self.maper = None
+        self.mapper = None
         self.enums = None
 
     def partial_fit(self, col: List):
@@ -84,16 +83,85 @@ class Indexer(Identifier):
         ordered = sorted(self.classes)
         self.count = len(ordered)
         self.enums = tuple(range(self.count))
-        self.maper = dict(zip(ordered, self.enums))
+        self.mapper = dict(zip(ordered, self.enums))
 
     def _map(self, x):
-        return self.maper[x]
+        return self.mapper[x]
 
     def transform(self, col: List) -> List:
-        if self.maper:
+        if self.mapper:
             return list(map(self._map, col))
         else:
             raise TransformError("Indexer should be (partially) fitted before using ...")
+
+
+class UpIndexer(Indexer):
+    r"""
+    Transform sparse items into indices from zero to maximum.
+
+    Examples:
+    ---------
+    >>> col = [3, 2, 1]
+    >>> col2 = [4, 5, 6]
+    >>> transformer = UpIndexer()
+    >>> transformer.partial_fit(col)
+    >>> transformer.count
+    4
+    >>> transformer.enums
+    (0, 1, 2, 3)
+    >>> transformer.partial_fit(col2)
+    >>> transformer.count
+    7
+    >>> transformer.enums
+    (0, 1, 2, 3, 4, 5, 6)
+    >>> transformer.transform(col2)
+    [4, 5, 6]
+    """
+
+    def reset(self):
+        self.enums = None
+        self.count = float("-inf")
+
+    def partial_fit(self, col: List):
+        self.count = max(np.max(col).item() + 1, self.count)
+        self.enums = tuple(range(self.count))
+
+    def transform(self, col: List) -> List:
+        if self.enums:
+            return col
+        else:
+            raise TransformError("Indexer should be (partially) fitted before using ...")
+
+class NumIndexer(Indexer):
+    r"""
+    Transform sparse items into indices from zero to maximum.
+
+    Parameters:
+    -----------
+    nums: int
+        the maximum index.
+
+    Examples:
+    ---------
+    >>> transformer = NumIndexer(6)
+    >>> transformer.count
+    7
+    >>> transformer.enums
+    (0, 1, 2, 3, 4, 5, 6)
+    """
+
+    def __init__(self, nums: int) -> None:
+        self.nums = nums
+        super().__init__()
+
+    def reset(self):
+        self.count = self.nums + 1
+        self.enums = tuple(range(self.count))
+
+    def partial_fit(self, col: List): ...
+
+    def transform(self, col: List) -> List:
+        return col
 
 
 class StandardScaler(Identifier):
@@ -102,18 +170,15 @@ class StandardScaler(Identifier):
 
     Attributes:
     -----------
-    field: dt.Field or the Field defined in torcharrow.fields
-        The field type of the dense items.
-    n_samples: int
+    nums: int
         The number of fitted items.
-    sum_: float
+    sum: float
         The summation of the fitted items.
-    sum_of_squares: float 
+    ssum: float 
         The summation of the squared fitted items.
 
     Examples:
     ---------
-    >>> import torcharrow.dtypes as dt
     >>> col = [3., 2., 1.]
     >>> transformer = StandardScaler()
     >>> transformer.partial_fit(col)

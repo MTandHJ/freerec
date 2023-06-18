@@ -382,8 +382,8 @@ class SparseField(FieldModule):
         tags: Union[FieldTags, Iterable[FieldTags]] = tuple(),
         transformer: Union[str, Callable] = 'label2index'
     ):
-        assert transformer == 'label2index', "SparseField supports 'label2index' only !"
         super().__init__(name, na_value, dtype, tags, transformer)
+        assert isinstance(self.transformer, Indexer), "SparseField supports 'Indexer' only !"
         self.add_tag(SPARSE)
 
     @property
