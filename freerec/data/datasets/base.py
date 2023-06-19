@@ -611,15 +611,15 @@ class RecDataSet(BaseSet):
 
     @property
     def maxlen(self) -> int:
-        return np.max(self.seqLens()).item()
+        return np.max(self.seqlens()).item()
 
     @property
     def minlen(self) -> int:
-        return np.min(self.seqLens()).item()
+        return np.min(self.seqlens()).item()
 
     @property
     def meanlen(self) -> int:
-        return np.mean(self.seqLens()).item()
+        return np.mean(self.seqlens()).item()
 
     def __str__(self) -> str:
         cfg = '\n'.join(map(str, self.fields))
