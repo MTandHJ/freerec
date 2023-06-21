@@ -48,7 +48,7 @@ def make(args):
             ratios=ratios,
             fields=fields
         )
-    elif args.datatype == 'seq' and args.by == 'last-two':
+    elif args.datatype == 'seq' and args.by == 'leave-one-out':
         fields = None if args.all else (USER.name, ITEM.name, TIMESTAMP.name)
         converter.make_sequential_dataset(
             star4pos=star4pos,
@@ -124,8 +124,8 @@ def main():
         help="gen: general; seq: sequential; sess: session"
     )
     make_parser.add_argument(
-        "--by", type=str, choices=('ratio', 'last-two', 'day'), default='ratio', 
-        help="gen: ratio; seq: last-two; ratio; sess: ratio, day"
+        "--by", type=str, choices=('ratio', 'leave-one-out', 'day'), default='ratio', 
+        help="gen: ratio; seq: leave-one-out; ratio; sess: ratio, day"
     )
 
     make_parser.add_argument("--star4pos", type=int, default=0, help="select interactions with `Rating > star4pos'")
