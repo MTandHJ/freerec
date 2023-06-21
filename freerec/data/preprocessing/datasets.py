@@ -335,6 +335,34 @@ class YooChooseClicks14(YooChooseClicks):
         self.validiter = self.interactions[self.interactions[SESSION.name].isin(validgroups)]
         self.testiter = self.interactions[self.interactions[SESSION.name].isin(testgroups)]
 
+    def sess_split_by_day(self, days: int = 1):
+        infoLogger(f"[Converter] >>> Split by days: {days} ...")
+
+        groups = list(self.interactions.groupby(SESSION.name)[TIMESTAMP.name].max().sort_values().index)
+        groups = groups[-ceil(len(groups) / 4):] # recent 1/4 sessions
+        self.interactions = self.interactions[self.interactions[SESSION.name].isin(groups)]
+
+        seconds_per_day = 86400
+        seconds = seconds_per_day * days
+
+        last_date = self.interactions[TIMESTAMP.name].max().item()
+
+        # Group interactions by session and calculate session timestamps
+        session_timestamps = self.interactions.groupby(SESSION.name)[TIMESTAMP.name].max().sort_values()
+
+        # Split interactions into train, validation, and test sets based on session timestamps
+        traingroups = session_timestamps[session_timestamps < (last_date - 2 * seconds)].index
+        validgroups = session_timestamps[(session_timestamps >= (last_date - 2 * seconds)) & (session_timestamps < (last_date - seconds))].index
+        testgroups = session_timestamps[session_timestamps >= (last_date - seconds)].index
+
+        assert len(traingroups) >= 0, f"The given `days` of {days} leads to zero-size trainsets ..."
+        assert len(validgroups) >= 0, f"The given `days` of {days} leads to zero-size validsets ..."
+        assert len(testgroups) >= 0, f"The given `days` of {days} leads to zero-size testsets ..."
+
+        self.trainiter = self.interactions[self.interactions[SESSION.name].isin(traingroups)]
+        self.validiter = self.interactions[self.interactions[SESSION.name].isin(validgroups)]
+        self.testiter = self.interactions[self.interactions[SESSION.name].isin(testgroups)]
+
 
 class YooChooseClicks164(YooChooseClicks):
 
@@ -342,7 +370,7 @@ class YooChooseClicks164(YooChooseClicks):
         infoLogger(f"[Converter] >>> Split by ratios: {ratios} ...")
 
         groups = list(self.interactions.groupby(SESSION.name)[TIMESTAMP.name].max().sort_values().index)
-        groups = groups[-ceil(len(groups) / 64):] # recent 1/4 sessions
+        groups = groups[-ceil(len(groups) / 64):] # recent 1/64 sessions
 
         markers = np.cumsum(ratios)
         l = max(floor(markers[0] * len(groups) / markers[-1]), 1)
@@ -355,3 +383,32 @@ class YooChooseClicks164(YooChooseClicks):
         self.trainiter = self.interactions[self.interactions[SESSION.name].isin(traingroups)]
         self.validiter = self.interactions[self.interactions[SESSION.name].isin(validgroups)]
         self.testiter = self.interactions[self.interactions[SESSION.name].isin(testgroups)]
+
+    def sess_split_by_day(self, days: int = 1):
+        infoLogger(f"[Converter] >>> Split by days: {days} ...")
+
+        groups = list(self.interactions.groupby(SESSION.name)[TIMESTAMP.name].max().sort_values().index)
+        groups = groups[-ceil(len(groups) / 64):] # recent 1/64 sessions
+        self.interactions = self.interactions[self.interactions[SESSION.name].isin(groups)]
+
+        seconds_per_day = 86400
+        seconds = seconds_per_day * days
+
+        last_date = self.interactions[TIMESTAMP.name].max().item()
+
+        # Group interactions by session and calculate session timestamps
+        session_timestamps = self.interactions.groupby(SESSION.name)[TIMESTAMP.name].max().sort_values()
+
+        # Split interactions into train, validation, and test sets based on session timestamps
+        traingroups = session_timestamps[session_timestamps < (last_date - 2 * seconds)].index
+        validgroups = session_timestamps[(session_timestamps >= (last_date - 2 * seconds)) & (session_timestamps < (last_date - seconds))].index
+        testgroups = session_timestamps[session_timestamps >= (last_date - seconds)].index
+
+        assert len(traingroups) >= 0, f"The given `days` of {days} leads to zero-size trainsets ..."
+        assert len(validgroups) >= 0, f"The given `days` of {days} leads to zero-size validsets ..."
+        assert len(testgroups) >= 0, f"The given `days` of {days} leads to zero-size testsets ..."
+
+        self.trainiter = self.interactions[self.interactions[SESSION.name].isin(traingroups)]
+        self.validiter = self.interactions[self.interactions[SESSION.name].isin(validgroups)]
+        self.testiter = self.interactions[self.interactions[SESSION.name].isin(testgroups)]
+
