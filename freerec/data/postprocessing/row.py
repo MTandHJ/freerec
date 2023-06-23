@@ -149,7 +149,7 @@ class RowMapper(dp.iter.IterDataPipe):
         self.fn = fn
         self.indices = sorted(set(indices))
 
-    def _apply_fn(self, row: Union[List, Tuple]):
+    def _apply_fn(self, row: Union[List, Tuple]) -> List:
         r"""
         Apply the specified function to the elements of the row at the specified indices.
 
@@ -234,7 +234,7 @@ class RightPruningRow(RowMapper):
             indices=indices
         )
 
-    def _rprune(self, x):
+    def _rprune(self, x: Iterable) -> Iterable:
         return x[:self.maxlen]
 
 
@@ -267,10 +267,10 @@ class DropingDuplicates(RowMapper):
             indices=indices
         )
 
-    def _drop(self, x):
+    def _drop(self, x: Iterable) -> List:
         return list(set(x))
 
-    def _drop_in_order(self, x):
+    def _drop_in_order(self, x: Iterable) -> List:
         return sorted(set(x), key=x.index)
 
 
@@ -303,10 +303,10 @@ class LeftShiftingRow(RowMapper):
 
         self.offset = offset
 
-    def _reduce(self, item):
+    def _reduce(self, item: int):
         return item - self.offset
 
-    def _lshift(self, x):
+    def _lshift(self, x: Iterable) -> List:
         return list(map(self._reduce, x))
 
 
@@ -339,10 +339,10 @@ class RightShiftingRow(RowMapper):
             indices=indices
         )
 
-    def _add(self, item):
+    def _add(self, item: int):
         return item + self.offset
 
-    def _rshift(self, x):
+    def _rshift(self, x: Iterable) -> List:
         return list(map(self._add, x))
 
 
@@ -378,7 +378,7 @@ class LeftPaddingRow(RowMapper):
             indices=indices
         )
 
-    def _lpad(self, x):
+    def _lpad(self, x: Iterable) -> List:
         return list(chain(repeat(self.padding_value, self.maxlen - len(x)), x))
 
 
@@ -414,5 +414,5 @@ class RightPaddingRow(RowMapper):
             indices=indices
         )
 
-    def _rpad(self, x):
+    def _rpad(self, x: Iterable) -> List:
         return list(chain(x, repeat(self.padding_value, self.maxlen - len(x))))
