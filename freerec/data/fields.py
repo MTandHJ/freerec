@@ -166,6 +166,8 @@ class BufferField(Field):
             self.add_tag(*root.tags)
         elif root.match(DENSE):
             self.add_tag(*root.tags)
+        elif isinstance(root, Field):
+            self.add_tag(*root.tags)
         else:
             raise ValueError(
                 f"root should be `None|BufferField|FieldMoudle' but {type(root)} received ..."
