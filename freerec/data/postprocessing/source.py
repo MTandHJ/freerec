@@ -11,14 +11,15 @@ from ..fields import SparseField
 
 
 __all__ = [
-    'RandomSource', 'RandomShuffledSource', 'OrderedSource',
+    'RandomChoicedSource', 'RandomShuffledSource', 'OrderedSource',
     'RandomIDs', 'OrderedIDs', 'DummySource'
 ]
 
 
-class RandomSource(BaseProcessor):
+class RandomChoicedSource(BaseProcessor):
     r"""
     DataPipe that generates random items from given source.
+    Note that this sampling is with replacement.
 
     Parameters:
     -----------
@@ -46,6 +47,7 @@ class RandomSource(BaseProcessor):
 class RandomShuffledSource(BaseProcessor):
     r"""
     DataPipe that generates shuffled source.
+    In this vein, every sample will be selected once per epoch.
 
     Parameters:
     -----------
@@ -88,7 +90,7 @@ class OrderedSource(BaseProcessor):
         yield from iter(self.source)
 
 
-class RandomIDs(RandomSource):
+class RandomIDs(RandomChoicedSource):
     r"""
     DataPipe that generates random IDs according to SparseField.
 

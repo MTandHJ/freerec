@@ -60,16 +60,13 @@ class GenTrainUniformSampler(Postprocessor):
             The dataset object that contains field objects.
         """
         self.posItems = [set() for _ in range(self.User.count)]
-        self.negative_pool = self._sample_from_all(dataset.datasize * self.num_negatives)
+        self.negative_pool = self._sample_from_all(dataset.train().datasize * self.num_negatives)
         for chunk in dataset.train():
             self.listmap(
                 lambda user, item: self.posItems[user].add(item),
                 chunk[USER, ID], chunk[ITEM, ID]
             )
         self.posItems = [tuple(items) for items in self.posItems]
-
-    def _check(self, user) -> bool:
-        return len(self.posItems[user]) > 0
 
     def _sample_from_all(self, pool_size: int = 51200):
         r"""
@@ -140,6 +137,9 @@ class GenTrainUniformSampler(Postprocessor):
         seen = self.posItems[user]
         return self.listmap(self._sample_from_pool, [seen] * self.num_negatives)
 
+    def _check(self, user: int) -> bool:
+        return len(self.posItems[user]) > 0
+
     def __iter__(self):
         for user in self.source:
             if self._check(user):
@@ -204,7 +204,7 @@ class GenValidYielder(Postprocessor):
         self.seenItems = [tuple(items) for items in self.seenItems]
         self.unseenItems = [tuple(items) for items in self.unseenItems]
 
-    def _check(self, user) -> bool:
+    def _check(self, user: int) -> bool:
         return len(self.unseenItems[user]) > 0
 
     def __iter__(self):
@@ -275,47 +275,49 @@ class SeqTrainYielder(Postprocessor):
         A datapipe that yields users.
     dataset: RecDataSet 
         The dataset object that contains field objects.
+    leave_one_out: bool, default to `True`
+        `True`: take the last one as a target
+        `False`: take `posItems[1:]` as targets
     """
 
     def __init__(
-        self, source_dp: dp.iter.IterableWrapper,
-        dataset: RecDataSet,
+        self, 
+        source_dp: dp.iter.IterableWrapper,
+        dataset: Optional[RecDataSet] = None,
+        leave_one_out: bool = True
     ) -> None:
         super().__init__(source_dp)
-        self.User: SparseField = dataset.fields[USER, ID]
-        self.Item: SparseField = dataset.fields[ITEM, ID]
+        self.User = dataset.fields[USER, ID]
+        self.Item = dataset.fields[ITEM, ID]
+        if leave_one_out:
+            self.marker = -1
+        else:
+            self.marker = 1
+
         self.prepare(dataset)
 
     @timemeter
     def prepare(self, dataset: RecDataSet):
-        r"""
-        Prepare the data before yielding.
+        pass
 
-        Parameters:
-        -----------
-        dataset: RecDataSet 
-            The dataset object that contains field objects.
-        """
-        self.posItems = [[] for _ in range(self.User.count)]
-        for chunk in dataset.train():
-            self.listmap(
-                lambda user, item: self.posItems[user].append(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-        self.posItems = [tuple(items) for items in self.posItems]
-
-    def _check(self, user) -> bool:
-        return len(self.posItems[user]) > 1
+    def _check(self, seq: Tuple) -> bool:
+        return len(seq) > 1
 
     def __iter__(self):
-        for user in self.source:
-            if self._check(user):
-                posItems = self.posItems[user]
-                yield [user, posItems[:-1], posItems[1:]]
+        for user, seq in self.source:
+            if self._check(seq):
+                yield [user, seq[:-1], seq[self.marker:]]
 
 
 @dp.functional_datapipe("seq_valid_yielding_")
 class SeqValidYielder(SeqTrainYielder):
+
+    def __init__(
+        self, 
+        source_dp: dp.iter.IterableWrapper, 
+        dataset: RecDataSet
+    ) -> None:
+        super().__init__(source_dp, dataset, True)
 
     @timemeter
     def prepare(self, dataset: RecDataSet):
@@ -342,8 +344,8 @@ class SeqValidYielder(SeqTrainYielder):
 
     def __iter__(self):
         for user in self.source:
-            if self._check(user):
-                posItems = self.posItems[user]
+            posItems = self.posItems[user]
+            if self._check(posItems):
                 # (user, seqs, unseen, seen)
                 yield [user, posItems[:-1], posItems[-1:], posItems[:-1]]
 
@@ -383,7 +385,6 @@ class SeqTestYielder(SeqValidYielder):
 @dp.functional_datapipe("seq_train_uniform_sampling_")
 class SeqTrainUniformSampler(SeqTrainYielder):
 
-
     @timemeter
     def prepare(self, dataset: RecDataSet):
         r"""
@@ -395,16 +396,13 @@ class SeqTrainUniformSampler(SeqTrainYielder):
             The dataset object that contains field objects.
         """
         self.posItems = [[] for _ in range(self.User.count)]
-        self.negative_pool = self._sample_from_all(dataset.datasize)
-
+        self.negative_pool = self._sample_from_all(dataset.train().datasize)
         for chunk in dataset.train():
             self.listmap(
                 lambda user, item: self.posItems[user].append(item),
                 chunk[USER, ID], chunk[ITEM, ID]
             )
-
         self.posItems = [tuple(items) for items in self.posItems]
-
 
     def _sample_from_all(self, pool_size: int = 51200):
         r"""
@@ -443,13 +441,14 @@ class SeqTrainUniformSampler(SeqTrainYielder):
             negative = next(self.negative_pool)
         return negative
 
-    def _sample_neg(self, user: int) -> List[int]:
+    def _sample_neg(self, user: int, positives: Tuple) -> List[int]:
         r"""Randomly sample negative items for a user.
 
         Parameters:
         ----------
-        user: int 
-            A user index.
+        user: int
+        positives: Tuple 
+            A tuple of positives.
 
         Returns:
         --------
@@ -457,18 +456,19 @@ class SeqTrainUniformSampler(SeqTrainYielder):
             A list of negative items that the user has not interacted with.
         """
         seen = self.posItems[user]
-        return self.listmap(self._sample_from_pool, [seen] * (len(seen) - 1))
+        return self.listmap(self._sample_from_pool, [seen] * (len(positives)))
 
     def __iter__(self):
-        for user in self.source:
-            if self._check(user):
-                posItems = self.posItems[user]
-                yield [user, posItems[:-1], posItems[1:], self._sample_neg(user)]
+        for user, seq in self.source:
+            if self._check(seq):
+                seen = seq[:-1]
+                positives = seq[self.marker:]
+                negatives = self._sample_neg(user, positives)
+                yield [user, seen, positives, self._sample_neg(user, negatives)]
 
 
 @dp.functional_datapipe("seq_valid_sampling_")
 class SeqValidSampler(SeqValidYielder):
-
 
     def _sample_negs(self, seen: List[int]):
         unseen = list(set(self.Item.enums) - set(seen))
@@ -504,8 +504,8 @@ class SeqValidSampler(SeqValidYielder):
 
     def __iter__(self):
         for user in self.source:
-            if self._check(user):
-                posItems = self.posItems[user]
+            posItems = self.posItems[user]
+            if self._check(posItems):
                 yield [user, posItems[:-1], posItems[-1:] + self.negItems[user]]
 
 
@@ -560,30 +560,48 @@ class SessTrainYielder(Postprocessor):
         A datapipe that yields users.
     dataset: RecDataSet 
         The dataset object that contains field objects.
+    leave_one_out: bool, default to `True`
+        `True`: take the last one as a target
+        `False`: take `posItems[1:]` as targets
     """
 
     def __init__(
         self, source_dp: dp.iter.IterableWrapper,
         dataset: Optional[RecDataSet] = None,
+        leave_one_out: bool = True
     ) -> None:
         super().__init__(source_dp)
+        self.Item = dataset.fields[ITEM, ID]
+        if leave_one_out:
+            self.marker = -1
+        else:
+            self.marker = 1
+
         self.prepare(dataset)
+
 
     @timemeter
     def prepare(self, dataset: RecDataSet):
         pass
 
-    def _check(self, sequence) -> bool:
-        return len(sequence) > 1
+    def _check(self, seq) -> bool:
+        return len(seq) > 1
 
     def __iter__(self):
-        for sess, sequence in self.source:
-            if self._check(sequence):
-                yield [sess, sequence[:-1], sequence[-1:]]
+        for sess, seq in self.source:
+            if self._check(seq):
+                yield [sess, seq[:-1], seq[self.marker:]]
 
 
 @dp.functional_datapipe("sess_valid_yielding_")
 class SessValidYielder(SessTrainYielder):
+
+    def __init__(
+        self, 
+        source_dp: dp.iter.IterableWrapper, 
+        dataset: RecDataSet
+    ) -> None:
+        super().__init__(source_dp, dataset, True)
 
     @timemeter
     def prepare(self, dataset: RecDataSet):
@@ -594,15 +612,15 @@ class SessValidYielder(SessTrainYielder):
                 chunk[ITEM, ID]
             )
 
-    def _check(self, sequence) -> bool:
+    def _check(self, seq) -> bool:
         # filter out the sequence with a target not appearing in training set
-        return len(sequence) > 1 and sequence[-1] in self.seenItems
+        return len(seq) > 1 and seq[-1] in self.seenItems
 
     def __iter__(self):
-        for sess, sequence in self.source:
-            if self._check(sequence):
+        for sess, seq in self.source:
+            if self._check(seq):
                 # (user, seqs, unseen, seen)
-                yield [sess, sequence[:-1], sequence[-1:], sequence[:-1]]
+                yield [sess, seq[:-1], seq[-1:], seq[:-1]]
 
 
 @dp.functional_datapipe("sess_test_yielding_")
@@ -622,16 +640,10 @@ class SessTrainUniformSampler(SessTrainYielder):
         The dataset object that contains field objects.
     num_negatives: int 
         The number of negative samples for each piece of data.  
+    leave_one_out: bool, default to `True`
+        `True`: take the last one as a target
+        `False`: take `posItems[1:]` as targets
     """
-
-    def __init__(
-        self, source_dp: dp.iter.IterableWrapper,
-        dataset: RecDataSet,
-        num_negatives: int = 1,
-    ) -> None:
-        self.num_negatives = num_negatives
-        self.Item = dataset.fields[ITEM, ID]
-        super().__init__(source_dp, dataset)
 
     @timemeter
     def prepare(self, dataset: RecDataSet):
@@ -643,7 +655,7 @@ class SessTrainUniformSampler(SessTrainYielder):
         dataset: RecDataSet 
             The dataset object that contains field objects.
         """
-        self.negative_pool = self._sample_from_all(dataset.train().datasize * self.num_negatives)
+        self.negative_pool = self._sample_from_all(dataset.train().datasize)
 
     def _sample_from_all(self, pool_size: int = 51200):
         r"""
@@ -682,25 +694,27 @@ class SessTrainUniformSampler(SessTrainYielder):
             negative = next(self.negative_pool)
         return negative
 
-    def _sample_neg(self, seen: Tuple) -> List[int]:
+    def _sample_neg(self, seen: Tuple, positives: Tuple) -> List[int]:
         r"""Randomly sample negative items for a user.
 
         Parameters:
         ----------
-        user: int 
-            A user index.
+        seen: Tuple 
+            A sequence of seen items.
+        positives: Tuple
+            A sequence of positive items.
 
         Returns:
         --------
         negatives: List[int] 
             A list of negative items that the user has not interacted with.
         """
-        return self.listmap(self._sample_from_pool, [seen] * self.num_negatives)
-
-    def _check(self, sequence) -> bool:
-        return len(sequence) > 1
+        return self.listmap(self._sample_from_pool, [seen] * len(positives))
 
     def __iter__(self):
-        for sess, sequence in self.source:
-            if self._check(sequence):
-                yield [sess, sequence[:-1], sequence[-1:], self._sample_neg(sequence)]
+        for sess, seq in self.source:
+            if self._check(seq):
+                seen = seq[:-1]
+                positives = seq[self.marker:]
+                negatives = self._sample_neg(seen, positives)
+                yield [sess, seen, positives, negatives]
