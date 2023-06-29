@@ -1,6 +1,6 @@
 
 
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Iterable
 
 import random
 import torchdata.datapipes as dp
@@ -17,6 +17,7 @@ __all__ = [
     'SeqTrainYielder', 'SeqValidYielder', 'SeqTestYielder', 
     'SeqTrainUniformSampler', 'SeqValidSampler', 'SeqTestSampler',
     'SessTrainYielder', 'SessValidYielder', 'SessTestYielder', 
+    'SessTrainUniformSampler'
 ]
 
 
@@ -606,3 +607,100 @@ class SessValidYielder(SessTrainYielder):
 
 @dp.functional_datapipe("sess_test_yielding_")
 class SessTestYielder(SessValidYielder): ...
+
+
+@dp.functional_datapipe("sess_train_uniform_sampling_")
+class SessTrainUniformSampler(SessTrainYielder):
+    r"""
+    A functional datapipe for uniformly sampling negatives for each sequence.
+
+    Parameters:
+    -----------
+    source_dp: dp.iter.IterableWrapper 
+        A datapipe that yields users.
+    dataset: RecDataSet 
+        The dataset object that contains field objects.
+    num_negatives: int 
+        The number of negative samples for each piece of data.  
+    """
+
+    def __init__(
+        self, source_dp: dp.iter.IterableWrapper,
+        dataset: RecDataSet,
+        num_negatives: int = 1,
+    ) -> None:
+        self.num_negatives = num_negatives
+        self.Item = dataset.fields[ITEM, ID]
+        super().__init__(source_dp, dataset)
+
+    @timemeter
+    def prepare(self, dataset: RecDataSet):
+        r"""
+        Prepare the data before sampling.
+
+        Parameters:
+        -----------
+        dataset: RecDataSet 
+            The dataset object that contains field objects.
+        """
+        self.negative_pool = self._sample_from_all(dataset.train().datasize * self.num_negatives)
+
+    def _sample_from_all(self, pool_size: int = 51200):
+        r"""
+        Randomly sample items from all items.
+
+        Parameters:
+        -----------
+        pool_size: int 
+            The number of items to be sampled.
+
+        Returns:
+        --------
+        Generator: A generator that yields sampled items.
+        """
+        allItems = self.Item.enums
+        while 1:
+            for item in random.choices(allItems, k=pool_size):
+                yield item
+
+    def _sample_from_pool(self, seen: Tuple):
+        r"""
+        Randomly sample a negative item from the pool of all items.
+
+        Parameters:
+        -----------
+        seen: set 
+            A set of seen items.
+
+        Returns:
+        --------
+        negative: int 
+            A negative item that has not been seen.
+        """
+        negative = next(self.negative_pool)
+        while negative in seen:
+            negative = next(self.negative_pool)
+        return negative
+
+    def _sample_neg(self, seen: Tuple) -> List[int]:
+        r"""Randomly sample negative items for a user.
+
+        Parameters:
+        ----------
+        user: int 
+            A user index.
+
+        Returns:
+        --------
+        negatives: List[int] 
+            A list of negative items that the user has not interacted with.
+        """
+        return self.listmap(self._sample_from_pool, [seen] * self.num_negatives)
+
+    def _check(self, sequence) -> bool:
+        return len(sequence) > 1
+
+    def __iter__(self):
+        for sess, sequence in self.source:
+            if self._check(sequence):
+                yield [sess, sequence[:-1], sequence[-1:], self._sample_neg(sequence)]
