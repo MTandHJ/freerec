@@ -1,7 +1,7 @@
 
 
 from typing import Optional, Union, overload, Tuple
-import torch
+import torch, inspect
 import torch.nn as nn
 
 
@@ -30,6 +30,18 @@ class RecSysArch(nn.Module):
         Broadcasts the given tensors according to broadcasting semantics.
 
     """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._check()
+
+    @classmethod
+    def _check(cls):
+        signature = inspect.signature(cls.recommend_from_pool)
+        if 'pool' not in signature.parameters:
+            raise NotImplementedError(
+                f"`pool` must be a argument of `recommend_from_pool` ..."
+            )
 
     def to(
         self, device: Optional[Union[int, torch.device]] = None,
@@ -142,10 +154,10 @@ class RecSysArch(nn.Module):
         scores: torch.Tensor, (B, K)
         """
 
-    def recommend_from_full(self, *args, **kwargs):
+    def recommend_from_full(self, **kwargs):
         raise NotImplementedError()
 
-    def recommend_from_pool(self, *args, **kwargs):
+    def recommend_from_pool(self, *, pool: torch.Tensor, **kwargs):
         raise NotImplementedError()
 
     def recommend(self, **kwargs):

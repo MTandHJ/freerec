@@ -564,11 +564,7 @@ class RecDataSet(BaseSet):
         pairs = []
 
         for chunk in self:
-            list(map(
-                lambda id_, item: pairs.append((id_, item)),
-                chunk[master], chunk[ITEM, ID]
-            ))
-        
+            pairs.extend(list(zip(chunk[master], chunk[ITEM, ID])))
         return pairs
 
     def to_seqs(self, master: Tuple = (USER, ID), keepid: bool = False) -> List:

@@ -747,7 +747,8 @@ class SessValidSampler(SessTrainYielder):
             )
 
         self.negItems = dict()
-        self.seenItems = [tuple(items) for items in self.seenItems]
+        for key in self.seenItems:
+            self.seenItems[key] = tuple(self.seenItems[key])
 
     def __iter__(self):
         for sess, seq in self.source:
@@ -771,4 +772,5 @@ class SessTestSampler(SessValidSampler):
             )
 
         self.negItems = dict()
-        self.seenItems = [tuple(items) for items in self.seenItems]
+        for key in self.seenItems:
+            self.seenItems[key] = tuple(self.seenItems[key])
