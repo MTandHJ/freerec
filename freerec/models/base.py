@@ -65,6 +65,9 @@ class RecSysArch(nn.Module):
                     nn.init.constant_(m.bias, 0.)
             elif isinstance(m, nn.Embedding):
                 nn.init.xavier_normal_(m.weight)
+            elif isinstance(m, nn.GRU):
+                nn.init.xavier_uniform_(m.weight_hh_l0)
+                nn.init.xavier_uniform_(m.weight_ih_l0)
             elif isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d)):
                 nn.init.constant_(m.weight, 1.)
                 nn.init.constant_(m.bias, 0.)
@@ -98,7 +101,7 @@ class RecSysArch(nn.Module):
         return torch.broadcast_tensors(*tensors)
 
     @overload
-    def recommend(self) -> Tuple[torch.Tensor, torch.Tensor]:
+    def recommend_from_full(self) -> Tuple[torch.Tensor, torch.Tensor]:
         r"""
         Returns:
         --------
@@ -107,7 +110,7 @@ class RecSysArch(nn.Module):
         """
 
     @overload
-    def recommend(self, seqs: torch.Tensor) -> torch.Tensor:
+    def recommend_from_full(self, seqs: torch.Tensor) -> torch.Tensor:
         r"""
         Full ranking recommendation.
 
@@ -123,7 +126,7 @@ class RecSysArch(nn.Module):
         """
 
     @overload
-    def recommend(self, seqs: torch.Tensor, items: torch.Tensor) -> torch.Tensor:
+    def recommend_from_pool(self, seqs: torch.Tensor, pool: torch.Tensor) -> torch.Tensor:
         r"""
         Sampling-based recommendation.
 
@@ -131,10 +134,16 @@ class RecSysArch(nn.Module):
         -----------
         seqs: torch.Tensor, (B, S)
             A batch of sequences.
-        items: torch.Tensor, (B, K)
+        pool: torch.Tensor, (B, K)
             A batch of items.
 
         Returns:
         --------
         scores: torch.Tensor, (B, K)
         """
+
+    def recommend(self, **kwargs):
+        if kwargs.get('pool', None) is None:
+            return self.recommend_from_full(**kwargs)
+        else:
+            return self.recommend_from_pool(**kwargs)

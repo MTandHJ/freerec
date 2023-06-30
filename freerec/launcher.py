@@ -605,6 +605,137 @@ class Coach(ChiefCoach):
         self.eval_at_best()
 
 
+class GenCoach(Coach):
+
+    def evaluate(self, epoch: int, prefix: str = 'valid'):
+        r"""
+        Evaluate recommender by sampled-based or full ranking
+        according to the form of `data`:
+
+        1. (users, pool):
+            users: torch.Tensor, (B, 1)
+            pool: torch.Tensor, (B, 101)
+        2. (users, unseen, seen):
+            users: BufferField
+            unseen: BufferField
+            seen: BufferField
+        """
+        userFeats, itemFeats = self.model.recommend()
+        for data in self.dataloader:
+            if len(data) == 2:
+                users, pool = [col.to(self.device) for col in data]
+                users = userFeats[users] # (B, 1, D)
+                items = itemFeats[pool] # (B, K, D)
+                scores = users.mul(items).sum(-1)
+                targets = torch.zeros_like(scores)
+                targets[:, 0].fill_(1)
+            elif len(data) == 3:
+                users, unseen, seen = data
+                users = users.to(self.device).data
+                seen = seen.to_csr().to(self.device).to_dense().bool()
+                targets = unseen.to_csr().to(self.device).to_dense()
+                users = userFeats[users].flatten(1) # B x D
+                items = itemFeats.flatten(1) # N x D
+                scores = users.matmul(items.T) # B x N
+                scores[seen] = -1e23
+            else:
+                raise NotImplementedError(
+                    f"GenCoach's `evaluate` expects the `data` to be the length of 2 or 3, but {len(data)} received ..."
+                )
+
+            self.monitor(
+                scores, targets,
+                n=len(users), mode="mean", prefix=prefix,
+                pool=['HITRATE', 'PRECISION', 'RECALL', 'NDCG', 'MRR']
+            )
+
+
+class SeqCoach(Coach):
+
+    def evaluate(self, epoch: int, prefix: str = 'valid'):
+        r"""
+        Evaluate recommender by sampled-based or full ranking
+        according to the form of `data`:
+
+        1. (users, seqs, pool):
+            users: torch.Tensor, (B, 1)
+            seqs: torch.Tensor, (B, S)
+            pool: torch.Tensor, (B, 101)
+        2. (users, seqs, unseen, seen):
+            users: BufferField
+            seqs: BufferField
+            unseen: BufferField
+            seen: BufferField
+        """
+        for data in self.dataloader:
+            if len(data) == 3:
+                users, seqs, pool = [col.to(self.device) for col in data]
+                scores = self.model.recommend(seqs=seqs, pool=pool)
+                targets = torch.zeros_like(scores)
+                targets[:, 0].fill_(1)
+            elif len(data) == 4:
+                users, seqs, unseen, seen = data
+                users = users.data
+                seqs = seqs.to(self.device).data
+                scores = self.model.recommend(seqs=seqs)
+                seen = seen.to_csr().to(self.device).to_dense().bool()
+                scores[seen] = -1e23
+                targets = unseen.to_csr().to(self.device).to_dense()
+            else:
+                raise NotImplementedError(
+                    f"SeqCoach's `evaluate` expects the `data` to be the length of 3 or 4, but {len(data)} received ..."
+                )
+
+            self.monitor(
+                scores, targets,
+                n=len(users), mode="mean", prefix=prefix,
+                pool=['HITRATE', 'PRECISION', 'RECALL', 'NDCG', 'MRR']
+            )
+
+
+class SessCoach(Coach):
+
+    def evaluate(self, epoch: int, prefix: str = 'valid'):
+        r"""
+        Evaluate recommender by sampled-based or full ranking
+        according to the form of `data`:
+
+        1. (users, seqs, pool):
+            users: torch.Tensor, (B, 1)
+            seqs: torch.Tensor, (B, S)
+            pool: torch.Tensor, (B, 101)
+        2. (users, seqs, unseen, seen):
+            users: BufferField
+            seqs: BufferField
+            unseen: BufferField
+            seen: BufferField
+        """
+        for data in self.dataloader:
+            if len(data) == 3:
+                users, seqs, pool = [col.to(self.device) for col in data]
+                scores = self.model.recommend(seqs=seqs, pool=pool)
+                targets = torch.zeros_like(scores)
+                targets[:, 0].fill_(1)
+            elif len(data) == 4:
+                users, seqs, unseen, seen = data
+                users = users.data
+                seqs = seqs.to(self.device).data
+                scores = self.model.recommend(seqs=seqs)
+                # Don't remove seens for session
+                targets = unseen.to_csr().to(self.device).to_dense()
+            else:
+                raise NotImplementedError(
+                    f"SessCoach's `evaluate` expects the `data` to be the length of 3 or 4, but {len(data)} received ..."
+                )
+
+            self.monitor(
+                scores, targets,
+                n=len(users), mode="mean", prefix=prefix,
+                pool=['HITRATE', 'PRECISION', 'RECALL', 'NDCG', 'MRR']
+            )
+
+
+
 class Adapter:
     r"""
     Params tuner.
