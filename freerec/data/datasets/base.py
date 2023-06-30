@@ -546,6 +546,31 @@ class RecDataSet(BaseSet):
         else:
             return self.testsize
 
+    def to_pairs(self, master: Tuple = (USER, ID)) -> List:
+        r"""
+        Return dataset in pairs.
+
+        Parameters:
+        -----------
+        master: Tuple
+            Tuple of tags to spefic a field, e.g., (USER, ID), (SESSION, ID)
+        
+        Returns:
+        --------
+        List
+        """
+        Master = self.fields[master]
+        assert Master is not None, f"{Master} is not in fields ..."
+        pairs = []
+
+        for chunk in self:
+            list(map(
+                lambda id_, item: pairs.append((id_, item)),
+                chunk[master], chunk[ITEM, ID]
+            ))
+        
+        return pairs
+
     def to_seqs(self, master: Tuple = (USER, ID), keepid: bool = False) -> List:
         r"""
         Return dataset in sequence.

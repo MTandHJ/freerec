@@ -169,7 +169,8 @@ class Parser(Config):
 
         self.add_argument("--root", type=str, default=".", help="data")
         self.add_argument("--dataset", type=str, default="RecDataSet", help="useless if no need to automatically select a dataset")
-        self.add_argument("--config", type=str, default=None, help="config.yml")
+        self.add_argument("--config", type=str, default=None, help="config.yaml")
+        self.add_argument("--ranking", type=str, choices=('full', 'pool'), default='full', help="full: full ranking; pool: sampled-based ranking")
 
         self.add_argument("--device", default=torch.cuda.current_device() if torch.cuda.is_available() else 'cpu', help="device")
 

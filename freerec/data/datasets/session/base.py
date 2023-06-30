@@ -21,6 +21,9 @@ class SessionBasedRecSet(RecDataSet):
     def check(self):
         assert isinstance(self.fields[TIMESTAMP], Field), "SessionRecSet must have `TIMESTAMP' field."
 
+    def to_pairs(self, master: Tuple = (SESSION, ID)) -> List:
+        return super().to_pairs(master)
+
     def to_seqs(self, master: Tuple = (SESSION, ID), keepid: bool = False) -> List:
         return super().to_seqs(master, keepid)
 

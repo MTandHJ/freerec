@@ -4,6 +4,7 @@ from typing import List, Tuple, Optional, Iterable
 
 import random
 import torchdata.datapipes as dp
+from collections import defaultdict
 
 from .base import Postprocessor
 from ..datasets.base import RecDataSet
@@ -13,18 +14,149 @@ from ...utils import timemeter
 
 
 __all__ = [
+    'GenTrainYielder', 'GenValidYielder', 'GenTestYielder',
     'GenTrainUniformSampler', 'GenValidYielder', 'GenTestYielder',
     'SeqTrainYielder', 'SeqValidYielder', 'SeqTestYielder', 
     'SeqTrainUniformSampler', 'SeqValidSampler', 'SeqTestSampler',
     'SessTrainYielder', 'SessValidYielder', 'SessTestYielder', 
-    'SessTrainUniformSampler'
+    'SessTrainUniformSampler', 'SessValidSampler', 'SessTestSampler',
 ]
 
 
 #===============================For General Recommendation===============================
 
+
+@dp.functional_datapipe("gen_train_yielding_")
+class GenTrainYielder(Postprocessor):
+    r"""A datapipe that yields (user, item) pairs."""
+
+    def __init__(
+        self, source_dp: dp.iter.IterDataPipe,
+        dataset: RecDataSet
+    ) -> None:
+        r"""
+        Initializes a new instance of the Tripleter postprocessor.
+        
+        Parameters:
+        -----------
+        source_dp: RecDatapipe or Postprocessor 
+            A RecDatapipe or another Postprocessor that yields dicts of NumPy arrays.
+        dataset: RecDataSet 
+            The dataset that provides the data source.
+        """
+        super().__init__(source_dp)
+
+        self.User: SparseField = dataset.fields[USER, ID]
+        self.Item: SparseField = dataset.fields[ITEM, ID]
+
+        self.prepare(dataset)
+
+    @timemeter
+    def prepare(self, dataset: RecDataSet):
+        r"""
+        Prepares the dataset by building sets of seen items for each user.
+
+        Parameters:
+        -----------
+        dataset: RecDataSet 
+            The dataset that provides the data source.
+        """
+        self.posItems = [set() for _ in range(self.User.count)]
+
+        for chunk in dataset.train():
+            self.listmap(
+                lambda user, item: self.posItems[user].add(item),
+                chunk[USER, ID], chunk[ITEM, ID]
+            )
+
+        self.posItems = [tuple(items) for items in self.posItems]
+
+    def _sample_pos(self, user: int) -> int:
+        r"""
+        Randomly sample a positive item for a user.
+
+        Parameters:
+        -----------
+        user: int 
+            A user index.
+
+        Returns:
+        --------
+        positive: int 
+            A positive item that the user has interacted with.
+        """
+        return random.choice(self.posItems[user])
+
+    def _check(self, user: int) -> bool:
+        return len(self.posItems[user]) > 0
+
+    def __iter__(self):
+        for user in self.source:
+            if self._check(user):
+                yield [user, self._sample_pos(user)]
+
+
+@dp.functional_datapipe("gen_valid_yielding_")
+class GenValidYielder(GenTrainYielder):
+
+    @timemeter
+    def prepare(self, dataset: RecDataSet):
+        self.seenItems = [set() for _ in range(self.User.count)]
+        self.unseenItems = [set() for _ in range(self.User.count)]
+
+        for chunk in dataset.train():
+            self.listmap(
+                lambda user, item: self.seenItems[user].add(item),
+                chunk[USER, ID], chunk[ITEM, ID]
+            )
+        for chunk in dataset.valid():
+            self.listmap(
+                lambda user, item: self.unseenItems[user].add(item),
+                chunk[USER, ID], chunk[ITEM, ID]
+            )
+
+        self.seenItems = [tuple(items) for items in self.seenItems]
+        self.unseenItems = [tuple(items) for items in self.unseenItems]
+
+    def _check(self, user: int) -> bool:
+        return len(self.unseenItems[user]) > 0
+
+    def __iter__(self):
+        for user in self.source:
+            if self._check(user):
+                yield [user, self.unseenItems[user], self.seenItems[user]]
+
+
+@dp.functional_datapipe("gen_test_yielding_")
+class GenTestYielder(GenValidYielder):
+
+    @timemeter
+    def prepare(self, dataset: RecDataSet):
+        self.seenItems = [set() for _ in range(self.User.count)]
+        self.unseenItems = [set() for _ in range(self.User.count)]
+
+        for chunk in dataset.train():
+            self.listmap(
+                lambda user, item: self.seenItems[user].add(item),
+                chunk[USER, ID], chunk[ITEM, ID]
+            )
+        for chunk in dataset.valid():
+            self.listmap(
+                lambda user, item: self.seenItems[user].add(item),
+                chunk[USER, ID], chunk[ITEM, ID]
+            )
+        for chunk in dataset.test():
+            self.listmap(
+                lambda user, item: self.unseenItems[user].add(item),
+                chunk[USER, ID], chunk[ITEM, ID]
+            )
+
+        self.seenItems = [tuple(items) for items in self.seenItems]
+        self.unseenItems = [tuple(items) for items in self.unseenItems]
+
+
 @dp.functional_datapipe("gen_train_uniform_sampling_")
-class GenTrainUniformSampler(Postprocessor):
+class GenTrainUniformSampler(GenTrainYielder):
     r"""
     A functional datapipe for uniformly sampling users and their negatives.
 
@@ -43,22 +175,11 @@ class GenTrainUniformSampler(Postprocessor):
         dataset: RecDataSet,
         num_negatives: int = 1,
     ) -> None:
-        super().__init__(source_dp)
         self.num_negatives = num_negatives
-        self.User: SparseField = dataset.fields[USER, ID]
-        self.Item: SparseField = dataset.fields[ITEM, ID]
-        self.prepare(dataset)
+        super().__init__(source_dp, dataset)
 
     @timemeter
     def prepare(self, dataset: RecDataSet):
-        r"""
-        Prepare the data before sampling.
-
-        Parameters:
-        -----------
-        dataset: RecDataSet 
-            The dataset object that contains field objects.
-        """
         self.posItems = [set() for _ in range(self.User.count)]
         self.negative_pool = self._sample_from_all(dataset.train().datasize * self.num_negatives)
         for chunk in dataset.train():
@@ -105,22 +226,6 @@ class GenTrainUniformSampler(Postprocessor):
             negative = next(self.negative_pool)
         return negative
 
-    def _sample_pos(self, user: int) -> int:
-        r"""
-        Randomly sample a positive item for a user.
-
-        Parameters:
-        -----------
-        user: int 
-            A user index.
-
-        Returns:
-        --------
-        positive: int 
-            A positive item that the user has interacted with.
-        """
-        return random.choice(self.posItems[user])
-
     def _sample_neg(self, user: int) -> List[int]:
         r"""Randomly sample negative items for a user.
 
@@ -137,128 +242,62 @@ class GenTrainUniformSampler(Postprocessor):
         seen = self.posItems[user]
         return self.listmap(self._sample_from_pool, [seen] * self.num_negatives)
 
-    def _check(self, user: int) -> bool:
-        return len(self.posItems[user]) > 0
-
     def __iter__(self):
         for user in self.source:
             if self._check(user):
                 yield [user, self._sample_pos(user), self._sample_neg(user)]
 
 
-@dp.functional_datapipe("gen_valid_yielding_")
-class GenValidYielder(Postprocessor):
-    r"""
-    A datapipe that yields (user, unseen, seen) triplets.
-    The ValidTripleter postprocessor takes a RecDataSet as input,
-    and yields (user, unseen, seen) triplets. The unseen and seen sets contain the IDs of
-    the items that the user has not seen and seen, respectively. Whether to use validation
-    or test set as the source of unseen items depends on the value of `dataset.VALID_IS_TEST`.
-    """
+@dp.functional_datapipe("gen_valid_sampling_")
+class GenValidSampler(GenValidYielder):
 
-    def __init__(
-        self, source_dp: dp.iter.IterDataPipe,
-        dataset: RecDataSet
-    ) -> None:
-        r"""
-        Initializes a new instance of the Tripleter postprocessor.
-        
-        Parameters:
-        -----------
-        source_dp: RecDatapipe or Postprocessor 
-            A RecDatapipe or another Postprocessor that yields dicts of NumPy arrays.
-        dataset: RecDataSet 
-            The dataset that provides the data source.
-        """
-        super().__init__(source_dp)
-
-        self.User: SparseField = dataset.fields[USER, ID]
-        self.Item: SparseField = dataset.fields[ITEM, ID]
-
-        self.prepare(dataset)
+    def _sample_negs(self, user: int, posItem: int):
+        idx = (user, posItem)
+        if self.negItems.get(idx, None) is None:
+            seen = self.seenItems[user]
+            unseen = list(set(self.Item.enums) - set(seen))
+            self.negItems[idx] = tuple(random.choices(unseen, k=100))
+        return self.negItems[idx]
 
     @timemeter
     def prepare(self, dataset: RecDataSet):
-        r"""
-        Prepares the dataset by building sets of seen items for each user.
-
-        Parameters:
-        -----------
-        dataset: RecDataSet 
-            The dataset that provides the data source.
-        """
         self.seenItems = [set() for _ in range(self.User.count)]
-        self.unseenItems = [set() for _ in range(self.User.count)]
 
         for chunk in dataset.train():
             self.listmap(
                 lambda user, item: self.seenItems[user].add(item),
                 chunk[USER, ID], chunk[ITEM, ID]
             )
-        for chunk in dataset.valid():
-            self.listmap(
-                lambda user, item: self.unseenItems[user].add(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
 
+        self.negItems = dict()
         self.seenItems = [tuple(items) for items in self.seenItems]
-        self.unseenItems = [tuple(items) for items in self.unseenItems]
-
-    def _check(self, user: int) -> bool:
-        return len(self.unseenItems[user]) > 0
 
     def __iter__(self):
-        r"""
-        Yields:
-        -------
-        user, unseen, seen: int, List[int], List[int]
-            Triplets for each user in the data source.
-        """
-        for user in self.source:
-            if self._check(user):
-                yield [user, self.unseenItems[user], self.seenItems[user]]
+        for user, posItem in self.source:
+            yield [user, (posItem,) + self._sample_negs(user, posItem)]
 
 
-@dp.functional_datapipe("gen_test_yielding_")
-class GenTestYielder(GenValidYielder):
-    r"""
-    A datapipe that yields (user, unseen, seen) triplets from the test set.
-    The TestTriplet postprocessor takes a RecDataSet as input,
-    and yields (user, unseen, seen) triplets from the test set. The unseen and seen sets contain the IDs of
-    the items that the user has not seen and seen, respectively.
-    """
+@dp.functional_datapipe("gen_test_sampling_")
+class GenTestSampler(GenValidSampler):
 
     @timemeter
     def prepare(self, dataset: RecDataSet):
-        r"""
-        Prepares the dataset by building sets of seen items for each user.
-
-        Parameters:
-        -----------
-        dataset: RecDataSet 
-            The dataset that provides the data source.
-        """
         self.seenItems = [set() for _ in range(self.User.count)]
-        self.unseenItems = [set() for _ in range(self.User.count)]
 
         for chunk in dataset.train():
             self.listmap(
                 lambda user, item: self.seenItems[user].add(item),
                 chunk[USER, ID], chunk[ITEM, ID]
             )
+
         for chunk in dataset.valid():
             self.listmap(
                 lambda user, item: self.seenItems[user].add(item),
                 chunk[USER, ID], chunk[ITEM, ID]
             )
-        for chunk in dataset.test():
-            self.listmap(
-                lambda user, item: self.unseenItems[user].add(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
 
+        self.negItems = dict()
         self.seenItems = [tuple(items) for items in self.seenItems]
-        self.unseenItems = [tuple(items) for items in self.unseenItems]
 
 
 #===============================For Sequential Recommendation===============================
@@ -321,14 +360,6 @@ class SeqValidYielder(SeqTrainYielder):
 
     @timemeter
     def prepare(self, dataset: RecDataSet):
-        r"""
-        Prepare the data before yielding.
-
-        Parameters:
-        -----------
-        dataset: RecDataSet 
-            The dataset object that contains field objects.
-        """
         self.posItems = [[] for _ in range(self.User.count)]
         for chunk in dataset.train():
             self.listmap(
@@ -355,14 +386,6 @@ class SeqTestYielder(SeqValidYielder):
 
     @timemeter
     def prepare(self, dataset: RecDataSet):
-        r"""
-        Prepare the data before yielding.
-
-        Parameters:
-        -----------
-        dataset: RecDataSet 
-            The dataset object that contains field objects.
-        """
         self.posItems = [[] for _ in range(self.User.count)]
         for chunk in dataset.train():
             self.listmap(
@@ -387,14 +410,6 @@ class SeqTrainUniformSampler(SeqTrainYielder):
 
     @timemeter
     def prepare(self, dataset: RecDataSet):
-        r"""
-        Prepare the data before sampling.
-
-        Parameters:
-        -----------
-        dataset: RecDataSet
-            The dataset object that contains field objects.
-        """
         self.posItems = [[] for _ in range(self.User.count)]
         self.negative_pool = self._sample_from_all(dataset.train().datasize)
         for chunk in dataset.train():
@@ -476,14 +491,6 @@ class SeqValidSampler(SeqValidYielder):
 
     @timemeter
     def prepare(self, dataset: RecDataSet):
-        r"""
-        Prepare the data before sampling.
-
-        Parameters:
-        -----------
-        dataset: RecDataSet
-            The dataset object that contains field objects.
-        """
         self.posItems = [[] for _ in range(self.User.count)]
         for chunk in dataset.train():
             self.listmap(
@@ -514,14 +521,6 @@ class SeqTestSampler(SeqValidSampler):
 
     @timemeter
     def prepare(self, dataset: RecDataSet):
-        r"""
-        Prepare the data before sampling.
-
-        Parameters:
-        -----------
-        dataset: RecDataSet
-            The dataset object that contains field objects.
-        """
         self.posItems = [[] for _ in range(self.User.count)]
         for chunk in dataset.train():
             self.listmap(
@@ -578,7 +577,6 @@ class SessTrainYielder(Postprocessor):
             self.marker = 1
 
         self.prepare(dataset)
-
 
     @timemeter
     def prepare(self, dataset: RecDataSet):
@@ -718,3 +716,59 @@ class SessTrainUniformSampler(SessTrainYielder):
                 positives = seq[self.marker:]
                 negatives = self._sample_neg(seen, positives)
                 yield [sess, seen, positives, negatives]
+
+
+@dp.functional_datapipe("sess_valid_sampling_")
+class SessValidSampler(SessTrainYielder):
+
+    def __init__(
+        self, 
+        source_dp: dp.iter.IterableWrapper, 
+        dataset: Optional[RecDataSet] = None
+    ) -> None:
+        super().__init__(source_dp, dataset, True)
+
+    def _sample_negs(self, sess: int, seq: Tuple):
+        idx = (sess, tuple(seq))
+        if self.negItems.get(idx, None) is None:
+            seen = self.seenItems[sess]
+            unseen = list(set(self.Item.enums) - set(seen))
+            self.negItems[idx] = tuple(random.choices(unseen, k=100))
+        return self.negItems[idx]
+
+    @timemeter
+    def prepare(self, dataset: RecDataSet):
+        self.seenItems = defaultdict(set)
+
+        for chunk in dataset.valid():
+            self.listmap(
+                lambda id_, item: self.seenItems[id_].add(item),
+                chunk[SESSION, ID], chunk[ITEM, ID]
+            )
+
+        self.negItems = dict()
+        self.seenItems = [tuple(items) for items in self.seenItems]
+
+    def __iter__(self):
+        for sess, seq in self.source:
+            if self._check(seq):
+                seen = seq[:-1]
+                posItem = seq[-1]
+                yield [sess, seen, (posItem,) + self._sample_negs(sess, seq)]
+
+
+@dp.functional_datapipe("sess_test_sampling_")
+class SessTestSampler(SessValidSampler):
+
+    @timemeter
+    def prepare(self, dataset: RecDataSet):
+        self.seenItems = defaultdict(set)
+
+        for chunk in dataset.test():
+            self.listmap(
+                lambda id_, item: self.seenItems[id_].add(item),
+                chunk[SESSION, ID], chunk[ITEM, ID]
+            )
+
+        self.negItems = dict()
+        self.seenItems = [tuple(items) for items in self.seenItems]

@@ -142,6 +142,12 @@ class RecSysArch(nn.Module):
         scores: torch.Tensor, (B, K)
         """
 
+    def recommend_from_full(self, *args, **kwargs):
+        raise NotImplementedError()
+
+    def recommend_from_pool(self, *args, **kwargs):
+        raise NotImplementedError()
+
     def recommend(self, **kwargs):
         if kwargs.get('pool', None) is None:
             return self.recommend_from_full(**kwargs)
