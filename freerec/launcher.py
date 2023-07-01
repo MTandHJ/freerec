@@ -452,6 +452,23 @@ class Coach(ChiefCoach):
         except FileNotFoundError:
             infoLogger(f"[Coach] >>> No best model was recorded. Skip it ...")
 
+    def easy_record_best(self, best: defaultdict):
+        r"""
+        Record the best results on test set.
+        It make easy to watch on tensorboard.
+        """
+
+        for lastname, meters in self.monitors['test'].items():
+            for meter in meters:
+                # Skip those meters never activated.
+                if len(meter.history) == 0:
+                    continue
+                # Note that meter.history[-1] is the result at the best checkpoint.
+                val = meter.history[-1]
+                best['best'][meter.name] = val
+
+        export_pickle(best, os.path.join(self.cfg.LOG_PATH, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME))
+
     def resume(self) -> int:
         r"""
         Resume training from the last checkpoint.
@@ -566,10 +583,9 @@ class Coach(ChiefCoach):
         infoLogger(f"[LoG_PaTH] >>> {self.cfg.LOG_PATH}")
 
         self.monitors.write(os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR)) # tensorboard
-
         self.monitors.save(os.path.join(self.cfg.LOG_PATH, self.cfg.DATA_DIR), self.cfg.MONITOR_FILENAME)
-        export_pickle(best, os.path.join(self.cfg.LOG_PATH, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME))
 
+        return best
             
     @timemeter
     def fit(self):
@@ -600,9 +616,10 @@ class Coach(ChiefCoach):
         self.check_best(self.cfg.epochs)
         self.step(self.cfg.epochs)
 
-        self.summary()
+        best = self.summary()
 
         self.eval_at_best()
+        self.easy_record_best(best)
 
 
 class GenCoach(Coach):
@@ -815,7 +832,6 @@ class Adapter:
 
         cfg_infos = f"command: {self.cfg.COMMAND} \nenvs: \n{envs}params: \n{params}defaults: \n{defaults}"
         infoLogger(f"\033[0;31;47m{cfg_infos}\033[0m")
-        
 
     def deploy_params(self, key: str, vals: Iterable):
         self.params.append(key)
