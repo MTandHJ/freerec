@@ -714,7 +714,7 @@ class SessTrainUniformSampler(SessTrainYielder):
             if self._check(seq):
                 seen = seq[:-1]
                 positives = seq[self.marker:]
-                negatives = self._sample_neg(seen, positives)
+                negatives = self._sample_neg(seq, positives)
                 yield [sess, seen, positives, negatives]
 
 

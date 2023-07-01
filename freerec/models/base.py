@@ -1,6 +1,7 @@
 
 
-from typing import Optional, Union, overload, Tuple
+from typing import Optional, Union, overload, Tuple, Dict
+
 import torch, inspect
 import torch.nn as nn
 
@@ -160,8 +161,20 @@ class RecSysArch(nn.Module):
     def recommend_from_pool(self, *, pool: torch.Tensor, **kwargs):
         raise NotImplementedError()
 
+    def _kwargs4full(self, kwargs: Dict):
+        parameters = inspect.signature(self.recommend_from_full).parameters
+        if any(param.kind == param.VAR_KEYWORD for param in parameters.values()):
+            return kwargs
+        return {key: kwargs[key] for key in parameters}
+
+    def _kwargs4pool(self, kwargs: Dict):
+        parameters = inspect.signature(self.recommend_from_pool).parameters
+        if any(param.kind == param.VAR_KEYWORD for param in parameters.values()):
+            return kwargs
+        return {key: kwargs[key] for key in parameters}
+
     def recommend(self, **kwargs):
         if kwargs.get('pool', None) is None:
-            return self.recommend_from_full(**kwargs)
+            return self.recommend_from_full(**self._kwargs4full(kwargs))
         else:
-            return self.recommend_from_pool(**kwargs)
+            return self.recommend_from_pool(**self._kwargs4pool(kwargs))

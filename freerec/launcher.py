@@ -670,14 +670,14 @@ class SeqCoach(Coach):
         for data in self.dataloader:
             if len(data) == 3:
                 users, seqs, pool = [col.to(self.device) for col in data]
-                scores = self.model.recommend(seqs=seqs, pool=pool)
+                scores = self.model.recommend(users=users, seqs=seqs, pool=pool)
                 targets = torch.zeros_like(scores)
                 targets[:, 0].fill_(1)
             elif len(data) == 4:
                 users, seqs, unseen, seen = data
-                users = users.data
+                users = users.to(self.device).data
                 seqs = seqs.to(self.device).data
-                scores = self.model.recommend(seqs=seqs)
+                scores = self.model.recommend(users=users, seqs=seqs)
                 seen = seen.to_csr().to(self.device).to_dense().bool()
                 scores[seen] = -1e23
                 targets = unseen.to_csr().to(self.device).to_dense()
@@ -712,15 +712,15 @@ class SessCoach(Coach):
         """
         for data in self.dataloader:
             if len(data) == 3:
-                users, seqs, pool = [col.to(self.device) for col in data]
-                scores = self.model.recommend(seqs=seqs, pool=pool)
+                sesses, seqs, pool = [col.to(self.device) for col in data]
+                scores = self.model.recommend(sesses=sesses, seqs=seqs, pool=pool)
                 targets = torch.zeros_like(scores)
                 targets[:, 0].fill_(1)
             elif len(data) == 4:
-                users, seqs, unseen, seen = data
-                users = users.data
+                sesses, seqs, unseen, seen = data
+                sesses = sesses.data
                 seqs = seqs.to(self.device).data
-                scores = self.model.recommend(seqs=seqs)
+                scores = self.model.recommend(sesses=sesses, seqs=seqs)
                 # Don't remove seens for session
                 targets = unseen.to_csr().to(self.device).to_dense()
             else:
@@ -730,7 +730,7 @@ class SessCoach(Coach):
 
             self.monitor(
                 scores, targets,
-                n=len(users), mode="mean", prefix=prefix,
+                n=len(sesses), mode="mean", prefix=prefix,
                 pool=['HITRATE', 'PRECISION', 'RECALL', 'NDCG', 'MRR']
             )
 
