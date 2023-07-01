@@ -772,7 +772,7 @@ class Adapter:
         self.cfg.ENVS['device'] = device
         command = self.COMMAND + self.get_option('id', self.cfg.ENVS.id)
         command += self.get_option('device', self.cfg.ENVS.device)
-        return command, self.cfg.ENVS.id, self.cfg.LOG_PATH.format(**self.cfg.ENVS)
+        return command, f"{device}-{self.cfg.ENVS.id}", self.cfg.LOG_PATH.format(**self.cfg.ENVS)
 
     @timemeter
     def compile(self, cfg: Config) -> None:
