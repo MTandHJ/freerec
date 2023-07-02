@@ -20,7 +20,10 @@ from .metrics import *
 from .parser import TIME
 
 
-__all__ = ['ChiefCoach', 'Coach', 'Adapter']
+__all__ = [
+    'ChiefCoach', 'Coach', 'Adapter',
+    'GenCoach', 'SeqCoach', 'SessCoach'
+]
 
 
 DEFAULT_METRICS = {
@@ -789,7 +792,7 @@ class Adapter:
         self.cfg.ENVS['device'] = device
         command = self.COMMAND + self.get_option('id', self.cfg.ENVS.id)
         command += self.get_option('device', self.cfg.ENVS.device)
-        return command, f"{device}-{self.cfg.ENVS.id}", self.cfg.LOG_PATH.format(**self.cfg.ENVS)
+        return command, self.cfg.ENVS.id, self.cfg.LOG_PATH.format(**self.cfg.ENVS)
 
     @timemeter
     def compile(self, cfg: Config) -> None:
