@@ -7,7 +7,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-__all__ = ["BaseCriterion", "BCELoss", "MSELoss", "L1Loss"]
+__all__ = [
+    "BaseCriterion", 
+    "CrossEntropy4Logits", "KLDivLoss4Logits",
+    "BPRLoss", "BCELoss4Logits",
+    "MSELoss", "L1Loss"
+]
 
 
 class BaseCriterion(nn.Module):
@@ -33,7 +38,7 @@ class BaseCriterion(nn.Module):
 
     def __init__(self, reduction: str = 'mean') -> None:
         super().__init__()
-        assert reduction in ('none', 'sum', 'mean'), f"Invalid reduction of {reduction} got ..."
+        assert reduction in ('none', 'sum', 'mean', 'batchmean'), f"Invalid reduction of {reduction} got ..."
         self.reduction = reduction
 
     @staticmethod
@@ -66,7 +71,7 @@ class CrossEntropy4Logits(BaseCriterion):
     """Cross entropy loss with logits."""
 
     def forward(self, logits: torch.Tensor, targets: torch.Tensor):
-        return F.cross_entropy(logits, targets)
+        return F.cross_entropy(logits, targets, reduction=self.reduction)
 
 
 class BCELoss4Logits(BaseCriterion):
@@ -74,7 +79,20 @@ class BCELoss4Logits(BaseCriterion):
 
     def forward(self, logits: torch.Tensor, targets: torch.Tensor):
         return F.binary_cross_entropy_with_logits(logits, targets.to(logits.dtype), reduction=self.reduction)
-    
+
+
+class KLDivLoss4Logits(BaseCriterion):
+    """KLDivLoss with logits"""
+
+    def __init__(self, reduction: str = 'batchmean') -> None:
+        super().__init__(reduction)
+
+    def forward(self, logits: torch.Tensor, targets: torch.Tensor):
+        assert logits.size() == targets.size()
+        inputs = F.log_softmax(logits, dim=-1)
+        targets = F.softmax(targets, dim=-1)
+        return F.kl_div(inputs, targets, reduction=self.reduction)
+        
 
 class BPRLoss(BaseCriterion):
 
