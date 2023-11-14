@@ -213,7 +213,7 @@ def check_sha1(filename, sha1_hash):
 
 def negsamp_vectorized_bsearch(
     positives: Union[Tuple, List], n_items: int, size: Union[int, List[int], Tuple[int]] = 1
-) -> Tuple:
+) -> List:
     r"""
     Uniformly sampling negatives according to a list of ordered positives
     See [here](https://tech.hbc.com/2018-03-23-negative-sampling-in-numpy.html) for more details.
