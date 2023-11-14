@@ -397,6 +397,7 @@ class SeqTrainUniformSampler(SeqTrainYielder):
                 lambda user, item: self.posItems[user].append(item),
                 chunk[USER, ID], chunk[ITEM, ID]
             )
+        # sorting for ordered positives
         self.posItems = [tuple(sorted(items)) for items in self.posItems]
 
     @_to_tuple
@@ -605,43 +606,6 @@ class SessTrainUniformSampler(SessTrainYielder):
             The dataset object that contains field objects.
         """
         self.negative_pool = self._sample_from_all(dataset.train().datasize)
-
-    def _sample_from_all(self, pool_size: int = 51200):
-        r"""
-        Randomly sample items from all items.
-
-        Parameters:
-        -----------
-        pool_size: int 
-            The number of items to be sampled.
-
-        Returns:
-        --------
-        Generator: A generator that yields sampled items.
-        """
-        allItems = self.Item.enums
-        while 1:
-            for item in random.choices(allItems, k=pool_size):
-                yield item
-
-    def _sample_from_pool(self, seen: Tuple):
-        r"""
-        Randomly sample a negative item from the pool of all items.
-
-        Parameters:
-        -----------
-        seen: set 
-            A set of seen items.
-
-        Returns:
-        --------
-        negative: int 
-            A negative item that has not been seen.
-        """
-        negative = next(self.negative_pool)
-        while negative in seen:
-            negative = next(self.negative_pool)
-        return negative
 
     @_to_tuple
     def _sample_neg(self, seen: Tuple, positives: Tuple) -> List[int]:
