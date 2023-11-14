@@ -1,6 +1,6 @@
 
 
-from typing import List, Tuple, Optional, Iterable
+from typing import List, Tuple, Optional, Iterable, Callable
 
 import random
 import torchdata.datapipes as dp
@@ -25,6 +25,14 @@ __all__ = [
 
 
 NUM_NEGS_FOR_SAMPLE_BASED_RANKING = 100
+
+
+def _to_tuple(func: Callable):
+    def wrapper(*args, **kwargs) -> Tuple:
+        return tuple(func(*args, **kwargs))
+    wrapper.__name__ = func.__name__
+    wrapper.__doc__ = func.__doc__
+    return wrapper
 
 #===============================For General Recommendation===============================
 
@@ -193,6 +201,7 @@ class GenTrainUniformSampler(GenTrainYielder):
         # sorting for ordered positives
         self.posItems = [tuple(sorted(items)) for items in self.posItems]
 
+    @_to_tuple
     def _sample_neg(self, user: int) -> List[int]:
         r"""Randomly sample negative items for a user.
 
@@ -224,9 +233,9 @@ class GenValidSampler(GenValidYielder):
         idx = (user, posItem)
         if self.negItems.get(idx, None) is None:
             seen = self.seenItems[user]
-            self.negItems[idx] = negsamp_vectorized_bsearch(
+            self.negItems[idx] = tuple(negsamp_vectorized_bsearch(
                 seen, self.Item.count, NUM_NEGS_FOR_SAMPLE_BASED_RANKING
-            )
+            ))
         return self.negItems[idx]
 
     @timemeter
@@ -390,6 +399,7 @@ class SeqTrainUniformSampler(SeqTrainYielder):
             )
         self.posItems = [tuple(sorted(items)) for items in self.posItems]
 
+    @_to_tuple
     def _sample_neg(self, user: int, positives: Tuple) -> List[int]:
         r"""Randomly sample negative items for a user.
 
@@ -421,6 +431,7 @@ class SeqTrainUniformSampler(SeqTrainYielder):
 @dp.functional_datapipe("seq_valid_sampling_")
 class SeqValidSampler(SeqValidYielder):
 
+    @_to_tuple
     def _sample_negs(self, seen: List[int]):
         # sorting for ordered positives
         seen = sorted(seen)
@@ -632,6 +643,7 @@ class SessTrainUniformSampler(SessTrainYielder):
             negative = next(self.negative_pool)
         return negative
 
+    @_to_tuple
     def _sample_neg(self, seen: Tuple, positives: Tuple) -> List[int]:
         r"""Randomly sample negative items for a user.
 
@@ -676,9 +688,9 @@ class SessValidSampler(SessTrainYielder):
         idx = (sess, tuple(seq))
         if self.negItems.get(idx, None) is None:
             seen = sorted(self.seenItems[sess])
-            self.negItems[idx] = negsamp_vectorized_bsearch(
+            self.negItems[idx] = tuple(negsamp_vectorized_bsearch(
                 seen, self.Item.count, NUM_NEGS_FOR_SAMPLE_BASED_RANKING
-            )
+            ))
         return self.negItems[idx]
 
     @timemeter

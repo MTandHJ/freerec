@@ -212,7 +212,7 @@ def check_sha1(filename, sha1_hash):
 
 
 def negsamp_vectorized_bsearch(
-    positives: Union[Tuple, List], n_items: int, n_negs: int = 1
+    positives: Union[Tuple, List], n_items: int, size: Union[int, List[int], Tuple[int]] = 1
 ) -> Tuple:
     r"""
     Uniformly sampling negatives according to a list of ordered positives
@@ -224,16 +224,16 @@ def negsamp_vectorized_bsearch(
         The positive indices should be ordered.
     n_items: int
         The number of all items.
-    n_negs: int
-        The number of required negatives.
+    size: int or List[int] or Tuple[int]
+        The size of required negatives.
     
     Returns:
     --------
-    neg_inds: Tuple
-        A list of negatives.
+    neg_inds: List
+        A list of negatives in the size of `size`.
     """
-    raw_samp = np.random.randint(0, n_items - len(positives), size=n_negs)
+    raw_samp = np.random.randint(0, n_items - len(positives), size=size)
     pos_inds_adj = np.array(positives) - np.arange(len(positives))
     ss = np.searchsorted(pos_inds_adj, raw_samp, side='right')
     neg_inds = raw_samp + ss
-    return tuple(neg_inds.tolist())
+    return neg_inds.tolist()
