@@ -38,7 +38,6 @@ class BaseCriterion(nn.Module):
 
     def __init__(self, reduction: str = 'mean') -> None:
         super().__init__()
-        assert reduction in ('none', 'sum', 'mean', 'batchmean'), f"Invalid reduction of {reduction} got ..."
         self.reduction = reduction
 
     @staticmethod
