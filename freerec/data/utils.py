@@ -1,7 +1,8 @@
 
 
-from typing import TypeVar, Callable, Optional
+from typing import TypeVar, Callable, Optional, List
 
+import numpy as np
 import os, requests, warnings, hashlib, tqdm
 
 from ..utils import infoLogger
@@ -208,3 +209,29 @@ def check_sha1(filename, sha1_hash):
             sha1.update(data)
 
     return sha1.hexdigest() == sha1_hash
+
+
+def negsamp_vectorized_bsearch(positives: List, n_items: int, n_negs: int = 1):
+    r"""
+    Uniformly sampling negatives according to a list of ordered positives
+    See [here](https://tech.hbc.com/2018-03-23-negative-sampling-in-numpy.html) for more details.
+
+    Parameters:
+    -----------
+    positives: List
+        The positive indices should be ordered.
+    n_items: int
+        The number of all items.
+    n_negs: int
+        The number of required negatives.
+    
+    Returns:
+    --------
+    neg_inds: List
+        A list of negatives.
+    """
+    raw_samp = np.random.randint(0, n_items - len(positives), size=n_negs)
+    pos_inds_adj = np.array(positives) - np.arange(len(positives))
+    ss = np.searchsorted(pos_inds_adj, raw_samp, side='right')
+    neg_inds = raw_samp + ss
+    return neg_inds.tolist()

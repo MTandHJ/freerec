@@ -10,6 +10,7 @@ from .base import Postprocessor
 from ..datasets.base import RecDataSet
 from ..fields import SparseField
 from ..tags import USER, SESSION, ITEM, ID
+from ..utils import negsamp_vectorized_bsearch
 from ...utils import timemeter
 
 
@@ -22,6 +23,8 @@ __all__ = [
     'SessTrainUniformSampler', 'SessValidSampler', 'SessTestSampler',
 ]
 
+
+NUM_NEGS_FOR_SAMPLE_BASED_RANKING = 100
 
 #===============================For General Recommendation===============================
 
@@ -69,7 +72,8 @@ class GenTrainYielder(Postprocessor):
                 chunk[USER, ID], chunk[ITEM, ID]
             )
 
-        self.posItems = [tuple(items) for items in self.posItems]
+        # sorting for ordered positives
+        self.posItems = [tuple(sorted(items)) for items in self.posItems]
 
     def _sample_pos(self, user: int) -> int:
         r"""
@@ -181,50 +185,13 @@ class GenTrainUniformSampler(GenTrainYielder):
     @timemeter
     def prepare(self, dataset: RecDataSet):
         self.posItems = [set() for _ in range(self.User.count)]
-        self.negative_pool = self._sample_from_all(dataset.train().datasize * self.num_negatives)
         for chunk in dataset.train():
             self.listmap(
                 lambda user, item: self.posItems[user].add(item),
                 chunk[USER, ID], chunk[ITEM, ID]
             )
-        self.posItems = [tuple(items) for items in self.posItems]
-
-    def _sample_from_all(self, pool_size: int = 51200):
-        r"""
-        Randomly sample items from all items.
-
-        Parameters:
-        -----------
-        pool_size: int 
-            The number of items to be sampled.
-
-        Returns:
-        --------
-        Generator: A generator that yields sampled items.
-        """
-        allItems = self.Item.enums
-        while 1:
-            for item in random.choices(allItems, k=pool_size):
-                yield item
-
-    def _sample_from_pool(self, seen: Tuple):
-        r"""
-        Randomly sample a negative item from the pool of all items.
-
-        Parameters:
-        -----------
-        seen: set 
-            A set of seen items.
-
-        Returns:
-        --------
-        negative: int 
-            A negative item that has not been seen.
-        """
-        negative = next(self.negative_pool)
-        while negative in seen:
-            negative = next(self.negative_pool)
-        return negative
+        # sorting for ordered positives
+        self.posItems = [tuple(sorted(items)) for items in self.posItems]
 
     def _sample_neg(self, user: int) -> List[int]:
         r"""Randomly sample negative items for a user.
@@ -240,7 +207,9 @@ class GenTrainUniformSampler(GenTrainYielder):
             A list of negative items that the user has not interacted with.
         """
         seen = self.posItems[user]
-        return self.listmap(self._sample_from_pool, [seen] * self.num_negatives)
+        return negsamp_vectorized_bsearch(
+            seen, self.Item.count, self.num_negatives
+        )
 
     def __iter__(self):
         for user in self.source:
@@ -255,8 +224,9 @@ class GenValidSampler(GenValidYielder):
         idx = (user, posItem)
         if self.negItems.get(idx, None) is None:
             seen = self.seenItems[user]
-            unseen = list(set(self.Item.enums) - set(seen))
-            self.negItems[idx] = tuple(random.choices(unseen, k=100))
+            self.negItems[idx] = negsamp_vectorized_bsearch(
+                seen, self.Item.count, NUM_NEGS_FOR_SAMPLE_BASED_RANKING
+            )
         return self.negItems[idx]
 
     @timemeter
@@ -270,7 +240,8 @@ class GenValidSampler(GenValidYielder):
             )
 
         self.negItems = dict()
-        self.seenItems = [tuple(items) for items in self.seenItems]
+        # sorting for ordered positives
+        self.seenItems = [tuple(sorted(items)) for items in self.seenItems]
 
     def __iter__(self):
         for user, posItem in self.source:
@@ -297,7 +268,8 @@ class GenTestSampler(GenValidSampler):
             )
 
         self.negItems = dict()
-        self.seenItems = [tuple(items) for items in self.seenItems]
+        # sorting for ordered positives
+        self.seenItems = [tuple(sorted(items)) for items in self.seenItems]
 
 
 #===============================For Sequential Recommendation===============================
@@ -411,50 +383,12 @@ class SeqTrainUniformSampler(SeqTrainYielder):
     @timemeter
     def prepare(self, dataset: RecDataSet):
         self.posItems = [[] for _ in range(self.User.count)]
-        self.negative_pool = self._sample_from_all(dataset.train().datasize)
         for chunk in dataset.train():
             self.listmap(
                 lambda user, item: self.posItems[user].append(item),
                 chunk[USER, ID], chunk[ITEM, ID]
             )
-        self.posItems = [tuple(items) for items in self.posItems]
-
-    def _sample_from_all(self, pool_size: int = 51200):
-        r"""
-        Randomly sample items from all items.
-
-        Parameters:
-        -----------
-        pool_size: int 
-            The number of items to be sampled.
-
-        Returns:
-        --------
-        Generator: A generator that yields sampled items.
-        """
-        allItems = self.Item.enums
-        while 1:
-            for item in random.choices(allItems, k=pool_size):
-                yield item
-
-    def _sample_from_pool(self, seen: Tuple):
-        r"""
-        Randomly sample a negative item from the pool of all items.
-
-        Parameters:
-        -----------
-        seen: set 
-            A set of seen items.
-
-        Returns:
-        --------
-        negative: int 
-            A negative item that has not been seen.
-        """
-        negative = next(self.negative_pool)
-        while negative in seen:
-            negative = next(self.negative_pool)
-        return negative
+        self.posItems = [tuple(sorted(items)) for items in self.posItems]
 
     def _sample_neg(self, user: int, positives: Tuple) -> List[int]:
         r"""Randomly sample negative items for a user.
@@ -471,7 +405,9 @@ class SeqTrainUniformSampler(SeqTrainYielder):
             A list of negative items that the user has not interacted with.
         """
         seen = self.posItems[user]
-        return self.listmap(self._sample_from_pool, [seen] * (len(positives)))
+        return negsamp_vectorized_bsearch(
+            seen, self.Item.count, len(positives)
+        )
 
     def __iter__(self):
         for user, seq in self.source:
@@ -479,15 +415,18 @@ class SeqTrainUniformSampler(SeqTrainYielder):
                 seen = seq[:-1]
                 positives = seq[self.marker:]
                 negatives = self._sample_neg(user, positives)
-                yield [user, seen, positives, self._sample_neg(user, negatives)]
+                yield [user, seen, positives, negatives]
 
 
 @dp.functional_datapipe("seq_valid_sampling_")
 class SeqValidSampler(SeqValidYielder):
 
     def _sample_negs(self, seen: List[int]):
-        unseen = list(set(self.Item.enums) - set(seen))
-        return tuple(random.choices(unseen, k=100))
+        # sorting for ordered positives
+        seen = sorted(seen)
+        return negsamp_vectorized_bsearch(
+            seen, self.Item.count, NUM_NEGS_FOR_SAMPLE_BASED_RANKING
+        )
 
     @timemeter
     def prepare(self, dataset: RecDataSet):
@@ -498,10 +437,6 @@ class SeqValidSampler(SeqValidYielder):
                 chunk[USER, ID], chunk[ITEM, ID]
             )
 
-        self.negItems = self.listmap(
-            self._sample_negs, self.posItems
-        )
-
         for chunk in dataset.valid():
             self.listmap(
                 lambda user, item: self.posItems[user].append(item),
@@ -509,10 +444,15 @@ class SeqValidSampler(SeqValidYielder):
             )
         self.posItems = [tuple(items) for items in self.posItems]
 
+        self.negItems = self.listmap(
+            self._sample_negs, self.posItems
+        )
+
     def __iter__(self):
         for user in self.source:
             posItems = self.posItems[user]
             if self._check(posItems):
+                # (user, seq, positive || negatives)
                 yield [user, posItems[:-1], posItems[-1:] + self.negItems[user]]
 
 
@@ -533,16 +473,16 @@ class SeqTestSampler(SeqValidSampler):
                 chunk[USER, ID], chunk[ITEM, ID]
             )
 
-        self.negItems = self.listmap(
-            self._sample_negs, self.posItems
-        )
-
         for chunk in dataset.test():
             self.listmap(
                 lambda user, item: self.posItems[user].append(item),
                 chunk[USER, ID], chunk[ITEM, ID]
             )
         self.posItems = [tuple(items) for items in self.posItems]
+
+        self.negItems = self.listmap(
+            self._sample_negs, self.posItems
+        )
 
 
 #===============================For Session Recommendation===============================
@@ -707,7 +647,11 @@ class SessTrainUniformSampler(SessTrainYielder):
         negatives: List[int] 
             A list of negative items that the user has not interacted with.
         """
-        return self.listmap(self._sample_from_pool, [seen] * len(positives))
+        # sorting for ordered positives
+        seen = sorted(seen)
+        return negsamp_vectorized_bsearch(
+            seen, self.Item.count, len(positives)
+        )
 
     def __iter__(self):
         for sess, seq in self.source:
@@ -731,9 +675,10 @@ class SessValidSampler(SessTrainYielder):
     def _sample_negs(self, sess: int, seq: Tuple):
         idx = (sess, tuple(seq))
         if self.negItems.get(idx, None) is None:
-            seen = self.seenItems[sess]
-            unseen = list(set(self.Item.enums) - set(seen))
-            self.negItems[idx] = tuple(random.choices(unseen, k=100))
+            seen = sorted(self.seenItems[sess])
+            self.negItems[idx] = negsamp_vectorized_bsearch(
+                seen, self.Item.count, NUM_NEGS_FOR_SAMPLE_BASED_RANKING
+            )
         return self.negItems[idx]
 
     @timemeter
