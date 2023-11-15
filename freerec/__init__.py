@@ -1,6 +1,7 @@
-__version__ = '0.4.3'
+__version__ = '0.4.5'
 
 from . import data, models, criterions, launcher, metrics, parser, utils
+from .utils import infoLogger
 from freerec.dict2obj import Config
 
 
