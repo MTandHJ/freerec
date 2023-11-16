@@ -247,7 +247,10 @@ def negsamp_vectorized_bsearch(
     positives = np.array(positives)
     assert positives.ndim == 1, f"positives should be 1-D array but {positives.ndim}-D received ..."
     try:
-        raw_samp = np.random.choice(n_items - len(positives), size=size, replace=replacement)
+        if replacement:
+            raw_samp = np.random.randint(0, n_items - len(positives), size=size)
+        else:
+            raw_samp = np.random.choice(n_items - len(positives), size=size, replace=replacement)
     except ValueError:
         raise ValueError(
             "The number of required negatives is larger than that of candidates, but replacement is False ..."
