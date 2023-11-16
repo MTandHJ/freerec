@@ -212,7 +212,9 @@ def check_sha1(filename, sha1_hash):
 
 
 def negsamp_vectorized_bsearch(
-    positives: Union[Tuple, List], n_items: int, size: Union[int, List[int], Tuple[int]] = 1
+    positives: Union[Tuple, List], n_items: int, 
+    size: Union[int, List[int], Tuple[int]] = 1,
+    replacement: bool = True
 ) -> List:
     r"""
     Uniformly sampling negatives according to a list of ordered positives
@@ -220,20 +222,37 @@ def negsamp_vectorized_bsearch(
 
     Parameters:
     -----------
-    positives: List
+    positives: Union[Tuple, List], 1-D
         The positive indices should be ordered.
     n_items: int
         The number of all items.
     size: int or List[int] or Tuple[int]
         The size of required negatives.
+    replacement: bool, default to `True`
+        - True: sampling with replacement
+        - False: sampling without replacement
+    
+    Raises:
+    -------
+    AssertionError:
+        Given `positives` is not 1-D.
+    ValueError:
+        Too much negatives required.
     
     Returns:
     --------
     neg_inds: List
         A list of negatives in the size of `size`.
     """
-    raw_samp = np.random.randint(0, n_items - len(positives), size=size)
-    pos_inds_adj = np.array(positives) - np.arange(len(positives))
+    positives = np.array(positives)
+    assert positives.ndim == 1, f"positives should be 1-D array but {positives.ndim}-D received ..."
+    try:
+        raw_samp = np.random.choice(n_items - len(positives), size=size, replace=replacement)
+    except ValueError:
+        raise ValueError(
+            "The number of required negatives is larger than that of candidates, but replacement is False ..."
+        )
+    pos_inds_adj = positives - np.arange(len(positives))
     ss = np.searchsorted(pos_inds_adj, raw_samp, side='right')
     neg_inds = raw_samp + ss
     return neg_inds.tolist()
