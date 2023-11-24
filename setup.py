@@ -5,10 +5,8 @@ with open("README.md", "r") as fh:
   long_description = fh.read()
 
 requires = [
-    "torchdata==0.4.1",
-    "tqdm>=4.64.0",
-    'scipy>=1.9.1',
-    "freeplot>=0.3.3",
+    # "torchdata==0.4.1",
+    "freeplot>=0.4.3",
     "PyYAML>=6.0",
     "tensorboard>=2.10.0",
     "psutil>=5.9.0",
