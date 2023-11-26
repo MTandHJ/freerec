@@ -1,0 +1,11 @@
+dataset: YooChooseClicks164_2501_Chron
+root: ../../data
+epochs: 30
+batch_size: 512
+lr: 1.e-3
+weight_decay: 1.e-6
+embedding_dim: 100
+hidden_size: 100
+emb_dropout_rate: 0.3
+ct_dropout_rate: 0.2
+num_gru_layers: 1
