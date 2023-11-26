@@ -3,7 +3,7 @@
 from typing import Any, Set
 
 import torch
-import os, sys, argparse, time, yaml
+import os, argparse, time, yaml
 from argparse import ArgumentParser
 
 from .dict2obj import Config
@@ -40,20 +40,6 @@ CORE_CONFIG : Config
 
 Configurations:
 ---------------
-BENCHMARK : bool
-    If True, activate cudnn.benchmark.
-SEED : int
-    The random seed used by PyTorch. If set to -1, uses a random seed.
-EVAL_FREQ : int
-    The frequency of evaluation.
-EVAL_VALID : bool
-    If True, evaluate on the validation set.
-EVAL_TEST : bool
-    If True, evaluate on the test set.
-log2file : bool
-    If True, save logs to a file.
-log2console : bool
-    If True, display logs on the console.
 SAVED_FILENAME : str
     The filename of saved model parameters.
 BEST_FILENAME : str
@@ -93,18 +79,6 @@ CORE_LOG_PATH = "./logs/{description}/core"
 TIME = "%m%d%H%M%S"
 
 CONFIG = Config(
-    BENCHMARK = None,
-    SEED = 1,
-
-    # evaluation
-    EVAL_FREQ = 5,
-    EVAL_VALID = None,
-    EVAL_TEST = None,
-
-    # logger
-    log2file = True,
-    log2console = True,
-
     # path|file
     SAVED_FILENAME = "model.pt",
     BEST_FILENAME = "best.pt",
@@ -113,8 +87,7 @@ CONFIG = Config(
     CHECKPOINT_FILENAME = "checkpoint.tar",
     SUMMARY_FILENAME = "SUMMARY.md",
     MONITOR_FILENAME = "monitors.pickle",
-    MONITOR_BEST_FILENAME = "best.pickle",
-    description = "RecSys"
+    MONITOR_BEST_FILENAME = "best.pickle"
 )
 
 CORE_CONFIG = Config(
@@ -125,9 +98,6 @@ CORE_CONFIG = Config(
     ENVS = dict(),
     PARAMS = dict(),
     DEFAULTS = dict(),
-
-    log2file = True,
-    log2console = True,
 )
 
 
@@ -136,12 +106,7 @@ class Parser(Config):
 
     def __init__(self) -> None:
         super().__init__(**CONFIG)
-        self._options = dict()
         self.parse()
-
-    def __setitem__(self, key: str, value: Any) -> None:
-        key = key.upper() if key.upper() in self else key
-        return super().__setitem__(key, value)
 
     def readme(self, path: str, mode: str = "w") -> None:
         """Add README.md to the path."""
@@ -185,20 +150,24 @@ class Parser(Config):
         self.add_argument("-b", "--batch-size", type=int, default=None)
         self.add_argument("--epochs", type=int, default=None)
 
+        # logging
+        self.add_argument("--log2file", action="store_false", default=True, help="if True, save logs to a file")
+        self.add_argument("--log2console", action="store_false", default=True, help="if True, display logs on the console")
+
         # eval
-        self.add_argument("--eval-valid", action="store_false", default=True, help="evaluate validset")
-        self.add_argument("--eval-test", action="store_true", default=False, help="evaluate testset")
-        self.add_argument("--eval-freq", type=int, default=CONFIG.EVAL_FREQ, help="the evaluation frequency")
+        self.add_argument("--eval-valid", action="store_false", default=True, help="if True, evaluate validset")
+        self.add_argument("--eval-test", action="store_true", default=False, help="if True, evaluate testset")
+        self.add_argument("--eval-freq", type=int, default=5, help="the evaluation frequency")
 
         self.add_argument("--num-workers", type=int, default=4)
         self.add_argument("--pin-memory", action="store_true", default=False)
 
-        self.add_argument("--seed", type=int, default=CONFIG.SEED, help="calling --seed=-1 for a random seed")
+        self.add_argument("--seed", type=int, default=1, help="calling --seed=-1 for a random seed")
         self.add_argument("--benchmark", action="store_true", default=False, help="cudnn.benchmark == True ?")
         self.add_argument("--resume", action="store_true", default=False, help="resume the training from the recent checkpoint")
 
         self.add_argument("--id", type=str, default=time.strftime(TIME))
-        self.add_argument("-m", "--description", type=str, default=CONFIG.description)
+        self.add_argument("-m", "--description", type=str, default="RecSys")
 
     def add_argument(self, *args: str, **kwargs):
         r"""
@@ -210,7 +179,7 @@ class Parser(Config):
             The name(s) of the argument.
         **kwargs
             Additional keyword arguments to pass to `parser.add_argument`.
-        
+       
         Notes:
         ------
         Any character `_' will be replaced by `-'.
@@ -218,8 +187,6 @@ class Parser(Config):
         args = (arg.replace('_', '-') for arg in args) # user '-' instead of '_'
         action = self.parser.add_argument(*args, **kwargs)
         self[action.dest] = action.default
-        for option in action.option_strings:
-            self._options[option] = action.dest
 
     def set_defaults(self, **kwargs):
         r"""
@@ -233,48 +200,34 @@ class Parser(Config):
         self.parser.set_defaults(**kwargs)
         for key, val in kwargs.items():
             self[key] = val
-
     
-    def _command_line_args(self) -> Set:
-        """return the activated args in command line"""
-        args = set()
-        for arg in sys.argv[1:]:
-            if not arg.startswith("-"):
-                continue
-            if '=' in arg:
-                key = arg.split('=')[0]
-            else:
-                key = arg.split(' ')[0]
-            args.add(self._options[key])
-        return args
-
     @timemeter
-    def load(self, args: ArgumentParser):
+    def load(self):
         r"""
         Load config.yaml.
-
-        Parameters:
-        -----------
-        args : argparse.ArgumentParser
-            An instance of argparse.ArgumentParser containing the arguments
-            passed to the script.
 
         Raises:
         -------
         KeyError
             If the parameter key is not recognized.
+        
+        Returns:
+        --------
+        ArgParser:
+            Some of defaults are overwrited by the config file
         """
-        defaults = dict()
+        args = self.parser.parse_args()
+        keys, _ = zip(*args._get_kwargs())
         if hasattr(args, 'config') and args.config:
             with open(args.config, encoding="UTF-8", mode='r') as f:
                 for key, val in yaml.full_load(f).items():
-                    if key.upper() in self:
-                        defaults[key.upper()] = val
-                    elif key in self:
-                        defaults[key] = val
+                    if key in keys: # overwrite defaults in config file
+                        self.set_defaults(**{key: val})
+                    elif key.upper() in self:
+                        self[key.upper()] = val
                     else:
                         raise KeyError(f"Unexpected parameter of `{key}' in `{args.config}' ...")
-        return defaults
+        return self.parser.parse_args()
 
     @timemeter
     def compile(self):
@@ -293,17 +246,8 @@ class Parser(Config):
         4. Configure the logger so that information can be logged by `info|debug|warnLogger`.
         5. Add a README.md file under CHECKPOINT_PATH and LOG_PATH.
         """
-        args = self.parser.parse_args()
-        defaults = self.load(args) # default parameters from config.yaml
-        activated_args = self._command_line_args() # arguments from the command line
-        for key, val in args._get_kwargs():
-            if key.upper() in self:
-                if key in activated_args or  key.upper() not in defaults:
-                    defaults[key.upper()] = val
-            else:
-                if key in activated_args or key not in defaults:
-                    defaults[key] = val
-        self.update(**defaults)
+        args = self.load()
+        self.update(**dict(args._get_kwargs()))
 
         try:
             self.device = int(self.device)
@@ -322,8 +266,8 @@ class Parser(Config):
         set_color(self.device)
         set_logger(path=self.LOG_PATH, log2file=self.log2file, log2console=self.log2console)
 
-        activate_benchmark(self.BENCHMARK)
-        self.SEED = set_seed(self.SEED)
+        activate_benchmark(self.benchmark)
+        self.seed = set_seed(self.seed)
 
         self.readme(self.CHECKPOINT_PATH) # create README.md
         self.readme(self.LOG_PATH)

@@ -560,7 +560,7 @@ class Coach(ChiefCoach):
 
         for prefix, metrics in self.monitors.items():
             metrics: defaultdict[str, List[AverageMeter]]
-            freq = 1 if prefix == 'train' else self.cfg.EVAL_FREQ
+            freq = 1 if prefix == 'train' else self.cfg.eval_freq
             for lastname, meters in metrics.items():
                 for meter in meters:
                     # Skip those meters never activated.
@@ -602,10 +602,10 @@ class Coach(ChiefCoach):
         for epoch in range(start_epoch, self.cfg.epochs):
             if epoch % self.cfg.CHECKPOINT_FREQ == 0:
                 self.save_checkpoint(epoch)
-            if epoch % self.cfg.EVAL_FREQ == 0:
-                if self.cfg.EVAL_VALID:
+            if epoch % self.cfg.eval_freq == 0:
+                if self.cfg.eval_valid:
                     self.valid(epoch)
-                if self.cfg.EVAL_TEST:
+                if self.cfg.eval_test:
                     self.test(epoch)
             self.check_best(epoch)
             self.step(epoch)
