@@ -378,8 +378,18 @@ class LeftPaddingRow(RowMapper):
             indices=indices
         )
 
+    def _zero_like(self, x: Union[Iterable, int, float]):
+        if isinstance(x, Iterable):
+            return [self._zero_like(item) for item in x]
+        else:
+            return self.padding_value
+
     def _lpad(self, x: Iterable) -> List:
-        return list(chain(repeat(self.padding_value, self.maxlen - len(x)), x))
+        if isinstance(x, Iterable):
+            p = self.padding_value if len(x) == 0 else self._zero_like(x[0])
+            return list(chain(repeat(p, self.maxlen - len(x)), x))
+        else:
+            raise ValueError(f"To pad a scalar element, sequence expected ...")
 
 
 @dp.functional_datapipe("rpad_")
@@ -414,5 +424,15 @@ class RightPaddingRow(RowMapper):
             indices=indices
         )
 
+    def _zero_like(self, x: Union[Iterable, int, float]):
+        if isinstance(x, Iterable):
+            return [self._zero_like(item) for item in x]
+        else:
+            return self.padding_value
+
     def _rpad(self, x: Iterable) -> List:
-        return list(chain(x, repeat(self.padding_value, self.maxlen - len(x))))
+        if isinstance(x, Iterable):
+            p = self.padding_value if len(x) == 0 else self._zero_like(x[0])
+            return list(chain(x, repeat(p, self.maxlen - len(x))))
+        else:
+            raise ValueError(f"To pad a scalar element, sequence expected ...")

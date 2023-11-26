@@ -190,15 +190,25 @@ class LeftPaddingCol(ColMapper):
             indices=indices
         )
 
-    def _lpad_row(self, x, maxlen):
-        return list(chain(repeat(self.padding_value, maxlen - len(x)), x))
+    def _zero_like(self, x: Union[Iterable, int, float]):
+        if isinstance(x, Iterable):
+            return [self._zero_like(item) for item in x]
+        else:
+            return self.padding_value
 
-    def _lpad(self, col: Iterable):
-        col = col if isinstance(col, List) else list(col)
-        maxlen = maxlen if self.maxlen is not None else max([len(row) for row in col])
+    def _lpad_row(self, x: Iterable, maxlen: int):
+        if isinstance(x, Iterable):
+            p = self.padding_value if len(x) == 0 else self._zero_like(x[0])
+            return list(chain(repeat(p, maxlen - len(x)), x))
+        else:
+            raise ValueError(f"To pad a scalar element, sequence expected ...")
+
+    def _lpad(self, cols: Iterable):
+        cols = cols if isinstance(cols, List) else list(cols)
+        maxlen = maxlen if self.maxlen is not None else max([len(row) for row in cols])
         return list(map(
             partial(self._lpad_row, maxlen=maxlen),
-            col
+            cols
         ))
 
 
@@ -235,13 +245,23 @@ class RightPaddingCol(ColMapper):
             indices=indices
         )
 
-    def _rpad_row(self, x, maxlen):
-        return list(chain(x, repeat(self.padding_value, maxlen - len(x))))
+    def _zero_like(self, x: Union[Iterable, int, float]):
+        if isinstance(x, Iterable):
+            return [self._zero_like(item) for item in x]
+        else:
+            return self.padding_value
 
-    def _rpad(self, col: Iterable):
-        col = col if isinstance(col, List) else list(col)
-        maxlen = maxlen if self.maxlen is not None else max([len(row) for row in col])
+    def _rpad_row(self, x: Iterable, maxlen: int):
+        if isinstance(x, Iterable):
+            p = self.padding_value if len(x) == 0 else self._zero_like(x[0])
+            return list(chain(x, repeat(p, maxlen - len(x))))
+        else:
+            raise ValueError(f"To pad a scalar element, sequence expected ...")
+
+    def _rpad(self, cols: Iterable):
+        cols = cols if isinstance(cols, List) else list(cols)
+        maxlen = maxlen if self.maxlen is not None else max([len(row) for row in cols])
         return list(map(
             partial(self._rpad_row, maxlen=maxlen),
-            col
+            cols
         ))
