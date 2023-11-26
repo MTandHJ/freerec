@@ -303,8 +303,11 @@ class LeftShiftingRow(RowMapper):
 
         self.offset = offset
 
-    def _reduce(self, item: int):
-        return item - self.offset
+    def _reduce(self, x: Union[Iterable, int, float]):
+        if isinstance(x, Iterable):
+            return [self._reduce(item) for item in x]
+        else:
+            return x - self.offset
 
     def _lshift(self, x: Iterable) -> List:
         return list(map(self._reduce, x))
@@ -339,8 +342,11 @@ class RightShiftingRow(RowMapper):
             indices=indices
         )
 
-    def _add(self, item: int):
-        return item + self.offset
+    def _add(self, x: Union[Iterable, int, float]):
+        if isinstance(x, Iterable):
+            return [self._add(item) for item in x]
+        else:
+            return x + self.offset
 
     def _rshift(self, x: Iterable) -> List:
         return list(map(self._add, x))
