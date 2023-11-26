@@ -13,6 +13,9 @@ from .utils import (
 )
 
 
+__all__ = ['Parser', 'CoreParser']
+
+
 r"""
 A configuration module for a Recommender System.
 
@@ -132,7 +135,7 @@ class Parser(Config):
 
         self.parser = argparse.ArgumentParser()
 
-        self.add_argument("--root", type=str, default=".", help="data")
+        self.add_argument("--root", type=str, default=".", help="data path")
         self.add_argument("--dataset", type=str, default="RecDataSet", help="useless if no need to automatically select a dataset")
         self.add_argument("--config", type=str, default=None, help="config.yaml")
         self.add_argument("--ranking", type=str, choices=('full', 'pool'), default='full', help="full: full ranking; pool: sampled-based ranking")
@@ -221,7 +224,7 @@ class Parser(Config):
         if hasattr(args, 'config') and args.config:
             with open(args.config, encoding="UTF-8", mode='r') as f:
                 for key, val in yaml.full_load(f).items():
-                    if key in keys: # overwrite defaults in config file
+                    if key in keys: # overwriting defaults
                         self.set_defaults(**{key: val})
                     elif key.upper() in self:
                         self[key.upper()] = val
@@ -236,15 +239,12 @@ class Parser(Config):
 
         Flows:
         ------
-        1. If the `--config` flag has been specified, load settings from a .yaml file, 
-            which returns default settings.
-        2. Load the modified settings from the parsed command-line arguments (ArgumentParser).
-            Note that the activated arguments will overwrite the defaults above !
-        3. Generate the paths for saving checkpoints and collecting training information:
+        1. If the `--config` flag has been specified, load settings from a .yaml file.
+        2. Generate the paths for saving checkpoints and collecting training information:
             - CHECKPOINT_PATH: the path where checkpoints will be saved.
             - LOG_PATH: the path where training information will be collected.
-        4. Configure the logger so that information can be logged by `info|debug|warnLogger`.
-        5. Add a README.md file under CHECKPOINT_PATH and LOG_PATH.
+        3. Configure the logger so that information can be logged by `info|debug|warnLogger`.
+        4. Add a README.md file under CHECKPOINT_PATH and LOG_PATH.
         """
         args = self.load()
         self.update(**dict(args._get_kwargs()))
