@@ -442,9 +442,8 @@ class SeqTrainUniformSampler(SeqTrainYielder):
             A list of negative items that the user has not interacted with.
         """
         seen = self.posItems[user]
-        size = len(positives) if self.num_negatives == 1 else (len(positives), self.num_negatives)
         return negsamp_vectorized_bsearch(
-            seen, self.Item.count, size
+            seen, self.Item.count, (len(positives), self.num_negatives)
         )
 
     def __iter__(self):
@@ -651,9 +650,8 @@ class SessTrainUniformSampler(SessTrainYielder):
         """
         # sorting for ordered positives
         seen = sorted(seen)
-        size = len(positives) if self.num_negatives == 1 else (len(positives), self.num_negatives)
         return negsamp_vectorized_bsearch(
-            seen, self.Item.count, size
+            seen, self.Item.count, (len(positives), self.num_negatives)
         )
 
     def __iter__(self):
