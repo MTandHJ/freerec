@@ -152,7 +152,7 @@ def main():
         source=dataset.train().to_seqs(keepid=True)
     ).sharding_filter().lprune_(
         indices=[1], maxlen=cfg.maxlen
-    ).rshift_(
+    ).add_(
         indices=[1], offset=NUM_PADS
     ).lpad_(
         indices=[1], maxlen=cfg.maxlen, padding_value=0 # 0: padding; 1: mask token
@@ -166,7 +166,7 @@ def main():
             dataset
         ).lprune_(
             indices=[1], maxlen=cfg.maxlen - 1,
-        ).rshift_(
+        ).add_(
             indices=[1], offset=NUM_PADS
         ).lpad_(
             indices=[1], maxlen=cfg.maxlen - 1, padding_value=0
@@ -182,7 +182,7 @@ def main():
             dataset # yielding (user, items, (target + (100) negatives))
         ).lprune_(
             indices=[1], maxlen=cfg.maxlen - 1,
-        ).rshift_(
+        ).add_(
             indices=[1, 2], offset=NUM_PADS
         ).lpad_(
             indices=[1], maxlen=cfg.maxlen - 1, padding_value=0
@@ -198,7 +198,7 @@ def main():
             dataset
         ).lprune_(
             indices=[1], maxlen=cfg.maxlen - 1,
-        ).rshift_(
+        ).add_(
             indices=[1], offset=NUM_PADS
         ).lpad_(
             indices=[1], maxlen=cfg.maxlen - 1, padding_value=0
@@ -214,7 +214,7 @@ def main():
             dataset # yielding (user, items, (target + (100) negatives))
         ).lprune_(
             indices=[1], maxlen=cfg.maxlen - 1,
-        ).rshift_(
+        ).add_(
             indices=[1, 2], offset=NUM_PADS
         ).lpad_(
             indices=[1], maxlen=cfg.maxlen - 1, padding_value=0

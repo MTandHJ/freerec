@@ -118,7 +118,7 @@ def main():
         dataset.train().to_roll_seqs(minlen=2)
     ).sharding_filter().sess_train_yielding_(
         dataset, leave_one_out=True # yielding (sesses, seqs, targets)
-    ).rshift_(
+    ).add_(
         indices=[1], offset=NUM_PADS
     ).batch(cfg.batch_size).column_().rpad_col_(
         indices=[1], maxlen=None, padding_value=0

@@ -217,7 +217,7 @@ def main():
         dataset, leave_one_out=False # yielding (user, seqs, targets, negatives)
     ).lprune_(
         indices=[1, 2, 3], maxlen=cfg.maxlen
-    ).rshift_(
+    ).add_(
         indices=[1, 2, 3], offset=NUM_PADS
     ).lpad_(
         indices=[1, 2, 3], maxlen=cfg.maxlen, padding_value=0
