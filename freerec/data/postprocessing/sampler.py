@@ -34,6 +34,7 @@ def _to_tuple(func: Callable):
     wrapper.__doc__ = func.__doc__
     return wrapper
 
+
 #===============================For General Recommendation===============================
 
 
@@ -389,6 +390,31 @@ class SeqTestYielder(SeqValidYielder):
 
 @dp.functional_datapipe("seq_train_uniform_sampling_")
 class SeqTrainUniformSampler(SeqTrainYielder):
+    r"""
+    A functional datapipe for yielding (user, positives, targets).
+
+    Parameters:
+    -----------
+    source_dp: dp.iter.IterableWrapper 
+        A datapipe that yields users.
+    dataset: RecDataSet 
+        The dataset object that contains field objects.
+    leave_one_out: bool, default to `True`
+        `True`: take the last one as a target
+        `False`: take `posItems[1:]` as targets
+    num_negatives: int
+        The number of negatives.
+    """
+
+    def __init__(
+        self, 
+        source_dp: dp.iter.IterableWrapper, 
+        dataset: Optional[RecDataSet] = None, 
+        leave_one_out: bool = True,
+        num_negatives: int = 1
+    ) -> None:
+        self.num_negatives = num_negatives
+        super().__init__(source_dp, dataset, leave_one_out)
 
     @timemeter
     def prepare(self, dataset: RecDataSet):
@@ -416,8 +442,9 @@ class SeqTrainUniformSampler(SeqTrainYielder):
             A list of negative items that the user has not interacted with.
         """
         seen = self.posItems[user]
+        size = len(positives) if self.num_negatives == 1 else (len(positives), self.num_negatives)
         return negsamp_vectorized_bsearch(
-            seen, self.Item.count, len(positives)
+            seen, self.Item.count, size
         )
 
     def __iter__(self):
@@ -593,19 +620,19 @@ class SessTrainUniformSampler(SessTrainYielder):
     leave_one_out: bool, default to `True`
         `True`: take the last one as a target
         `False`: take `posItems[1:]` as targets
+    num_negatives: int 
+        The number of negative samples for each piece of data.  
     """
 
-    @timemeter
-    def prepare(self, dataset: RecDataSet):
-        r"""
-        Prepare the data before sampling.
-
-        Parameters:
-        -----------
-        dataset: RecDataSet 
-            The dataset object that contains field objects.
-        """
-        self.negative_pool = self._sample_from_all(dataset.train().datasize)
+    def __init__(
+        self, 
+        source_dp: dp.iter.IterableWrapper, 
+        dataset: Optional[RecDataSet] = None, 
+        leave_one_out: bool = True,
+        num_negatives: int = 1
+    ) -> None:
+        self.num_negatives = num_negatives
+        super().__init__(source_dp, dataset, leave_one_out)
 
     def _sample_neg(self, seen: Tuple, positives: Tuple) -> List[int]:
         r"""Randomly sample negative items for a user.
@@ -624,8 +651,9 @@ class SessTrainUniformSampler(SessTrainYielder):
         """
         # sorting for ordered positives
         seen = sorted(seen)
+        size = len(positives) if self.num_negatives == 1 else (len(positives), self.num_negatives)
         return negsamp_vectorized_bsearch(
-            seen, self.Item.count, len(positives)
+            seen, self.Item.count, size
         )
 
     def __iter__(self):
