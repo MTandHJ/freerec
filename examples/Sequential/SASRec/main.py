@@ -191,7 +191,7 @@ class CoachForSASRec(freerec.launcher.SeqCoach):
     def train_per_epoch(self, epoch: int):
         for data in self.dataloader:
             users, seqs, positives, negatives = [col.to(self.device) for col in data]
-            posLogits, negLogits = self.model.predict(seqs, positives, negatives)
+            posLogits, negLogits = self.model.predict(seqs, positives, negatives.squeeze(-1))
             posLabels = torch.ones_like(posLogits)
             negLabels = torch.zeros_like(negLogits)
             indices = positives != 0
