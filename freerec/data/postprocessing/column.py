@@ -18,6 +18,10 @@ __all__ = [
 ]
 
 
+def _to_array(x: Union[np.ndarray, Iterable]) -> np.ndarray:
+    return x if isinstance(x, np.ndarray) else np.array(x)
+
+
 T = TypeVar("T")
 
 
@@ -73,8 +77,8 @@ class ToTensor(Postprocessor):
             return col
 
     def __iter__(self) -> Iterator:
-        for chunk in self.source:
-            yield self.listmap(self.to_tensor, chunk)
+        for cols in self.source:
+            yield self.listmap(self.to_tensor, cols)
 
 
 @dp.functional_datapipe("field_")
@@ -211,18 +215,26 @@ class LeftPaddingCol(ColMapper):
             return self.padding_value
 
     def _lpad_row(self, x: Iterable, maxlen: int):
-        if isinstance(x, Iterable):
-            p = self.padding_value if len(x) == 0 else self._zero_like(x[0])
-            return list(chain(repeat(p, maxlen - len(x)), x))
+        x = _to_array(x)
+        if len(x) >= maxlen:
+            return x
+        elif len(x) > 0:
+            p = np.empty_like(x[0])
+            p.fill(self.padding_value)
+            p = np.stack(
+                [p] * (maxlen - len(x)),
+                axis=0
+            )
+            return np.concatenate((p, x), axis=0)
         else:
-            raise ValueError(f"To pad a scalar element, sequence expected ...")
+            raise ValueError("Cannot pad an empty element")
 
-    def _lpad(self, cols: Iterable):
-        cols = cols if isinstance(cols, List) else list(cols)
-        maxlen = maxlen if self.maxlen is not None else max([len(row) for row in cols])
+    def _lpad(self, rows: Iterable):
+        rows = rows if isinstance(rows, List) else list(rows)
+        maxlen = maxlen if self.maxlen is not None else max([len(row) for row in rows])
         return list(map(
             partial(self._lpad_row, maxlen=maxlen),
-            cols
+            rows
         ))
 
 
@@ -266,16 +278,24 @@ class RightPaddingCol(ColMapper):
             return self.padding_value
 
     def _rpad_row(self, x: Iterable, maxlen: int):
-        if isinstance(x, Iterable):
-            p = self.padding_value if len(x) == 0 else self._zero_like(x[0])
-            return list(chain(x, repeat(p, maxlen - len(x))))
+        x = _to_array(x)
+        if len(x) >= maxlen:
+            return x
+        elif len(x) > 0:
+            p = np.empty_like(x[0])
+            p.fill(self.padding_value)
+            p = np.stack(
+                [p] * (maxlen - len(x)),
+                axis=0
+            )
+            return np.concatenate((x, p), axis=0)
         else:
-            raise ValueError(f"To pad a scalar element, sequence expected ...")
+            raise ValueError("Cannot pad an empty element")
 
-    def _rpad(self, cols: Iterable):
-        cols = cols if isinstance(cols, List) else list(cols)
-        maxlen = maxlen if self.maxlen is not None else max([len(row) for row in cols])
+    def _rpad(self, rows: Iterable):
+        rows = rows if isinstance(rows, List) else list(rows)
+        maxlen = maxlen if self.maxlen is not None else max([len(row) for row in rows])
         return list(map(
             partial(self._rpad_row, maxlen=maxlen),
-            cols
+            rows
         ))
