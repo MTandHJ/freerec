@@ -7,7 +7,7 @@ import freerec
 from freerec.data.fields import FieldModuleList
 from freerec.data.tags import USER, SESSION, ITEM, TIMESTAMP, ID
 
-freerec.declare(version='0.4.3')
+freerec.declare(version='0.5.1')
 
 cfg = freerec.parser.Parser()
 cfg.add_argument("--embedding-dim", type=int, default=50)
