@@ -201,7 +201,6 @@ class GenTrainUniformSampler(GenTrainYielder):
         # sorting for ordered positives
         self.posItems = [tuple(sorted(items)) for items in self.posItems]
 
-    @_to_tuple
     def _sample_neg(self, user: int) -> List[int]:
         r"""Randomly sample negative items for a user.
 
@@ -233,9 +232,11 @@ class GenValidSampler(GenValidYielder):
         idx = (user, posItem)
         if self.negItems.get(idx, None) is None:
             seen = self.seenItems[user]
-            self.negItems[idx] = tuple(negsamp_vectorized_bsearch(
-                seen, self.Item.count, NUM_NEGS_FOR_SAMPLE_BASED_RANKING
-            ))
+            self.negItems[idx] = tuple(
+                negsamp_vectorized_bsearch(
+                    seen, self.Item.count, NUM_NEGS_FOR_SAMPLE_BASED_RANKING
+                ).tolist()
+            )
         return self.negItems[idx]
 
     @timemeter
@@ -400,7 +401,6 @@ class SeqTrainUniformSampler(SeqTrainYielder):
         # sorting for ordered positives
         self.posItems = [tuple(sorted(items)) for items in self.posItems]
 
-    @_to_tuple
     def _sample_neg(self, user: int, positives: Tuple) -> List[int]:
         r"""Randomly sample negative items for a user.
 
@@ -438,7 +438,7 @@ class SeqValidSampler(SeqValidYielder):
         seen = sorted(seen)
         return negsamp_vectorized_bsearch(
             seen, self.Item.count, NUM_NEGS_FOR_SAMPLE_BASED_RANKING
-        )
+        ).tolist()
 
     @timemeter
     def prepare(self, dataset: RecDataSet):
@@ -607,7 +607,6 @@ class SessTrainUniformSampler(SessTrainYielder):
         """
         self.negative_pool = self._sample_from_all(dataset.train().datasize)
 
-    @_to_tuple
     def _sample_neg(self, seen: Tuple, positives: Tuple) -> List[int]:
         r"""Randomly sample negative items for a user.
 
@@ -652,9 +651,11 @@ class SessValidSampler(SessTrainYielder):
         idx = (sess, tuple(seq))
         if self.negItems.get(idx, None) is None:
             seen = sorted(self.seenItems[sess])
-            self.negItems[idx] = tuple(negsamp_vectorized_bsearch(
-                seen, self.Item.count, NUM_NEGS_FOR_SAMPLE_BASED_RANKING
-            ))
+            self.negItems[idx] = tuple(
+                negsamp_vectorized_bsearch(
+                    seen, self.Item.count, NUM_NEGS_FOR_SAMPLE_BASED_RANKING
+                ).tolist()
+            )
         return self.negItems[idx]
 
     @timemeter

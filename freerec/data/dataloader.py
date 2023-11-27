@@ -157,7 +157,7 @@ def _load_seq_datapipe(
             dataset # yielding (user, seq, unseen, seen)
         ).lprune_(
             indices=[1], maxlen=maxlen,
-        ).rshift_(
+        ).add_(
             indices=[1], offset=NUM_PADS
         ).__getattr__(padding_way)(
             indices=[1], maxlen=maxlen, padding_value=padding_value
@@ -171,7 +171,7 @@ def _load_seq_datapipe(
             dataset # yielding (user, seq, (target + (100) negatives))
         ).lprune_(
             indices=[1], maxlen=maxlen,
-        ).rshift_(
+        ).add_(
             indices=[1, 2], offset=NUM_PADS
         ).__getattr__(padding_way)(
             indices=[1], maxlen=maxlen, padding_value=0
@@ -264,7 +264,7 @@ def _load_sess_datapipe(
             source=getattr(dataset, mode)().to_roll_seqs(minlen=2)
         ).sharding_filter().__getattr__(f"sess_{mode}_yielding_")(
             dataset # yielding (sesses, seq, unseen, seen)
-        ).rshift_(
+        ).add_(
             indices=[1], offset=NUM_PADS
         ).batch(batch_size).column_().__getattr__(f"{padding_way}col_")(
             indices=[1], maxlen=None, padding_value=padding_value
@@ -276,7 +276,7 @@ def _load_sess_datapipe(
             source=getattr(dataset, mode)().to_roll_seqs(minlen=2)
         ).sharding_filter().__getattr__(f"sess_{mode}_sampling_")(
             dataset # yielding (sesses, seq, (target + (100) negatives))
-        ).rshift_(
+        ).add_(
             indices=[1, 2], offset=NUM_PADS
         ).batch(batch_size).column_().__getattr__(f"{padding_way}col_")(
             indices=[1], maxlen=None, padding_value=padding_value
