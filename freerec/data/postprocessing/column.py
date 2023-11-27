@@ -2,6 +2,7 @@
 
 from typing import Iterator, Iterable, List, Union, TypeVar, Any, Callable, Optional
 
+import numpy as np
 import torch
 import torchdata.datapipes as dp
 from itertools import repeat, chain
@@ -45,6 +46,14 @@ class ToTensor(Postprocessor):
     This class converts a List into a torch.Tensor.
     """
 
+    def __init__(
+        self, source_dp: dp.iter.IterDataPipe, *, 
+        idtype = torch.long, fdtype = torch.float32
+    ) -> None:
+        super().__init__(source_dp)
+        self.idtype = idtype
+        self.fdtype = fdtype
+
     def at_least_2d(self, vals: torch.Tensor):
         """Reshape tensor to 2D if needed."""
         return vals.unsqueeze(1) if vals.ndim == 1 else vals
@@ -52,10 +61,15 @@ class ToTensor(Postprocessor):
     def to_tensor(self, col: List) -> Union[List, torch.Tensor]:
         """Convert the List to a torch.Tensor."""
         try:
-            return self.at_least_2d(
-                torch.tensor(col)
-            )
-        except ValueError: # avoid ragged List
+            arr = np.stack(col)
+            if arr.dtype.kind == 'i':
+                ter = torch.as_tensor(arr, dtype=self.idtype)
+            elif arr.dtype.kind == 'f': 
+                ter = torch.as_tensor(arr, dtype=self.fdtype)
+            else:
+                ter = torch.as_tensor(arr)
+            return self.at_least_2d(ter)
+        except ValueError: # skip ragged List
             return col
 
     def __iter__(self) -> Iterator:
