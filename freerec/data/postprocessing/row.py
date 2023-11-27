@@ -2,18 +2,21 @@
 
 from typing import Iterable, Union, Any, Callable, List, Tuple
 
+import numpy as np
 import torchdata.datapipes as dp
-from itertools import repeat, chain
 
 
 __all__ = [
     "DropEmpty", 
     "LeftPruningRow", "RightPruningRow",
     "DropingDuplicates",
-    "LeftShiftingRow", "RightShiftingRow",
+    "AddingRow",
     "LeftPaddingRow", "RightPaddingRow",
 ]
 
+
+def _to_array(x: Union[np.ndarray, Iterable]) -> np.ndarray:
+    return x if isinstance(x, np.ndarray) else np.array(x)
 
 #==================================Filter==================================
 class RowFilter(dp.iter.IterDataPipe):
@@ -267,56 +270,23 @@ class DropingDuplicates(RowMapper):
             indices=indices
         )
 
-    def _drop(self, x: Iterable) -> List:
-        return list(set(x))
-
-    def _drop_in_order(self, x: Iterable) -> List:
-        return sorted(set(x), key=x.index)
-
-
-@dp.functional_datapipe("lshift_")
-class LeftShiftingRow(RowMapper):
-    r"""
-    Mapper that left shifts the input data by a specified offset.
-
-    Parameters:
-    -----------
-    source_dp: dp.iter.IterDataPipe
-        Input datapipeline.
-    indices : Iterable[int]
-        The indices of the elements in each row to which `fn` should be applied.
-    offset: int
-        Amount to shift the input data by.   
-    """
-
-    def __init__(
-        self, source_dp: dp.iter.IterDataPipe, 
-        indices: Union[None, int, Iterable[int]],
-        offset: int
-    ) -> None:
-
-        super().__init__(
-            source_dp=source_dp, 
-            fn=self._lshift,
-            indices=indices,
-        )
-
-        self.offset = offset
-
-    def _reduce(self, x: Union[Iterable, int, float]):
-        if isinstance(x, Iterable):
-            return [self._reduce(item) for item in x]
+    def _drop(self, x: Union[np.ndarray, Iterable]) -> Union[np.ndarray, List]:
+        if isinstance(x, np.ndarray):
+            return np.unique(x)
         else:
-            return x - self.offset
+            return list(set(x))
 
-    def _lshift(self, x: Iterable) -> List:
-        return list(map(self._reduce, x))
+    def _drop_in_order(self, x: Union[np.ndarray, Iterable]) -> Union[np.ndarray, List]:
+        if isinstance(x, np.ndarray):
+            return np.unique(x)
+        else:
+            return sorted(set(x), key=x.index)
 
 
-@dp.functional_datapipe("rshift_")
-class RightShiftingRow(RowMapper):
+@dp.functional_datapipe("add_")
+class AddingRow(RowMapper):
     r"""
-    Mapper that right shifts the input data by a specified offset.
+    Mapper that adds the input data by a specified offset.
 
     Parameters:
     -----------
@@ -325,7 +295,7 @@ class RightShiftingRow(RowMapper):
     indices : Iterable[int]
         The indices of the elements in each row to which `fn` should be applied.
     offset: int
-        Amount to shift the input data by.   
+        Amount to add the input data by.   
     """
 
     def __init__(
@@ -338,18 +308,21 @@ class RightShiftingRow(RowMapper):
 
         super().__init__(
             source_dp=source_dp, 
-            fn=self._rshift,
+            fn=self._add,
             indices=indices
         )
 
-    def _add(self, x: Union[Iterable, int, float]):
-        if isinstance(x, Iterable):
-            return [self._add(item) for item in x]
-        else:
-            return x + self.offset
-
-    def _rshift(self, x: Iterable) -> List:
-        return list(map(self._add, x))
+    def _add(self, x: Union[np.ndarray, Iterable]) -> np.ndarray:
+        r"""
+        Examples:
+        ---------
+        >>> x = [1, 2, 3] 
+        >>> _add(x) # self.offset = 1
+        [2, 3, 4]
+        >>> _add(x) # self.offset = -1
+        [0, 1, 2]
+        """
+        return _to_array(x) + self.offset
 
 
 @dp.functional_datapipe("lpad_")
@@ -367,6 +340,11 @@ class LeftPaddingRow(RowMapper):
         The maximum length to pad the sequences to.
     padding_value : int, optional (default=0)
         The value to use for padding.
+
+    Raises:
+    -------
+    ValueError:
+        To pad an empty element.
     """
 
     def __init__(
@@ -384,18 +362,20 @@ class LeftPaddingRow(RowMapper):
             indices=indices
         )
 
-    def _zero_like(self, x: Union[Iterable, int, float]):
-        if isinstance(x, Iterable):
-            return [self._zero_like(item) for item in x]
+    def _lpad(self, x: Union[np.ndarray, Iterable]) -> np.ndarray:
+        x = _to_array(x)
+        if len(x) >= self.maxlen:
+            return x
+        elif len(x) > 0:
+            p = np.empty_like(x[0])
+            p.fill(self.padding_value)
+            p = np.stack(
+                [p] * (self.maxlen - len(x)),
+                axis=0
+            )
+            return np.concatenate((p, x), axis=0)
         else:
-            return self.padding_value
-
-    def _lpad(self, x: Iterable) -> List:
-        if isinstance(x, Iterable):
-            p = self.padding_value if len(x) == 0 else self._zero_like(x[0])
-            return list(chain(repeat(p, self.maxlen - len(x)), x))
-        else:
-            raise ValueError(f"To pad a scalar element, sequence expected ...")
+            raise ValueError("Cannot pad an empty element")
 
 
 @dp.functional_datapipe("rpad_")
@@ -413,6 +393,11 @@ class RightPaddingRow(RowMapper):
         The maximum length to right pad the sequences to.
     padding_value : int, optional (default=0)
         The value to use for padding.
+
+    Raises:
+    -------
+    ValueError:
+        To pad an empty element.
     """
 
     def __init__(
@@ -430,15 +415,17 @@ class RightPaddingRow(RowMapper):
             indices=indices
         )
 
-    def _zero_like(self, x: Union[Iterable, int, float]):
-        if isinstance(x, Iterable):
-            return [self._zero_like(item) for item in x]
+    def _rpad(self, x: Union[np.ndarray, Iterable]) -> np.ndarray:
+        x = _to_array(x)
+        if len(x) >= self.maxlen:
+            return x
+        elif len(x) > 0:
+            p = np.empty_like(x[0])
+            p.fill(self.padding_value)
+            p = np.stack(
+                [p] * (self.maxlen - len(x)),
+                axis=0
+            )
+            return np.concatenate((x, p), axis=0)
         else:
-            return self.padding_value
-
-    def _rpad(self, x: Iterable) -> List:
-        if isinstance(x, Iterable):
-            p = self.padding_value if len(x) == 0 else self._zero_like(x[0])
-            return list(chain(x, repeat(p, self.maxlen - len(x))))
-        else:
-            raise ValueError(f"To pad a scalar element, sequence expected ...")
+            raise ValueError("Cannot pad an empty element")
