@@ -101,6 +101,9 @@ CORE_CONFIG = Config(
     ENVS = dict(),
     PARAMS = dict(),
     DEFAULTS = dict(),
+
+    log2file = True,
+    log2console = True
 )
 
 
@@ -279,7 +282,7 @@ class CoreParser(Config):
     """CoreParser class to parse command-line arguments and configuration files."""
 
     ALL_ENVS = (
-        'description', 'root', 'device', 'eval_freq', 'num_workers'
+        'description', 'root', 'device', 'num_workers'
     )
 
     def __init__(self) -> None:

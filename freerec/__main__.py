@@ -105,8 +105,6 @@ def main():
     tune_parser.add_argument("--root", type=str, default=None, help="data")
     tune_parser.add_argument("--dataset", type=str, default=None, help="useless if no need to automatically select a dataset")
     tune_parser.add_argument("--device", type=str, default=None, help="device")
-
-    tune_parser.add_argument("--eval-freq", type=int, default=None, help="the evaluation frequency")
     tune_parser.add_argument("--num-workers", type=int, default=None)
 
     tune_parser.add_argument("--resume", action="store_true", default=False, help="resume the search from the recent checkpoint")
