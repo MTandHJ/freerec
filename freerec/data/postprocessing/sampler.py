@@ -229,13 +229,22 @@ class GenTrainUniformSampler(GenTrainYielder):
 @dp.functional_datapipe("gen_valid_sampling_")
 class GenValidSampler(GenValidYielder):
 
+    def __init__(
+        self, 
+        source_dp: dp.iter.IterDataPipe, 
+        dataset: RecDataSet,
+        num_negs_for_sample_based_ranking: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING
+    ) -> None:
+        self.num_negs_for_sample_based_ranking = num_negs_for_sample_based_ranking
+        super().__init__(source_dp, dataset)
+
     def _sample_negs(self, user: int, posItem: int):
         idx = (user, posItem)
         if self.negItems.get(idx, None) is None:
             seen = self.seenItems[user]
             self.negItems[idx] = tuple(
                 negsamp_vectorized_bsearch(
-                    seen, self.Item.count, NUM_NEGS_FOR_SAMPLE_BASED_RANKING
+                    seen, self.Item.count, self.num_negs_for_sample_based_ranking
                 ).tolist()
             )
         return self.negItems[idx]
@@ -458,12 +467,21 @@ class SeqTrainUniformSampler(SeqTrainYielder):
 @dp.functional_datapipe("seq_valid_sampling_")
 class SeqValidSampler(SeqValidYielder):
 
+    def __init__(
+        self, 
+        source_dp: dp.iter.IterableWrapper, 
+        dataset: RecDataSet,
+        num_negs_for_sample_based_ranking: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING
+    ) -> None:
+        self.num_negs_for_sample_based_ranking = num_negs_for_sample_based_ranking
+        super().__init__(source_dp, dataset)
+
     @_to_tuple
     def _sample_negs(self, seen: List[int]):
         # sorting for ordered positives
         seen = sorted(seen)
         return negsamp_vectorized_bsearch(
-            seen, self.Item.count, NUM_NEGS_FOR_SAMPLE_BASED_RANKING
+            seen, self.Item.count, self.num_negs_for_sample_based_ranking
         ).tolist()
 
     @timemeter
@@ -669,8 +687,10 @@ class SessValidSampler(SessTrainYielder):
     def __init__(
         self, 
         source_dp: dp.iter.IterableWrapper, 
-        dataset: Optional[RecDataSet] = None
+        dataset: Optional[RecDataSet] = None,
+        num_negs_for_sample_based_ranking: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING
     ) -> None:
+        self.num_negs_for_sample_based_ranking = num_negs_for_sample_based_ranking
         super().__init__(source_dp, dataset, True)
 
     def _sample_negs(self, sess: int, seq: Tuple):
@@ -679,7 +699,7 @@ class SessValidSampler(SessTrainYielder):
             seen = sorted(self.seenItems[sess])
             self.negItems[idx] = tuple(
                 negsamp_vectorized_bsearch(
-                    seen, self.Item.count, NUM_NEGS_FOR_SAMPLE_BASED_RANKING
+                    seen, self.Item.count, self.num_negs_for_sample_based_ranking
                 ).tolist()
             )
         return self.negItems[idx]

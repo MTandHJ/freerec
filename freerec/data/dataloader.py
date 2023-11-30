@@ -52,7 +52,8 @@ class DataLoader(torch.utils.data.DataLoader):
 
 def _load_gen_datapipe(
     dataset: GeneralRecSet, mode: str,
-    batch_size: int, ranking: str
+    batch_size: int, ranking: str,
+    num_negs_for_sample_based_ranking: int = 100
 ):
     r"""
     Load datapipe for general recommendation.
@@ -65,6 +66,8 @@ def _load_gen_datapipe(
     ranking: str
         `full`: datapipe for full ranking
         `pool`: datapipe for sampled-based ranking
+    num_negs_for_sample_based_ranking: int
+        The number of negatives for sample-based ranking.
 
     Raises:
     -------
@@ -89,7 +92,7 @@ def _load_gen_datapipe(
         datapipe = OrderedSource(
             source=getattr(dataset, mode)().to_pairs()
         ).sharding_filter().__getattr__(f"gen_{mode}_sampling_")(
-            dataset # return (user, pool)
+            dataset, num_negs_for_sample_based_ranking # return (user, pool)
         ).batch(batch_size).column_().tensor_()
     else:
         raise NotImplementedError(f"{ranking} ranking is not supported ...")
@@ -98,20 +101,24 @@ def _load_gen_datapipe(
 
 def load_gen_validpipe(
     dataset: SequentialRecSet,
-    batch_size: int = 512, ranking: str = 'full'
+    batch_size: int = 512, ranking: str = 'full',
+    num_negs_for_sample_based_ranking: int = 100
 ):
     return _load_gen_datapipe(
         dataset, mode='valid', 
-        batch_size=batch_size, ranking=ranking
+        batch_size=batch_size, ranking=ranking,
+        num_negs_for_sample_based_ranking=num_negs_for_sample_based_ranking
     )
 
 def load_gen_testpipe(
     dataset: SequentialRecSet,
-    batch_size: int = 512, ranking: str = 'full'
+    batch_size: int = 512, ranking: str = 'full',
+    num_negs_for_sample_based_ranking: int = 100
 ):
     return _load_gen_datapipe(
         dataset, mode='test', 
-        batch_size=batch_size, ranking=ranking
+        batch_size=batch_size, ranking=ranking,
+        num_negs_for_sample_based_ranking=num_negs_for_sample_based_ranking
     )
 
 
@@ -119,6 +126,7 @@ def _load_seq_datapipe(
     dataset: SequentialRecSet, mode: str,
     maxlen: int, batch_size: int, ranking: str,
     padding_way, NUM_PADS: int, padding_value: int,
+    num_negs_for_sample_based_ranking: int = 100
 ):
     r"""
     Load datapipe for sequential recommendation.
@@ -136,6 +144,8 @@ def _load_seq_datapipe(
         `left`: sequence will be padded from left
     NUM_PADS: int
     padding_value: int
+    num_negs_for_sample_based_ranking: int
+        The number of negatives for sample-based ranking.
 
     Raises:
     -------
@@ -168,7 +178,7 @@ def _load_seq_datapipe(
         datapipe = OrderedIDs(
             field=User
         ).sharding_filter().__getattr__(f"seq_{mode}_sampling_")(
-            dataset # yielding (user, seq, (target + (100) negatives))
+            dataset, num_negs_for_sample_based_ranking # yielding (user, seq, (target + (100) negatives))
         ).lprune_(
             indices=[1], maxlen=maxlen,
         ).add_(
@@ -184,51 +194,60 @@ def _load_seq_datapipe(
 def load_seq_lpad_validpipe(
     dataset: SequentialRecSet,
     maxlen: int, NUM_PADS: int, padding_value: int = 0,
-    batch_size: int = 128, ranking: str = 'full'
+    batch_size: int = 128, ranking: str = 'full',
+    num_negs_for_sample_based_ranking: int = 100
 ):
     return _load_seq_datapipe(
         dataset, mode='valid', 
         maxlen=maxlen, batch_size=batch_size, ranking=ranking, 
-        padding_way='left', NUM_PADS=NUM_PADS, padding_value=padding_value
+        padding_way='left', NUM_PADS=NUM_PADS, padding_value=padding_value,
+        num_negs_for_sample_based_ranking=num_negs_for_sample_based_ranking
     )
 
 def load_seq_rpad_validpipe(
     dataset: SequentialRecSet,
     maxlen: int, NUM_PADS: int, padding_value: int = 0,
-    batch_size: int = 128, ranking: str = 'full'
+    batch_size: int = 128, ranking: str = 'full',
+    num_negs_for_sample_based_ranking: int = 100
 ):
     return _load_seq_datapipe(
         dataset, mode='valid', 
         maxlen=maxlen, batch_size=batch_size, ranking=ranking, 
-        padding_way='right', NUM_PADS=NUM_PADS, padding_value=padding_value
+        padding_way='right', NUM_PADS=NUM_PADS, padding_value=padding_value,
+        num_negs_for_sample_based_ranking=num_negs_for_sample_based_ranking
     )
 
 def load_seq_lpad_testpipe(
     dataset: SequentialRecSet,
     maxlen: int, NUM_PADS: int, padding_value: int = 0,
-    batch_size: int = 128, ranking: str = 'full'
+    batch_size: int = 128, ranking: str = 'full',
+    num_negs_for_sample_based_ranking: int = 100
 ):
     return _load_seq_datapipe(
         dataset, mode='test', 
         maxlen=maxlen, batch_size=batch_size, ranking=ranking, 
-        padding_way='left', NUM_PADS=NUM_PADS, padding_value=padding_value
+        padding_way='left', NUM_PADS=NUM_PADS, padding_value=padding_value,
+        num_negs_for_sample_based_ranking=num_negs_for_sample_based_ranking
     )
 
 def load_seq_rpad_testpipe(
     dataset: SequentialRecSet,
     maxlen: int, NUM_PADS: int, padding_value: int = 0,
-    batch_size: int = 128, ranking: str = 'full'
+    batch_size: int = 128, ranking: str = 'full',
+    num_negs_for_sample_based_ranking: int = 100
 ):
     return _load_seq_datapipe(
         dataset, mode='test', 
         maxlen=maxlen, batch_size=batch_size, ranking=ranking, 
-        padding_way='right', NUM_PADS=NUM_PADS, padding_value=padding_value
+        padding_way='right', NUM_PADS=NUM_PADS, padding_value=padding_value,
+        num_negs_for_sample_based_ranking=num_negs_for_sample_based_ranking
     )
 
 def _load_sess_datapipe(
     dataset: SessionBasedRecSet, mode: str,
     batch_size: int, ranking: str,
     padding_way, NUM_PADS: int, padding_value: int,
+    num_negs_for_sample_based_ranking: int = 100
 ):
     r"""
     Load datapipe for session-based recommendation.
@@ -245,6 +264,8 @@ def _load_sess_datapipe(
         `left`: sequence will be padded from left
     NUM_PADS: int
     padding_value: int
+    num_negs_for_sample_based_ranking: int
+        The number of negatives for sample-based ranking
 
     Raises:
     -------
@@ -275,7 +296,7 @@ def _load_sess_datapipe(
         datapipe = OrderedSource(
             source=getattr(dataset, mode)().to_roll_seqs(minlen=2)
         ).sharding_filter().__getattr__(f"sess_{mode}_sampling_")(
-            dataset # yielding (sesses, seq, (target + (100) negatives))
+            dataset, num_negs_for_sample_based_ranking # yielding (sesses, seq, (target + (100) negatives))
         ).add_(
             indices=[1, 2], offset=NUM_PADS
         ).batch(batch_size).column_().__getattr__(f"{padding_way}col_")(
@@ -289,43 +310,51 @@ def _load_sess_datapipe(
 def load_sess_lpad_validpipe(
     dataset: SessionBasedRecSet,
     NUM_PADS: int, padding_value: int = 0,
-    batch_size: int = 256, ranking: str = 'full'
+    batch_size: int = 256, ranking: str = 'full',
+    num_negs_for_sample_based_ranking: int = 100
 ):
     return _load_sess_datapipe(
         dataset, mode='valid', 
         batch_size=batch_size, ranking=ranking, 
-        padding_way='left', NUM_PADS=NUM_PADS, padding_value=padding_value
+        padding_way='left', NUM_PADS=NUM_PADS, padding_value=padding_value,
+        num_negs_for_sample_based_ranking=num_negs_for_sample_based_ranking
     )
 
 def load_sess_rpad_validpipe(
     dataset: SessionBasedRecSet,
     NUM_PADS: int, padding_value: int = 0,
-    batch_size: int = 256, ranking: str = 'full'
+    batch_size: int = 256, ranking: str = 'full',
+    num_negs_for_sample_based_ranking: int = 100
 ):
     return _load_sess_datapipe(
         dataset, mode='valid', 
         batch_size=batch_size, ranking=ranking, 
-        padding_way='right', NUM_PADS=NUM_PADS, padding_value=padding_value
+        padding_way='right', NUM_PADS=NUM_PADS, padding_value=padding_value,
+        num_negs_for_sample_based_ranking=num_negs_for_sample_based_ranking
     )
 
 def load_sess_lpad_testpipe(
     dataset: SessionBasedRecSet,
     NUM_PADS: int, padding_value: int = 0,
-    batch_size: int = 256, ranking: str = 'full'
+    batch_size: int = 256, ranking: str = 'full',
+    num_negs_for_sample_based_ranking: int = 100
 ):
     return _load_sess_datapipe(
         dataset, mode='test', 
         batch_size=batch_size, ranking=ranking, 
-        padding_way='left', NUM_PADS=NUM_PADS, padding_value=padding_value
+        padding_way='left', NUM_PADS=NUM_PADS, padding_value=padding_value,
+        num_negs_for_sample_based_ranking=num_negs_for_sample_based_ranking
     )
 
 def load_sess_rpad_testpipe(
     dataset: SessionBasedRecSet,
     NUM_PADS: int, padding_value: int = 0,
-    batch_size: int = 256, ranking: str = 'full'
+    batch_size: int = 256, ranking: str = 'full',
+    num_negs_for_sample_based_ranking: int = 100
 ):
     return _load_sess_datapipe(
         dataset, mode='test', 
         batch_size=batch_size, ranking=ranking, 
-        padding_way='right', NUM_PADS=NUM_PADS, padding_value=padding_value
+        padding_way='right', NUM_PADS=NUM_PADS, padding_value=padding_value,
+        num_negs_for_sample_based_ranking=num_negs_for_sample_based_ranking
     )
