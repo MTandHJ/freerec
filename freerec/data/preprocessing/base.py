@@ -371,6 +371,8 @@ class AtomicConverter:
             if len(group) == 0:
                 continue
             if len(group) <= 3:
+                # Note that sequence with len(group) == 3 cannot be splited into train/valid/test,
+                # because train sequence needs at least length >= 2 for prediction.
                 traingroups.append(group)
             else:
                 traingroups.append(group[:-2])
