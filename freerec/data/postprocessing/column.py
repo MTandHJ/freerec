@@ -3,9 +3,8 @@
 from typing import Iterator, Iterable, List, Union, TypeVar, Any, Callable, Optional
 
 import numpy as np
-import torch
+import torch, warnings
 import torchdata.datapipes as dp
-from itertools import repeat, chain
 from functools import partial
 
 from .base import Postprocessor
@@ -65,7 +64,9 @@ class ToTensor(Postprocessor):
     def to_tensor(self, col: List) -> Union[List, torch.Tensor]:
         """Convert the List to a torch.Tensor."""
         try:
-            arr = np.stack(col)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                arr = np.stack(col)
             if arr.dtype.kind == 'i':
                 ter = torch.as_tensor(arr, dtype=self.idtype)
             elif arr.dtype.kind == 'f': 
@@ -74,6 +75,8 @@ class ToTensor(Postprocessor):
                 ter = torch.as_tensor(arr)
             return self.at_least_2d(ter)
         except ValueError: # skip ragged List
+            return col
+        except TypeError: # skip objects
             return col
 
     def __iter__(self) -> Iterator:
