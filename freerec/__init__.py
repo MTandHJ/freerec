@@ -1,4 +1,4 @@
-__version__ = '0.5.0'
+__version__ = '0.5.1'
 
 from . import data, models, criterions, launcher, metrics, parser, utils
 from .utils import infoLogger
