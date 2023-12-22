@@ -92,9 +92,6 @@ CONFIG = Config(
     SUMMARY_FILENAME = "SUMMARY.md",
     MONITOR_FILENAME = "monitors.pickle",
     MONITOR_BEST_FILENAME = "best.pickle",
-
-    DISTRIBUTED = False,
-    IS_PRIMARY_PROCESS = True
 )
 
 CORE_CONFIG = Config(

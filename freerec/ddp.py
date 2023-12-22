@@ -5,8 +5,9 @@ import torch.distributed as dist
 
 
 def is_distributed() -> bool:
-    world_size = os.environ.get('WORLD_SIZE', '1')
-    return int(world_size) > 1
+    world_size = os.environ.get('WORLD_SIZE', None)
+    # world_size > 1 will be better?
+    return world_size is not None
 
 def is_primary_process() -> bool:
     """Checks if the current process is the primary process"""
