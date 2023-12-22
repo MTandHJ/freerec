@@ -1,24 +1,24 @@
 
 
-
 import os
 import torch.distributed as dist
 
 
+def is_distributed() -> bool:
+    world_size = os.environ.get('WORLD_SIZE', '1')
+    return int(world_size) > 1
+
 def is_primary_process() -> bool:
-    try:
-        if os.environ['WORLD_SIZE'] >= 1 and dist.get_rank() != 0:
-            return False
-    except KeyError:
+    """Checks if the current process is the primary process"""
+    if dist.is_available() and dist.is_initialized():
+        return dist.get_rank() == 0
+    else:
         return True
-    return True
 
 def primary_process_only(func):
-    def wrapper(self, *args, **kwargs):
-        if self.cfg.IS_PRIMARY_PROCESS:
-            return func(self, *args, **kwargs)
-        else:
-            return 0
+    def wrapper(*args, **kwargs):
+        if is_primary_process():
+            return func(*args, **kwargs)
     wrapper.__name__ = func.__name__
     wrapper.__func__ = func.__doc__
     return wrapper

@@ -7,6 +7,7 @@ import os, argparse, time, yaml
 from argparse import ArgumentParser
 
 from .dict2obj import Config
+from .ddp import is_distributed, primary_process_only, is_primary_process
 from .utils import (
     mkdirs, timemeter, set_color, set_seed, activate_benchmark, 
     set_logger, infoLogger
@@ -129,14 +130,11 @@ class Parser(Config):
     CHECKPOINT_PATH: str
     LOG_PATH: str
 
-    # DDP
-    DISTRIBUTED: bool
-    IS_PRIMARY_PROCESS: bool
-
     def __init__(self) -> None:
         super().__init__(**CONFIG)
         self.parse()
 
+    @primary_process_only
     def readme(self, path: str, mode: str = "w") -> None:
         """Add README.md to the path."""
         time_ = time.strftime("%Y-%m-%d-%H:%M:%S")
@@ -248,19 +246,10 @@ class Parser(Config):
         return device
 
     def init_ddp(self):
-        try:
-            import torch.distributed as dist
-            if os.environ['WORLD_SIZE'] >= 1:
-                self.DISTRIBUTED = True
-                dist.init_process_group(backend=self.ddp_backend, init_method="env://")
-                self.world_size = dist.get_world_size()
-                self.device = int(os.environ["LOCAL_RANK"])
-                if dist.get_rank() == 0:
-                    self.IS_PRIMARY_PROCESS = True
-                else:
-                    self.IS_PRIMARY_PROCESS = False
-        except KeyError:
-            self.DISTRIBUTED = False
+        import torch.distributed as dist
+        if is_distributed():
+            dist.init_process_group(backend=self.ddp_backend, init_method="env://")
+            self.device = int(os.environ["LOCAL_RANK"])
     
     @timemeter
     def load(self):
@@ -319,7 +308,7 @@ class Parser(Config):
         )
 
         self.init_ddp()
-        self.set_device()
+        self.set_device(self.device)
         set_logger(path=self.LOG_PATH, log2file=self.log2file, log2console=self.log2console)
 
         activate_benchmark(self.benchmark)
@@ -328,7 +317,8 @@ class Parser(Config):
         self.readme(self.CHECKPOINT_PATH) # create README.md
         self.readme(self.LOG_PATH)
 
-        infoLogger(str(self))
+        if is_primary_process():
+            infoLogger(str(self))
 
 
 class CoreParser(Config):
