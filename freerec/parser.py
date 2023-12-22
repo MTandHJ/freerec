@@ -1,6 +1,6 @@
 
 
-from typing import Any, Set
+from typing import Any, Set, Union, List
 
 import torch
 import os, argparse, time, yaml
@@ -90,7 +90,10 @@ CONFIG = Config(
     CHECKPOINT_FILENAME = "checkpoint.tar",
     SUMMARY_FILENAME = "SUMMARY.md",
     MONITOR_FILENAME = "monitors.pickle",
-    MONITOR_BEST_FILENAME = "best.pickle"
+    MONITOR_BEST_FILENAME = "best.pickle",
+
+    DISTRIBUTED = False,
+    IS_PRIMARY_PROCESS = True
 )
 
 CORE_CONFIG = Config(
@@ -109,6 +112,26 @@ CORE_CONFIG = Config(
 
 class Parser(Config):
     """ArgumentParser wrapper."""
+
+    # FILE
+    SAVED_FILENAME: str
+    BEST_FILENAME: str
+    CHECKPOINT_FREQ: int
+    CHECKPOINT_MODULES: List[str]
+    CHECKPOINT_FILENAME: str
+    SUMMARY_FILENAME: str
+    MONITOR_FILENAME: str
+    MONITOR_BEST_FILENAME: str
+
+    # PATH
+    DATA_DIR: str
+    SUMMARY_DIR: str
+    CHECKPOINT_PATH: str
+    LOG_PATH: str
+
+    # DDP
+    DISTRIBUTED: bool
+    IS_PRIMARY_PROCESS: bool
 
     def __init__(self) -> None:
         super().__init__(**CONFIG)
@@ -144,6 +167,7 @@ class Parser(Config):
         self.add_argument("--ranking", type=str, choices=('full', 'pool'), default='full', help="full: full ranking; pool: sampled-based ranking")
 
         self.add_argument("--device", default=torch.cuda.current_device() if torch.cuda.is_available() else 'cpu', help="device")
+        self.add_argument("--ddp-backend", type=str, default='nccl', help="ddp backend")
 
         # model
         self.add_argument("--optimizer", type=str, default="adam", help="Optimizer: adam (default), sgd, ...")
@@ -206,6 +230,37 @@ class Parser(Config):
         self.parser.set_defaults(**kwargs)
         for key, val in kwargs.items():
             self[key] = val
+
+    def set_device(self, device: Union[torch.device, str, int]):
+        try:
+            device = int(device)
+        except ValueError:
+            pass
+
+        set_color(device)
+        self.device = torch.device(device)
+        try:
+            torch.cuda.set_device(device)
+        except ValueError:
+            pass
+        except AttributeError:
+            pass
+        return device
+
+    def init_ddp(self):
+        try:
+            import torch.distributed as dist
+            if os.environ['WORLD_SIZE'] >= 1:
+                self.DISTRIBUTED = True
+                dist.init_process_group(backend=self.ddp_backend, init_method="env://")
+                self.world_size = dist.get_world_size()
+                self.device = int(os.environ["LOCAL_RANK"])
+                if dist.get_rank() == 0:
+                    self.IS_PRIMARY_PROCESS = True
+                else:
+                    self.IS_PRIMARY_PROCESS = False
+        except KeyError:
+            self.DISTRIBUTED = False
     
     @timemeter
     def load(self):
@@ -252,10 +307,6 @@ class Parser(Config):
         args = self.load()
         self.update(**dict(args._get_kwargs()))
 
-        try:
-            self.device = int(self.device)
-        except ValueError:
-            ...
         
         self['DATA_DIR'] = DATA_DIR
         self['SUMMARY_DIR'] = SUMMARY_DIR
@@ -266,7 +317,9 @@ class Parser(Config):
             os.path.join(self.LOG_PATH, self.DATA_DIR),
             os.path.join(self.LOG_PATH, self.SUMMARY_DIR)
         )
-        set_color(self.device)
+
+        self.init_ddp()
+        self.set_device()
         set_logger(path=self.LOG_PATH, log2file=self.log2file, log2console=self.log2console)
 
         activate_benchmark(self.benchmark)

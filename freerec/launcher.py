@@ -17,7 +17,8 @@ from .criterions import BaseCriterion
 from .dict2obj import Config
 from .utils import AverageMeter, Monitor, timemeter, infoLogger
 from .metrics import *
-from .parser import TIME
+from .parser import TIME, Parser
+from .ddp import primary_process_only
 
 
 __all__ = [
@@ -141,12 +142,6 @@ class ChiefCoach(metaclass=abc.ABCMeta):
 
         self.fields: FieldTuple[FieldModule] = FieldTuple(fields)
         self.device = torch.device(device)
-        try:
-            torch.cuda.set_device(self.device)
-        except ValueError:
-            pass
-        except AttributeError:
-            pass
 
         self._set_datapipe(trainpipe, validpipe, testpipe)
         self._set_other(model, criterion, optimizer, lr_scheduler)
@@ -308,7 +303,7 @@ class Coach(ChiefCoach):
 
     @timemeter
     def compile(
-        self, cfg: Config, monitors: List[str], 
+        self, cfg: Parser, monitors: List[str], 
         which4best: str = 'LOSS'
     ):
         r"""
@@ -384,6 +379,7 @@ class Coach(ChiefCoach):
         # Prepare data loaders
         self.prepare_dataloader()
 
+    @primary_process_only
     def save(self) -> None:
         """Save the model"""
         torch.save(self.model.state_dict(), os.path.join(self.cfg.LOG_PATH, self.cfg.SAVED_FILENAME))
@@ -392,6 +388,7 @@ class Coach(ChiefCoach):
         filename = self.cfg.SAVED_FILENAME if filename is None else filename
         self.model.load_state_dict(torch.load(os.path.join(path, filename), **kwargs))
 
+    @primary_process_only
     def save_checkpoint(self, epoch: int) -> None:
         r"""
         Save current checkpoint at epoch.
@@ -435,6 +432,7 @@ class Coach(ChiefCoach):
         infoLogger(f"[Coach] >>> Load best model @Epoch {self._best_epoch:<4d} ")
         self.model.load_state_dict(torch.load(os.path.join(self.cfg.LOG_PATH, self.cfg.BEST_FILENAME)))
 
+    @primary_process_only
     def check_best(self, epoch: int) -> None:
         """Update best value."""
         if self.meter4best.active:
@@ -455,6 +453,7 @@ class Coach(ChiefCoach):
         except FileNotFoundError:
             infoLogger(f"[Coach] >>> No best model was recorded. Skip it ...")
 
+    @primary_process_only
     def easy_record_best(self, best: defaultdict):
         r"""
         Record the best results on test set.
@@ -539,6 +538,7 @@ class Coach(ChiefCoach):
             infoLogger(' || '.join(infos))
 
     @timemeter
+    @primary_process_only
     def summary(self):
         r"""
         Summary the whole training process.
@@ -616,6 +616,7 @@ class Coach(ChiefCoach):
         # last epoch
         self.valid(self.cfg.epochs)
         self.test(self.cfg.epochs)
+
         self.check_best(self.cfg.epochs)
         self.step(self.cfg.epochs)
 
