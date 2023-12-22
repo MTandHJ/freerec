@@ -3,6 +3,7 @@
 from typing import Any, Callable, Iterable, List, Dict, Optional, Tuple, Union
 
 import torch, abc, os, time, sys, signal, psutil, atexit
+import torch.distributed as dist
 from torchdata.datapipes.iter import IterDataPipe
 from torch.utils.tensorboard import SummaryWriter
 from functools import partial
@@ -18,7 +19,7 @@ from .dict2obj import Config
 from .utils import AverageMeter, Monitor, timemeter, infoLogger
 from .metrics import *
 from .parser import TIME, Parser
-from .ddp import primary_process_only
+from .ddp import primary_process_only, is_distributed
 
 
 __all__ = [
@@ -149,6 +150,8 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         self.__mode = 'train'
 
         def clean():
+            if is_distributed(): # clean up DDP
+                dist.destroy_process_group()
             parent = psutil.Process(os.getpid())
             children = parent.children(recursive=True)
             for process in children:
@@ -156,7 +159,6 @@ class ChiefCoach(metaclass=abc.ABCMeta):
             psutil.wait_procs(children, timeout=5)
 
         atexit.register(clean)
-
 
     def _set_datapipe(
         self,

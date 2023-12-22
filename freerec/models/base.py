@@ -178,3 +178,39 @@ class RecSysArch(nn.Module):
             return self.recommend_from_full(**self._kwargs4full(kwargs))
         else:
             return self.recommend_from_pool(**self._kwargs4pool(kwargs))
+
+    @overload
+    def predict(self, users: torch.Tensor) -> torch.Tensor:
+        r"""
+        User-Item scoring.
+
+        users: torch.Tensor, (B, 1)
+        """
+
+    @overload
+    def predict(self, users: torch.Tensor, items: torch.Tensor) -> torch.Tensor:
+        r"""
+        User-Item scoring.
+
+        users: torch.Tensor, (B, 1)
+        items: torch.Tensor, (B, K + 1)
+        """
+
+    @overload
+    def predict(self, users: torch.Tensor, positives: torch.Tensor, negatives: torch.Tensor) -> Tuple[torch.Tensor]:
+        r"""
+        User-Item scoring.
+
+        users: torch.Tensor, (B, 1)
+        positives: torch.Tensor, (B, 1)
+        negatives: torch.Tensor, (B, K)
+        """
+
+    def predict(self, *args, **kwargs):
+        raise NotImplementedError()
+
+    def forward(self, *args, **kwargs):
+        if self.training:
+            return self.predict(*args, **kwargs)
+        else:
+            return self.recommend(*args, **kwargs)
