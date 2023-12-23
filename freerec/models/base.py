@@ -180,6 +180,22 @@ class RecSysArch(nn.Module):
             return self.recommend_from_pool(**self._kwargs4pool(kwargs))
 
     @overload
+    def encode(self, users: torch.Tensor) -> torch.Tensor:
+        r"""
+        User encoding.
+
+        users: torch.Tensor, (B, 1)
+        """
+
+    @overload
+    def encode(self, seqs: torch.Tensor) -> torch.Tensor:
+        r"""
+        Seq encoding.
+
+        seqs: torch.Tensor, (B, S)
+        """
+
+    @overload
     def predict(self, users: torch.Tensor) -> torch.Tensor:
         r"""
         User-Item scoring.
@@ -208,3 +224,9 @@ class RecSysArch(nn.Module):
 
     def predict(self, *args, **kwargs):
         raise NotImplementedError()
+
+    def forward(self, *args, **kwargs):
+        if self.training:
+            return self.predict(*args, **kwargs)
+        else:
+            return self.recommend(**kwargs)
