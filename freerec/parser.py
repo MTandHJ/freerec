@@ -7,7 +7,7 @@ import os, argparse, time, yaml
 from argparse import ArgumentParser
 
 from .dict2obj import Config
-from .ddp import is_distributed, primary_process_only, is_primary_process
+from .ddp import is_distributed, main_process_only, is_main_process
 from .utils import (
     mkdirs, timemeter, set_color, set_seed, activate_benchmark, 
     set_logger, infoLogger
@@ -131,7 +131,7 @@ class Parser(Config):
         super().__init__(**CONFIG)
         self.parse()
 
-    @primary_process_only
+    @main_process_only
     def readme(self, path: str, mode: str = "w") -> None:
         """Add README.md to the path."""
         time_ = time.strftime("%Y-%m-%d-%H:%M:%S")
@@ -314,7 +314,7 @@ class Parser(Config):
         self.readme(self.CHECKPOINT_PATH) # create README.md
         self.readme(self.LOG_PATH)
 
-        if is_primary_process():
+        if is_main_process():
             infoLogger(str(self))
 
 

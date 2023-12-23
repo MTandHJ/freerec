@@ -208,9 +208,3 @@ class RecSysArch(nn.Module):
 
     def predict(self, *args, **kwargs):
         raise NotImplementedError()
-
-    def forward(self, *args, **kwargs):
-        if self.training:
-            return self.predict(*args, **kwargs)
-        else:
-            return self.recommend(*args, **kwargs)

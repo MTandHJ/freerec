@@ -5,6 +5,7 @@ from typing import Any, Callable, Iterable, List, Dict, Optional, Tuple, Union
 import torch, abc, os, time, sys, signal, psutil, atexit
 import torch.distributed as dist
 from torchdata.datapipes.iter import IterDataPipe
+from torch.utils.data.graph_settings import get_all_graph_pipes
 from torch.utils.tensorboard import SummaryWriter
 from functools import partial
 from itertools import product
@@ -19,7 +20,7 @@ from .dict2obj import Config
 from .utils import AverageMeter, Monitor, timemeter, infoLogger
 from .metrics import *
 from .parser import TIME, Parser
-from .ddp import primary_process_only, is_distributed
+from .ddp import main_process_only, is_distributed, shared_random_seed, all_gather
 
 
 __all__ = [
@@ -147,7 +148,6 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         self._set_datapipe(trainpipe, validpipe, testpipe)
         self._set_other(model, criterion, optimizer, lr_scheduler)
 
-        self.current_epoch = -1
         self.__mode = 'train'
 
         def clean():
@@ -181,6 +181,15 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         self.model = model.to(self.device) if model else _DummyModule()
         self.optimizer = optimizer if optimizer else _DummyModule()
         self.lr_scheduler = lr_scheduler if lr_scheduler else _DummyModule()
+
+    def get_res_sys_arch(self) -> RecSysArch:
+        model = self.model
+        if isinstance(self.model, torch.nn.parallel.DataParallel):
+            model = self.model.module
+        elif isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
+            model = self.model.module
+        assert isinstance(model, RecSysArch), "No RecSysArch found ..."
+        return model
 
     @property
     def mode(self):
@@ -262,24 +271,24 @@ class ChiefCoach(metaclass=abc.ABCMeta):
 class Coach(ChiefCoach):
     """The framework for training."""
 
-    def prepare_dataloader(self) -> None:
-        """Prepare data loaders for training, validation, and testing data."""
-        from torch.utils.data.graph_settings import get_all_graph_pipes
-        def seed_worker(worker_id):
-            datapipe = torch.utils.data.get_worker_info().dataset
+    def seed_worker(self):
+        """Set seed to keep consistent across differents ranks."""
+        if is_distributed() and dist.is_initialized():
+            datapipe = self.trainpipe
             if isinstance(datapipe, IterDataPipe):
                 graph = torch.utils.data.graph.traverse(datapipe, only_datapipe=True)
                 for pipe in get_all_graph_pipes(graph):
                     if hasattr(pipe, "set_seed"):
                         pipe.set_seed(
-                            self.cfg.seed + self.current_epoch
+                            shared_random_seed()
                         )
 
+    def prepare_dataloader(self) -> None:
+        """Prepare data loaders for training, validation, and testing data."""
         self.trainloader = DataLoader(
             datapipe=self.trainpipe, 
             num_workers=self.cfg.num_workers,
             pin_memory=self.cfg.pin_memory,
-            worker_init_fn=seed_worker if is_distributed() else None
         )
         self.validloader = DataLoader(
             datapipe=self.validpipe, 
@@ -394,7 +403,7 @@ class Coach(ChiefCoach):
         # Prepare data loaders
         self.prepare_dataloader()
 
-    @primary_process_only
+    @main_process_only
     def save(self) -> None:
         """Save the model"""
         torch.save(self.model.state_dict(), os.path.join(self.cfg.LOG_PATH, self.cfg.SAVED_FILENAME))
@@ -403,7 +412,7 @@ class Coach(ChiefCoach):
         filename = self.cfg.SAVED_FILENAME if filename is None else filename
         self.model.load_state_dict(torch.load(os.path.join(path, filename), **kwargs))
 
-    @primary_process_only
+    @main_process_only
     def save_checkpoint(self, epoch: int) -> None:
         r"""
         Save current checkpoint at epoch.
@@ -447,7 +456,7 @@ class Coach(ChiefCoach):
         infoLogger(f"[Coach] >>> Load best model @Epoch {self._best_epoch:<4d} ")
         self.model.load_state_dict(torch.load(os.path.join(self.cfg.LOG_PATH, self.cfg.BEST_FILENAME)))
 
-    @primary_process_only
+    @main_process_only
     def check_best(self, epoch: int) -> None:
         """Update best value."""
         if self.meter4best.active:
@@ -468,7 +477,7 @@ class Coach(ChiefCoach):
         except FileNotFoundError:
             infoLogger(f"[Coach] >>> No best model was recorded. Skip it ...")
 
-    @primary_process_only
+    @main_process_only
     def easy_record_best(self, best: defaultdict):
         r"""
         Record the best results on test set.
@@ -501,6 +510,7 @@ class Coach(ChiefCoach):
             infoLogger(f"[Coach] >>> Load last checkpoint and train from epoch: {start_epoch}")
         return start_epoch
 
+    @main_process_only
     @torch.no_grad()
     def monitor(
         self, *values,
@@ -553,7 +563,7 @@ class Coach(ChiefCoach):
             infoLogger(' || '.join(infos))
 
     @timemeter
-    @primary_process_only
+    @main_process_only
     def summary(self):
         r"""
         Summary the whole training process.
@@ -615,9 +625,7 @@ class Coach(ChiefCoach):
 
         start_epoch = self.resume()
         for epoch in range(start_epoch, self.cfg.epochs):
-
-            self.current_epoch = epoch
-
+            self.seed_worker()
             if epoch % self.cfg.CHECKPOINT_FREQ == 0:
                 self.save_checkpoint(epoch)
             if epoch % self.cfg.eval_freq == 0:
@@ -659,7 +667,8 @@ class GenCoach(Coach):
             unseen: BufferField
             seen: BufferField
         """
-        userFeats, itemFeats = self.model.recommend()
+        model = self.get_res_sys_arch()
+        userFeats, itemFeats = model.recommend()
         for data in self.dataloader:
             if len(data) == 2:
                 users, pool = [col.to(self.device) for col in data]
@@ -681,6 +690,13 @@ class GenCoach(Coach):
                 raise NotImplementedError(
                     f"GenCoach's `evaluate` expects the `data` to be the length of 2 or 3, but {len(data)} received ..."
                 )
+
+            scores = torch.cat(
+                all_gather(scores), dim=0
+            )
+            targets = torch.cat(
+                all_gather(targets), dim=0
+            )
 
             self.monitor(
                 scores, targets,
@@ -706,17 +722,18 @@ class SeqCoach(Coach):
             unseen: BufferField
             seen: BufferField
         """
+        model = self.get_res_sys_arch()
         for data in self.dataloader:
             if len(data) == 3:
                 users, seqs, pool = [col.to(self.device) for col in data]
-                scores = self.model.recommend(users=users, seqs=seqs, pool=pool)
+                scores = model.recommend(users=users, seqs=seqs, pool=pool)
                 targets = torch.zeros_like(scores)
                 targets[:, 0].fill_(1)
             elif len(data) == 4:
                 users, seqs, unseen, seen = data
                 users = users.to(self.device).data
                 seqs = seqs.to(self.device).data
-                scores = self.model.recommend(users=users, seqs=seqs)
+                scores = model.recommend(users=users, seqs=seqs)
                 seen = seen.to_csr().to(self.device).to_dense().bool()
                 scores[seen] = -1e23
                 targets = unseen.to_csr().to(self.device).to_dense()
@@ -724,6 +741,13 @@ class SeqCoach(Coach):
                 raise NotImplementedError(
                     f"SeqCoach's `evaluate` expects the `data` to be the length of 3 or 4, but {len(data)} received ..."
                 )
+
+            scores = torch.cat(
+                all_gather(scores), dim=0
+            )
+            targets = torch.cat(
+                all_gather(targets), dim=0
+            )
 
             self.monitor(
                 scores, targets,
@@ -749,17 +773,18 @@ class SessCoach(Coach):
             unseen: BufferField
             seen: BufferField
         """
+        model = self.get_res_sys_arch()
         for data in self.dataloader:
             if len(data) == 3:
                 sesses, seqs, pool = [col.to(self.device) for col in data]
-                scores = self.model.recommend(sesses=sesses, seqs=seqs, pool=pool)
+                scores = model.recommend(sesses=sesses, seqs=seqs, pool=pool)
                 targets = torch.zeros_like(scores)
                 targets[:, 0].fill_(1)
             elif len(data) == 4:
                 sesses, seqs, unseen, seen = data
                 sesses = sesses.data
                 seqs = seqs.to(self.device).data
-                scores = self.model.recommend(sesses=sesses, seqs=seqs)
+                scores = model.recommend(sesses=sesses, seqs=seqs)
                 # Don't remove seens for session
                 targets = unseen.to_csr().to(self.device).to_dense()
             else:
@@ -767,12 +792,18 @@ class SessCoach(Coach):
                     f"SessCoach's `evaluate` expects the `data` to be the length of 3 or 4, but {len(data)} received ..."
                 )
 
+            scores = torch.cat(
+                all_gather(scores), dim=0
+            )
+            targets = torch.cat(
+                all_gather(targets), dim=0
+            )
+
             self.monitor(
                 scores, targets,
                 n=len(sesses), mode="mean", prefix=prefix,
                 pool=['HITRATE', 'PRECISION', 'RECALL', 'NDCG', 'MRR']
             )
-
 
 
 class Adapter:
