@@ -34,14 +34,19 @@ class RandomChoicedSource(BaseProcessor):
     ) -> None:
         super().__init__(None)
 
-        self._rng = partial(
-            random.choice, seq=tuple(source)
-        )
+        self.source = tuple(source)
         self.datasize = datasize
+        self._seed = None
+        self._rng = random.Random()
+
+    def set_seed(self, seed: int):
+        self._seed = seed
 
     def __iter__(self):
+        self._rng.seed(self._seed)
+        self._seed = None
         for _ in range(self.datasize):
-            yield self._rng()
+            yield self._rng.choice(self.source)
 
 
 class RandomShuffledSource(BaseProcessor):
@@ -59,12 +64,16 @@ class RandomShuffledSource(BaseProcessor):
         super().__init__(None)
 
         self.source = list(source)
-        self._rng = partial(
-            random.shuffle, x=self.source
-        )
+        self._seed = None
+        self._rng = random.Random()
+
+    def set_seed(self, seed: int):
+        self._seed = seed
 
     def __iter__(self):
-        self._rng()
+        self._rng.seed(self._seed)
+        self._seed = None
+        self._rng.shuffle(self.source)
         yield from iter(self.source)
 
 

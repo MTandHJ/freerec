@@ -147,6 +147,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         self._set_datapipe(trainpipe, validpipe, testpipe)
         self._set_other(model, criterion, optimizer, lr_scheduler)
 
+        self.current_epoch = -1
         self.__mode = 'train'
 
         def clean():
@@ -263,20 +264,32 @@ class Coach(ChiefCoach):
 
     def prepare_dataloader(self) -> None:
         """Prepare data loaders for training, validation, and testing data."""
+        from torch.utils.data.graph_settings import get_all_graph_pipes
+        def seed_worker(worker_id):
+            datapipe = torch.utils.data.get_worker_info().dataset
+            if isinstance(datapipe, IterDataPipe):
+                graph = torch.utils.data.graph.traverse(datapipe, only_datapipe=True)
+                for pipe in get_all_graph_pipes(graph):
+                    if hasattr(pipe, "set_seed"):
+                        pipe.set_seed(
+                            self.cfg.seed + self.current_epoch
+                        )
+
         self.trainloader = DataLoader(
             datapipe=self.trainpipe, 
             num_workers=self.cfg.num_workers,
-            pin_memory=self.cfg.pin_memory
+            pin_memory=self.cfg.pin_memory,
+            worker_init_fn=seed_worker if is_distributed() else None
         )
         self.validloader = DataLoader(
             datapipe=self.validpipe, 
             num_workers=self.cfg.num_workers,
-            pin_memory=self.cfg.pin_memory
+            pin_memory=self.cfg.pin_memory,
         )
         self.testloader = DataLoader(
             datapipe=self.testpipe, 
             num_workers=self.cfg.num_workers,
-            pin_memory=self.cfg.pin_memory
+            pin_memory=self.cfg.pin_memory,
         )
     
     @property
@@ -602,6 +615,9 @@ class Coach(ChiefCoach):
 
         start_epoch = self.resume()
         for epoch in range(start_epoch, self.cfg.epochs):
+
+            self.current_epoch = epoch
+
             if epoch % self.cfg.CHECKPOINT_FREQ == 0:
                 self.save_checkpoint(epoch)
             if epoch % self.cfg.eval_freq == 0:

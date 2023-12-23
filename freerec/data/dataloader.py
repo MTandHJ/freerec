@@ -32,24 +32,6 @@ class DataLoader(torch.utils.data.DataLoader):
         )
 
 
-# TODO: torchdata==0.4.1 has the following issue:
-# Multiprocessing and batching / collation:
-# https://github.com/pytorch/data/issues/530
-# class DataLoader(DataLoader2):
-
-#     def __init__(
-#         self, datapipe: dp.iter.IterDataPipe, 
-#         num_workers: int = 0, **kwargs
-#     ) -> None:
-#         super().__init__(
-#             datapipe=datapipe,
-#             reading_service=MultiProcessingReadingService(
-#                 num_workers=num_workers, **kwargs
-#             )
-#         )
-
-
-
 def _load_gen_datapipe(
     dataset: GeneralRecSet, mode: str,
     batch_size: int, ranking: str,
