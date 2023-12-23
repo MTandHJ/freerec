@@ -541,6 +541,7 @@ class Coach(ChiefCoach):
             for meter in metrics.get(lastname.upper(), []):
                 meter(*values, n=n, mode=mode)
 
+    @main_process_only
     def step(self, epoch: int):
         r"""
         Prints training status and evaluation results for each epoch, 
