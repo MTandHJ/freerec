@@ -20,7 +20,7 @@ from .dict2obj import Config
 from .utils import AverageMeter, Monitor, timemeter, infoLogger
 from .metrics import *
 from .parser import TIME, Parser
-from .ddp import main_process_only, is_distributed, shared_random_seed, all_gather, synchronize
+from .ddp import is_main_process, main_process_only, is_distributed, shared_random_seed, synchronize
 
 
 __all__ = [
@@ -150,7 +150,6 @@ class ChiefCoach(metaclass=abc.ABCMeta):
 
         self.__mode = 'train'
 
-        @main_process_only
         def clean():
             if dist.is_available() and dist.is_initialized(): # clean up DDP
                 dist.destroy_process_group()
@@ -404,14 +403,27 @@ class Coach(ChiefCoach):
         # Prepare data loaders
         self.prepare_dataloader()
 
-    @main_process_only
-    def save(self) -> None:
-        """Save the model"""
-        torch.save(self.model.state_dict(), os.path.join(self.cfg.LOG_PATH, self.cfg.SAVED_FILENAME))
+    def save(self, filename: Optional[str] = None) -> None:
+        r"""
+        Save the model to `LOG_PATH` with a given filename.
 
-    def load(self, path: str, filename: Optional[str] = None, **kwargs) -> None:
+        Parameters:
+        -----------
+        filename: str, optional
+            `None`: Use `SAVED_FILENAME`
+        """
+        if is_main_process():
+            filename = self.cfg.SAVED_FILENAME if filename is None else filename
+            torch.save(self.model.state_dict(), os.path.join(self.cfg.LOG_PATH, filename))
+
+        synchronize()
+        return 
+
+    def load(self, path: str, filename: Optional[str] = None) -> None:
         filename = self.cfg.SAVED_FILENAME if filename is None else filename
-        self.model.load_state_dict(torch.load(os.path.join(path, filename), **kwargs))
+        self.model.load_state_dict(
+            torch.load(os.path.join(path, filename), map_location=self.device)
+        )
 
         synchronize()
         return
@@ -457,9 +469,8 @@ class Coach(ChiefCoach):
         synchronize()
         return checkpoint['epoch']
 
-    @main_process_only
     def save_best(self) -> None:
-        torch.save(self.model.state_dict(), os.path.join(self.cfg.LOG_PATH, self.cfg.BEST_FILENAME))
+        self.save(self.cfg.BEST_FILENAME)
 
     def load_best(self) -> None:
         infoLogger(f"[Coach] >>> Load best model @Epoch {self._best_epoch:<4d} ")
@@ -468,7 +479,6 @@ class Coach(ChiefCoach):
         synchronize()
         return
 
-    @main_process_only
     def check_best(self, epoch: int) -> None:
         """Update best value."""
         if self.meter4best.active:
