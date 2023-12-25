@@ -11,6 +11,7 @@ from freeplot.base import FreePlot
 from freeplot.utils import export_pickle
 
 from .dict2obj import Config
+from .ddp import is_main_process, all_gather
 
 
 LOGGER = Config(
@@ -82,6 +83,18 @@ class AverageMeter:
         self.count = 0
         self.active = False
 
+    def gather(self, val: float, n: int, mode: str):
+        """Gather metrics from other processes (DDP)."""
+        vals = all_gather(val)
+        ns = all_gather(n)
+        if mode == "mean":
+            val = sum([val * n for val, n in zip(vals, ns)])
+        elif mode == "sum":
+            val = sum(vals)
+        else:
+            raise ValueError(f"Receive mode {mode} but 'mean' or 'sum' expected ...")
+        return val, int(sum(ns))
+
     def update(self, val: float, n: int = 1, mode: str = "mean") -> None:
         r"""
         Updates the meter.
@@ -95,14 +108,10 @@ class AverageMeter:
         mode: str, optional (default: "mean")
             Mode: 'sum'|'mean'.
         """
+        val, n = self.gather(val, n, mode)
         self.val = val
         self.count += n
-        if mode == "mean":
-            self.sum += val * n
-        elif mode == "sum":
-            self.sum += val
-        else:
-            raise ValueError(f"Receive mode {mode} but 'mean' or 'sum' expected ...")
+        self.sum += val
         self.avg = self.sum / self.count
 
     def step(self) -> str:
@@ -376,7 +385,7 @@ def set_color(device: Union[int, str]):
     except KeyError:
         pass
 
-def infoLogger(words: str):
+def infoLogger(words: str, main_process_only: bool = True):
     r"""
     Log an info-level message.
 
@@ -384,12 +393,16 @@ def infoLogger(words: str):
     -----------
     words : str
         The message to log.
+    main_process_only: bool, default to `True`
+        `True`: print for main process only
 
     Returns:
     --------
     words : str
         The message that was logged.
     """
+    if main_process_only and not is_main_process():
+        return
     words = COLOR['current'].format(words)
     LOGGER.info(words)
     return words
@@ -447,7 +460,7 @@ def timemeter(func):
         start = time.time()
         results = func(*args, **kwargs)
         end = time.time()
-        infoLogger(f"[Wall TIME] >>> {func.__qualname__} takes {end-start:.6f} seconds ...")
+        infoLogger(f"[Wall TIME] >>> {func.__qualname__} takes {end-start:.6f} seconds ...", False)
         return  results
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__

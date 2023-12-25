@@ -8,10 +8,8 @@ from typing import List, TypeVar, Dict
 
 import torch
 import numpy as np
-import os, pickle, functools
+import os, pickle, functools, warnings
 import torch.distributed as dist
-
-from .utils import warnLogger
 
 
 _LOCAL_PROCESS_GROUP = None
@@ -97,7 +95,7 @@ def _serialize_to_tensor(data, group):
 
     buffer = pickle.dumps(data)
     if len(buffer) > 1024 ** 3:
-        warnLogger(
+        warnings.warn(
             "Rank {} trying to all-gather {:.2f} GB of data on device {}".format(
                 get_rank(), len(buffer) / (1024 ** 3), device
             )

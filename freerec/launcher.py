@@ -150,8 +150,9 @@ class ChiefCoach(metaclass=abc.ABCMeta):
 
         self.__mode = 'train'
 
+        @main_process_only
         def clean():
-            if is_distributed(): # clean up DDP
+            if dist.is_available() and dist.is_initialized(): # clean up DDP
                 dist.destroy_process_group()
             parent = psutil.Process(os.getpid())
             children = parent.children(recursive=True)
@@ -521,7 +522,6 @@ class Coach(ChiefCoach):
             infoLogger(f"[Coach] >>> Load last checkpoint and train from epoch: {start_epoch}")
         return start_epoch
 
-    @main_process_only
     @torch.no_grad()
     def monitor(
         self, *values,
@@ -552,7 +552,6 @@ class Coach(ChiefCoach):
             for meter in metrics.get(lastname.upper(), []):
                 meter(*values, n=n, mode=mode)
 
-    @main_process_only
     def step(self, epoch: int):
         r"""
         Prints training status and evaluation results for each epoch, 
@@ -574,8 +573,8 @@ class Coach(ChiefCoach):
                 infos += [meter.step() for meter in meters if meter.active]
             infoLogger(' || '.join(infos))
 
-    @timemeter
     @main_process_only
+    @timemeter
     def summary(self):
         r"""
         Summary the whole training process.
@@ -703,13 +702,6 @@ class GenCoach(Coach):
                     f"GenCoach's `evaluate` expects the `data` to be the length of 2 or 3, but {len(data)} received ..."
                 )
 
-            scores = torch.cat(
-                all_gather(scores), dim=0
-            )
-            targets = torch.cat(
-                all_gather(targets), dim=0
-            )
-
             self.monitor(
                 scores, targets,
                 n=len(users), mode="mean", prefix=prefix,
@@ -754,13 +746,6 @@ class SeqCoach(Coach):
                     f"SeqCoach's `evaluate` expects the `data` to be the length of 3 or 4, but {len(data)} received ..."
                 )
 
-            scores = torch.cat(
-                all_gather(scores), dim=0
-            )
-            targets = torch.cat(
-                all_gather(targets), dim=0
-            )
-
             self.monitor(
                 scores, targets,
                 n=len(users), mode="mean", prefix=prefix,
@@ -803,13 +788,6 @@ class SessCoach(Coach):
                 raise NotImplementedError(
                     f"SessCoach's `evaluate` expects the `data` to be the length of 3 or 4, but {len(data)} received ..."
                 )
-
-            scores = torch.cat(
-                all_gather(scores), dim=0
-            )
-            targets = torch.cat(
-                all_gather(targets), dim=0
-            )
 
             self.monitor(
                 scores, targets,
