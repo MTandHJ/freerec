@@ -20,7 +20,7 @@ from .dict2obj import Config
 from .utils import AverageMeter, Monitor, timemeter, infoLogger
 from .metrics import *
 from .parser import TIME, Parser
-from .ddp import main_process_only, is_distributed, shared_random_seed, all_gather
+from .ddp import main_process_only, is_distributed, shared_random_seed, all_gather, synchronize
 
 
 __all__ = [
@@ -412,7 +412,9 @@ class Coach(ChiefCoach):
         filename = self.cfg.SAVED_FILENAME if filename is None else filename
         self.model.load_state_dict(torch.load(os.path.join(path, filename), **kwargs))
 
-    @main_process_only
+        synchronize()
+        return
+
     def save_checkpoint(self, epoch: int) -> None:
         r"""
         Save current checkpoint at epoch.
@@ -433,6 +435,9 @@ class Coach(ChiefCoach):
         checkpoint['monitors'] = self.monitors.state_dict()
         torch.save(checkpoint, path)
 
+        synchronize()
+        return
+
     def load_checkpoint(self) -> int:
         r"""
         Load last saved checkpoint.
@@ -447,14 +452,20 @@ class Coach(ChiefCoach):
         for module in self.cfg.CHECKPOINT_MODULES:
             getattr(self, module).load_state_dict(checkpoint[module])
         self.monitors.load_state_dict(checkpoint['monitors'])
+
+        synchronize()
         return checkpoint['epoch']
 
+    @main_process_only
     def save_best(self) -> None:
         torch.save(self.model.state_dict(), os.path.join(self.cfg.LOG_PATH, self.cfg.BEST_FILENAME))
 
     def load_best(self) -> None:
         infoLogger(f"[Coach] >>> Load best model @Epoch {self._best_epoch:<4d} ")
         self.model.load_state_dict(torch.load(os.path.join(self.cfg.LOG_PATH, self.cfg.BEST_FILENAME)))
+
+        synchronize()
+        return
 
     @main_process_only
     def check_best(self, epoch: int) -> None:

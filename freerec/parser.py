@@ -7,7 +7,7 @@ import os, argparse, time, yaml
 from argparse import ArgumentParser
 
 from .dict2obj import Config
-from .ddp import is_distributed, main_process_only, is_main_process
+from .ddp import is_distributed, main_process_only, is_main_process, all_gather
 from .utils import (
     mkdirs, timemeter, set_color, set_seed, activate_benchmark, 
     set_logger, infoLogger
@@ -77,7 +77,7 @@ DEFAULTS : dict
 DATA_DIR = 'data'
 SUMMARY_DIR = 'summary'
 CHECKPOINT_PATH = "./infos/{description}/{dataset}/{device}"
-LOG_PATH = "./logs/{description}/{dataset}/{device}-{id}"
+LOG_PATH = "./logs/{description}/{dataset}/{id}"
 CORE_CHECKPOINT_PATH = "./infos/{description}/core"
 CORE_LOG_PATH = "./logs/{description}/core"
 TIME = "%m%d%H%M%S"
@@ -247,6 +247,8 @@ class Parser(Config):
         if is_distributed():
             dist.init_process_group(backend=self.ddp_backend, init_method="env://")
             self.device = int(os.environ["LOCAL_RANK"])
+            # synchronize ids
+            self.id = all_gather(self.id)[0]
     
     @timemeter
     def load(self):
@@ -292,10 +294,11 @@ class Parser(Config):
         """
         args = self.load()
         self.update(**dict(args._get_kwargs()))
-
         
         self['DATA_DIR'] = DATA_DIR
         self['SUMMARY_DIR'] = SUMMARY_DIR
+
+        self.init_ddp()
         self['CHECKPOINT_PATH'] = CHECKPOINT_PATH.format(**self)
         self['LOG_PATH'] = LOG_PATH.format(**self)
         mkdirs(
@@ -304,7 +307,6 @@ class Parser(Config):
             os.path.join(self.LOG_PATH, self.SUMMARY_DIR)
         )
 
-        self.init_ddp()
         self.set_device(self.device)
         set_logger(path=self.LOG_PATH, log2file=self.log2file, log2console=self.log2console)
 
