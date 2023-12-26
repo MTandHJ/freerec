@@ -200,6 +200,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
     def train(self, epoch: int):
         """Start training and return the training loss."""
         self.__mode = 'train'
+        self.seed_worker()
         self.model.train()
         return self.train_per_epoch(epoch)
 
@@ -646,7 +647,6 @@ class Coach(ChiefCoach):
 
         start_epoch = self.resume()
         for epoch in range(start_epoch, self.cfg.epochs):
-            self.seed_worker()
             if epoch % self.cfg.CHECKPOINT_FREQ == 0:
                 self.save_checkpoint(epoch)
             if epoch % self.cfg.eval_freq == 0:
