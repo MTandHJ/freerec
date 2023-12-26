@@ -600,7 +600,11 @@ class RecDataSet(BaseSet):
 
         return seqs
 
-    def to_roll_seqs(self, master: Tuple = (USER, ID), minlen: int = 2) -> List:
+    def to_roll_seqs(
+        self, master: Tuple = (USER, ID), 
+        minlen: int = 2,
+        maxlen: Optional[int] = None
+    ) -> List:
         r"""
         Rolling dataset in sequence.
 
@@ -610,6 +614,9 @@ class RecDataSet(BaseSet):
             Tuple of tags to spefic a field, e.g., (USER, ID), (SESSION, ID)
         minlen: int
             Shorest sequence
+        maxlen: int, optional
+            Maximum length
+            `None`: Roll throughout the whole sequence
        
         Returns:
         --------
@@ -619,6 +626,8 @@ class RecDataSet(BaseSet):
 
         roll_seqs = []
         for id_, items in seqs:
+            if maxlen is not None:
+                items = items[-maxlen:]
             for k in range(minlen, len(items) + 1):
                 roll_seqs.append(
                     (id_, items[:k])
