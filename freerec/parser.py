@@ -90,8 +90,8 @@ CONFIG = Config(
     CHECKPOINT_MODULES = ['model', 'optimizer', 'lr_scheduler'],
     CHECKPOINT_FILENAME = "checkpoint.tar",
     SUMMARY_FILENAME = "SUMMARY.md",
-    MONITOR_FILENAME = "monitors.pickle",
-    MONITOR_BEST_FILENAME = "best.pickle",
+    MONITOR_FILENAME = "monitors.pkl",
+    MONITOR_BEST_FILENAME = "best.pkl",
 )
 
 CORE_CONFIG = Config(

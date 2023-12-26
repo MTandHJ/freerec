@@ -921,7 +921,7 @@ class Adapter:
         return f" --{key.replace('_', '-')}={val}"
 
     def load_best(self, logPath: str):
-        """Load best.pickle from logPath of corresponding."""
+        """Load best.pkl from logPath of corresponding."""
         file_ = os.path.join(logPath, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME)
         return import_pickle(file_)
 
