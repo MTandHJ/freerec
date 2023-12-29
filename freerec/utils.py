@@ -32,8 +32,6 @@ COLOR = {
     1: "\033[1;35m{0}\033[0m",
     2: "\033[1;34m{0}\033[0m",
     3: "\033[1;33m{0}\033[0m",
-    4: "\033[1;38m{0}\033[0m",
-    5: "\033[1;32m{0}\033[0m"
 }
 
 
@@ -381,6 +379,8 @@ def set_color(device: Union[int, str]):
         The device identifier, which can be an integer or string.
     """
     try:
+        if isinstance(device, int):
+            device = device % 4
         COLOR['current'] = COLOR[device]
     except KeyError:
         pass
