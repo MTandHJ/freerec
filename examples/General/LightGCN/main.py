@@ -13,7 +13,7 @@ import freerec
 from freerec.data.fields import FieldModuleList
 from freerec.data.tags import USER, SESSION, ITEM, TIMESTAMP, ID
 
-freerec.declare(version='0.5.1')
+freerec.declare(version='0.6.1')
 
 cfg = freerec.parser.Parser()
 cfg.add_argument("-eb", "--embedding-dim", type=int, default=64)
@@ -173,10 +173,10 @@ def main():
     criterion = freerec.criterions.BPRLoss()
 
     coach = CoachForLightGCN(
+        dataset=dataset,
         trainpipe=trainpipe,
         validpipe=validpipe,
         testpipe=testpipe,
-        fields=dataset.fields,
         model=model,
         criterion=criterion,
         optimizer=optimizer,

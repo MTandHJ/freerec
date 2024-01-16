@@ -7,7 +7,7 @@ import freerec
 from freerec.data.fields import FieldModuleList
 from freerec.data.tags import USER, SESSION, ITEM, TIMESTAMP, ID
 
-freerec.declare(version='0.5.1')
+freerec.declare(version='0.6.1')
 
 cfg = freerec.parser.Parser()
 cfg.add_argument("--embedding-dim", type=int, default=50)
@@ -167,10 +167,10 @@ def main():
     criterion = freerec.criterions.CrossEntropy4Logits()
 
     coach = CoachForGRU4Rec(
+        dataset=dataset,
         trainpipe=trainpipe,
         validpipe=validpipe,
         testpipe=testpipe,
-        fields=dataset.fields,
         model=model,
         criterion=criterion,
         optimizer=optimizer,
