@@ -9,3 +9,4 @@ __all__ = []
 #TODO:===============================Knowledge-based Recommendation===============================
 class KnowledgeBasedRecSet(RecDataSet):
     DATATYPE =  "Knowledge"
+    DEDUPLICATED = True

@@ -58,6 +58,8 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         - `Knowledge': for knowledge-based recommendation.
     VALID_IS_TEST: bool 
         The validset and testset are the same one sometimes.
+    DEDUPLICATED: bool
+        Whether the dataset has been deduplicated.
 
     Notes:
     ------
@@ -72,6 +74,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     URL: str
     DATATYPE: str
     VALID_IS_TEST: bool
+    DEDUPLICATED: bool
 
     def __new__(cls, *args, **kwargs):
         for attr in ('_cfg', 'DATATYPE', 'VALID_IS_TEST'):

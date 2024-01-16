@@ -17,6 +17,7 @@ __all__ = ['SessionBasedRecSet', 'SessionItemTimeTriplet']
 
 class SessionBasedRecSet(RecDataSet):
     DATATYPE =  "Session"
+    DEDUPLICATED = True
 
     def check(self):
         assert isinstance(self.fields[TIMESTAMP], Field), "SessionRecSet must have `TIMESTAMP' field."

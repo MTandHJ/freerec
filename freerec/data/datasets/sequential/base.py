@@ -15,6 +15,7 @@ __all__ = ['SequentialRecSet']
 
 class SequentialRecSet(RecDataSet):
     DATATYPE =  "Sequential"
+    DEDUPLICATED = True
 
     def check(self):
         assert isinstance(self.fields[TIMESTAMP], Field), "SequentialRecSet must have `TIMESTAMP' field."
