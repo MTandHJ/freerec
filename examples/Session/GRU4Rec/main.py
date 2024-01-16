@@ -110,7 +110,7 @@ class CoachForGRU4Rec(freerec.launcher.SessCoach):
 
 def main():
 
-    dataset = getattr(freerec.data.datasets.session, cfg.dataset)(root=cfg.root)
+    dataset: freerec.data.datasets.SessionBasedRecSet = getattr(freerec.data.datasets.session, cfg.dataset)(root=cfg.root)
     Session, Item = dataset.fields[SESSION, ID], dataset.fields[ITEM, ID]
 
     # trainpipe

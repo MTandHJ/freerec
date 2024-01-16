@@ -144,7 +144,7 @@ class CoachForBERT4Rec(freerec.launcher.SeqCoach):
 
 def main():
 
-    dataset = getattr(freerec.data.datasets.sequential, cfg.dataset)(root=cfg.root)
+    dataset: freerec.data.datasets.SequentialRecSet = getattr(freerec.data.datasets.sequential, cfg.dataset)(root=cfg.root)
     User, Item = dataset.fields[USER, ID], dataset.fields[ITEM, ID]
 
     # trainpipe

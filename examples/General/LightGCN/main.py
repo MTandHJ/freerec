@@ -134,7 +134,7 @@ class CoachForLightGCN(freerec.launcher.GenCoach):
 
 def main():
 
-    dataset = getattr(freerec.data.datasets.general, cfg.dataset)(cfg.root)
+    dataset: freerec.data.datasets.GeneralRecSet = getattr(freerec.data.datasets.general, cfg.dataset)(cfg.root)
     User, Item = dataset.fields[USER, ID], dataset.fields[ITEM, ID]
 
     # trainpipe
