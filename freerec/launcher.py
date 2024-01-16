@@ -12,6 +12,7 @@ from itertools import product
 from collections import defaultdict
 from freeplot.utils import import_pickle, export_pickle
 
+from .data.datasets import RecDataSet
 from .data.fields import FieldModule, FieldTuple
 from .data.dataloader import DataLoader
 from .models import RecSysArch
@@ -105,6 +106,8 @@ class ChiefCoach(metaclass=abc.ABCMeta):
 
     Parameters:
     -----------
+    dataset: RecDataSet,
+        The original dataset.
     trainpipe : IterDataPipe
         Iterable data pipeline for training data.
     validpipe : IterDataPipe, optional
@@ -113,8 +116,6 @@ class ChiefCoach(metaclass=abc.ABCMeta):
     testpipe : IterDataPipe, optional
         Iterable data pipeline for testing data.
         If `None`, use `validpipe` instead.
-    fields : Iterable[FieldModule]
-        Tuple of `FieldModule`s for dataset fields.
     model : Union[RecSysArch, torch.nn.Module, None]
         Model for training and evaluating. 
         If `None`, use _DummyModule instead, which should not call `forward`.
@@ -136,13 +137,14 @@ class ChiefCoach(metaclass=abc.ABCMeta):
 
     def __init__(
         self, *,
-        trainpipe: IterDataPipe, validpipe: Optional[IterDataPipe], testpipe: Optional[IterDataPipe], fields: Iterable[FieldModule],
+        dataset: RecDataSet, trainpipe: IterDataPipe, validpipe: Optional[IterDataPipe], testpipe: Optional[IterDataPipe],
         model: Union[RecSysArch, torch.nn.Module, None], criterion: Union[BaseCriterion, Callable], 
         optimizer: Optional[torch.optim.Optimizer], lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler],
         device: Union[torch.device, str, int]
     ):
 
-        self.fields: FieldTuple[FieldModule] = FieldTuple(fields)
+        self.dataset = dataset
+        self.fields: FieldTuple[FieldModule] = FieldTuple(dataset.fields)
         self.device = torch.device(device)
 
         self._set_datapipe(trainpipe, validpipe, testpipe)
@@ -325,6 +327,13 @@ class Coach(ChiefCoach):
     def meter4best(self, meter: AverageMeter):
         self.__best_meter = meter
         infoLogger(f"[Coach] >>> Set best meter: {meter.name} ")
+
+    @property
+    def remove_seen(self):
+        # remove seen if
+        # 1) retain_seen is not activated and
+        # 2) dataset has no duplicates
+        return not (self.cfg.retain_seen or self.dataset.has_duplicates())
 
     @timemeter
     def compile(
@@ -704,7 +713,7 @@ class GenCoach(Coach):
                 users = userFeats[users].flatten(1) # B x D
                 items = itemFeats.flatten(1) # N x D
                 scores = users.matmul(items.T) # B x N
-                if not self.cfg.retain_seen:
+                if self.remove_seen:
                     seen = seen.to_csr().to(self.device).to_dense().bool()
                     scores[seen] = -1e23
                 targets = unseen.to_csr().to(self.device).to_dense()
@@ -749,7 +758,7 @@ class SeqCoach(Coach):
                 users = users.to(self.device).data
                 seqs = seqs.to(self.device).data
                 scores = model.recommend(users=users, seqs=seqs)
-                if not self.cfg.retain_seen:
+                if self.remove_seen:
                     seen = seen.to_csr().to(self.device).to_dense().bool()
                     scores[seen] = -1e23
                 targets = unseen.to_csr().to(self.device).to_dense()
@@ -794,7 +803,7 @@ class SessCoach(Coach):
                 sesses = sesses.data
                 seqs = seqs.to(self.device).data
                 scores = model.recommend(sesses=sesses, seqs=seqs)
-                if not self.cfg.retain_seen:
+                if self.remove_seen:
                     seen = seen.to_csr().to(self.device).to_dense().bool()
                     scores[seen] = -1e23
                 targets = unseen.to_csr().to(self.device).to_dense()

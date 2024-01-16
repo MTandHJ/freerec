@@ -4,6 +4,7 @@ from typing import Tuple, List
 
 import numpy as np
 import torchdata.datapipes as dp
+from functools import lru_cache
 
 from ..base import RecDataSet
 from ...tags import TIMESTAMP, SESSION, ITEM, ID
@@ -33,6 +34,7 @@ class SessionBasedRecSet(RecDataSet):
     def seqlens(self, master: Tuple = (SESSION, ID)) -> List:
         return super().seqlens(master)
 
+    @lru_cache()
     def has_duplicates(self, master: Tuple = (SESSION, ID)) -> bool:
         from itertools import chain
         train_seqs = self.train().to_seqs(master, keepid=False)

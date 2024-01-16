@@ -5,6 +5,7 @@ from typing import Iterator, Optional, TypeVar, Tuple, List
 import torch, os, abc
 import numpy as np
 import torchdata.datapipes as dp
+from functools import lru_cache
 from freeplot.utils import import_pickle, export_pickle
 
 from ..tags import FieldTags, SPARSE, USER, SESSION, ITEM, ID
@@ -639,6 +640,7 @@ class RecDataSet(BaseSet):
         seqs = self.to_seqs(master, keepid=False)
         return list(filter(lambda x: x > 0, [len(items) for items in seqs]))
 
+    @lru_cache()
     def has_duplicates(self, master: Tuple = (USER, ID)) -> bool:
         r"""
         Check whether the dataset has repeated interactions.
