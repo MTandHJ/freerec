@@ -14,7 +14,6 @@ __all__ = ['GeneralRecSet', 'UserItemPair']
 
 class GeneralRecSet(RecDataSet):
     DATATYPE =  "General"
-    DEDUPLICATED = True
 
 
 class UserItemPair(GeneralRecSet):

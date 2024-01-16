@@ -17,7 +17,6 @@ __all__ = ['SessionBasedRecSet', 'SessionItemTimeTriplet']
 
 class SessionBasedRecSet(RecDataSet):
     DATATYPE =  "Session"
-    DEDUPLICATED = True
 
     def check(self):
         assert isinstance(self.fields[TIMESTAMP], Field), "SessionRecSet must have `TIMESTAMP' field."
@@ -33,6 +32,21 @@ class SessionBasedRecSet(RecDataSet):
 
     def seqlens(self, master: Tuple = (SESSION, ID)) -> List:
         return super().seqlens(master)
+
+    def has_duplicates(self, master: Tuple = (SESSION, ID)) -> bool:
+        from itertools import chain
+        train_seqs = self.train().to_seqs(master, keepid=False)
+        valid_seqs = self.valid().to_seqs(master, keepid=False)
+        test_seqs = self.test().to_seqs(master, keepid=False)
+        seqs = map(
+            lambda triple: chain(*triple),
+            zip(train_seqs, valid_seqs, test_seqs)
+        )
+        for seq in seqs:
+            seq = list(seq)
+            if len(seq) != len(set(seq)):
+                return True
+        return False
 
 
 class SessionItemTimeTriplet(SessionBasedRecSet):

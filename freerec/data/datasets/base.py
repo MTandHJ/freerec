@@ -58,8 +58,6 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         - `Knowledge': for knowledge-based recommendation.
     VALID_IS_TEST: bool 
         The validset and testset are the same one sometimes.
-    DEDUPLICATED: bool
-        Whether the dataset has been deduplicated.
 
     Notes:
     ------
@@ -74,7 +72,6 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     URL: str
     DATATYPE: str
     VALID_IS_TEST: bool
-    DEDUPLICATED: bool
 
     def __new__(cls, *args, **kwargs):
         for attr in ('_cfg', 'DATATYPE', 'VALID_IS_TEST'):
@@ -641,6 +638,33 @@ class RecDataSet(BaseSet):
     def seqlens(self, master: Tuple = (USER, ID)) -> List:
         seqs = self.to_seqs(master, keepid=False)
         return list(filter(lambda x: x > 0, [len(items) for items in seqs]))
+
+    def has_duplicates(self, master: Tuple = (USER, ID)) -> bool:
+        r"""
+        Check whether the dataset has repeated interactions.
+
+        Parameters:
+        -----------
+        master: Tuple
+            Tuple of tags to spefic a field, e.g., (USER, ID), (SESSION, ID)
+
+        Returns:
+        --------
+        bool
+        """
+        from itertools import chain
+        train_seqs = self.train().to_seqs(master, keepid=False)
+        valid_seqs = self.valid().to_seqs(master, keepid=False)
+        test_seqs = self.test().to_seqs(master, keepid=False)
+        seqs = map(
+            lambda triple: chain(*triple),
+            zip(train_seqs, valid_seqs, test_seqs)
+        )
+        for seq in seqs:
+            seq = list(seq)
+            if len(seq) != len(set(seq)):
+                return True
+        return False
 
     @property
     def maxlen(self) -> int:

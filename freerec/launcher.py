@@ -701,12 +701,13 @@ class GenCoach(Coach):
             elif len(data) == 3:
                 users, unseen, seen = data
                 users = users.to(self.device).data
-                seen = seen.to_csr().to(self.device).to_dense().bool()
-                targets = unseen.to_csr().to(self.device).to_dense()
                 users = userFeats[users].flatten(1) # B x D
                 items = itemFeats.flatten(1) # N x D
                 scores = users.matmul(items.T) # B x N
-                scores[seen] = -1e23
+                if not self.cfg.retain_seen:
+                    seen = seen.to_csr().to(self.device).to_dense().bool()
+                    scores[seen] = -1e23
+                targets = unseen.to_csr().to(self.device).to_dense()
             else:
                 raise NotImplementedError(
                     f"GenCoach's `evaluate` expects the `data` to be the length of 2 or 3, but {len(data)} received ..."
@@ -748,8 +749,9 @@ class SeqCoach(Coach):
                 users = users.to(self.device).data
                 seqs = seqs.to(self.device).data
                 scores = model.recommend(users=users, seqs=seqs)
-                seen = seen.to_csr().to(self.device).to_dense().bool()
-                scores[seen] = -1e23
+                if not self.cfg.retain_seen:
+                    seen = seen.to_csr().to(self.device).to_dense().bool()
+                    scores[seen] = -1e23
                 targets = unseen.to_csr().to(self.device).to_dense()
             else:
                 raise NotImplementedError(
@@ -792,7 +794,9 @@ class SessCoach(Coach):
                 sesses = sesses.data
                 seqs = seqs.to(self.device).data
                 scores = model.recommend(sesses=sesses, seqs=seqs)
-                # Don't remove seens for session
+                if not self.cfg.retain_seen:
+                    seen = seen.to_csr().to(self.device).to_dense().bool()
+                    scores[seen] = -1e23
                 targets = unseen.to_csr().to(self.device).to_dense()
             else:
                 raise NotImplementedError(
