@@ -6,7 +6,7 @@ I am a beginner in the field of recommender systems, so much of FreeRec's design
 
 ## Requirements: 
 
-Python == 3.9 | [PyTorch == 1.12.1](https://pytorch.org/) | [TorchData == 0.4.1](https://github.com/pytorch/data) | [PyG](https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html#)
+Python == 3.9 | [PyTorch == 1.12.1](https://pytorch.org/) | [TorchData == 0.4.1](https://github.com/pytorch/data) | [PyG](https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html#) (optional)
 
 
 ```
