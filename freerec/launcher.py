@@ -193,6 +193,18 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         assert isinstance(model, RecSysArch), "No RecSysArch found ..."
         return model
 
+    def seed_worker(self):
+        """Set seed to keep consistent across differents ranks."""
+        if is_distributed() and dist.is_initialized():
+            datapipe = self.trainpipe
+            if isinstance(datapipe, IterDataPipe):
+                graph = torch.utils.data.graph.traverse(datapipe, only_datapipe=True)
+                for pipe in get_all_graph_pipes(graph):
+                    if hasattr(pipe, "set_seed"):
+                        pipe.set_seed(
+                            shared_random_seed()
+                        )
+
     @property
     def mode(self):
         """Get the current mode of the chief coach."""
@@ -273,18 +285,6 @@ class ChiefCoach(metaclass=abc.ABCMeta):
 
 class Coach(ChiefCoach):
     """The framework for training."""
-
-    def seed_worker(self):
-        """Set seed to keep consistent across differents ranks."""
-        if is_distributed() and dist.is_initialized():
-            datapipe = self.trainpipe
-            if isinstance(datapipe, IterDataPipe):
-                graph = torch.utils.data.graph.traverse(datapipe, only_datapipe=True)
-                for pipe in get_all_graph_pipes(graph):
-                    if hasattr(pipe, "set_seed"):
-                        pipe.set_seed(
-                            shared_random_seed()
-                        )
 
     def prepare_dataloader(self) -> None:
         """Prepare data loaders for training, validation, and testing data."""
