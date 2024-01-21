@@ -4,7 +4,6 @@ from typing import Iterable, Sequence
 
 import random
 import torchdata.datapipes as dp
-from functools import partial
 
 from .base import BaseProcessor
 from ..fields import SparseField
@@ -36,15 +35,13 @@ class RandomChoicedSource(BaseProcessor):
 
         self.source = tuple(source)
         self.datasize = datasize
-        self._seed = None
         self._rng = random.Random()
+        self.set_seed(1)
 
     def set_seed(self, seed: int):
-        self._seed = seed
+        self._rng.seed(seed)
 
     def __iter__(self):
-        self._rng.seed(self._seed)
-        self._seed = None
         for _ in range(self.datasize):
             yield self._rng.choice(self.source)
 
@@ -64,15 +61,13 @@ class RandomShuffledSource(BaseProcessor):
         super().__init__(None)
 
         self.source = list(source)
-        self._seed = None
         self._rng = random.Random()
+        self.set_seed(1)
 
     def set_seed(self, seed: int):
-        self._seed = seed
+        self._rng.seed(seed)
 
     def __iter__(self):
-        self._rng.seed(self._seed)
-        self._seed = None
         self._rng.shuffle(self.source)
         yield from iter(self.source)
 

@@ -195,15 +195,14 @@ class ChiefCoach(metaclass=abc.ABCMeta):
 
     def seed_worker(self):
         """Set seed to keep consistent across differents ranks."""
-        if is_distributed() and dist.is_initialized():
-            datapipe = self.trainpipe
-            if isinstance(datapipe, IterDataPipe):
-                graph = torch.utils.data.graph.traverse(datapipe, only_datapipe=True)
-                for pipe in get_all_graph_pipes(graph):
-                    if hasattr(pipe, "set_seed"):
-                        pipe.set_seed(
-                            shared_random_seed()
-                        )
+        datapipe = self.trainpipe
+        if isinstance(datapipe, IterDataPipe):
+            graph = torch.utils.data.graph.traverse(datapipe, only_datapipe=True)
+            for pipe in get_all_graph_pipes(graph):
+                if hasattr(pipe, "set_seed"):
+                    pipe.set_seed(
+                        shared_random_seed()
+                    )
 
     @property
     def mode(self):

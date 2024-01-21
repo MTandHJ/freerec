@@ -250,6 +250,7 @@ class Parser(Config):
             self.device = int(os.environ["LOCAL_RANK"])
             # synchronize ids
             self.id = all_gather(self.id)[0]
+            infoLogger(f"[DDP] >>> DDP is activated ...")
     
     @timemeter
     def load(self):
