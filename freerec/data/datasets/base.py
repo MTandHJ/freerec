@@ -603,8 +603,8 @@ class RecDataSet(BaseSet):
 
     def to_roll_seqs(
         self, master: Tuple = (USER, ID), 
-        minlen: int = 2,
-        maxlen: Optional[int] = None
+        minlen: int = 2, maxlen: Optional[int] = None,
+        keep_at_least_itself: bool = True
     ) -> List:
         r"""
         Rolling dataset in sequence.
@@ -618,6 +618,8 @@ class RecDataSet(BaseSet):
         maxlen: int, optional
             Maximum length
             `None`: Roll throughout the whole sequence
+        keep_at_least_itself: bool, default to `True`
+            `True`: Keep the sequence with items less than `minlen`
        
         Returns:
         --------
@@ -629,6 +631,11 @@ class RecDataSet(BaseSet):
         for id_, items in seqs:
             if maxlen is not None:
                 items = items[-maxlen:]
+            if len(items) <= minlen and keep_at_least_itself:
+                roll_seqs.append(
+                    (id_, items)
+                )
+                continue
             for k in range(minlen, len(items) + 1):
                 roll_seqs.append(
                     (id_, items[:k])
