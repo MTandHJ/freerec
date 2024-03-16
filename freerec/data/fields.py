@@ -639,7 +639,7 @@ class FieldTuple(tuple):
         """
         return super().index(self[tags])
 
-    def __getitem__(self, index: Union[int, slice, FieldTags, Iterable[FieldTags]]) -> Union[Field, 'FieldTuple', None]:
+    def __getitem__(self, index: Union[int, str, slice, FieldTags, Iterable[FieldTags]]) -> Union[Field, 'FieldTuple', None]:
         r"""
         Get fields by index.
 
@@ -647,6 +647,7 @@ class FieldTuple(tuple):
         -----------
         index: Union[int, slice, FieldTags, Iterable[FieldTags]]
             - int: Return the field at position `int`.
+            - str: Return the field with a name of `str`.
             - slice: Return the fields at positions of `slice`.
             - FieldTags: Return the fields matching `FieldTags`.
             - Iterable[FieldTags]: Return the fields matching `Iterable[FieldTags]`.
@@ -672,7 +673,9 @@ class FieldTuple(tuple):
         True
         >>> fields[Item, ID] is Item
         True
-        >>> fields [1] is Item
+        >>> fields[1] is Item
+        True
+        >>> fields['Item'] is Item
         True
         >>> fields[1:] is Item
         True
@@ -685,6 +688,8 @@ class FieldTuple(tuple):
         """
         if isinstance(index, int):
             return super().__getitem__(index)
+        elif isinstance(index, str):
+            fields = FieldTuple(field for field in self if field.name == index)
         elif isinstance(index, slice):
             fields = FieldTuple(
                 super().__getitem__(index)
@@ -770,7 +775,7 @@ class FieldList(list):
         """
         return super().index(self[tags])
 
-    def __getitem__(self, index: Union[int, slice, FieldTags, Iterable[FieldTags]]) -> Union[Field, 'FieldList', None]:
+    def __getitem__(self, index: Union[int, str, slice, FieldTags, Iterable[FieldTags]]) -> Union[Field, 'FieldList', None]:
         r"""
         Get fields by index.
 
@@ -778,6 +783,7 @@ class FieldList(list):
         -----------
         index: Union[int, FieldTags, Iterable[FieldTags]]
             - int: Return the field at position `int`.
+            - str: Return the field with a name of `str`.
             - slice: Return the fields at positions of `slice`.
             - FieldTags: Return the fields matching `FieldTags`.
             - Iterable[FieldTags]: Return the fields matching `Iterable[FieldTags]`.
@@ -803,7 +809,9 @@ class FieldList(list):
         True
         >>> fields[Item, ID] is Item
         True
-        >>> fields [1] is Item
+        >>> fields[1] is Item
+        True
+        >>> fields['Item'] is Item
         True
         >>> fields[1:] is Item
         True
@@ -821,6 +829,8 @@ class FieldList(list):
             fields = FieldList(
                 super().__getitem__(index)
             )
+        elif isinstance(index, str):
+            fields = FieldList(field for field in self if field.name == index)
         elif isinstance(index, FieldTags):
             fields =  self.groupby(index)
         else:
@@ -924,7 +934,7 @@ class FieldModuleList(torch.nn.Module):
     def __len__(self):
         return len(self.fields)
 
-    def __getitem__(self, index: Union[int, FieldTags, Iterable[FieldTags]]) -> Union[FieldModule, 'FieldList', None]:
+    def __getitem__(self, index: Union[int, str, FieldTags, Iterable[FieldTags]]) -> Union[FieldModule, 'FieldList', None]:
         r"""
         Get fields by index.
 
@@ -932,6 +942,7 @@ class FieldModuleList(torch.nn.Module):
         -----------
         index: Union[int, FieldTags, Iterable[FieldTags]]
             - int: Return the field at position `int`.
+            - str: Return the field with a name of `str`.
             - slice: Return the fields at positions of `slice`.
             - FieldTags: Return the fields matching `FieldTags`.
             - Iterable[FieldTags]: Return the fields matching `Iterable[FieldTags]`.
@@ -957,7 +968,9 @@ class FieldModuleList(torch.nn.Module):
         True
         >>> fields[Item, ID] is Item
         True
-        >>> fields [1] is Item
+        >>> fields[1] is Item
+        True
+        >>> fields['Item'] is Item
         True
         >>> fields[1:] is Item
         True
@@ -975,6 +988,8 @@ class FieldModuleList(torch.nn.Module):
             fields = FieldList(
                 super().__getitem__(index)
             )
+        elif isinstance(index, str):
+            fields = FieldList(field for field in self if field.name == index)
         elif isinstance(index, FieldTags):
             fields =  self.groupby(index)
         else:
