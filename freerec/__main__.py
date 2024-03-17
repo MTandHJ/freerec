@@ -126,7 +126,7 @@ def main():
         help="gen: ratio; seq: leave-one-out; ratio; sess: ratio, day"
     )
 
-    make_parser.add_argument("--star4pos", type=int, default=0, help="select interactions with `Rating > star4pos'")
+    make_parser.add_argument("--star4pos", type=int, default=0, help="select interactions with `Rating >= star4pos'")
     make_parser.add_argument("--kcore4user", type=int, default=10, help="select kcore interactions according to User")
     make_parser.add_argument("--kcore4item", type=int, default=10, help="select kcore interactions according to Item")
     make_parser.add_argument("--not-strict", action="store_true", default=False, help="filter by kcore once if True")

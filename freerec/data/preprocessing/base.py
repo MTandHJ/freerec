@@ -470,7 +470,7 @@ class AtomicConverter:
         Parameters:
         -----------
         star4pos: int, default to 0
-            Select interactions with `Rating > star4pos'.
+            Select interactions with `Rating >= star4pos'.
         kcore4user: int, default to 10
             Select kcore interactions according to User.
         kcore4item: int, default to 10
@@ -516,7 +516,7 @@ class AtomicConverter:
         Parameters:
         -----------
         star4pos: int, default to 0
-            Select interactions with `Rating > star4pos'.
+            Select interactions with `Rating >= star4pos'.
         kcore4user: int, default to 10
             Select kcore interactions according to User.
         kcore4item: int, default to 10
@@ -562,7 +562,7 @@ class AtomicConverter:
         Parameters:
         -----------
         star4pos: int, default to 0
-            Select interactions with `Rating > star4pos'.
+            Select interactions with `Rating >= star4pos'.
         kcore4user: int, default to 10
             Select kcore interactions according to User.
         kcore4item: int, default to 10
@@ -613,7 +613,7 @@ class AtomicConverter:
         Parameters:
         -----------
         star4pos: int, default to 0
-            Select interactions with `Rating > star4pos'.
+            Select interactions with `Rating >= star4pos'.
         kcore4user: int, default to 10
             Select kcore interactions according to User.
         kcore4item: int, default to 10
@@ -664,7 +664,7 @@ class AtomicConverter:
         Parameters:
         -----------
         star4pos: int, default to 0
-            Select interactions with `Rating > star4pos'.
+            Select interactions with `Rating >= star4pos'.
         kcore4user: int, default to 10
             Select kcore interactions according to User.
         kcore4item: int, default to 10

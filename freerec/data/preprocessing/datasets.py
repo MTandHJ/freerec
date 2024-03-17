@@ -9,6 +9,7 @@ from .base import AtomicConverter
 from ..tags import USER, SESSION, ITEM, RATING, TIMESTAMP
 from ...utils import infoLogger
 
+
 class AmazonBeauty(AtomicConverter):
     r"""
     inter:
@@ -107,6 +108,66 @@ class AmazonGames(AtomicConverter):
         item_id:token	price:float	sales_type:token	sales_rank:float	categories:token_seq	title:token	brand:token
     """
     filename = "Amazon_Video_Games"
+
+
+class Amazon2023_All_Beauty(AtomicConverter):
+    r"""
+    inter:
+        user_id:token	item_id:token	rating:float	timestamp:float	parent_asin:token
+    item:
+        item_id:token	parent_asin:token ...
+    """
+    filename = "All_Beauty"
+
+
+class Amazon2023_Beauty(AtomicConverter):
+    r"""
+    inter:
+        user_id:token	item_id:token	rating:float	timestamp:float	parent_asin:token
+    item:
+        item_id:token	parent_asin:token ...
+    """
+    filename = "Beauty"
+
+
+class Amazon2023_CDs(AtomicConverter):
+    r"""
+    inter:
+        user_id:token	item_id:token	rating:float	timestamp:float	parent_asin:token
+    item:
+        item_id:token	parent_asin:token ...
+    """
+    filename = "CDs"
+
+
+class Amazon2023_Office(AtomicConverter):
+    r"""
+    inter:
+        user_id:token	item_id:token	rating:float	timestamp:float	parent_asin:token
+    item:
+        item_id:token	parent_asin:token ...
+    """
+    filename = "Office"
+
+
+class Amazon2023_Toys(AtomicConverter):
+    r"""
+    inter:
+        user_id:token	item_id:token	rating:float	timestamp:float	parent_asin:token
+    item:
+        item_id:token	parent_asin:token ...
+    """
+    filename = "Toys"
+
+
+class Amazon2023_Tools(AtomicConverter):
+    r"""
+    inter:
+        user_id:token	item_id:token	rating:float	timestamp:float	parent_asin:token
+    item:
+        item_id:token	parent_asin:token ...
+    """
+    filename = "Tools"
 
 
 class Diginetica(AtomicConverter):
