@@ -23,10 +23,11 @@ def make(args):
     #
     #    freerec make DATASET --root=../data
     #
+    from .data.preprocessing.base import AtomicConverter
     from .data.preprocessing import datasets
     from .data.tags import USER, SESSION, ITEM, TIMESTAMP
 
-    converter = getattr(datasets, args.dataset)(
+    converter: AtomicConverter = getattr(datasets, args.dataset)(
         root=args.root,
         filename=args.filename
     )
@@ -87,6 +88,35 @@ def make(args):
             ratios=ratios,
             fields=fields
         )
+    elif args.datatype =='ctxt' and args.by == 'ratio':
+        fields = None if args.all else (USER.name, ITEM.name, TIMESTAMP.name)
+        converter.make_context_dataset_by_ratio(
+            star4pos=star4pos,
+            kcore4user=kcore4user,
+            kcore4item=kcore4item,
+            strict=strict,
+            ratios=ratios,
+            fields=fields
+        )
+    elif args.datatype =='ctxt' and args.by == 'leave-one-out':
+        fields = None if args.all else (USER.name, ITEM.name, TIMESTAMP.name)
+        converter.make_context_dataset_by_last_two(
+            star4pos=star4pos,
+            kcore4user=kcore4user,
+            kcore4item=kcore4item,
+            strict=strict,
+            fields=fields
+        )
+    elif args.datatype =='ctxt' and args.by == 'day':
+        fields = None if args.all else (SESSION.name, ITEM.name, TIMESTAMP.name)
+        converter.make_context_dataset_by_day(
+            star4pos=star4pos,
+            kcore4user=kcore4user,
+            kcore4item=kcore4item,
+            strict=strict,
+            days=days,
+            fields=fields
+        )
     else:
         raise ValueError(f"`{args.datatype}' type dataset cannot be made by `{args.by}'")
 
@@ -118,8 +148,8 @@ def main():
     make_parser.add_argument("--filename", type=str, default=None, help="filename of Atomic files")
 
     make_parser.add_argument(
-        "--datatype", type=str, choices=('gen', 'seq', 'sess'), default='gen', 
-        help="gen: general; seq: sequential; sess: session"
+        "--datatype", type=str, choices=('gen', 'seq', 'sess', 'ctxt'), default='gen', 
+        help="gen: general; seq: sequential; sess: session; ctxt:context"
     )
     make_parser.add_argument(
         "--by", type=str, choices=('ratio', 'leave-one-out', 'day'), default='ratio', 

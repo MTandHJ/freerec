@@ -695,6 +695,146 @@ class AtomicConverter:
 
         self.save(path)
 
+    def make_context_dataset_by_last_two(
+        self,
+        star4pos: int = 0,
+        kcore4user: int = 5,
+        kcore4item: int = 5,
+        strict: bool = True,
+        fields: Optional[Iterable[str]] = (USER.name, ITEM.name, TIMESTAMP.name)
+    ):
+        r"""
+        Make context dataset by leaving last two as validation|test samples.
+
+        Parameters:
+        -----------
+        star4pos: int, default to 0
+            Select interactions with `Rating >= star4pos'.
+        kcore4user: int, default to 10
+            Select kcore interactions according to User.
+        kcore4item: int, default to 10
+            Select kcore interactions according to Item.
+        strict: bool, default to `True`
+            `True`: strictly filter by core
+            `False`: filter by core only once
+        fields: Iterable[str], default to (User, Item, TimeStamp)
+            The fields reserved.
+        """
+
+        self.load()
+        self.filter_by_rating(low=star4pos, high=None)
+        self.filter_by_core(low4user=kcore4user, low4item=kcore4item, strict=strict)
+        self.user2token()
+        self.item2token()
+        self.sort_by_timestamp()
+        if fields:
+            self.reserve(fields)
+        self.seq_split_by_last_two()
+
+        code = f"{kcore4user}{kcore4item}{star4pos}"
+        path = os.path.join(
+            self.root, 'Context', 
+            '_'.join([self.dataset, code, 'Chron'])
+        )
+
+        self.save(path)
+
+    def make_context_dataset_by_ratio(
+        self,
+        star4pos: int = 0,
+        kcore4user: int = 5,
+        kcore4item: int = 5,
+        strict: bool = True,
+        ratios: Tuple[int, int, int] = (8, 1, 1),
+        fields: Optional[Iterable[str]] = (USER.name, ITEM.name, TIMESTAMP.name),
+    ):
+        r"""
+        Make context dataset by ratios.
+
+        Parameters:
+        -----------
+        star4pos: int, default to 0
+            Select interactions with `Rating >= star4pos'.
+        kcore4user: int, default to 10
+            Select kcore interactions according to User.
+        kcore4item: int, default to 10
+            Select kcore interactions according to Item.
+        strict: bool, default to `True`
+            `True`: strictly filter by core
+            `False`: filter by core only once
+        ratios: Tuple[int, int, int], default to (8, 1, 1)
+            The ratios of training|validation|test set.
+        fields: Iterable[str], default to (User, Item, Timestamp)
+            The fields reserved.
+        """
+        self.load()
+        self.filter_by_rating(low=star4pos, high=None)
+        self.filter_by_core(low4user=kcore4user, low4item=kcore4item, strict=strict)
+        self.user2token()
+        self.item2token()
+        self.sort_by_timestamp()
+        if fields:
+            self.reserve(fields)
+        self.gen_split_by_ratio(ratios)
+
+        code = f"{kcore4user}{kcore4item}{star4pos}{''.join(map(str, ratios))}"
+        path = os.path.join(
+            self.root, 'Context', 
+            '_'.join([self.dataset, code, 'Chron'])
+        )
+        self.save(path)
+
+    def make_context_dataset_by_day(
+        self,
+        star4pos: int = 0,
+        kcore4user: int = 2,
+        kcore4item: int = 5,
+        strict: bool = True,
+        days: int = 7,
+        fields: Optional[Iterable[str]] = (SESSION.name, ITEM.name, TIMESTAMP.name),
+    ):
+        r"""
+        Make session dataset by day.
+
+        Flows:
+        ------
+        1. filter out `inactive' items and short sessions;
+        2. training|validation|test set will be splited according to the start time of each session.
+
+        Parameters:
+        -----------
+        star4pos: int, default to 0
+            Select interactions with `Rating >= star4pos'.
+        kcore4user: int, default to 10
+            Select kcore interactions according to User.
+        kcore4item: int, default to 10
+            Select kcore interactions according to Item.
+        strict: bool, default to `True`
+            `True`: strictly filter by core
+            `False`: filter by core only once
+        days: int, default to 7
+            the number days used for validation and test
+        fields: Iterable[str], default to (User, Item, Timestamp)
+            The fields reserved.
+        """
+        self.load()
+        self.filter_by_rating(low=star4pos, high=None)
+        self.filter_by_core(low4user=kcore4user, low4item=kcore4item, master=SESSION.name, strict=strict)
+        self.user2token(master=SESSION.name)
+        self.item2token()
+        self.sort_by_timestamp(master=SESSION.name)
+        if fields:
+            self.reserve(fields)
+        self.sess_split_by_day(days)
+
+        code = f"{kcore4user}{kcore4item}{star4pos}{days}"
+        path = os.path.join(
+            self.root, 'Context', 
+            '_'.join([self.dataset, code, 'Chron'])
+        )
+
+        self.save(path)
+
     def summary(self):
         from prettytable import PrettyTable
         table = PrettyTable(['#User', '#Item', '#Interactions', '#Train', '#Valid', '#Test', 'Density'])
