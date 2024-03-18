@@ -18,6 +18,9 @@ __all__ = []
 class ContextAwareRecSet(RecDataSet):
     DATATYPE =  "Context"
 
+    def check(self):
+        assert isinstance(self.fields[TIMESTAMP], Field), "ContextAwareRecSet must have `TIMESTAMP' field."
+
     def load_meta(self, root: SparseField, meta_infos: Config):
         try:
             meta_df = pd.read_csv(
