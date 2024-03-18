@@ -5,7 +5,6 @@ from .base import TripletWithMeta
 from ...utils import download_from_url
 
 
-
 __all__ = [
     'Amazon2023',
     'Amazon2023_All_Beauty_550_Chron',
@@ -33,15 +32,18 @@ class Amazon2023(TripletWithMeta):
         from concurrent.futures import ThreadPoolExecutor
         assert size in ('thumb', 'large', 'hi_res'), f"`size` should be 'thumb', 'large', 'hi_res' ..."
         urls = self.fields['Images'].data
-        urls = [eval(url)[0][size] for url in urls]
         with ThreadPoolExecutor() as executor:
             for id_, url in enumerate(urls):
-                executor.submit(
-                    download_from_url,
-                    url=url,
-                    root=os.path.join(self.path, f"item_{size}_images"),
-                    filename=f"{id_}.jpg"
-                )
+                try:
+                    url = eval(url)[0][size]
+                    executor.submit(
+                        download_from_url,
+                        url=url,
+                        root=os.path.join(self.path, f"item_{size}_images"),
+                        filename=f"{id_}.jpg"
+                    )
+                except (KeyError, IndexError):
+                    continue
 
 class Amazon2023_All_Beauty_550_Chron(Amazon2023):
     r"""
