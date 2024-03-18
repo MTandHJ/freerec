@@ -41,7 +41,7 @@ def safe_cast(val: T, dest_type: Callable[[T], T], default: T) -> T:
     If the `default` value is None, a ValueError will be raised.
     """
     try:
-        if val:
+        if val not in (None, ''):
             return dest_type(val)
         else: # fill_na
             if default is None:
@@ -49,8 +49,8 @@ def safe_cast(val: T, dest_type: Callable[[T], T], default: T) -> T:
             return dest_type(default)
     except (ValueError, TypeError):
         raise ValueError(
-            f"Using '{dest_type.__name__}' to convert '{val}' where the default value is {default} ..." \
-            f"This happens when the value (or the default value: {default}) to be cast is not of the type {dest_type.__name__}.",
+            f"Using '{dest_type.__name__}' to convert '{val}' where the default value is '{default}' ..." \
+            f"This happens when the value (or the default value: '{default}') to be cast is not of the type '{dest_type.__name__}'.",
         )
 
 

@@ -4,15 +4,20 @@ from typing import Callable, Iterable, Tuple, Union, Dict, Optional, Any
 
 import torch, abc
 import numpy as np
+import pandas as pd
 from functools import partial, lru_cache, reduce
 
 from .utils import safe_cast
 from .transformation import Identifier, Indexer, StandardScaler, MinMaxScaler
-from .tags import FieldTags, SPARSE, DENSE
+from .tags import FieldTags, SPARSE, DENSE, AFFILIATE, ID
 from ..utils import warnLogger
 
 
-__all__ = ['Field', 'BufferField', 'SparseField', 'DenseField', 'FieldTuple', 'FieldList', 'FieldModule']
+__all__ = [
+    'Field', 
+    'BufferField', 'SparseField', 'DenseField', 'AffiliateField', 
+    'FieldTuple', 'FieldList', 'FieldModule'
+]
 
 
 TRANSFORMATIONS = {
@@ -48,6 +53,8 @@ class Field(metaclass=abc.ABCMeta):
     >>> Target = SparseField('Label', 0, int, transformer='none', tags=TARGET)
     """
 
+    _exclusive_tags = set()
+
     def __init__(
         self, data: Any = None, 
         tags: Union[FieldTags, Iterable[FieldTags]] = tuple()
@@ -77,7 +84,9 @@ class Field(metaclass=abc.ABCMeta):
         for tag in tags:
             if not isinstance(tag, FieldTags):
                 warnLogger(f"FieldTags is expected but {type(tags)} received ...")
-            self.__tags.add(tag)
+            if tag not in self._exclusive_tags:
+                self.__tags.add(tag)
+        assert not self.match(SPARSE, DENSE), "A field should not be `SPARSE` and `DENSE` at the same time ..."
 
     @property
     def tags(self) -> set:
@@ -129,6 +138,10 @@ class Field(metaclass=abc.ABCMeta):
         """
         buffer_ = BufferField(data, tags, root=self)
         return buffer_
+
+    def __repr__(self) -> str:
+        tags = ','.join(map(lambda tag: str(tag).split('.')[-1], self.tags))
+        return f"{self.__class__.__name__}({self.name}||{tags})"
 
 
 class BufferField(Field):
@@ -247,7 +260,8 @@ class FieldModule(Field, torch.nn.Module):
     """
 
     def __init__(
-        self, name: str, na_value: Union[str, int, float], dtype: Callable,
+        self, name: str, 
+        na_value: Optional[Union[str, int, float]], dtype: Callable,
         tags: Union[FieldTags, Iterable[FieldTags]] = tuple(),
         transformer: Union[str, Callable] = 'none'
     ) -> None:
@@ -314,7 +328,32 @@ class FieldModule(Field, torch.nn.Module):
         """
         return self.transformer.transform(col)
 
-    def embed(self, dim: int, **kwargs):
+    def sparse_embed(
+        self, 
+        dim: int, 
+        num_embeddings: Optional[int] = None,
+        padding_idx: Optional[int] = None,
+        **kwargs
+    ) -> None:
+        self.dimension = dim
+        self.embeddings = torch.nn.Embedding(
+            num_embeddings, dim, padding_idx=padding_idx, **kwargs
+        )
+
+    def dense_embed(self, dim: int = 1, bias: bool = False, linear: bool = False) -> None:
+        if linear:
+            self.dimension = dim
+            self.embeddings = torch.nn.Linear(1, dim, bias=bias)
+        else:
+            self.dimension = 1
+            self.embeddings = torch.nn.Identity()
+
+    def embed(
+        self, dim: int,
+        num_embeddings: Optional[int] = None, padding_idx: Optional[int] = None,
+        bias: bool = False, linear: bool = False,
+        **kwargs
+    ):
         r"""
         Embed the field values into a lower dimensional space.
 
@@ -322,34 +361,81 @@ class FieldModule(Field, torch.nn.Module):
         -----------
         dim: int 
             The dimension of the lower dimensional space.
+        SPARSE:
+            num_embeddings: int, optional
+                The number of embeddings.
+                - `None`: Set the number of embeddings to `count` or `count + 1` (if padding_idx is not None).
+                - `int`: Set the number of embeddings to `int`.
+            padding_idx: int, optional
+                padding index
+        DENSE:
+            bias: bool 
+                Add bias or not.
+            linear: bool: 
+                - `True`: nn.Linear.
+                - `False`: using nn.Identity instead.
         **kwargs: 
-            Other arguments for embedding.
+            Other arguments for (SPARSE) embedding.
 
         Raises:
         -------
         NotImplementedError: if the method is not implemented.
         """
-        raise NotImplementedError(f"{self.__class__.__name__}.embed() method should be implemented ...")
+        if self.match(SPARSE):
+            return self.sparse_embed(
+                dim, num_embeddings, padding_idx,
+                **kwargs
+            )
+        elif self.match(DENSE):
+            return self.dense_embed(
+                dim, bias, linear
+            )
+        else:
+            raise NotImplementedError(f"{self.__class__.__name__}.embed() method should be implemented ...")
 
     def look_up(self, x: torch.Tensor) -> torch.Tensor:
         r"""
         Look up embeddings.
 
-        Args:
         Parameters:
         -----------
         x: torch.Tensor 
-            Indices for looking up.
+            The input tensor of shape (B, *), where B is the batch size
+            and * can be any number of additional dimensions.
+
+        Returns:
+        --------
+        embeddings: (B, *, 1) or (B, *, d)
+            - `SPARSE`: The output tensor of shape (B, *, d), where d is the embedding dimension.
+            - `DENSE`:
+                - If `linear` is True, it returns (B, *, d).
+                - If `linear` is False, it returns (B, *, 1).
+        
+        Examples:
+        ---------
+        >>> User: SparseField
+        >>> ids = torch.arange(3).view(-1, 1)
+        >>> User.look_up(ids).ndim
+        3
+        >>> Field: DenseField
+        >>> vals = torch.rand(3, 1)
+        >>> Field.look_up(vals).ndim
+        3
 
         Raises:
         -------
-        NotImplementedError: if the method is not implemented.
+        NotImplementedError: if the method (for other TYPEs) is not implemented.
         """
-        raise NotImplementedError(f"{self.__class__.__name__}.look_up() method should be implemented...")
+        if self.match(SPARSE):
+            return self.embeddings(x)
+        elif self.match(DENSE):
+            return self.embeddings(x.unsqueeze(-1))
+        else:
+            raise NotImplementedError(f"{self.__class__.__name__}.look_up() method should be implemented...")
 
     def __str__(self) -> str:
-        tags = ','.join(map(str, self.tags))
-        return f"{self.name}: [dtype: {self.dtype}, na_value: {self.na_value}, tags: {tags}]"
+        tags = ','.join(map(lambda tag: str(tag).split('.')[-1], self.tags))
+        return f"{self.name}: {self.__class__.__name__}[dtype: {self.dtype}, na_value: {self.na_value}, tags: {tags}]"
 
 
 class SparseField(FieldModule):
@@ -379,6 +465,8 @@ class SparseField(FieldModule):
     SPARSE
     """
 
+    _exclusive_tags = {DENSE, AFFILIATE}
+
     def __init__(
         self, name: str, na_value: Union[str, int, float], dtype: Callable, 
         tags: Union[FieldTags, Iterable[FieldTags]] = tuple(),
@@ -400,62 +488,78 @@ class SparseField(FieldModule):
 
     def embed(
         self, 
-        dim: int, 
+        dim: int,
         num_embeddings: Optional[int] = None,
         padding_idx: Optional[int] = None,
         **kwargs
     ) -> None:
-        r"""
-        Create an nn.Embedding layer for the sparse field.
-
-        Args:
-        Parameters:
-        -----------
-        dim: int 
-            The embedding dimension.
-        num_embeddings: int, optional
-            The number of embeddings.
-            - `None`: Set the number of embeddings to `count` or `count + 1` (if padding_idx is not None).
-            - `int`: Set the number of embeddings to `int`.
-        **kwargs: 
-            Other keyword arguments to be passed to nn.Embedding.
-
-        Returns:
-        --------
-        None
-        """
-        self.dimension = dim
         if num_embeddings is None:
             nums = self.count if padding_idx is None else self.count + 1
         else:
             nums = num_embeddings
-        self.embeddings = torch.nn.Embedding(
-            nums, dim, padding_idx=padding_idx, **kwargs
+        return super().embed(
+            dim, 
+            num_embeddings=nums, padding_idx=padding_idx,
+            **kwargs
         )
 
-    def look_up(self, x: torch.Tensor) -> torch.Tensor:
+    def bind(
+        self,
+        meta_df: pd.DataFrame,
+        rootCol: Union[int, str] = 0,
+        mapper: Optional[dict] = None
+    ):
         r"""
-        Look up embeddings for categorical features.
+        Bind attributes for the current field.
 
         Parameters:
         -----------
-        x: torch.Tensor 
-            The input tensor of shape (B, *), where B is the batch size
-            and * can be any number of additional dimensions.
-
-        Returns:
-        --------
-        embeddings: torch.Tensor 
-            The output tensor of shape (B, *, d), where d is the embedding dimension.
-
-        Examples:
-        ---------
-        >>> User: SparseField
-        >>> ids = torch.arange(3).view(-1, 1)
-        >>> User.look_up(ids).ndim
-        3
+        meta_df: DataFrame
+            The attribute dataframe like:
+                ------------------------------
+                Item    Title   Brand   Price
+                ------------------------------
+                0       X       X       1.2
+                1       Y       Y       1.3
+                2       Z       Z       1.3
+                ------------------------------
+        rootCol: int, str
+            - `int`: column index
+            - `str`: column name
+        mapper: dict: (key: (int, str), val (bool))
+            Determining SPARSE/DENSE field 
         """
-        return self.embeddings(x)
+        columns = list(meta_df.columns)
+        def index2column(index: Union[int, str]):
+            if isinstance(index, int):
+                return columns[index]
+            elif isinstance(index, str):
+                return index
+            else:
+                raise NotImplementedError(f"index should be `int` or `str`, but `{index}` received ...")
+
+        if mapper is None:
+            mapper = dict()
+        else:
+            mapper = {index2column(key): val for key, val in mapper.items()}
+        
+        rootCol = index2column(rootCol)
+        meta_df[rootCol] = meta_df[rootCol].map(self.caster)
+        meta_df = meta_df.sort_values(by=rootCol).reset_index(drop=True)
+
+        affiliates = []
+        for feat in columns:
+            if feat == rootCol:
+                continue
+            affiliates.append(
+                AffiliateField(
+                    name=feat, 
+                    data=meta_df[feat].to_list(), 
+                    root=self,
+                    is_dense=mapper.get(feat, False)
+                )
+            )
+        return FieldTuple(affiliates)
 
 
 class DenseField(FieldModule):
@@ -484,6 +588,8 @@ class DenseField(FieldModule):
     DENSE
     """
 
+    _exclusive_tags = {SPARSE, AFFILIATE}
+
     def __init__(
         self, name: str, na_value: Union[str, int, float], dtype: Callable, 
         tags: Union[FieldTags, Iterable[FieldTags]] = tuple(),
@@ -492,57 +598,65 @@ class DenseField(FieldModule):
         super().__init__(name, na_value, dtype, tags, transformer)
         self.add_tag(DENSE)
 
-    def embed(self, dim: int = 1, bias: bool = False, linear: bool = False) -> None:
-        r"""
-        Create Embedding in nn.Linear manner.
 
-        Parameters:
-        -----------
-        dim: int 
-            Dimension.
-        bias: bool 
-            Add bias or not.
-        linear: bool: 
-            - `True`: nn.Linear.
-            - `False`: using nn.Identity instead.
-        **kwargs: other kwargs for nn.Linear.
+class AffiliateField(FieldModule):
+    r"""
+    Affiliate field for a root field (SparseField).
 
-        Returns:
-        --------
-        None.
-        """
-        if linear:
-            self.dimension = dim
-            self.embeddings = torch.nn.Linear(1, dim, bias=bias)
+    Parameters:
+    -----------
+    name: str 
+        Name of this field.
+    data: Iterable 
+        data
+    root: SparseField
+        root field
+
+    Examples:
+    ---------
+    >>> Item = SparseField('Item', None, int, tags=(ITEM, ID))
+    >>> ItemTitles = AffiliateField('Titles', data, Item)
+    """
+
+    _exclusive_tags = {ID}
+
+    def __init__(
+        self, name: str, 
+        data: Iterable, root: SparseField,
+        is_dense: bool = False
+    ) -> None:
+        super().__init__(
+            name=name, na_value=None, dtype=None,
+            tags=root.tags - {SPARSE, DENSE}, 
+            transformer='none'
+        )
+        self.add_tag(AFFILIATE)
+        if is_dense:
+            self.add_tag(DENSE)
         else:
-            self.dimension = 1
-            self.embeddings = torch.nn.Identity()
+            self.add_tag(SPARSE)
+        self.data = data
+        self.root = root
 
-    def look_up(self, x: torch.Tensor) -> torch.Tensor:
-        r"""
-        Look up embeddings for numeric features.
-        Note that the return embeddings' shape is in accordance with
-        that of categorical features.
+        assert len(data) == root.count, f"The number of data ({len(data)}) is not equal to the number of Entities ({root.count})."
 
-        Parameters:
-        -----------
-            x: torch.Tensor in the shape of (B, *)
+    def embed(
+        self, dim: int,
+        num_embeddings: Optional[int] = None, padding_idx: Optional[int] = None,
+        bias: bool = False, linear: bool = False,
+        **kwargs
+    ):
+        if num_embeddings is None:
+            nums = self.root.count if padding_idx is None else self.root.count + 1
+        else:
+            nums = num_embeddings
+        return super().embed(
+            dim, 
+            num_embeddings=nums, padding_idx=padding_idx,
+            bias=bias, linear=linear,
+            **kwargs
+        )
 
-        Returns:
-        --------
-        embeddings: (B, *, 1) or (B, *, d)
-            - If `linear` is True, it returns (B, *, d).
-            - If `linear` is False, it returns (B, *, 1).
-
-        Examples:
-        ---------
-        >>> Field: DenseField
-        >>> vals = torch.rand(3, 1)
-        >>> Field.look_up(vals).ndim
-        3
-        """
-        return self.embeddings(x.unsqueeze(-1))
-   
 
 class FieldTuple(tuple):
     """A tuple of fields, which support attribute access and filtering by tags."""
@@ -907,16 +1021,37 @@ class FieldModuleList(torch.nn.Module):
         """
         return FieldList(field for field in self.fields if not field.match(*tags))
 
-    def embed(self, dim: int, *tags: FieldTags, **kwargs):
+    def embed(
+        self, dim: int, *tags: FieldTags,
+        num_embeddings: Optional[int] = None, padding_idx: Optional[int] = None,
+        bias: bool = False, linear: bool = False,
+        **kwargs
+    ):
         r"""
         Create embeddings.
 
         Parameters:
         -----------
-        dim: int
-            Dimension.
+        dim: int 
+            The dimension of the lower dimensional space.
         *tags: FieldTags
-        **kwargs: kwargs for nn.Embeddings or nn.Linear
+        SPARSE:
+            num_embeddings: int, optional
+                The number of embeddings.
+                - `None`: Set the number of embeddings to `count` or `count + 1` (if padding_idx is not None).
+                - `int`: Set the number of embeddings to `int`.
+            padding_idx: int, optional
+                padding index
+        DENSE:
+            bias: bool 
+                Add bias or not.
+            linear: bool: 
+                - `True`: nn.Linear.
+                - `False`: using nn.Identity instead.
+        **kwargs: 
+            Other arguments for (SPARSE) embedding.
+
+
 
         Examples:
         ---------
@@ -925,7 +1060,12 @@ class FieldModuleList(torch.nn.Module):
         >>> fields.embed(8, DENSE, bias=False) # nn.Linear(1, 8, bias=False)
         """
         for field in self.groupby(*tags):
-            field.embed(dim, **kwargs)
+            field.embed(
+                dim, 
+                num_embeddings, padding_idx, # SPARSE
+                bias, linear, # DENSE
+                **kwargs
+            )
 
     def calculate_dimension(self, *tags: FieldTags):
         """Return the total dimension of fields matching tiven tags."""

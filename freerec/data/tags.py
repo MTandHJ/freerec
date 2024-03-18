@@ -9,6 +9,7 @@ class FieldTags(Enum):
     User = 'User'
     Item = 'Item'
     Session = 'Session'
+    Affiliate = 'Affiliate'
     Interaction = 'Interaction'
     Timestamp = 'Timestamp'
     Rating = 'Rating'
@@ -26,6 +27,7 @@ DENSE = FieldTags('Dense')
 USER = FieldTags('User')
 ITEM = FieldTags('Item')
 SESSION = FieldTags('Session')
+AFFILIATE = FieldTags('Affiliate')
 INTERACTION = FieldTags('Interaction')
 TIMESTAMP = FieldTags('Timestamp')
 RATING = FieldTags('Rating')
