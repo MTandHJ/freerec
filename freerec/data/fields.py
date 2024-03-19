@@ -553,9 +553,8 @@ class SparseField(FieldModule):
                 continue
             affiliates.append(
                 AffiliateField(
-                    name=feat, 
+                    name=feat, root=self,
                     data=meta_df[feat].to_list(), 
-                    root=self,
                     is_dense=mapper.get(feat, False)
                 )
             )
@@ -607,10 +606,10 @@ class AffiliateField(FieldModule):
     -----------
     name: str 
         Name of this field.
-    data: Iterable 
-        data
     root: SparseField
         root field
+    data: Iterable 
+        data
 
     Examples:
     ---------
@@ -622,7 +621,8 @@ class AffiliateField(FieldModule):
 
     def __init__(
         self, name: str, 
-        data: Iterable, root: SparseField,
+        root: SparseField,
+        data: Optional[Iterable] = None, 
         is_dense: bool = False
     ) -> None:
         super().__init__(
@@ -635,10 +635,12 @@ class AffiliateField(FieldModule):
             self.add_tag(DENSE)
         else:
             self.add_tag(SPARSE)
+
+        if data is not None:
+            assert len(data) == root.count, f"The number of data ({len(data)}) is not equal to the number of Entities ({root.count})."
+
         self.data = data
         self.root = root
-
-        assert len(data) == root.count, f"The number of data ({len(data)}) is not equal to the number of Entities ({root.count})."
 
     def embed(
         self, dim: int,
