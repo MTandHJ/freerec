@@ -118,9 +118,14 @@ def download_from_url(
                 if r.status_code != 200:
                     raise RuntimeError("Failed downloading url %s" % url)
                 with open(file_, 'wb') as f:
-                    for chunk in tqdm.tqdm(r.iter_content(chunk_size=1024), leave=False, desc="վ'ᴗ' ի-"):
-                        if chunk:  # filter out keep-alive new chunks
-                            f.write(chunk)
+                    if log:
+                        for chunk in tqdm.tqdm(r.iter_content(chunk_size=1024), leave=False, desc="վ'ᴗ' ի-"):
+                            if chunk:  # filter out keep-alive new chunks
+                                f.write(chunk)
+                    else:
+                        for chunk in r.iter_content(chunk_size=1024):
+                            if chunk:  # filter out keep-alive new chunks
+                                f.write(chunk)
                 if sha1_hash and not check_sha1(file_, sha1_hash):
                     raise DataSetLoadingError(
                         'File {} is downloaded but the content hash does not match.'

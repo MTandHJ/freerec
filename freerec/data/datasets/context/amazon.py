@@ -32,33 +32,43 @@ class Amazon2023(TripletWithMeta):
         'Details': lambda x: ' '.join([f"{key}: {val}" for key, val in eval(x).items()])
     }
 
-    def download_images(self, size: str = 'thumb') -> None:
+    def download_images(
+        self, 
+        image_folder: str = "item_images",
+        image_size: str = 'thumb'
+    ) -> None:
         r"""
         Download images from urls.
 
         Parameters:
         -----------
-        size: str, 'thumb', 'large' or 'hi_res'
+        image_folder: str,
+            The image folder to save images.
+        image_size: str, 'thumb', 'large' or 'hi_res'
         """
+        import tqdm
         from concurrent.futures import ThreadPoolExecutor
-        assert size in ('thumb', 'large', 'hi_res'), f"`size` should be 'thumb', 'large', 'hi_res' ..."
+        assert image_size in ('thumb', 'large', 'hi_res'), f"`size` should be 'thumb', 'large', 'hi_res' ..."
         urls = self.fields['Images'].data
         with ThreadPoolExecutor() as executor:
-            for id_, url in enumerate(urls):
+            for id_, url in tqdm.tqdm(enumerate(urls), desc="Download images: "):
                 try:
-                    url = eval(url)[0][size]
+                    url = eval(url)[0][image_size]
                     executor.submit(
                         download_from_url,
                         url=url,
-                        root=os.path.join(self.path, f"item_{size}_images"),
-                        filename=f"{id_}.jpg"
+                        root=os.path.join(self.path, image_folder, image_size),
+                        filename=f"{id_}.jpg",
+                        log=False
                     )
                 except (KeyError, IndexError):
                     continue
+        return
 
     def encode_visual_modality(
         self,
-        model: str, model_dir: str, image_folder: str,
+        model: str, model_dir: str, 
+        image_folder: str, image_size: str = 'thumb',
         saved_file: str = "visual_modality.pkl",
         pool: bool = True, num_workers: int = 4, batch_size: int = 128,
     ) -> torch.Tensor:
@@ -74,6 +84,7 @@ class Amazon2023(TripletWithMeta):
         image_folder: str
             The cache folder for saving images to be encoded. 
             Note that `self.root/image/folder` will be used as the final path.
+        image_size: str, 'thumb', 'large' or 'hi_res'
         saved_file: str
             The filename for saving visual modality features.
         pool: bool, default to `True`
@@ -86,6 +97,7 @@ class Amazon2023(TripletWithMeta):
         from PIL import Image
         from freeplot.utils import export_pickle
 
+        assert image_size in ('thumb', 'large', 'hi_res'), f"`size` should be 'thumb', 'large', 'hi_res' ..."
         Item = self.fields[ITEM, ID]
         images = []
         processor = AutoImageProcessor.from_pretrained(
@@ -96,7 +108,7 @@ class Amazon2023(TripletWithMeta):
             try:
                 image = Image.open(
                     os.path.join(
-                        self.path, image_folder, f"{idx}.jpg"
+                        self.path, image_folder, image_size, f"{idx}.jpg"
                     )
                 ).convert('RGB')
             except FileNotFoundError:
@@ -123,7 +135,7 @@ class Amazon2023(TripletWithMeta):
         vFeats = []
         with torch.no_grad():
             encoder.eval()
-            for (indices, images) in tqdm.tqdm(dataloader, desc="Batches: "):
+            for (indices, images) in tqdm.tqdm(dataloader, desc="Visual batches: "):
                 vIndices.append(indices)
                 if pool:
                     vFeats.append(
