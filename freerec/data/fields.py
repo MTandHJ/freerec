@@ -1063,9 +1063,9 @@ class FieldModuleList(torch.nn.Module):
         """
         for field in self.groupby(*tags):
             field.embed(
-                dim, 
-                num_embeddings, padding_idx, # SPARSE
-                bias, linear, # DENSE
+                dim=dim, 
+                num_embeddings=num_embeddings, padding_idx=padding_idx, # SPARSE
+                bias=bias, linear=linear, # DENSE
                 **kwargs
             )
 
