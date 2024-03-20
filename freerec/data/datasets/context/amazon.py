@@ -1,7 +1,11 @@
 
 
-import os
+from typing import Callable, Iterable
+
+import torch, os
+import torchdata.datapipes as dp
 from .base import TripletWithMeta
+from ...tags import ITEM, ID
 from ...utils import download_from_url
 
 
@@ -20,6 +24,13 @@ class Amazon2023(TripletWithMeta):
     Amazon datasets (2023).
     See [[here](https://amazon-reviews-2023.github.io/)] for more details.
     """
+
+    text_converter = {
+        'Title': lambda x: x,
+        'Features': lambda x: ' '.join(eval(x)),
+        'Description': lambda x: ' '.join(eval(x)),
+        'Details': lambda x: ' '.join([f"{key}: {val}" for key, val in eval(x).items()])
+    }
 
     def download_images(self, size: str = 'thumb') -> None:
         r"""
@@ -44,6 +55,156 @@ class Amazon2023(TripletWithMeta):
                     )
                 except (KeyError, IndexError):
                     continue
+
+    def encode_visual_modality(
+        self,
+        model: str, model_dir: str, image_folder: str,
+        saved_file: str = "visual_modality.pkl",
+        pool: bool = True, num_workers: int = 4, batch_size: int = 128,
+    ) -> torch.Tensor:
+        r"""
+        Visual modality encoding via `transformers`.
+
+        Parameters:
+        -----------
+        model: str
+            The model name. Refer to [[here](https://huggingface.co/models?pipeline_tag=image-feature-extraction&sort=trending)]
+        model_dir: str
+            The cache dir for model.
+        image_folder: str
+            The cache folder for saving images to be encoded. 
+            Note that `self.root/image/folder` will be used as the final path.
+        saved_file: str
+            The filename for saving visual modality features.
+        pool: bool, default to `True`
+            Pooled hidden states as visual modality features if `True`.
+        num_workers: int
+        batch_size: int
+        """
+        import tqdm
+        from transformers import AutoImageProcessor, AutoModel
+        from PIL import Image
+        from freeplot.utils import export_pickle
+
+        Item = self.fields[ITEM, ID]
+        images = []
+        processor = AutoImageProcessor.from_pretrained(
+            model, cache_dir=model_dir
+        )
+
+        def _process(idx: int):
+            try:
+                image = Image.open(
+                    os.path.join(
+                        self.path, image_folder, f"{idx}.jpg"
+                    )
+                ).convert('RGB')
+            except FileNotFoundError:
+                image = Image.new('RGB', (224, 224))
+            return idx, processor(images=image, return_tensors='pt')['pixel_values'][0]
+
+        datapipe = dp.iter.IterableWrapper(
+            range(Item.count)
+        ).sharding_filter().map(
+            _process
+        )
+        dataloader = torch.utils.data.DataLoader(
+            datapipe, 
+            num_workers=num_workers, batch_size=batch_size,
+            shuffle=False
+        )
+
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        encoder = AutoModel.from_pretrained(
+            model, cache_dir=model_dir
+        ).to(device)
+
+        vIndices = []
+        vFeats = []
+        with torch.no_grad():
+            encoder.eval()
+            for (indices, images) in tqdm.tqdm(dataloader, desc="Batches: "):
+                vIndices.append(indices)
+                if pool:
+                    vFeats.append(
+                        encoder(pixel_values=images.to(device)).pooler_output.cpu()
+                    )
+                else:
+                    vFeats.append(
+                        encoder(pixel_values=images.to(device)).last_hidden_state.cpu()
+                    )
+        vIndices = torch.cat(vIndices, dim=0)
+        vFeats = torch.cat(vFeats, dim=0).flatten(1) # (N, D)
+        vFeats = vFeats[vIndices.argsort()] # reindex
+        assert vFeats.size(0) == Item.count, f"Unknown errors happen ..."
+
+        export_pickle(
+            vFeats, os.path.join(
+                self.path, saved_file
+            )
+        )
+        return vFeats
+
+    def encode_textual_modality(
+        self,
+        model: str, model_dir: str, 
+        field_names: Iterable[str] = ('Title', 'Features', 'Description', 'Details'),
+        saved_file: str = "textual_modality.pkl",
+        batch_size: int = 128,
+    ) -> torch.Tensor:
+        r"""
+        Textual modality encoding via `sentence_transformers`.
+
+        Parameters:
+        -----------
+        model: str
+            The model name. Refer to [[here](https://www.sbert.net/docs/pretrained_models.html)]
+        model_dir: str
+            The cache dir for model.
+        field_names: Iterable[str]
+            The fields to be encoded.
+        saved_file: str
+            The filename for saving visual modality features.
+        batch_size: int
+        """
+        import tqdm
+        from sentence_transformers import SentenceTransformer
+        from freeplot.utils import export_pickle
+
+        Item = self.fields[ITEM, ID]
+
+        tfields = [self.fields[name] for name in field_names]
+        sentences = []
+        for i in tqdm.tqdm(range(Item.count), desc="Make sentences: "):
+            sentence = ' '.join(
+                self.text_converter[field.name](
+                    field.data[i]
+                )
+                for field in tfields
+            )
+            sentences.append(sentence)
+
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        encoder = SentenceTransformer(
+            model, 
+            cache_folder=model_dir,
+            device=device
+        )
+
+        tFeats = encoder.encode(
+            sentences, 
+            convert_to_tensor=True,
+            batch_size=batch_size, show_progress_bar=True
+        ).cpu()
+        assert tFeats.size(0) == Item.count, f"Unknown errors happen ..."
+
+        export_pickle(
+            tFeats, os.path.join(
+                self.path, saved_file
+            )
+        )
+        return tFeats
+
 
 class Amazon2023_All_Beauty_550_Chron(Amazon2023):
     r"""
