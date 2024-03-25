@@ -69,6 +69,8 @@ class Tiktok_from_MMSSL(DataSetFromMMSSL):
     +--------+--------+------------------+---------------+--------+--------+-------+-----------------------+
 
     """
+    URL = "https://zenodo.org/records/10868610/files/Tiktok_from_MMSSL.zip"
+
 
 class Allrecipes_from_MMSSL(DataSetFromMMSSL):
     r"""
@@ -81,3 +83,4 @@ class Allrecipes_from_MMSSL(DataSetFromMMSSL):
     +--------+--------+-------------------+---------------+--------+--------+-------+-----------------------+
 
     """
+    URL = "https://zenodo.org/records/10868610/files/Allrecipes_from_MMSSL.zip"

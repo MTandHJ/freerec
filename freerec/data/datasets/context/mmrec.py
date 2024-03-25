@@ -74,6 +74,7 @@ class AmazonBaby_550_MMRec(DataSetFromMMRec):
     | 19445  |  7050  | 8.096734379017743 |     160792    | 118551 | 20559  | 21682 | 0.0011729172479570493 |
     +--------+--------+-------------------+---------------+--------+--------+-------+-----------------------+
     """
+    URL = "https://zenodo.org/records/10868610/files/AmazonBaby_550_MMRec.zip"
 
 
 class AmazonSports_550_MMRec(DataSetFromMMRec):
@@ -86,6 +87,7 @@ class AmazonSports_550_MMRec(DataSetFromMMRec):
     | 35598  | 18357  | 8.13542895668296 |     296337    | 218409 | 37899  | 40029 | 0.00045348045456958995 |
     +--------+--------+------------------+---------------+--------+--------+-------+------------------------+
     """
+    URL = "https://zenodo.org/records/10868610/files/AmazonSports_550_MMRec.zip"
 
 
 class AmazonClothing_550_MMRec(DataSetFromMMRec):
@@ -98,6 +100,7 @@ class AmazonClothing_550_MMRec(DataSetFromMMRec):
     | 39387  | 23033  | 7.010231802371341 |     278677    | 197338 | 40150  | 41189 | 0.0003071833809100676 |
     +--------+--------+-------------------+---------------+--------+--------+-------+-----------------------+
     """
+    URL = "https://zenodo.org/records/10868610/files/AmazonClothing_550_MMRec.zip"
 
 
 class AmazonElectronics_550_MMRec(DataSetFromMMRec):
@@ -110,4 +113,4 @@ class AmazonElectronics_550_MMRec(DataSetFromMMRec):
     | 192403 | 63001  | 8.5198619564144 |    1689188    | 1254441 | 211296 | 223451 | 0.00013935376448339807 |
     +--------+--------+-----------------+---------------+---------+--------+--------+------------------------+
     """
-
+    URL = "https://zenodo.org/records/10868610/files/AmazonElectronics_550_MMRec.zip"

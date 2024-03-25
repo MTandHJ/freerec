@@ -56,7 +56,7 @@ def safe_cast(val: T, dest_type: Callable[[T], T], default: T) -> T:
 
 def download_from_url(
     url: str, root: str = '.', filename: Optional[str] = None, 
-    overwrite: bool = False, retries=5, 
+    overwrite: bool = False, retries=5, chunk_size: int = 1024 * 1024,
     sha1_hash: Optional[str] = None, verify_ssl: bool = True, 
     log: bool = True
 ):
@@ -80,6 +80,7 @@ def download_from_url(
         but doesn't match.
     retries : int, optional
         The number of times to attempt downloading in case of failure or non 200 return codes. Default is 5.
+    chunk_size: int, default to 1024 * 1024 (=1MB)
     verify_ssl : bool, optional
         Verify SSL certificates. Default is True.
     log : bool, optional
@@ -119,11 +120,11 @@ def download_from_url(
                     raise RuntimeError("Failed downloading url %s" % url)
                 with open(file_, 'wb') as f:
                     if log:
-                        for chunk in tqdm.tqdm(r.iter_content(chunk_size=1024), leave=False, desc="վ'ᴗ' ի-"):
+                        for chunk in tqdm.tqdm(r.iter_content(chunk_size=chunk_size), leave=False, desc="վ'ᴗ' ի-"):
                             if chunk:  # filter out keep-alive new chunks
                                 f.write(chunk)
                     else:
-                        for chunk in r.iter_content(chunk_size=1024):
+                        for chunk in r.iter_content(chunk_size=chunk_size):
                             if chunk:  # filter out keep-alive new chunks
                                 f.write(chunk)
                 if sha1_hash and not check_sha1(file_, sha1_hash):
