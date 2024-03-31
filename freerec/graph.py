@@ -4,6 +4,7 @@ from typing import Optional, Tuple
 
 import torch
 from torch_geometric.utils import coalesce, \
+                scatter, spmm, \
                 to_undirected, to_edge_index, \
                 add_remaining_self_loops, remove_self_loops, \
                 k_hop_subgraph, \
@@ -13,6 +14,7 @@ from torch_geometric.utils.num_nodes import maybe_num_nodes
 
 __all__ = [
     'coalesce', 
+    'scatter', 'spmm',
     'to_undirected', 'to_edge_index',
     'add_self_loops', 'remove_self_loops',
     'k_hop_subgraph',

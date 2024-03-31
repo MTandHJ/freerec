@@ -17,7 +17,7 @@ conda activate FreeRec
 ```
 
 
-Note: After PyTorch 2.0, `TorchData` seems to have stopped being updated, and you can install it with `--no-deps` to avoid installing dependencies.
+**Note:** After PyTorch 2.0, `TorchData` seems to have stopped being updated, and you can install it with `--no-deps` to avoid installing dependencies.
 
 ```
 pip install --no-deps torchdata
@@ -39,7 +39,7 @@ or (for latest)
 ![](docs/src/pipeline.png)
 
 **Note:** To make dataset, please download corresponding Atomic files from [[RecBole](https://drive.google.com/drive/folders/1so0lckI6N6_niVEYaBu-LIcpOdZf99kj)]. 
-Then, run `make_dataset.ipynb'.
+Then, run `freerec make --help`.
 
 ## Training Flow
 
