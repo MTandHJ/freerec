@@ -343,7 +343,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         graph.edge_index = to_undirected(graph.edge_index)
         return graph
 
-    def to_normalized_uiAdj(
+    def to_normalized_adj(
         self,
         src: Tuple[FieldTags] = (USER, ID), 
         dst: Tuple[FieldTags] = (ITEM, ID),

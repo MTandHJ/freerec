@@ -7,7 +7,7 @@ import freerec
 from freerec.data.fields import FieldModuleList
 from freerec.data.tags import USER, SESSION, ITEM, TIMESTAMP, ID
 
-freerec.declare(version='0.6.1')
+freerec.declare(version='0.7.5')
 
 cfg = freerec.parser.Parser()
 cfg.add_argument("--maxlen", type=int, default=50)
