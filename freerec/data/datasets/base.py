@@ -229,7 +229,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
 
         # check mode and raise warning if not in 'train' mode
         if self.mode != 'train':
-            warnLogger(f"Convert the datapipe for {self.mode} to graph. Make sure that this is intentional ...")
+            warnLogger(f"Convert the {self.mode} datapipe to graph. Make sure that this is intentional ...")
 
         srcs, edges, dsts = zip(*edge_types)
         srcs = [self.fields[src] for src in srcs]
@@ -302,7 +302,11 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         """
         return self.to_heterograph((src, edge_type, dst))
    
-    def to_graph(self, src: Tuple[FieldTags], dst: Tuple[FieldTags]):
+    def to_graph(
+        self, 
+        src: Tuple[FieldTags] = (USER, ID), 
+        dst: Tuple[FieldTags] = (ITEM, ID)
+    ):
         r"""
         Convert datapipe to a homogeneous graph.
 
@@ -315,8 +319,8 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
 
         Returns:
         --------
-        HeteroData:
-            The resulting heterograph, with the requested edges and nodes.
+        Data:
+            The resulting graph, with the requested edges and nodes.
 
         Notes:
         ------
@@ -338,6 +342,44 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         graph = self.to_heterograph((src, None, dst)).to_homogeneous()
         graph.edge_index = to_undirected(graph.edge_index)
         return graph
+
+    def to_normalized_uiAdj(
+        self,
+        src: Tuple[FieldTags] = (USER, ID), 
+        dst: Tuple[FieldTags] = (ITEM, ID),
+        normalization: str = 'sym'
+    ):
+        r"""
+        Convert datapipe to a normalized adjacency matrix.
+
+        Parameters:
+        ----------
+        src: Tuple[FieldTags]
+            Source node.
+        dst: Tuple[FieldTags]
+            Destination node.
+        normalization: str
+            `sym`: Symmetric sqrt normalization
+                :math: `\mathbf{\tilde{A}} = \mathbf{D}_l^{-1/2} \mathbf{A} \mathbf{D}_r^{-1/2}`
+            'left': Left-side normalization
+                :math: `\mathbf{\tilde{A}} = \mathbf{D}_l^{-1} \mathbf{A}`
+            'right': Right-side normalization
+                :math: `\mathbf{\tilde{A}} = \mathbf{A} \mathbf{D}_r^{-1}`
+    
+        Returns:
+        --------
+        Adj: CSR Tensor
+        """
+        from ...graph import to_normalized, to_adjacency
+        User = self.fields[src]
+        Item = self.fields[dst]
+        edge_index, edge_weight = to_normalized(
+            self.to_graph(src, dst).edge_index, normalization=normalization
+        )
+        return to_adjacency(
+            edge_index, edge_weight,
+            num_nodes=User.count + Item.count
+        )
 
 
 class RecDataSet(BaseSet):
