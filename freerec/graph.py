@@ -138,12 +138,13 @@ def get_knn_graph(
     edge_weight: torch.Tensor
     """
     M, N = sim_mat.shape
+    device = sim_mat.device
     if sim_mat.is_sparse:
         sim_mat = sim_mat.to_dense()
     vals, cols = torch.topk(sim_mat, k, dim=1, largest=True)
     del sim_mat
 
-    rows = torch.arange(0, M).unsqueeze(-1).repeat(1, k)
+    rows = torch.arange(0, M, device=device).unsqueeze(-1).repeat(1, k)
     rows, cols = rows.flatten(), cols.flatten()
     edge_index = torch.stack(
         (rows, cols), dim=0
