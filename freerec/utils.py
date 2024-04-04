@@ -1,11 +1,11 @@
 
 
-from typing import Callable, Dict, List, Union
+from typing import Callable, Dict, List, Union, Any, NoReturn
 import torch
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 
-import logging, time, random, os
+import logging, time, random, os, pickle
 from collections import defaultdict
 import matplotlib.pyplot as plt
 
@@ -158,10 +158,11 @@ class AverageMeter:
         freq: int, optional (default: 1)
             Plot frequency.
         """
+        timeline = np.arange(len(self.history)) * freq
         self.fig = plt.figure(dpi=300)
         ax = self.fig.gca()
         ax.plot(
-            timeline, self.history, marker='', figure=fig
+            timeline, self.history, marker='', figure=self.fig
         )
         ax.set_title(self.name)
 
@@ -323,10 +324,17 @@ class Monitor(Config):
                             )
 
 
-def export_pickle(data: Any, file_: str) -> NoReturn:
+def export_pickle(data: Any, file: str) -> NoReturn:
+    r"""
+    Export data into pickle format.
+
+    data: Any
+    file: str
+        The file (path/filename) to be saved
+    """
     fh = None
     try:
-        fh = open(file_, "wb")
+        fh = open(file, "wb")
         pickle.dump(data, fh, pickle.HIGHEST_PROTOCOL)
     except (EnvironmentError, pickle.PicklingError) as err:
         ExportError_ = type("ExportError", (Exception,), dict())
@@ -335,10 +343,16 @@ def export_pickle(data: Any, file_: str) -> NoReturn:
         if fh is not None:
             fh.close()
 
-def import_pickle(file_: str) -> Any:
+def import_pickle(file: str) -> Any:
+    r"""
+    Import data from given file.
+    file: str
+        The file (path/filename).
+    """
+
     fh = None
     try:
-        fh = open(file_, "rb")
+        fh = open(file, "rb")
         return pickle.load(fh)
     except (EnvironmentError, pickle.UnpicklingError) as err:
         raise ImportError(f"Import Error: {err}")
