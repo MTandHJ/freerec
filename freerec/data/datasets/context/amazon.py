@@ -95,7 +95,7 @@ class Amazon2023(TripletWithMeta):
         import tqdm
         from transformers import AutoImageProcessor, AutoModel
         from PIL import Image
-        from freeplot.utils import export_pickle
+        from ....utils import export_pickle
 
         assert image_size in ('thumb', 'large', 'hi_res'), f"`size` should be 'thumb', 'large', 'hi_res' ..."
         Item = self.fields[ITEM, ID]
@@ -181,7 +181,7 @@ class Amazon2023(TripletWithMeta):
         """
         import tqdm
         from sentence_transformers import SentenceTransformer
-        from freeplot.utils import export_pickle
+        from ....utils import export_pickle
 
         Item = self.fields[ITEM, ID]
 

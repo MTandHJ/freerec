@@ -10,7 +10,6 @@ from torch.utils.tensorboard import SummaryWriter
 from functools import partial
 from itertools import product
 from collections import defaultdict
-from freeplot.utils import import_pickle, export_pickle
 
 from .data.datasets import RecDataSet
 from .data.fields import FieldModule, FieldTuple
@@ -18,7 +17,7 @@ from .data.dataloader import DataLoader
 from .models import RecSysArch
 from .criterions import BaseCriterion
 from .dict2obj import Config
-from .utils import AverageMeter, Monitor, timemeter, infoLogger
+from .utils import AverageMeter, Monitor, timemeter, infoLogger, import_pickle, export_pickle
 from .metrics import *
 from .parser import TIME, Parser
 from .ddp import is_main_process, main_process_only, is_distributed, shared_random_seed, synchronize

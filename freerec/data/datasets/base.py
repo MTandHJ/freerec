@@ -6,12 +6,11 @@ import torch, os, abc
 import numpy as np
 import torchdata.datapipes as dp
 from functools import lru_cache
-from freeplot.utils import import_pickle, export_pickle
 
 from ..tags import FieldTags, SPARSE, USER, SESSION, ITEM, ID
 from ..fields import Field, BufferField, FieldList, FieldTuple
 from ..utils import download_from_url, extract_archive
-from ...utils import timemeter, infoLogger, mkdirs, warnLogger
+from ...utils import timemeter, infoLogger, mkdirs, warnLogger, import_pickle, export_pickle
 
 
 __all__ = ['BaseSet', 'RecDataSet']

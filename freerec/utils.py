@@ -7,8 +7,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 import logging, time, random, os
 from collections import defaultdict
-from freeplot.base import FreePlot
-from freeplot.utils import export_pickle
+import matplotlib.pyplot as plt
 
 from .dict2obj import Config
 from .ddp import is_main_process, all_gather
@@ -159,14 +158,12 @@ class AverageMeter:
         freq: int, optional (default: 1)
             Plot frequency.
         """
-        self.fp = FreePlot(
-            shape=(1, 1),
-            titles=(self.name,),
-            dpi=300, latex=False
+        self.fig = plt.figure(dpi=300)
+        ax = self.fig.gca()
+        ax.plot(
+            timeline, self.history, marker='', figure=fig
         )
-        timeline = np.arange(len(self.history)) * freq
-        self.fp.lineplot(timeline, self.history, marker='')
-        self.fp.set_title(y=.98)
+        ax.set_title(self.name)
 
     def save(self, path: str, prefix: str = '') -> None:
         r"""
@@ -185,7 +182,8 @@ class AverageMeter:
             The filename of the saved file.
         """
         filename = f"{prefix}{self.name}.png"
-        self.fp.savefig(os.path.join(path, filename))
+        self.fig.savefig(os.path.join(path, filename))
+        plt.close(self.fig)
         return filename
 
     def which_is_better(self, other: float) -> bool:
@@ -323,6 +321,30 @@ class Monitor(Config):
                                 val,
                                 t
                             )
+
+
+def export_pickle(data: Any, file_: str) -> NoReturn:
+    fh = None
+    try:
+        fh = open(file_, "wb")
+        pickle.dump(data, fh, pickle.HIGHEST_PROTOCOL)
+    except (EnvironmentError, pickle.PicklingError) as err:
+        ExportError_ = type("ExportError", (Exception,), dict())
+        raise ExportError_(f"Export Error: {err}")
+    finally:
+        if fh is not None:
+            fh.close()
+
+def import_pickle(file_: str) -> Any:
+    fh = None
+    try:
+        fh = open(file_, "rb")
+        return pickle.load(fh)
+    except (EnvironmentError, pickle.UnpicklingError) as err:
+        raise ImportError(f"Import Error: {err}")
+    finally:
+        if fh is not None:
+            fh.close()
 
 
 def set_logger(
