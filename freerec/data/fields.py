@@ -6,6 +6,7 @@ import torch, abc
 import numpy as np
 import pandas as pd
 from functools import partial, lru_cache, reduce
+from itertools import chain
 
 from .utils import safe_cast
 from .transformation import Identifier, Indexer, StandardScaler, MinMaxScaler
@@ -218,9 +219,9 @@ class BufferField(Field):
 
         length = self.count if length is None else length
         crow_indices = np.cumsum([0] + list(map(len, self.data)), dtype=np.int64)
-        col_indices = reduce(
-            lambda x, y: x + y, data
-        )
+        col_indices = list(chain(
+            *self.data
+        ))
         values = np.ones_like(col_indices, dtype=np.int64)
         return torch.sparse_csr_tensor(
             crow_indices=crow_indices,

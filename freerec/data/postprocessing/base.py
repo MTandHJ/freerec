@@ -77,7 +77,6 @@ class BaseProcessor(dp.iter.IterDataPipe):
         List: The results after applying the function to the iterables.
         """
         return list(map(func, *iterables))
-
    
 
 class Postprocessor(BaseProcessor):

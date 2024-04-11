@@ -20,6 +20,7 @@ class FieldTags(Enum):
 
     Seen = 'Seen'
     Unseen = 'Unseen'
+    Sequence = 'Sequence'
     Positive = 'Positive'
     Negative = 'Negative'
 
@@ -42,5 +43,6 @@ NEXTITEM = FieldTags('NextItem')
 
 SEEN = FieldTags('Seen')
 UNSEEN = FieldTags('Unseen')
+SEQUENCE = FieldTags('Sequence')
 POSITIVE = FieldTags('Positive')
 NEGATIVE = FieldTags('Negative')

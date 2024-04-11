@@ -734,10 +734,8 @@ class RecDataSet(BaseSet):
 
 
 class MatchingRecSet(RecDataSet):
-
     DATATYPE = MATCHING
 
 
 class NextItemRecSet(RecDataSet):
-
     DATATYPE = NEXTITEM

@@ -310,15 +310,17 @@ class ValidSampler(BaseSampler):
 
     def _nextitem_from_pool(self):
         for user in self.source:
+            seen = self.seenItems[user]
             for k, positive in enumerate(self.unseenItems[user]):
-                seq = seen = self.seenItems[user] + self.unseenItems[user][:k]
+                seq = self.seenItems[user] + self.unseenItems[user][:k]
                 unseen = (positive,) + self._sample_neg(user, k, positive, seen)
                 yield [user, seq, unseen, seen]
 
     def _nextitem_from_full(self):
         for user in self.source:
+            seen = self.seenItems[user]
             for k, positive in enumerate(self.unseenItems[user]):
-                seq = seen = self.seenItems[user] + self.unseenItems[user][:k]
+                seq = self.seenItems[user] + self.unseenItems[user][:k]
                 unseen = (positive,)
                 yield [user, seq, unseen, seen]
 
