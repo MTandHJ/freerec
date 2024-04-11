@@ -6,35 +6,41 @@ from enum import Enum
 class FieldTags(Enum):
     Sparse = 'Sparse'
     Dense = 'Dense'
+    Affiliate = 'Affiliate'
+
+    ID = 'ID'
     User = 'User'
     Item = 'Item'
-    Session = 'Session'
-    Affiliate = 'Affiliate'
-    Interaction = 'Interaction'
-    Timestamp = 'Timestamp'
     Rating = 'Rating'
-    ID = 'ID'
     Feature = 'Feature'
-    Target = 'Target'
-    Positive = 'Positive'
-    Negative = 'Negative'
+    Timestamp = 'Timestamp'
+
+    Matching = 'Matching'
+    NextItem = 'NextItem'
+
     Seen = 'Seen'
     Unseen = 'Unseen'
+    Positive = 'Positive'
+    Negative = 'Negative'
+
+
 
 
 SPARSE = FieldTags('Sparse')
 DENSE = FieldTags('Dense')
+AFFILIATE = FieldTags('Affiliate')
+
+ID = FieldTags('ID')
 USER = FieldTags('User')
 ITEM = FieldTags('Item')
-SESSION = FieldTags('Session')
-AFFILIATE = FieldTags('Affiliate')
-INTERACTION = FieldTags('Interaction')
-TIMESTAMP = FieldTags('Timestamp')
 RATING = FieldTags('Rating')
-ID = FieldTags('ID')
 FEATURE = FieldTags('Feature')
-TARGET = FieldTags('Target')
-POSITIVE = FieldTags('Positive')
-NEGATIVE = FieldTags('Negative')
+TIMESTAMP = FieldTags('Timestamp')
+
+MATCHING = FieldTags('Matching')
+NEXTITEM = FieldTags('NEXTITEM')
+
 SEEN = FieldTags('Seen')
 UNSEEN = FieldTags('Unseen')
+POSITIVE = FieldTags('Positive')
+NEGATIVE = FieldTags('Negative')
