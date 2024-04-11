@@ -7,7 +7,7 @@ import numpy as np
 import torchdata.datapipes as dp
 from functools import lru_cache
 
-from ..tags import FieldTags, SPARSE, USER, SESSION, ITEM, ID
+from ..tags import FieldTags, SPARSE, USER, ITEM, ID, MATCHING, NEXTITEM
 from ..fields import Field, BufferField, FieldList, FieldTuple
 from ..utils import download_from_url, extract_archive
 from ...utils import timemeter, infoLogger, mkdirs, warnLogger, import_pickle, export_pickle
@@ -731,3 +731,13 @@ class RecDataSet(BaseSet):
     def __str__(self) -> str:
         cfg = '\n'.join(map(str, self.fields))
         return f"[{self.__class__.__name__}] >>> \n" + cfg
+
+
+class MatchingRecSet(RecDataSet):
+
+    DATATYPE = MATCHING
+
+
+class NextItemRecSet(RecDataSet):
+
+    DATATYPE = NEXTITEM

@@ -4,85 +4,84 @@ from typing import List, Tuple, Optional, Iterable, Callable
 
 import random
 import torchdata.datapipes as dp
-from collections import defaultdict
 
 from .base import Postprocessor
 from ..datasets.base import RecDataSet
 from ..fields import SparseField
-from ..tags import USER, SESSION, ITEM, ID
+from ..tags import USER, ITEM, ID, MATCHING, NEXTITEM
 from ..utils import negsamp_vectorized_bsearch
 from ...utils import timemeter
 
 
 __all__ = [
-    'GenTrainYielder', 'GenValidYielder', 'GenTestYielder',
-    'GenTrainUniformSampler', 'GenValidYielder', 'GenTestYielder',
-    'SeqTrainYielder', 'SeqValidYielder', 'SeqTestYielder', 
-    'SeqTrainUniformSampler', 'SeqValidSampler', 'SeqTestSampler',
-    'SessTrainYielder', 'SessValidYielder', 'SessTestYielder', 
-    'SessTrainUniformSampler', 'SessValidSampler', 'SessTestSampler',
+    'GenTrainPositiveSampler', 'GenTrainNegativeSampler',
+    'SeqTrainPositiveYielder', 'SeqTrainNegativeSampler',
+    'ValidSampler', 'TestSampler',
 ]
 
 
 NUM_NEGS_FOR_SAMPLE_BASED_RANKING = 100
 
 
-def _to_tuple(func: Callable):
-    def wrapper(*args, **kwargs) -> Tuple:
-        return tuple(func(*args, **kwargs))
-    wrapper.__name__ = func.__name__
-    wrapper.__doc__ = func.__doc__
-    return wrapper
+class BaseSampler(Postprocessor):
+    r"""
+    Base Sampler for training.
 
-
-#===============================For General Recommendation===============================
-
-
-@dp.functional_datapipe("gen_train_yielding_")
-class GenTrainYielder(Postprocessor):
-    r"""A datapipe that yields (user, item) pairs."""
+    Parameters:
+    -----------
+    source_dp: Source datapipe defined in source.py
+    dataset: RecDataSet 
+        The dataset that provides the data source.
+    """
 
     def __init__(
-        self, source_dp: dp.iter.IterDataPipe,
-        dataset: RecDataSet
+        self, 
+        source_dp: dp.iter.IterDataPipe, dataset: RecDataSet,
     ) -> None:
-        r"""
-        Initializes a new instance of the Tripleter postprocessor.
-        
-        Parameters:
-        -----------
-        source_dp: RecDatapipe or Postprocessor 
-            A RecDatapipe or another Postprocessor that yields dicts of NumPy arrays.
-        dataset: RecDataSet 
-            The dataset that provides the data source.
-        """
         super().__init__(source_dp)
-
+        self.dataset = dataset
         self.User: SparseField = dataset.fields[USER, ID]
         self.Item: SparseField = dataset.fields[ITEM, ID]
-
         self.prepare(dataset)
+
+    def prepare(self, dataset: RecDataSet):
+        pass
+
+    @property
+    def seenItems(self) -> Tuple:
+        return self.__seenItems
+
+    @seenItems.setter
+    def seenItems(self, seenItems: Iterable):
+        self.__seenItems = tuple(tuple(items) for items in seenItems)
+
+    @property
+    def unseenItems(self) -> Tuple:
+        raise self.__unseenItems
+    
+    @unseenItems.setter
+    def unseenItems(self, unseenItems: Iterable):
+        self.__unseenItems = tuple(tuple(items) for items in unseenItems) 
+
+
+#===============================For Training ===============================
+
+
+@dp.functional_datapipe("gen_train_sampling_pos_")
+class GenTrainPositiveSampler(BaseSampler):
 
     @timemeter
     def prepare(self, dataset: RecDataSet):
-        r"""
-        Prepares the dataset by building sets of seen items for each user.
-
-        Parameters:
-        -----------
-        dataset: RecDataSet 
-            The dataset that provides the data source.
-        """
-        self.posItems = [set() for _ in range(self.User.count)]
+        seenItems = [set() for _ in range(self.User.count)]
 
         for chunk in dataset.train():
             self.listmap(
-                lambda user, item: self.posItems[user].add(item),
+                lambda user, item: seenItems[user].add(item),
                 chunk[USER, ID], chunk[ITEM, ID]
             )
 
         # sorting for ordered positives
-        self.posItems = [tuple(sorted(items)) for items in self.posItems]
+        self.seenItems = [sorted(items) for items in seenItems]
 
     def _sample_pos(self, user: int) -> int:
         r"""
@@ -98,10 +97,10 @@ class GenTrainYielder(Postprocessor):
         positive: int 
             A positive item that the user has interacted with.
         """
-        return random.choice(self.posItems[user])
+        return random.choice(self.seenItems[user])
 
     def _check(self, user: int) -> bool:
-        return len(self.posItems[user]) > 0
+        return len(self.seenItems[user]) > 0
 
     def __iter__(self):
         for user in self.source:
@@ -109,98 +108,17 @@ class GenTrainYielder(Postprocessor):
                 yield [user, self._sample_pos(user)]
 
 
-@dp.functional_datapipe("gen_valid_yielding_")
-class GenValidYielder(GenTrainYielder):
-
-    @timemeter
-    def prepare(self, dataset: RecDataSet):
-        self.seenItems = [set() for _ in range(self.User.count)]
-        self.unseenItems = [set() for _ in range(self.User.count)]
-
-        for chunk in dataset.train():
-            self.listmap(
-                lambda user, item: self.seenItems[user].add(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-        for chunk in dataset.valid():
-            self.listmap(
-                lambda user, item: self.unseenItems[user].add(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-
-        self.seenItems = [tuple(items) for items in self.seenItems]
-        self.unseenItems = [tuple(items) for items in self.unseenItems]
-
-    def _check(self, user: int) -> bool:
-        return len(self.unseenItems[user]) > 0
-
-    def __iter__(self):
-        for user in self.source:
-            if self._check(user):
-                yield [user, self.unseenItems[user], self.seenItems[user]]
-
-
-@dp.functional_datapipe("gen_test_yielding_")
-class GenTestYielder(GenValidYielder):
-
-    @timemeter
-    def prepare(self, dataset: RecDataSet):
-        self.seenItems = [set() for _ in range(self.User.count)]
-        self.unseenItems = [set() for _ in range(self.User.count)]
-
-        for chunk in dataset.train():
-            self.listmap(
-                lambda user, item: self.seenItems[user].add(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-        for chunk in dataset.valid():
-            self.listmap(
-                lambda user, item: self.seenItems[user].add(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-        for chunk in dataset.test():
-            self.listmap(
-                lambda user, item: self.unseenItems[user].add(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-
-        self.seenItems = [tuple(items) for items in self.seenItems]
-        self.unseenItems = [tuple(items) for items in self.unseenItems]
-
-
-@dp.functional_datapipe("gen_train_uniform_sampling_")
-class GenTrainUniformSampler(GenTrainYielder):
-    r"""
-    A functional datapipe for uniformly sampling users and their negatives.
-
-    Parameters:
-    -----------
-    source_dp: dp.iter.IterableWrapper 
-        A datapipe that yields users.
-    dataset: RecDataSet 
-        The dataset object that contains field objects.
-    num_negatives: int 
-        The number of negative samples for each piece of data.  
-    """
+@dp.functional_datapipe("gen_train_sampling_neg_")
+class GenTrainNegativeSampler(GenTrainPositiveSampler):
 
     def __init__(
-        self, source_dp: dp.iter.IterableWrapper,
-        dataset: RecDataSet,
-        num_negatives: int = 1,
+        self, 
+        source_dp: dp.iter.IterDataPipe, dataset: RecDataSet,
+        unseen_only: bool = True, num_negatives: int = 1
     ) -> None:
-        self.num_negatives = num_negatives
         super().__init__(source_dp, dataset)
-
-    @timemeter
-    def prepare(self, dataset: RecDataSet):
-        self.posItems = [set() for _ in range(self.User.count)]
-        for chunk in dataset.train():
-            self.listmap(
-                lambda user, item: self.posItems[user].add(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-        # sorting for ordered positives
-        self.posItems = [tuple(sorted(items)) for items in self.posItems]
+        self.unseen_only = unseen_only
+        self.num_negatives = num_negatives
 
     def _sample_neg(self, user: int) -> List[int]:
         r"""Randomly sample negative items for a user.
@@ -213,228 +131,89 @@ class GenTrainUniformSampler(GenTrainYielder):
         Returns:
         --------
         negatives: List[int] 
-            A list of negative items that the user has not interacted with.
+            `unseen_only == True`:
+                A list of negative items that the user has not interacted with.
+            `unseen_only == False`:
+                A list of negative items from [0, self.Item.count - 1]
         """
-        seen = self.posItems[user]
+        seen = self.seenItems[user] if self.unseen_only else []
         return negsamp_vectorized_bsearch(
             seen, self.Item.count, self.num_negatives
         )
 
     def __iter__(self):
-        for user in self.source:
-            if self._check(user):
-                yield [user, self._sample_pos(user), self._sample_neg(user)]
+        for user, positive in self.source:
+            yield [user, positive, self._sample_neg(user)]
 
 
-@dp.functional_datapipe("gen_valid_sampling_")
-class GenValidSampler(GenValidYielder):
-
-    def __init__(
-        self, 
-        source_dp: dp.iter.IterDataPipe, 
-        dataset: RecDataSet,
-        num_negs_for_sample_based_ranking: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING
-    ) -> None:
-        self.num_negs_for_sample_based_ranking = num_negs_for_sample_based_ranking
-        super().__init__(source_dp, dataset)
-
-    def _sample_negs(self, user: int, posItem: int):
-        idx = (user, posItem)
-        if self.negItems.get(idx, None) is None:
-            seen = self.seenItems[user]
-            self.negItems[idx] = tuple(
-                negsamp_vectorized_bsearch(
-                    seen, self.Item.count, self.num_negs_for_sample_based_ranking
-                ).tolist()
-            )
-        return self.negItems[idx]
-
-    @timemeter
-    def prepare(self, dataset: RecDataSet):
-        self.seenItems = [set() for _ in range(self.User.count)]
-
-        for chunk in dataset.train():
-            self.listmap(
-                lambda user, item: self.seenItems[user].add(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-
-        self.negItems = dict()
-        # sorting for ordered positives
-        self.seenItems = [tuple(sorted(items)) for items in self.seenItems]
-
-    def __iter__(self):
-        for user, posItem in self.source:
-            yield [user, (posItem,) + self._sample_negs(user, posItem)]
-
-
-@dp.functional_datapipe("gen_test_sampling_")
-class GenTestSampler(GenValidSampler):
-
-    @timemeter
-    def prepare(self, dataset: RecDataSet):
-        self.seenItems = [set() for _ in range(self.User.count)]
-
-        for chunk in dataset.train():
-            self.listmap(
-                lambda user, item: self.seenItems[user].add(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-
-        for chunk in dataset.valid():
-            self.listmap(
-                lambda user, item: self.seenItems[user].add(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-
-        self.negItems = dict()
-        # sorting for ordered positives
-        self.seenItems = [tuple(sorted(items)) for items in self.seenItems]
-
-
-#===============================For Sequential Recommendation===============================
-
-
-@dp.functional_datapipe("seq_train_yielding_")
-class SeqTrainYielder(Postprocessor):
+@dp.functional_datapipe("seq_train_yielding_pos_")
+class SeqTrainPositiveYielder(BaseSampler):
     r"""
-    A functional datapipe for yielding (user, positives, targets).
+    Sequence sampler for training.
 
     Parameters:
     -----------
-    source_dp: dp.iter.IterableWrapper 
-        A datapipe that yields users.
-    dataset: RecDataSet 
-        The dataset object that contains field objects.
-    leave_one_out: bool, default to `True`
-        `True`: take the last one as a target
-        `False`: take `posItems[1:]` as targets
+    yielding_target_only: bool, default to `False`,
+        `False`: Only yielding (user, sequence)
+    start_idx_for_target: int, optional
+        Target sequence as seq[start_idx_for_target:]
+        `None`: seq
+    end_idx_for_input: int, optional
+        Input sequence as seq[:end_idx_for_input]
+        `None`: seq
+
+    Flows:
+    ------
+    - yielding_target_only == True:
+        yielding (user, seq)
+    - yielding_target_only == False and sampling_neg == False:
+        yielding (user, seq[:end_idx_for_input], seq[start_idx_for_target:])
+    - yielding_target_only == False and sampling_neg == True:
+        yielding (user, seq[:end_idx_for_input], seq[start_idx_for_target:], negatives)
+    where negatives is in the size of  (len(positives), num_negatives)
     """
 
     def __init__(
         self, 
         source_dp: dp.iter.IterableWrapper,
         dataset: Optional[RecDataSet] = None,
-        leave_one_out: bool = True
+        start_idx_for_target: Optional[int] = 1, 
+        end_idx_for_input: Optional[int] = -1,
     ) -> None:
-        super().__init__(source_dp)
-        self.User = dataset.fields[USER, ID]
-        self.Item = dataset.fields[ITEM, ID]
-        if leave_one_out:
-            self.marker = -1
-        else:
-            self.marker = 1
-
-        self.prepare(dataset)
-
-    @timemeter
-    def prepare(self, dataset: RecDataSet):
-        pass
-
-    def _check(self, seq: Tuple) -> bool:
-        return len(seq) > 1
+        super().__init__(source_dp, dataset)
+        self.start_idx_for_target = start_idx_for_target
+        self.end_idx_for_input = end_idx_for_input
 
     def __iter__(self):
         for user, seq in self.source:
             if self._check(seq):
-                yield [user, seq[:-1], seq[self.marker:]]
+                positives = seq[self.start_idx_for_target:]
+                seq = seq[:self.end_idx_for_input]
+                yield [user, seq, positives]
 
 
-@dp.functional_datapipe("seq_valid_yielding_")
-class SeqValidYielder(SeqTrainYielder):
-
-    def __init__(
-        self, 
-        source_dp: dp.iter.IterableWrapper, 
-        dataset: RecDataSet
-    ) -> None:
-        super().__init__(source_dp, dataset, True)
-
-    @timemeter
-    def prepare(self, dataset: RecDataSet):
-        self.posItems = [[] for _ in range(self.User.count)]
-        for chunk in dataset.train():
-            self.listmap(
-                lambda user, item: self.posItems[user].append(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-        for chunk in dataset.valid():
-            self.listmap(
-                lambda user, item: self.posItems[user].append(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-        self.posItems = [tuple(items) for items in self.posItems]
-
-    def __iter__(self):
-        for user in self.source:
-            posItems = self.posItems[user]
-            if self._check(posItems):
-                # (user, seqs, unseen, seen)
-                yield [user, posItems[:-1], posItems[-1:], posItems[:-1]]
-
-
-@dp.functional_datapipe("seq_test_yielding_")
-class SeqTestYielder(SeqValidYielder):
-
-    @timemeter
-    def prepare(self, dataset: RecDataSet):
-        self.posItems = [[] for _ in range(self.User.count)]
-        for chunk in dataset.train():
-            self.listmap(
-                lambda user, item: self.posItems[user].append(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-        for chunk in dataset.valid():
-            self.listmap(
-                lambda user, item: self.posItems[user].append(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-        for chunk in dataset.test():
-            self.listmap(
-                lambda user, item: self.posItems[user].append(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-        self.posItems = [tuple(items) for items in self.posItems]
-
-
-@dp.functional_datapipe("seq_train_uniform_sampling_")
-class SeqTrainUniformSampler(SeqTrainYielder):
-    r"""
-    A functional datapipe for yielding (user, positives, targets).
-
-    Parameters:
-    -----------
-    source_dp: dp.iter.IterableWrapper 
-        A datapipe that yields users.
-    dataset: RecDataSet 
-        The dataset object that contains field objects.
-    leave_one_out: bool, default to `True`
-        `True`: take the last one as a target
-        `False`: take `posItems[1:]` as targets
-    num_negatives: int
-        The number of negatives.
-    """
+@dp.functional_datapipe("seq_train_sampling_neg_")
+class SeqTrainNegativeSampler(BaseSampler):
 
     def __init__(
         self, 
-        source_dp: dp.iter.IterableWrapper, 
-        dataset: Optional[RecDataSet] = None, 
-        leave_one_out: bool = True,
-        num_negatives: int = 1
+        source_dp: dp.iter.IterDataPipe, dataset: RecDataSet,
+        unseen_only: bool = True, num_negatives: int = 1
     ) -> None:
+        super().__init__(source_dp, dataset)
+        self.unseen_only = unseen_only
         self.num_negatives = num_negatives
-        super().__init__(source_dp, dataset, leave_one_out)
 
     @timemeter
     def prepare(self, dataset: RecDataSet):
-        self.posItems = [[] for _ in range(self.User.count)]
+        seenItems = [set() for _ in range(self.User.count)]
         for chunk in dataset.train():
             self.listmap(
-                lambda user, item: self.posItems[user].append(item),
+                lambda user, item: seenItems[user].add(item),
                 chunk[USER, ID], chunk[ITEM, ID]
             )
         # sorting for ordered positives
-        self.posItems = [tuple(sorted(items)) for items in self.posItems]
+        self.seenItems = [sorted(items) for items in seenItems]
 
     def _sample_neg(self, user: int, positives: Tuple) -> List[int]:
         r"""Randomly sample negative items for a user.
@@ -447,298 +226,139 @@ class SeqTrainUniformSampler(SeqTrainYielder):
 
         Returns:
         --------
-        negatives: List[int] 
-            A list of negative items that the user has not interacted with.
+        negatives: np.ndarray
+            `unseen_only == True`:
+                A list of negative items that the user has not interacted with.
+            `unseen_only == False`:
+                A list of negative items from [0, self.Item.count - 1]
         """
-        seen = self.posItems[user]
+        seen = self.seenItems[user] if self.unseen_only else []
         return negsamp_vectorized_bsearch(
             seen, self.Item.count, (len(positives), self.num_negatives)
         )
 
     def __iter__(self):
-        for user, seq in self.source:
-            if self._check(seq):
-                seen = seq[:-1]
-                positives = seq[self.marker:]
-                negatives = self._sample_neg(user, positives)
-                yield [user, seen, positives, negatives]
+        for user, seq, positives in self.source:
+            negatives = self._sample_neg(user, positives)
+            yield [user, seq, positives, negatives]
 
 
-@dp.functional_datapipe("seq_valid_sampling_")
-class SeqValidSampler(SeqValidYielder):
+#===============================For Evaluation===============================
+
+@dp.functional_datapipe("valid_sampling_")
+class ValidSampler(BaseSampler):
 
     def __init__(
-        self, 
-        source_dp: dp.iter.IterableWrapper, 
-        dataset: RecDataSet,
-        num_negs_for_sample_based_ranking: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING
+        self, source_dp: dp.iter.IterDataPipe, dataset: RecDataSet, 
+        ranking: str = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING
     ) -> None:
-        self.num_negs_for_sample_based_ranking = num_negs_for_sample_based_ranking
         super().__init__(source_dp, dataset)
-
-    @_to_tuple
-    def _sample_negs(self, seen: List[int]):
-        # sorting for ordered positives
-        seen = sorted(seen)
-        return negsamp_vectorized_bsearch(
-            seen, self.Item.count, self.num_negs_for_sample_based_ranking
-        ).tolist()
-
-    @timemeter
-    def prepare(self, dataset: RecDataSet):
-        self.posItems = [[] for _ in range(self.User.count)]
-        for chunk in dataset.train():
-            self.listmap(
-                lambda user, item: self.posItems[user].append(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-
-        for chunk in dataset.valid():
-            self.listmap(
-                lambda user, item: self.posItems[user].append(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-        self.posItems = [tuple(items) for items in self.posItems]
-
-        self.negItems = self.listmap(
-            self._sample_negs, self.posItems
-        )
-
-    def __iter__(self):
-        for user in self.source:
-            posItems = self.posItems[user]
-            if self._check(posItems):
-                # (user, seq, positive || negatives)
-                yield [user, posItems[:-1], posItems[-1:] + self.negItems[user]]
-
-
-@dp.functional_datapipe("seq_test_sampling_")
-class SeqTestSampler(SeqValidSampler):
-
-    @timemeter
-    def prepare(self, dataset: RecDataSet):
-        self.posItems = [[] for _ in range(self.User.count)]
-        for chunk in dataset.train():
-            self.listmap(
-                lambda user, item: self.posItems[user].append(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-        for chunk in dataset.valid():
-            self.listmap(
-                lambda user, item: self.posItems[user].append(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-
-        for chunk in dataset.test():
-            self.listmap(
-                lambda user, item: self.posItems[user].append(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-        self.posItems = [tuple(items) for items in self.posItems]
-
-        self.negItems = self.listmap(
-            self._sample_negs, self.posItems
-        )
-
-
-#===============================For Session Recommendation===============================
-
-
-@dp.functional_datapipe("sess_train_yielding_")
-class SessTrainYielder(Postprocessor):
-    r"""
-    A functional datapipe for yielding (sess, sequences, targets).
-
-    Parameters:
-    -----------
-    source_dp: dp.iter.IterableWrapper 
-        A datapipe that yields users.
-    dataset: RecDataSet 
-        The dataset object that contains field objects.
-    leave_one_out: bool, default to `True`
-        `True`: take the last one as a target
-        `False`: take `posItems[1:]` as targets
-    """
-
-    def __init__(
-        self, source_dp: dp.iter.IterableWrapper,
-        dataset: Optional[RecDataSet] = None,
-        leave_one_out: bool = True
-    ) -> None:
-        super().__init__(source_dp)
-        self.Item = dataset.fields[ITEM, ID]
-        if leave_one_out:
-            self.marker = -1
-        else:
-            self.marker = 1
-
-        self.prepare(dataset)
-
-    @timemeter
-    def prepare(self, dataset: RecDataSet):
-        pass
-
-    def _check(self, seq) -> bool:
-        return len(seq) > 1
-
-    def __iter__(self):
-        for sess, seq in self.source:
-            if self._check(seq):
-                yield [sess, seq[:-1], seq[self.marker:]]
-
-
-@dp.functional_datapipe("sess_valid_yielding_")
-class SessValidYielder(SessTrainYielder):
-
-    def __init__(
-        self, 
-        source_dp: dp.iter.IterableWrapper, 
-        dataset: RecDataSet
-    ) -> None:
-        super().__init__(source_dp, dataset, True)
-
-    @timemeter
-    def prepare(self, dataset: RecDataSet):
-        self.seenItems = set()
-        for chunk in dataset.train():
-            self.listmap(
-                lambda item: self.seenItems.add(item),
-                chunk[ITEM, ID]
-            )
-
-    def _check(self, seq) -> bool:
-        # filter out the sequence with a target not appearing in training set
-        return len(seq) > 1 and seq[-1] in self.seenItems
-
-    def __iter__(self):
-        for sess, seq in self.source:
-            if self._check(seq):
-                # (user, seqs, unseen, seen)
-                yield [sess, seq[:-1], seq[-1:], seq[:-1]]
-
-
-@dp.functional_datapipe("sess_test_yielding_")
-class SessTestYielder(SessValidYielder): ...
-
-
-@dp.functional_datapipe("sess_train_uniform_sampling_")
-class SessTrainUniformSampler(SessTrainYielder):
-    r"""
-    A functional datapipe for uniformly sampling negatives for each sequence.
-
-    Parameters:
-    -----------
-    source_dp: dp.iter.IterableWrapper 
-        A datapipe that yields users.
-    dataset: RecDataSet 
-        The dataset object that contains field objects.
-    num_negatives: int 
-        The number of negative samples for each piece of data.  
-    leave_one_out: bool, default to `True`
-        `True`: take the last one as a target
-        `False`: take `posItems[1:]` as targets
-    num_negatives: int 
-        The number of negative samples for each piece of data.  
-    """
-
-    def __init__(
-        self, 
-        source_dp: dp.iter.IterableWrapper, 
-        dataset: Optional[RecDataSet] = None, 
-        leave_one_out: bool = True,
-        num_negatives: int = 1
-    ) -> None:
+        assert ranking in ('full', 'pool'), f"`ranking` should be 'full' or 'pool' but {ranking} received ..."
+        self.sampling_neg = True if ranking == 'pool' else False
         self.num_negatives = num_negatives
-        super().__init__(source_dp, dataset, leave_one_out)
 
-    def _sample_neg(self, seen: Tuple, positives: Tuple) -> List[int]:
-        r"""Randomly sample negative items for a user.
+    @timemeter
+    def prepare(self, dataset: RecDataSet):
+        seenItems = [[] for _ in range(self.User.count)]
+        unseenItems = [[] for _ in range(self.User.count)]
 
-        Parameters:
-        ----------
-        seen: Tuple 
-            A sequence of seen items.
-        positives: Tuple
-            A sequence of positive items.
+        for chunk in dataset.train():
+            self.listmap(
+                lambda user, item: seenItems[user].append(item),
+                chunk[USER, ID], chunk[ITEM, ID]
+            )
+        for chunk in dataset.valid():
+            self.listmap(
+                lambda user, item: unseenItems[user].append(item),
+                chunk[USER, ID], chunk[ITEM, ID]
+            )
 
-        Returns:
-        --------
-        negatives: List[int] 
-            A list of negative items that the user has not interacted with.
-        """
-        # sorting for ordered positives
-        seen = sorted(seen)
-        return negsamp_vectorized_bsearch(
-            seen, self.Item.count, (len(positives), self.num_negatives)
-        )
+        self.seenItems = seenItems
+        self.unseenItems = unseenItems
+        self.negItems = dict()
 
-    def __iter__(self):
-        for sess, seq in self.source:
-            if self._check(seq):
-                seen = seq[:-1]
-                positives = seq[self.marker:]
-                negatives = self._sample_neg(seq, positives)
-                yield [sess, seen, positives, negatives]
-
-
-@dp.functional_datapipe("sess_valid_sampling_")
-class SessValidSampler(SessTrainYielder):
-
-    def __init__(
-        self, 
-        source_dp: dp.iter.IterableWrapper, 
-        dataset: Optional[RecDataSet] = None,
-        num_negs_for_sample_based_ranking: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING
-    ) -> None:
-        self.num_negs_for_sample_based_ranking = num_negs_for_sample_based_ranking
-        super().__init__(source_dp, dataset, True)
-
-    def _sample_negs(self, sess: int, seq: Tuple):
-        idx = (sess, tuple(seq))
+    def _sample_neg(self, user: int, k: int, positive: int, seen: Tuple[int]):
+        """Sampling negatives for ranking_from_pool"""
+        idx = (user, k)
         if self.negItems.get(idx, None) is None:
-            seen = sorted(self.seenItems[sess])
+            seen = sorted(set(
+                (positive,) + seen
+            ))
             self.negItems[idx] = tuple(
                 negsamp_vectorized_bsearch(
-                    seen, self.Item.count, self.num_negs_for_sample_based_ranking
+                    seen, self.Item.count, self.num_negatives
                 ).tolist()
             )
         return self.negItems[idx]
 
-    @timemeter
-    def prepare(self, dataset: RecDataSet):
-        self.seenItems = defaultdict(set)
+    def _check(self, user: int) -> bool:
+        return len(self.unseenItems[user]) > 0
 
-        for chunk in dataset.valid():
-            self.listmap(
-                lambda id_, item: self.seenItems[id_].add(item),
-                chunk[SESSION, ID], chunk[ITEM, ID]
-            )
+    def _matching_from_pool(self):
+        for user in self.source:
+            seq = seen = self.seenItems[user]
+            for k, positive in enumerate(self.unseenItems[user]):
+                unseen = (positive,) + self._sample_neg(user, k, positive, seen)
+                yield [user, seq, unseen, seen]
 
-        self.negItems = dict()
-        for key in self.seenItems:
-            self.seenItems[key] = tuple(self.seenItems[key])
+    def _matching_from_full(self):
+        for user in self.source:
+            if self._check(user): 
+                seq = seen = self.seenItems[user]
+                unseen = self.unseenItems[user]
+                yield [user, seq, unseen, seen]
+
+    def _nextitem_from_pool(self):
+        for user in self.source:
+            for k, positive in enumerate(self.unseenItems[user]):
+                seq = seen = self.seenItems[user] + self.unseenItems[user][:k]
+                unseen = (positive,) + self._sample_neg(user, k, positive, seen)
+                yield [user, seq, unseen, seen]
+
+    def _nextitem_from_full(self):
+        for user in self.source:
+            for k, positive in enumerate(self.unseenItems[user]):
+                seq = seen = self.seenItems[user] + self.unseenItems[user][:k]
+                unseen = (positive,)
+                yield [user, seq, unseen, seen]
 
     def __iter__(self):
-        for sess, seq in self.source:
-            if self._check(seq):
-                seen = seq[:-1]
-                posItem = seq[-1]
-                yield [sess, seen, (posItem,) + self._sample_negs(sess, seq)]
+        if self.dataset.DATATYPE is MATCHING:
+            if self.sampling_neg:
+                yield from self._matching_from_pool()
+            else:
+                yield from self._matching_from_full()
+        elif self.dataset.DATATYPE is NEXTITEM:
+            if self.sampling_neg:
+                yield from self._nextitem_from_pool()
+            else:
+                yield from self._nextitem_from_full()
 
 
-@dp.functional_datapipe("sess_test_sampling_")
-class SessTestSampler(SessValidSampler):
+@dp.functional_datapipe("test_sampling_")
+class TestSampler(ValidSampler):
 
     @timemeter
     def prepare(self, dataset: RecDataSet):
-        self.seenItems = defaultdict(set)
+        seenItems = [[] for _ in range(self.User.count)]
+        unseenItems = [[] for _ in range(self.User.count)]
 
+        for chunk in dataset.train():
+            self.listmap(
+                lambda user, item: seenItems[user].append(item),
+                chunk[USER, ID], chunk[ITEM, ID]
+            )
+        for chunk in dataset.valid():
+            self.listmap(
+                lambda user, item: seenItems[user].append(item),
+                chunk[USER, ID], chunk[ITEM, ID]
+            )
         for chunk in dataset.test():
             self.listmap(
-                lambda id_, item: self.seenItems[id_].add(item),
-                chunk[SESSION, ID], chunk[ITEM, ID]
+                lambda user, item: unseenItems[user].append(item),
+                chunk[USER, ID], chunk[ITEM, ID]
             )
 
+        self.seenItems = seenItems
+        self.unseenItems = unseenItems
         self.negItems = dict()
-        for key in self.seenItems:
-            self.seenItems[key] = tuple(self.seenItems[key])

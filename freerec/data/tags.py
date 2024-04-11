@@ -38,7 +38,7 @@ FEATURE = FieldTags('Feature')
 TIMESTAMP = FieldTags('Timestamp')
 
 MATCHING = FieldTags('Matching')
-NEXTITEM = FieldTags('NEXTITEM')
+NEXTITEM = FieldTags('NextItem')
 
 SEEN = FieldTags('Seen')
 UNSEEN = FieldTags('Unseen')
