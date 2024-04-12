@@ -4,45 +4,44 @@ from enum import Enum
 
 
 class FieldTags(Enum):
-    Sparse = 'Sparse'
-    Dense = 'Dense'
-    Affiliate = 'Affiliate'
+    SPARSE = 'SPARSE'
+    DENSE = 'DENSE'
+    AFFILIATE = 'AFFILIATE'
 
     ID = 'ID'
-    User = 'User'
-    Item = 'Item'
-    Rating = 'Rating'
-    Feature = 'Feature'
-    Timestamp = 'Timestamp'
+    USER = 'USER'
+    ITEM = 'ITEM'
+    RATING = 'RATING'
+    FEATURE = 'FEATURE'
+    TIMESTAMP = 'TIMESTAMP'
 
-    Matching = 'Matching'
-    NextItem = 'NextItem'
+    SEEN = 'SEEN'
+    UNSEEN = 'UNSEEN'
+    SEQUENCE = 'SEQUENCE'
+    POSITIVE = 'POSITIVE'
+    NEGATIVE = 'NEGATIVE'
 
-    Seen = 'Seen'
-    Unseen = 'Unseen'
-    Sequence = 'Sequence'
-    Positive = 'Positive'
-    Negative = 'Negative'
+class TaskTags(Enum):
+    MATCHING = 'MATCHING'
+    NEXTITEM = 'NEXTITEM'
 
 
-
-
-SPARSE = FieldTags('Sparse')
-DENSE = FieldTags('Dense')
-AFFILIATE = FieldTags('Affiliate')
+SPARSE = FieldTags('SPARSE')
+DENSE = FieldTags('DENSE')
+AFFILIATE = FieldTags('AFFILIATE')
 
 ID = FieldTags('ID')
-USER = FieldTags('User')
-ITEM = FieldTags('Item')
-RATING = FieldTags('Rating')
-FEATURE = FieldTags('Feature')
-TIMESTAMP = FieldTags('Timestamp')
+USER = FieldTags('USER')
+ITEM = FieldTags('ITEM')
+RATING = FieldTags('RATING')
+FEATURE = FieldTags('FEATURE')
+TIMESTAMP = FieldTags('TIMESTAMP')
 
-MATCHING = FieldTags('Matching')
-NEXTITEM = FieldTags('NextItem')
+SEEN = FieldTags('SEEN')
+UNSEEN = FieldTags('UNSEEN')
+SEQUENCE = FieldTags('SEQUENCE')
+POSITIVE = FieldTags('POSITIVE')
+NEGATIVE = FieldTags('NEGATIVE')
 
-SEEN = FieldTags('Seen')
-UNSEEN = FieldTags('Unseen')
-SEQUENCE = FieldTags('Sequence')
-POSITIVE = FieldTags('Positive')
-NEGATIVE = FieldTags('Negative')
+MATCHING = TaskTags('MATCHING')
+NEXTITEM = TaskTags('NEXTITEM')
