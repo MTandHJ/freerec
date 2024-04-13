@@ -4,9 +4,10 @@ from enum import Enum
 
 
 class FieldTags(Enum):
-    SPARSE = 'SPARSE'
-    DENSE = 'DENSE'
-    AFFILIATE = 'AFFILIATE'
+    STR = 'STR'
+    INT = 'INT'
+    FLOAT = 'FLOAT'
+    TOKEN = 'TOKEN'
 
     ID = 'ID'
     USER = 'USER'
@@ -26,9 +27,10 @@ class TaskTags(Enum):
     NEXTITEM = 'NEXTITEM'
 
 
-SPARSE = FieldTags('SPARSE')
-DENSE = FieldTags('DENSE')
-AFFILIATE = FieldTags('AFFILIATE')
+STR = FieldTags('STR')
+INT = FieldTags('INT')
+FLOAT = FieldTags('FLOAT')
+TOKEN = FieldTags('TOKEN')
 
 ID = FieldTags('ID')
 USER = FieldTags('USER')

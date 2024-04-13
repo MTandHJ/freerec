@@ -17,7 +17,7 @@ __all__ = ['BaseSet', 'RecDataSet']
 
 
 DEFAULT_PICKLE_FMT = "{0}_from_pickle"
-DEFAULT_TRANSFORM_FILENAME = "transforms.pickle"
+DEFAULT_TRANSFORM_FILENAME = "transforms.pkl"
 DEFAULT_CHUNK_FMT = "chunk{0}.pickle"
 
 
@@ -71,13 +71,11 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     DEFAULT_CHUNK_SIZE = 51200 # chunk size
     URL: str
     DATATYPE: str
-    VALID_IS_TEST: bool
 
     def __new__(cls, *args, **kwargs):
-        for attr in ('_cfg', 'DATATYPE', 'VALID_IS_TEST'):
+        for attr in ('DATATYPE',):
             if not hasattr(cls, attr):
                 raise RecSetBuildingError(f"'{attr}' should be defined before instantiation ...")
-        assert 'fields' in cls._cfg, "the config of fields should be defined in '_cfg' ..."
         return super().__new__(cls)
 
     def __init__(self, root: str, filename: Optional[str] = None, download: bool = True) -> None:

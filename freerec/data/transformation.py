@@ -6,7 +6,7 @@ import math
 import numpy as np
 
 
-__all__ = ['Identifier', 'Indexer', 'StandardScaler', 'MinMaxScaler']
+__all__ = ['Identifier', 'Indexer', 'MaxIndexer', 'StandardScaler', 'MinMaxScaler']
 
 
 class TransformError(Exception): ...
@@ -95,7 +95,7 @@ class Indexer(Identifier):
             raise TransformError("Indexer should be (partially) fitted before using ...")
 
 
-class UpIndexer(Indexer):
+class MaxIndexer(Indexer):
     r"""
     Transform sparse items into indices from zero to maximum.
 
@@ -103,7 +103,7 @@ class UpIndexer(Indexer):
     ---------
     >>> col = [3, 2, 1]
     >>> col2 = [4, 5, 6]
-    >>> transformer = UpIndexer()
+    >>> transformer = MaxIndexer()
     >>> transformer.partial_fit(col)
     >>> transformer.count
     4
@@ -120,7 +120,7 @@ class UpIndexer(Indexer):
 
     def reset(self):
         self.enums = None
-        self.count = float("-inf")
+        self.count = 0
 
     def partial_fit(self, col: List):
         self.count = max(np.max(col).item() + 1, self.count)
@@ -131,37 +131,6 @@ class UpIndexer(Indexer):
             return col
         else:
             raise TransformError("Indexer should be (partially) fitted before using ...")
-
-class NumIndexer(Indexer):
-    r"""
-    Transform sparse items into indices from zero to maximum.
-
-    Parameters:
-    -----------
-    nums: int
-        the maximum index.
-
-    Examples:
-    ---------
-    >>> transformer = NumIndexer(6)
-    >>> transformer.count
-    7
-    >>> transformer.enums
-    (0, 1, 2, 3, 4, 5, 6)
-    """
-
-    def __init__(self, nums: int) -> None:
-        self.nums = nums
-        super().__init__()
-
-    def reset(self):
-        self.count = self.nums + 1
-        self.enums = tuple(range(self.count))
-
-    def partial_fit(self, col: List): ...
-
-    def transform(self, col: List) -> List:
-        return col
 
 
 class StandardScaler(Identifier):

@@ -1,6 +1,7 @@
 
 
 import argparse
+from .data.tags import USER, ITEM, RATING, TIMESTAMP
 
 
 def tune(args):
@@ -27,9 +28,9 @@ def make(args):
     from .data.preprocessing import datasets
     from .data.tags import USER, SESSION, ITEM, TIMESTAMP
 
-    converter: AtomicConverter = getattr(datasets, args.dataset)(
-        root=args.root,
-        filename=args.filename
+    converter = AtomicConverter(
+        root=args.root, dataset=args.dataset, filedir=args.filedir,
+        userColname=
     )
 
     star4pos = args.star4pos
@@ -39,86 +40,7 @@ def make(args):
     days = args.days
     strict = not args.not_strict
     
-    if args.datatype == 'gen' and args.by == 'ratio':
-        fields = None if args.all else (USER.name, ITEM.name)
-        converter.make_general_dataset(
-            star4pos=star4pos,
-            kcore4user=kcore4user,
-            kcore4item=kcore4item,
-            strict=strict,
-            ratios=ratios,
-            fields=fields
-        )
-    elif args.datatype == 'seq' and args.by == 'leave-one-out':
-        fields = None if args.all else (USER.name, ITEM.name, TIMESTAMP.name)
-        converter.make_sequential_dataset(
-            star4pos=star4pos,
-            kcore4user=kcore4user,
-            kcore4item=kcore4item,
-            strict=strict,
-            fields=fields
-        )
-    elif args.datatype == 'seq' and args.by == 'ratio':
-        fields = None if args.all else (USER.name, ITEM.name, TIMESTAMP.name)
-        converter.make_sequential_dataset_by_ratio(
-            star4pos=star4pos,
-            kcore4user=kcore4user,
-            kcore4item=kcore4item,
-            strict=strict,
-            ratios=ratios,
-            fields=fields
-        )
-    elif args.datatype == 'sess' and args.by == 'day':
-        fields = None if args.all else (SESSION.name, ITEM.name, TIMESTAMP.name)
-        converter.make_session_dataset_by_day(
-            star4pos=star4pos,
-            kcore4user=kcore4user,
-            kcore4item=kcore4item,
-            strict=strict,
-            days=days,
-            fields=fields
-        )
-    elif args.datatype == 'sess' and args.by == 'ratio':
-        fields = None if args.all else (SESSION.name, ITEM.name, TIMESTAMP.name)
-        converter.make_session_dataset_by_ratio(
-            star4pos=star4pos,
-            kcore4user=kcore4user,
-            kcore4item=kcore4item,
-            strict=strict,
-            ratios=ratios,
-            fields=fields
-        )
-    elif args.datatype =='ctxt' and args.by == 'ratio':
-        fields = None if args.all else (USER.name, ITEM.name, TIMESTAMP.name)
-        converter.make_context_dataset_by_ratio(
-            star4pos=star4pos,
-            kcore4user=kcore4user,
-            kcore4item=kcore4item,
-            strict=strict,
-            ratios=ratios,
-            fields=fields
-        )
-    elif args.datatype =='ctxt' and args.by == 'leave-one-out':
-        fields = None if args.all else (USER.name, ITEM.name, TIMESTAMP.name)
-        converter.make_context_dataset_by_last_two(
-            star4pos=star4pos,
-            kcore4user=kcore4user,
-            kcore4item=kcore4item,
-            strict=strict,
-            fields=fields
-        )
-    elif args.datatype =='ctxt' and args.by == 'day':
-        fields = None if args.all else (SESSION.name, ITEM.name, TIMESTAMP.name)
-        converter.make_context_dataset_by_day(
-            star4pos=star4pos,
-            kcore4user=kcore4user,
-            kcore4item=kcore4item,
-            strict=strict,
-            days=days,
-            fields=fields
-        )
-    else:
-        raise ValueError(f"`{args.datatype}' type dataset cannot be made by `{args.by}'")
+
 
 def main():
     parser = argparse.ArgumentParser("FreeRec")
@@ -143,27 +65,28 @@ def main():
     make_parser = subparsers.add_parser("make")
     make_parser.set_defaults(func=make)
 
-    make_parser.add_argument("dataset", type=str, help="dataset name")
+    make_parser.add_argument("dataset", type=str, help="output dataset name")
     make_parser.add_argument("--root", type=str, default=".", help="data")
-    make_parser.add_argument("--filename", type=str, default=None, help="filename of Atomic files")
-
     make_parser.add_argument(
-        "--datatype", type=str, choices=('gen', 'seq', 'sess', 'ctxt'), default='gen', 
-        help="gen: general; seq: sequential; sess: session; ctxt:context"
-    )
-    make_parser.add_argument(
-        "--by", type=str, choices=('ratio', 'leave-one-out', 'day'), default='ratio', 
-        help="gen: ratio; seq: leave-one-out; ratio; sess: ratio, day"
+        "--filedir", type=str, default=None, 
+        help="filedir saving data. Using `dataset` instead if None"
     )
 
-    make_parser.add_argument("--star4pos", type=int, default=0, help="select interactions with `Rating >= star4pos'")
-    make_parser.add_argument("--kcore4user", type=int, default=10, help="select kcore interactions according to User")
-    make_parser.add_argument("--kcore4item", type=int, default=10, help="select kcore interactions according to Item")
-    make_parser.add_argument("--not-strict", action="store_true", default=False, help="filter by kcore once if True")
-    make_parser.add_argument("--ratios", type=str, default="8,1,1", help="the ratios of training|validation|test set")
+    make_parser.add_argument(
+        "--splitting", type=str, choices=('ROU', 'ROD', 'LOU', 'DOU', 'DOD'), default='ROU',
+        help="ROU: Ratio On User; ROD: Ratio On Dataset; LOU: Leave-One-Out; DOU: Day on User; DOD: Day on Dataset"
+    )
+
+    make_parser.add_argument("-sp", "--star4pos", type=int, default=0, help="select interactions with `Rating >= star4pos'")
+    make_parser.add_argument("-ku", "--kcore4user", type=int, default=10, help="select kcore interactions according to User")
+    make_parser.add_argument("-ki", "--kcore4item", type=int, default=10, help="select kcore interactions according to Item")
+    make_parser.add_argument("-rs", "--ratios", type=str, default="8,1,1", help="the ratios of training|validation|test set")
     make_parser.add_argument("--days", type=int, default=7, help="the second last days for validation and last days for test")
 
-    make_parser.add_argument("--all", action="store_true", default=False, help="reserve all fields if True")
+    make_parser.add_argument("-uc", "--userColname", type=str, default=USER.name, help="the column name of User ID")
+    make_parser.add_argument("-ic", "--itemColname", type=str, default=ITEM.name, help="the column name of Item ID")
+    make_parser.add_argument("-rc", "--ratingColname", type=str, default=RATING.name, help="the column name of Rating")
+    make_parser.add_argument("-tc", "--timestampColname", type=str, default=TIMESTAMP.name, help="the column name of Timestamp")
 
     args = parser.parse_args()
     args.func(args)
