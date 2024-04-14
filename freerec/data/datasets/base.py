@@ -1,6 +1,6 @@
 
 
-from typing import Any, TypeVar, Literal, Union, Optional, Iterator, Iterable, Dict, Tuple, List
+from typing import Any, TypeVar, Literal, Union, Optional, Callable, Iterator, Iterable, Dict, Tuple, List
 
 import torch, os, abc
 import numpy as np
@@ -9,7 +9,7 @@ import torchdata.datapipes as dp
 from copy import copy
 from functools import lru_cache
 
-from ..tags import FieldTags, USER, ITEM, ID, RATING, TIMESTAMP, FEATURE, SEQUENCE
+from ..tags import FieldTags, USER, ITEM, ID, RATING, TIMESTAMP, FEATURE
 from ..fields import Field, FieldTuple
 from ..utils import download_from_url, extract_archive
 from ...utils import timemeter, infoLogger, warnLogger
@@ -17,11 +17,6 @@ from ...dict2obj import Config
 
 
 __all__ = ['BaseSet', 'RecDataSet']
-
-
-DEFAULT_PICKLE_FMT = "{0}_from_pickle"
-DEFAULT_TRANSFORM_FILENAME = "transforms.pkl"
-DEFAULT_CHUNK_FMT = "chunk{0}.pickle"
 
 
 T = TypeVar('T')
@@ -40,35 +35,11 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     Parameters:
     -----------
     root: str
-        The path storing datasets.
-    filename: str, optional 
-        The dirname of the dataset. If `None`, sets the classname as the filename.
+        The root path storing datasets.
+    filefir: str, optional 
+        The dirname of the dataset. If `None`, set the classname as the filedir.
     download: bool 
         Download the dataset from a URL.
-
-    Attributes:
-    -----------
-    _cfg: Config[str, Field] 
-        Includes fields of each column.
-    DEFAULT_CHUNK_SIZE: int, default 51200 
-        Chunk size for saving.
-    DATATYPE: str
-        Dataset type.
-        - `General': for general recommendation.
-        - `Sequential': for sequential recommendation.
-        - `Session': for session-based recommendation.
-        - `Context': for context-aware recommendation.
-        - `Knowledge': for knowledge-based recommendation.
-    VALID_IS_TEST: bool 
-        The validset and testset are the same one sometimes.
-
-    Notes:
-    ------
-    All datasets that inherit RecDataSet should define the class variable `_cfg` before instantiation.
-    Generally speaking, the dataset will be split into:
-        - trainset
-        - validset
-        - testset
     """
 
     field_builder = {
@@ -85,13 +56,15 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     )
 
     URL: str
-    DATATYPE: str
 
-    def __new__(cls, *args, **kwargs):
-        for attr in ('DATATYPE',):
-            if not hasattr(cls, attr):
-                raise RecSetBuildingError(f"'{attr}' should be defined before instantiation ...")
-        return super().__new__(cls)
+    # TODO:
+    # DATATYPE: str
+
+    # def __new__(cls, *args, **kwargs):
+    #     for attr in ('DATATYPE',):
+    #         if not hasattr(cls, attr):
+    #             raise RecSetBuildingError(f"'{attr}' should be defined before instantiation ...")
+    #     return super().__new__(cls)
 
     def __init__(
         self, root: str, filedir: Optional[str] = None, download: bool = True
@@ -121,13 +94,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         
     @property
     def mode(self) -> Literal['train', 'test', 'valid']:
-        r"""
-        Return the mode in which the dataset is currently being used.
-
-        Returns:
-            str: The mode in which the dataset is currently being used.
-        """
-
+        """Return the current mode."""
         return self.__mode
 
     def train(self: T) -> T:
@@ -157,6 +124,15 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
 
     @property
     def interdata(self) -> Dict[Field, Tuple]:
+        r"""
+        Get interaction data.
+
+        Examples:
+        ---------
+        >>> dataset: BaseSet
+        >>> dataset.train().interdata == dataset.valid().interdata
+        False
+        """
         return self.__interdata[self.mode]
 
     @property
@@ -177,11 +153,18 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
 
     @property
     def fields(self) -> FieldTuple[Field]:
-        """Return: Tuple of Field."""
+        """Return a tuple of Field."""
         return self.__fields
 
     @fields.setter
     def fields(self, fields: Iterable[Field]):
+        r"""
+        Set fields.
+
+        Notes:
+        ------
+        Set fields will change the saved interaction data.
+        """
         self.__fields = FieldTuple(fields)
         traindata = dict()
         validdata = dict()
@@ -200,7 +183,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         }
 
     @classmethod
-    def build_fields(cls, columns: Iterable[str], *tags: FieldTags) -> List[Field]:
+    def build_fields(cls, columns: Iterable[str], *tags: FieldTags) -> FieldTuple[Field]:
         fields = []
         for colname in columns:
             field = cls.field_builder.get(
@@ -208,9 +191,19 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
                 Field(colname, FEATURE)
             ).fork(*tags)
             fields.append(field)
-        return fields
+        return FieldTuple(fields)
 
     def load_inter(self):
+        r"""
+        Load interaction data.
+
+        Flows:
+        ------
+        1. Read dataframe according `open_kwargs`.
+        2. Record datasize.
+        3. Build fields.
+        4. Transform each field data.
+        """
         train_df = pd.read_csv(
             os.path.join(self.path, self.open_kwargs.trainfile),
             delimiter=self.open_kwargs.delimiter
@@ -256,7 +249,9 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         self.__userdata = {}
         for field in fields:
             colname = field.name
-            self.__userdata[field] = field.try_to_numeric(user_df[colname])
+            data = field.try_to_numeric(user_df[colname])
+            field.count = len(set(data))
+            self.__userdata[field] = data
 
     def load_item(self):
         item_df = pd.read_csv(
@@ -279,22 +274,65 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     def compile(self):
         self.load_inter()
         self.summary()
+        self.train()
 
-    def match_all(self, *tags: FieldTags) -> 'BaseSet':
-        """Return a copy of dataset with fields matching all given tags."""
+    def match_all(self: T, *tags: FieldTags) -> T:
+        r"""
+        Return a copy of dataset with fields matching all given tags.
+
+        Examples:
+        ---------
+        >>> dataset: BaseSet
+        RecDataSet(USER:ID,USER|ITEM:ID,ITEM|RATING:RATING|TIMESTAMP:TIMESTAMP)
+        >>> dataset.match_all(ID)
+        RecDataSet(USER:ID,USER|ITEM:ID,ITEM)
+        >>> dataset.match_all()
+        RecDataSet(USER:ID,USER|ITEM:ID,ITEM|RATING:RATING|TIMESTAMP:TIMESTAMP)
+        """
         dataset = copy(self)
         dataset.fields = self.fields.match_all(*tags)
         return dataset
 
-    def match_any(self, *tags: FieldTags) -> 'BaseSet':
-        """Return a copy of dataset with fields matching any given tags."""
+    def match_any(self: T, *tags: FieldTags) -> T:
+        r"""
+        Return a copy of dataset with fields matching any given tags.
+
+        Examples:
+        ---------
+        >>> dataset: BaseSet
+        RecDataSet(USER:ID,USER|ITEM:ID,ITEM|RATING:RATING|TIMESTAMP:TIMESTAMP)
+        >>> dataset.match_any(ID, TIMESTAMP)
+        RecDataSet(USER:ID,USER|ITEM:ID,ITEM|TIMESTAMP:TIMESTAMP)
+        >>> dataset.match_any()
+        RecDataSet()
+        """
         dataset = copy(self)
         dataset.fields = self.fields.match_any(*tags)
         return dataset
 
+    @staticmethod
+    def listmap(func: Callable, *iterables) -> List:
+        r"""
+        Apply a function to multiple iterables and return a list.
+
+        Parameters:
+        -----------
+        func (Callable): The function to be applied.
+        *iterables: Multiple iterables to be processed.
+
+        Returns:
+        --------
+        List: The results after applying the function to the iterables.
+        """
+        return list(map(func, *iterables))
+
+    def __repr__(self) -> str:
+        cfg = '|'.join(map(str, self.fields))
+        return f"{self.__class__.__name__}({cfg})"
+
     def __str__(self) -> str:
-        cfg = '\n'.join(map(str, self.fields))
-        return f"[{self.__class__.__name__}] >>> \n" + cfg
+        cfg = ' | '.join(map(str, self.fields))
+        return f"[{self.__class__.__name__}] >>> " + cfg
 
     def __iter__(self) -> Iterator[Dict[Field, Any]]:
         fields = self.interdata.keys()
@@ -305,39 +343,42 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
 class RecDataSet(BaseSet):
     """RecDataSet provides a template for specific datasets."""
 
-    def to_pairs(self) -> Iterator[Dict[Field, int]]:
-        r"""Return (User, Item) in pairs."""
+    def to_pairs(self) -> List[Tuple[int, int]]:
+        """Return (User, Item) in pairs."""
         User = self.fields[USER, ID]
         Item = self.fields[ITEM, ID]
-        for user, item in zip(self.interdata[User], self.interdata[Item]):
-            yield {User: user, Item: item}
+        users, items = self.interdata[User], self.interdata[Item]
+        return list(zip(users, items))
 
-    def to_seqs(self) -> Iterator[Dict[Field, int]]:
+    def to_seqs(self, keepid: bool = False) -> List[Tuple]:
         r"""
         Return dataset in sequence.
 
         Parameters:
         -----------
-        master: Tuple
-            Tuple of tags to spefic a field, e.g., (USER, ID), (SESSION, ID)
         keepid: bool, default to False
             `True`: return list of (id, items)
             `False`: return list of items
         """
         User = self.fields[USER, ID]
-        Item = self.fields[ITEM, ID].fork(SEQUENCE)
         seqs = [[] for id_ in range(User.count)]
 
-        for user, item in self.to_pairs():
-            seqs[user].append(item)
+        self.listmap(
+            lambda pair: seqs[pair[0]].append(pair[1]),
+            self.to_pairs()
+        )
 
-        for user, seq in enumerate(seqs):
-            yield {User: user, Item: tuple(seq)}
+        if keepid:
+            seqs = [(id_, tuple(items)) for id_, items in enumerate(seqs)]
+        else:
+            seqs = [tuple(items) for items in seqs]
+
+        return seqs
 
     def to_roll_seqs(
         self, minlen: int = 2, maxlen: Optional[int] = None,
         keep_at_least_itself: bool = True
-    ) -> Iterator[Dict[Field, Union[int, Tuple[int]]]]:
+    ) -> List:
         r"""
         Rolling dataset in sequence.
 
@@ -351,50 +392,27 @@ class RecDataSet(BaseSet):
         keep_at_least_itself: bool, default to `True`
             `True`: Keep the sequence with items less than `minlen`
         """
-        User = self.fields[USER, ID]
-        Item = self.fields[ITEM, ID].fork(SEQUENCE)
+        seqs = self.to_seqs(keepid=True)
 
-        for data in self.to_seqs():
-            user, seq = data[User], data[Item]
+        roll_seqs = []
+        for id_, items in seqs:
             if maxlen is not None:
-                seq = seq[-maxlen:]
-            if len(seq) <= minlen and keep_at_least_itself:
-                yield {User: user, Item: seq}
+                items = items[-maxlen:]
+            if len(items) <= minlen and keep_at_least_itself:
+                roll_seqs.append(
+                    (id_, items)
+                )
                 continue
-            for k in range(minlen, len(seq) + 1):
-                yield {User: user, Item: seq[:k]}
+            for k in range(minlen, len(items) + 1):
+                roll_seqs.append(
+                    (id_, items[:k])
+                )
 
-    @lru_cache()
-    def has_duplicates(self) -> bool:
-        r"""
-        Check whether the dataset has repeated interactions.
-
-        Parameters:
-        -----------
-        master: Tuple
-            Tuple of tags to spefic a field, e.g., (USER, ID), (SESSION, ID)
-
-        Returns:
-        --------
-        bool
-        """
-        from itertools import chain
-        Item = self.fields[ITEM, ID].fork(SEQUENCE)
-
-        for d1, d2, d3 in zip(
-            self.train().to_seqs(),
-            self.valid().to_seqs(),
-            self.test().to_seqs()
-        ):
-            seq = list(chain(d1[Item], d2[Item], d3[Item]))
-            if len(seq) != len(set(seq)):
-                return True
-        return False
+        return roll_seqs
 
     def seqlens(self) -> List:
-        Item = self.fields[ITEM, ID].fork(SEQUENCE)
-        seqlens = [len(data[Item]) for data in self.to_seqs()]
-        return list(filter(lambda x: x > 0, seqlens))
+        seqs = self.to_seqs(keepid=False)
+        return list(filter(lambda x: x > 0, [len(items) for items in seqs]))
 
     @property
     def maxlen(self) -> int:
@@ -407,6 +425,23 @@ class RecDataSet(BaseSet):
     @property
     def meanlen(self) -> int:
         return np.mean(self.seqlens()).item()
+
+    @lru_cache()
+    def has_duplicates(self) -> bool:
+        """Check whether the dataset has repeated interactions."""
+        from itertools import chain
+        train_seqs = self.train().to_seqs(keepid=False)
+        valid_seqs = self.valid().to_seqs(keepid=False)
+        test_seqs = self.test().to_seqs(keepid=False)
+        seqs = map(
+            lambda triple: chain(*triple),
+            zip(train_seqs, valid_seqs, test_seqs)
+        )
+        for seq in seqs:
+            seq = list(seq)
+            if len(seq) != len(set(seq)):
+                return True
+        return False
 
     @timemeter
     def to_heterograph(self, *edge_types: Tuple[Tuple[FieldTags], Optional[str], Tuple[FieldTags]]):
@@ -433,20 +468,17 @@ class RecDataSet(BaseSet):
 
         Examples:
         ---------
-        >>> from freerec.data.datasets import Gowalla_m1
-        >>> from freerec.data.tags import USER, ITEM, ID
-        >>> basepipe = Gowalla_m1("../data")
-        >>> fields = basepipe.fields
-        >>> graph = basepipe.to_heterograph(
+        >>> dataset: RecDataSet
+        >>> graph = dataset.to_heterograph(
         ...    ((USER, ID), None, (ITEM, ID)),
         ...    ((ITEM, ID), None, (USER, ID))
         ... )
         >>> graph
         HeteroData(
-            UserID={ x=[29858, 0] },
-            ItemID={ x=[40981, 0] },
-            (UserID, UserID2ItemID, ItemID)={ edge_index=[2, 810128] },
-            (ItemID, ItemID2UserID, UserID)={ edge_index=[2, 810128] }
+            USER={ x=[22363, 0] },
+            ITEM={ x=[12101, 0] },
+            (USER, USER2ITEM, ITEM)={ edge_index=[2, 153776] },
+            (ITEM, ITEM2USER, USER)={ edge_index=[2, 153776] }
         )
         """
         from torch_geometric.data import HeteroData
@@ -465,7 +497,7 @@ class RecDataSet(BaseSet):
         ))
         data = {node.name: self.interdata[node] for node in nodes}
         for key in data:
-            data[key] = torch.tensor(data, dtype=torch.long)
+            data[key] = torch.tensor(data[key], dtype=torch.long)
 
         graph = HeteroData()
         for node in srcs:
@@ -507,18 +539,15 @@ class RecDataSet(BaseSet):
 
         Examples:
         ---------
-        >>> from freerec.data.datasets import Gowalla_m1
-        >>> from freerec.data.tags import USER, ITEM, ID
-        >>> basepipe = Gowalla_m1("../data")
-        >>> fields = basepipe.fields
-        >>> graph = basepipe.to_bigraph(
+        >>> dataset: RecDataSet
+        >>> graph = dataset.to_bigraph(
         ...    (USER, ID), (ITEM, ID)
         ... )
         >>> graph
         HeteroData(
-            UserID={ x=[29858, 0] },
-            ItemID={ x=[40981, 0] },
-            (UserID, UserID2ItemID, ItemID)={ edge_index=[2, 810128] }
+            USER={ x=[22363, 0] },
+            ITEM={ x=[12101, 0] },
+            (USER, USER2ITEM, ITEM)={ edge_index=[2, 153776] }
         )
         """
         return self.to_heterograph((src, edge_type, dst))
@@ -549,15 +578,12 @@ class RecDataSet(BaseSet):
 
         Examples:
         --------
-        >>> from freerec.data.datasets import Gowalla_m1
-        >>> from freerec.data.tags import USER, ITEM, ID
-        >>> basepipe = Gowalla_m1("../data")
-        >>> fields = basepipe.fields
+        >>> dataset: RecDataSet
         >>> graph = basepipe.to_graph(
         ...    fields[USER, ID], fields[ITEM, ID],
         ... )
         >>> graph
-        Data(edge_index=[2, 1620256], x=[70839, 0])
+        Data(edge_index=[2, 307552], x=[34464, 0], node_type=[34464], edge_type=[153776])
         """
         from torch_geometric.utils import to_undirected
         graph = self.to_heterograph((src, None, dst)).to_homogeneous()
@@ -601,3 +627,18 @@ class RecDataSet(BaseSet):
             edge_index, edge_weight,
             num_nodes=User.count + Item.count
         )
+
+    def summary(self):
+        super().summary()
+        from prettytable import PrettyTable
+        User, Item = self.fields[USER, ID], self.fields[ITEM, ID]
+
+        table = PrettyTable(['#Users', '#Items', 'Avg.Len', '#Interactions', '#Train', '#Valid', '#Test', 'Density'])
+        table.add_row([
+            User.count, Item.count, self.train().meanlen + 2,
+            self.trainsize + self.validsize + self.testsize,
+            self.trainsize, self.validsize, self.testsize,
+            (self.trainsize + self.validsize + self.testsize) / (User.count * Item.count)
+        ])
+
+        infoLogger(table)

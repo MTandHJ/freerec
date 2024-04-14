@@ -90,10 +90,7 @@ class Field:
                 data = pd.to_numeric(data, errors='raise')
             except ValueError:
                 pass
-        data = tuple(data.to_list())
-        self._enums |= set(data)
-        self.count = len(self._enums)
-        return data
+        return tuple(data.to_list())
 
     def fork(self, *tags: FieldTags) -> 'Field':
         field = Field(self.name, *self.tags, *tags)
