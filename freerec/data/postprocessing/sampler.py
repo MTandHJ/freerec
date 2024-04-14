@@ -7,7 +7,7 @@ import torchdata.datapipes as dp
 
 from .base import Postprocessor
 from ..datasets.base import RecDataSet
-from ..fields import SparseField
+from ..fields import Field
 from ..tags import USER, ITEM, ID, MATCHING, NEXTITEM
 from ..utils import negsamp_vectorized_bsearch
 from ...utils import timemeter
@@ -40,8 +40,8 @@ class BaseSampler(Postprocessor):
     ) -> None:
         super().__init__(source_dp)
         self.dataset = dataset
-        self.User: SparseField = dataset.fields[USER, ID]
-        self.Item: SparseField = dataset.fields[ITEM, ID]
+        self.User: Field = dataset.fields[USER, ID]
+        self.Item: Field = dataset.fields[ITEM, ID]
         self.prepare(dataset)
 
     def prepare(self, dataset: RecDataSet):

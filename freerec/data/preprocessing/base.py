@@ -77,13 +77,13 @@ class AtomicConverter:
         new_columns = []
 
         for colname in old_columns:
-            colname = colname.upper()
-            colname =  self.name_converter.get(colname, colname.upper())
-            if colname in (RATING.name, TIMESTAMP.name):
+            newname = colname.upper()
+            newname =  self.name_converter.get(newname, newname)
+            if newname in (RATING.name, TIMESTAMP.name):
                 df[colname] = df[colname].astype(float)
             else:
                 df[colname] = df[colname].astype(str)
-            new_columns.append(colname)
+            new_columns.append(newname)
         df.columns = new_columns
         return df
 
@@ -294,7 +294,7 @@ class AtomicConverter:
             return df
 
     def split_by_ROU(self, ratios: Iterable = (8, 1, 1)):
-        infoLogger(f"[Converter] >>> Split by ROU (Ratio on User): {ratios} ...")
+        infoLogger(f"[Converter] >>> Split by ROU (Ratio On User): {ratios} ...")
         traingroups = []
         validgroups = []
         testgroups = []
@@ -317,13 +317,13 @@ class AtomicConverter:
         return ''.join(map(str, ratios)) + '_ROU'
 
     def split_by_ROD(self, ratios: Iterable = (8, 1, 1)):
-        infoLogger(f"[Converter] >>> Split by ROT (Ratio on Dataset): {ratios} ...")
+        infoLogger(f"[Converter] >>> Split by ROT (Ratio On Dataset): {ratios} ...")
         self.interactions = self.sort_by_timestamp(
             self.interactions, master=None
         )
         markers = np.floor(
             (np.cumsum(ratios) / np.sum(ratios)) * len(self.interactions)
-        )
+        ).astype(int)
 
         self.trainiter = self.interactions.iloc[:markers[0]]
         self.validiter = self.interactions.iloc[markers[0]:markers[1]]
@@ -355,7 +355,7 @@ class AtomicConverter:
         return '_LOU'
 
     def split_by_DOU(self, days: int = 1):
-        infoLogger(f"[Converter] >>> Split by DOU (Day on User): {days} ...")
+        infoLogger(f"[Converter] >>> Split by DOU (Day On User): {days} ...")
 
         seconds_per_day = 86400
         seconds = seconds_per_day * days
@@ -380,7 +380,7 @@ class AtomicConverter:
         return f"{days}_DOU"
 
     def split_by_DOD(self, days: int = 1):
-        infoLogger(f"[Converter] >>> Split by DOD (Day on Dataset): {days} ...")
+        infoLogger(f"[Converter] >>> Split by DOD (Day On Dataset): {days} ...")
 
         seconds_per_day = 86400
         seconds = seconds_per_day * days
@@ -403,17 +403,17 @@ class AtomicConverter:
         return f"{days}_DOD"
 
     def resort_iters(self):
-        infoLogger(f"[Converter] >>> Resort by train|valid|test iters ...")
+        infoLogger(f"[Converter] >>> Resort for train|valid|test iters ...")
         self.trainiter = self.sort_by_timestamp(
-            self.trainiter.reset_index(True),
+            self.trainiter.reset_index(drop=True),
             master=USER.name
         )
         self.validiter = self.sort_by_timestamp(
-            self.validiter.reset_index(True),
+            self.validiter.reset_index(drop=True),
             master=USER.name
         )
         self.testiter = self.sort_by_timestamp(
-            self.testiter.reset_index(True),
+            self.testiter.reset_index(drop=True),
             master=USER.name
         )
 

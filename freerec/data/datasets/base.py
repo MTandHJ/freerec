@@ -337,7 +337,7 @@ class RecDataSet(BaseSet):
     def to_roll_seqs(
         self, minlen: int = 2, maxlen: Optional[int] = None,
         keep_at_least_itself: bool = True
-    ) -> Iterator[Dict(Field, Union[int, Tuple[int]])]:
+    ) -> Iterator[Dict[Field, Union[int, Tuple[int]]]]:
         r"""
         Rolling dataset in sequence.
 

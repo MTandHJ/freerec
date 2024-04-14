@@ -63,27 +63,30 @@ def main():
     make_parser.set_defaults(func=make)
 
     make_parser.add_argument("dataset", type=str, help="output dataset name")
-    make_parser.add_argument("--root", type=str, default=".", help="data")
+    make_parser.add_argument(
+        "--root", type=str, default=".", 
+        help="data, default to '.'"
+    )
     make_parser.add_argument(
         "--filedir", type=str, default=None, 
-        help="filedir saving data. Using `dataset` instead if None"
+        help="filedir saving data. Using `dataset` instead if None (default)"
     )
 
     make_parser.add_argument(
         "--splitting", type=str, choices=('ROU', 'ROD', 'LOU', 'DOU', 'DOD'), default='ROU',
-        help="ROU: Ratio On User; ROD: Ratio On Dataset; LOU: Leave-One-Out; DOU: Day on User; DOD: Day on Dataset"
+        help="ROU: Ratio On User (default); ROD: Ratio On Dataset; LOU: Leave-One-Out; DOU: Day on User; DOD: Day on Dataset"
     )
 
-    make_parser.add_argument("-sp", "--star4pos", type=int, default=0, help="select interactions with `Rating >= star4pos'")
-    make_parser.add_argument("-ku", "--kcore4user", type=int, default=10, help="select kcore interactions according to User")
-    make_parser.add_argument("-ki", "--kcore4item", type=int, default=10, help="select kcore interactions according to Item")
-    make_parser.add_argument("-rs", "--ratios", type=str, default="8,1,1", help="the ratios of training|validation|test set")
-    make_parser.add_argument("--days", type=int, default=7, help="the second last days for validation and last days for test")
+    make_parser.add_argument("-sp", "--star4pos", type=int, default=0, help="select interactions with `Rating >= star4pos (default: 0)'")
+    make_parser.add_argument("-ku", "--kcore4user", type=int, default=10, help="select kcore (default: 10) interactions according to User")
+    make_parser.add_argument("-ki", "--kcore4item", type=int, default=10, help="select kcore interactions (default: 10) according to Item")
+    make_parser.add_argument("-rs", "--ratios", type=str, default="8,1,1", help="the ratios (default: 8,1,1) of training|validation|test set")
+    make_parser.add_argument("--days", type=int, default=7, help="the second last days (default: 7) for validation and last days (default: 7) for test")
 
-    make_parser.add_argument("-uc", "--userColname", type=str, default=USER.name, help="the column name of User ID")
-    make_parser.add_argument("-ic", "--itemColname", type=str, default=ITEM.name, help="the column name of Item ID")
-    make_parser.add_argument("-rc", "--ratingColname", type=str, default=RATING.name, help="the column name of Rating")
-    make_parser.add_argument("-tc", "--timestampColname", type=str, default=TIMESTAMP.name, help="the column name of Timestamp")
+    make_parser.add_argument("-uc", "--userColname", type=str, default=USER.name, help=f"the column name (default: {USER.name}) of User ID")
+    make_parser.add_argument("-ic", "--itemColname", type=str, default=ITEM.name, help=f"the column name (default: {ITEM.name}) of Item ID")
+    make_parser.add_argument("-rc", "--ratingColname", type=str, default=RATING.name, help=f"the column name (default: {RATING.name}) of Rating")
+    make_parser.add_argument("-tc", "--timestampColname", type=str, default=TIMESTAMP.name, help=f"the column name (default: {TIMESTAMP.name}) of Timestamp")
 
     args = parser.parse_args()
     args.func(args)

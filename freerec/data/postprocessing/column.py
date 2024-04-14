@@ -8,7 +8,7 @@ import torchdata.datapipes as dp
 from functools import partial
 
 from .base import Postprocessor
-from ..fields import BufferField, FieldList, Field
+from ..fields import Field
 
 
 __all__ = [
@@ -101,9 +101,9 @@ class Fielder(Postprocessor):
     def _buffer(field: Field, col: Any):
         return field.buffer(col)
 
-    def __iter__(self) -> Iterator[FieldList[BufferField]]:
+    def __iter__(self) -> Iterator:
         for cols in self.source:
-            yield FieldList(map(
+            yield tuple(map( # TODO
                 self._buffer,
                 self.fields,
                 cols

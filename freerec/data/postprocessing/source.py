@@ -6,7 +6,7 @@ import random
 import torchdata.datapipes as dp
 
 from .base import BaseProcessor
-from ..fields import SparseField
+from ..fields import Field
 
 
 __all__ = [
@@ -107,7 +107,7 @@ class RandomIDs(RandomChoicedSource):
     """
 
     def __init__(
-        self, field: SparseField,
+        self, field: Field,
         datasize: int,
     ) -> None:
         super().__init__(field.enums, datasize)
@@ -123,7 +123,7 @@ class OrderedIDs(OrderedSource):
         ID values to select from.
     """
 
-    def __init__(self, field: SparseField) -> None:
+    def __init__(self, field: Field) -> None:
         super().__init__(field.enums)
 
 
