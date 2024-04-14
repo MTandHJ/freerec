@@ -25,22 +25,19 @@ def make(args):
     #    freerec make DATASET --root=../data
     #
     from .data.preprocessing.base import AtomicConverter
-    from .data.preprocessing import datasets
-    from .data.tags import USER, SESSION, ITEM, TIMESTAMP
 
     converter = AtomicConverter(
         root=args.root, dataset=args.dataset, filedir=args.filedir,
-        userColname=
+        userColname=args.userColname, itemColname=args.itemColname,
+        ratingColname=args.ratingColname, timestampColname=args.timestampColname
     )
 
-    star4pos = args.star4pos
-    kcore4user = args.kcore4user
-    kcore4item = args.kcore4item
-    ratios = tuple(map(int, args.ratios.split(',')))
-    days = args.days
-    strict = not args.not_strict
-    
-
+    converter.make_dataset(
+        args.kcore4user, args.kcore4item, args.star4pos,
+        splitting=args.splitting, 
+        ratios=tuple(map(int, args.ratios.split(','))),
+        days=args.days
+    )
 
 def main():
     parser = argparse.ArgumentParser("FreeRec")
