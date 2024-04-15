@@ -9,7 +9,7 @@ import torchdata.datapipes as dp
 from copy import copy
 from functools import lru_cache
 
-from ..tags import FieldTags, USER, ITEM, ID, RATING, TIMESTAMP, FEATURE
+from ..tags import FieldTags, TaskTags, USER, ITEM, ID, RATING, TIMESTAMP, FEATURE, SEQUENCE
 from ..fields import Field, FieldTuple
 from ..utils import download_from_url, extract_archive
 from ...utils import timemeter, infoLogger, warnLogger
@@ -20,6 +20,20 @@ __all__ = ['BaseSet', 'RecDataSet']
 
 
 T = TypeVar('T')
+
+
+def safe_mode(*modes):
+    def decorator(func):
+        def wrapper(self, *args, **kwargs):
+            if self.mode not in modes:
+                fname = f"\033[0m\033[0;31;47m{func.__name__}\033[0m\033[1;31m"
+                mode = f"\033[0m\033[0;31;47m{self.mode}\033[0m\033[1;31m"
+                warnLogger(f"{fname} runs in {mode} mode. Make sure that this is intentional ...")
+            return func(self, *args, **kwargs)
+        wrapper.__name__ == func.__name__
+        wrapper.__doc__ = func.__doc__
+        return wrapper
+    return decorator
 
 
 #===============================Basic Class===============================
@@ -42,37 +56,35 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         Download the dataset from a URL.
     """
 
-    field_builder = {
+    _field_builder = {
         USER.name: Field(USER.name, USER, ID),
         ITEM.name: Field(ITEM.name, ITEM, ID),
         RATING.name: Field(RATING.name, RATING),
         TIMESTAMP.name: Field(TIMESTAMP.name, TIMESTAMP)
     }
 
-    open_kwargs = Config(
+    _open_kwargs = Config(
         trainfile='train.txt', validfile='valid.txt', testfile='test.txt',
         userfile='user.txt', itemfile='item.txt',
         delimiter='\t'
     )
 
+    TASK: TaskTags
     URL: str
 
-    # TODO:
-    # DATATYPE: str
-
-    # def __new__(cls, *args, **kwargs):
-    #     for attr in ('DATATYPE',):
-    #         if not hasattr(cls, attr):
-    #             raise RecSetBuildingError(f"'{attr}' should be defined before instantiation ...")
-    #     return super().__new__(cls)
-
     def __init__(
-        self, root: str, filedir: Optional[str] = None, download: bool = True
+        self, 
+        root: str, 
+        filedir: Optional[str] = None, 
+        download: bool = True,
+        tasktag: Optional[TaskTags] = None
     ) -> None:
         super().__init__()
 
         self.fields = []
         self.__mode: Literal['train', 'valid', 'test'] = 'train'
+        if tasktag is not None:
+            self.TASK = tasktag
 
         filedir = filedir if filedir else self.__class__.__name__
         self.path = os.path.join(root, 'Processed', filedir)
@@ -186,7 +198,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     def build_fields(cls, columns: Iterable[str], *tags: FieldTags) -> FieldTuple[Field]:
         fields = []
         for colname in columns:
-            field = cls.field_builder.get(
+            field = cls._field_builder.get(
                 colname,
                 Field(colname, FEATURE)
             ).fork(*tags)
@@ -199,22 +211,22 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
 
         Flows:
         ------
-        1. Read dataframe according `open_kwargs`.
+        1. Read dataframe according `_open_kwargs`.
         2. Record datasize.
         3. Build fields.
         4. Transform each field data.
         """
         train_df = pd.read_csv(
-            os.path.join(self.path, self.open_kwargs.trainfile),
-            delimiter=self.open_kwargs.delimiter
+            os.path.join(self.path, self._open_kwargs.trainfile),
+            delimiter=self._open_kwargs.delimiter
         )
         valid_df = pd.read_csv(
-            os.path.join(self.path, self.open_kwargs.validfile),
-            delimiter=self.open_kwargs.delimiter
+            os.path.join(self.path, self._open_kwargs.validfile),
+            delimiter=self._open_kwargs.delimiter
         )
         test_df = pd.read_csv(
-            os.path.join(self.path, self.open_kwargs.testfile),
-            delimiter=self.open_kwargs.delimiter
+            os.path.join(self.path, self._open_kwargs.testfile),
+            delimiter=self._open_kwargs.delimiter
         )
 
         self.trainsize = len(train_df)
@@ -242,8 +254,8 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
 
     def load_user(self):
         user_df = pd.read_csv(
-            os.path.join(self.path, self.open_kwargs.userfile),
-            delimiter=self.open_kwargs.delimiter
+            os.path.join(self.path, self._open_kwargs.userfile),
+            delimiter=self._open_kwargs.delimiter
         )
         fields = self.build_fields(user_df.columns, USER)
         self.__userdata = {}
@@ -255,8 +267,8 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
 
     def load_item(self):
         item_df = pd.read_csv(
-            os.path.join(self.path, self.open_kwargs.itemfile),
-            delimiter=self.open_kwargs.delimiter
+            os.path.join(self.path, self._open_kwargs.itemfile),
+            delimiter=self._open_kwargs.delimiter
         )
         fields = self.build_fields(item_df.columns, ITEM)
         self.__itemdata = {}
@@ -326,6 +338,14 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         """
         return list(map(func, *iterables))
 
+    @classmethod
+    def to_rows(cls, field_dict: Dict[Field, Iterable[T]]) -> List[Dict[Field, T]]:
+        fields = field_dict.keys()
+        return cls.listmap(
+            lambda values: dict(zip(fields, values)),
+            zip(*field_dict.values())
+        )
+
     def __repr__(self) -> str:
         cfg = '|'.join(map(str, self.fields))
         return f"{self.__class__.__name__}({cfg})"
@@ -335,50 +355,40 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         return f"[{self.__class__.__name__}] >>> " + cfg
 
     def __iter__(self) -> Iterator[Dict[Field, Any]]:
-        fields = self.interdata.keys()
-        for values in zip(*self.interdata.values()):
-            yield dict(zip(fields, values))
+        yield from iter(
+            self.to_rows(self.interdata)
+        )
 
 
 class RecDataSet(BaseSet):
     """RecDataSet provides a template for specific datasets."""
 
-    def to_pairs(self) -> List[Tuple[int, int]]:
+    def to_pairs(self) -> List[Dict[Field, int]]:
         """Return (User, Item) in pairs."""
         User = self.fields[USER, ID]
         Item = self.fields[ITEM, ID]
         users, items = self.interdata[User], self.interdata[Item]
-        return list(zip(users, items))
+        return self.to_rows({User: users, Item:items})
 
-    def to_seqs(self, keepid: bool = False) -> List[Tuple]:
-        r"""
-        Return dataset in sequence.
-
-        Parameters:
-        -----------
-        keepid: bool, default to False
-            `True`: return list of (id, items)
-            `False`: return list of items
-        """
+    def to_seqs(self) -> List[Dict[Field, Union[int, Tuple[int]]]]:
+        """Return dataset in sequence."""
         User = self.fields[USER, ID]
+        Item = self.fields[ITEM, ID]
         seqs = [[] for id_ in range(User.count)]
 
         self.listmap(
-            lambda pair: seqs[pair[0]].append(pair[1]),
+            lambda data: seqs[data[User]].append(data[Item]),
             self.to_pairs()
         )
+        users = list(range(User.count))
+        seqs = [tuple(items) for items in seqs]
 
-        if keepid:
-            seqs = [(id_, tuple(items)) for id_, items in enumerate(seqs)]
-        else:
-            seqs = [tuple(items) for items in seqs]
-
-        return seqs
+        return self.to_rows({User: users, Item.fork(SEQUENCE): seqs})
 
     def to_roll_seqs(
         self, minlen: int = 2, maxlen: Optional[int] = None,
         keep_at_least_itself: bool = True
-    ) -> List:
+    ) -> List[Dict[Field, Union[int, Tuple[int]]]]:
         r"""
         Rolling dataset in sequence.
 
@@ -392,27 +402,31 @@ class RecDataSet(BaseSet):
         keep_at_least_itself: bool, default to `True`
             `True`: Keep the sequence with items less than `minlen`
         """
-        seqs = self.to_seqs(keepid=True)
+        User = self.fields[USER, ID]
+        ISeq = self.fields[ITEM, ID].fork(SEQUENCE)
+        data = self.to_seqs()
 
         roll_seqs = []
-        for id_, items in seqs:
+        for row in data:
+            user, seq = row[User], row[ISeq]
             if maxlen is not None:
-                items = items[-maxlen:]
-            if len(items) <= minlen and keep_at_least_itself:
+                seq = seq[-maxlen:]
+            if len(seq) <= minlen and keep_at_least_itself:
                 roll_seqs.append(
-                    (id_, items)
+                    {User: user, ISeq: seq}
                 )
                 continue
-            for k in range(minlen, len(items) + 1):
+            for k in range(minlen, len(seq) + 1):
                 roll_seqs.append(
-                    (id_, items[:k])
+                    {User: user, ISeq: seq[:k]}
                 )
 
         return roll_seqs
 
-    def seqlens(self) -> List:
-        seqs = self.to_seqs(keepid=False)
-        return list(filter(lambda x: x > 0, [len(items) for items in seqs]))
+    def seqlens(self) -> List[int]:
+        ISeq = self.fields[ITEM, ID].fork(SEQUENCE)
+        seqlens = [len(row[ISeq]) for row in self.to_seqs()]
+        return list(filter(lambda x: x > 0, seqlens))
 
     @property
     def maxlen(self) -> int:
@@ -429,21 +443,19 @@ class RecDataSet(BaseSet):
     @lru_cache()
     def has_duplicates(self) -> bool:
         """Check whether the dataset has repeated interactions."""
-        from itertools import chain
-        train_seqs = self.train().to_seqs(keepid=False)
-        valid_seqs = self.valid().to_seqs(keepid=False)
-        test_seqs = self.test().to_seqs(keepid=False)
-        seqs = map(
-            lambda triple: chain(*triple),
-            zip(train_seqs, valid_seqs, test_seqs)
-        )
-        for seq in seqs:
-            seq = list(seq)
+        ISeq = self.fields[ITEM, ID]
+        traindata = self.train().to_seqs()
+        validdata = self.valid().to_seqs()
+        testdata = self.test().to_seqs()
+
+        for triplet in zip(traindata, validdata, testdata):
+            seq = triplet[0][ISeq] + triplet[1][ISeq] + triplet[2][ISeq]
             if len(seq) != len(set(seq)):
                 return True
         return False
 
     @timemeter
+    @safe_mode('train')
     def to_heterograph(self, *edge_types: Tuple[Tuple[FieldTags], Optional[str], Tuple[FieldTags]]):
         r"""
         Convert datapipe to a heterograph.
@@ -482,10 +494,6 @@ class RecDataSet(BaseSet):
         )
         """
         from torch_geometric.data import HeteroData
-
-        # check mode and raise warning if not in 'train' mode
-        if self.mode != 'train':
-            warnLogger(f"Convert the {self.mode} datapipe to graph. Make sure that this is intentional ...")
 
         srcs, edges, dsts = zip(*edge_types)
         srcs = [self.fields[src] for src in srcs]
@@ -626,6 +634,91 @@ class RecDataSet(BaseSet):
         return to_adjacency(
             edge_index, edge_weight,
             num_nodes=User.count + Item.count
+        )
+
+    @safe_mode('valid', 'test')
+    def to_ordered_user_ids(self) -> dp.iter.IterDataPipe:
+        r"""
+        To ordered User ID source.
+
+        Examples:
+        ---------
+        >>> dataset: RecDataSet
+        >>> datapipe = dataset.valid().to_ordered_user_ids()
+        >>> len(datapipe) == dataset.fields[USER, ID].count
+        True
+        """
+        User = self.fields[USER, ID]
+        source = self.to_rows({User: list(range(User.count))})
+        return self.ordered_source_(source)
+
+    @safe_mode('train')
+    def to_choiced_user_ids(self) -> dp.iter.IterDataPipe:
+        r"""
+        To random choiced User ID source.
+        The datasize equals the current dataset's datasize.
+
+        Examples:
+        ---------
+        >>> dataset: RecDataSet
+        >>> datapipe = dataset.train().to_choiced_user_ids()
+        >>> len(datapipe) == dataset.trainsize
+        True
+        """
+        User = self.fields[USER, ID]
+        source = self.to_rows({User: list(range(User.count))})
+        return self.choiced_source_(source)
+
+    @safe_mode('train')
+    def to_shuffled_pairs(self) -> dp.iter.IterDataPipe:
+        r"""
+        To random shuffled (User, Item) pairs source.
+        The datasize equals the current dataset's datasize.
+
+        Examples:
+        ---------
+        >>> dataset: RecDataSet
+        >>> datapipe = dataset.train().to_shuffled_pairs()
+        >>> len(datapipe) == dataset.trainsize
+        True
+        >>> list(datapipe)[0].keys()
+        dict_keys([Field(USER:ID,USER), Field(ITEM:ID,ITEM)])
+        """
+        return self.shuffled_source_(self.to_pairs())
+
+    @safe_mode('train')
+    def to_shuffled_seqs(self) -> dp.iter.IterDataPipe:
+        r"""
+        To random shuffled (User, ISeq) source.
+
+        Examples:
+        ---------
+        >>> dataset: RecDataSet
+        >>> datapipe = dataset.train().to_shuffled_seqs()
+        >>> len(datapipe) == dataset[USER, ID].count
+        True
+        >>> list(datapipe)[0].keys()
+        dict_keys([Field(USER:ID,USER), Field(ITEM:ID,ITEM,SEQUENCE)])
+        """
+        return self.shuffled_source_(self.to_seqs())
+
+    @safe_mode('train')
+    def to_shuffled_roll_seqs(
+        self, minlen: int = 2, maxlen: Optional[int] = None,
+        keep_at_least_itself: bool = True
+    ) -> dp.iter.IterDataPipe:
+        r"""
+        To random shuffled (User, ISeq) rolling source.
+
+        Examples:
+        ---------
+        >>> dataset: RecDataSet
+        >>> datapipe = dataset.train().to_shuffled_roll_seqs()
+        >>> list(datapipe)[0].keys()
+        dict_keys([Field(USER:ID,USER), Field(ITEM:ID,ITEM,SEQUENCE)])
+        """
+        return self.shuffled_source_(
+            self.to_roll_seqs(minlen, maxlen, keep_at_least_itself)
         )
 
     def summary(self):

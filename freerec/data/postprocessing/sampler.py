@@ -1,6 +1,6 @@
 
 
-from typing import List, Tuple, Optional, Iterable, Callable
+from typing import List, Tuple, Optional, Iterable
 
 import random
 import torchdata.datapipes as dp
@@ -8,7 +8,7 @@ import torchdata.datapipes as dp
 from .base import Postprocessor
 from ..datasets.base import RecDataSet
 from ..fields import Field
-from ..tags import USER, ITEM, ID, MATCHING, NEXTITEM
+from ..tags import USER, ITEM, ID, SEQUENCE, UNSEEN, SEEN, POSITIVE, NEGATIVE,  MATCHING, NEXTITEM
 from ..utils import negsamp_vectorized_bsearch
 from ...utils import timemeter
 
@@ -29,22 +29,18 @@ class BaseSampler(Postprocessor):
 
     Parameters:
     -----------
-    source_dp: Source datapipe defined in source.py
+    source: Source datapipe defined in source.py
     dataset: RecDataSet 
         The dataset that provides the data source.
     """
 
-    def __init__(
-        self, 
-        source_dp: dp.iter.IterDataPipe, dataset: RecDataSet,
-    ) -> None:
-        super().__init__(source_dp)
-        self.dataset = dataset
-        self.User: Field = dataset.fields[USER, ID]
-        self.Item: Field = dataset.fields[ITEM, ID]
-        self.prepare(dataset)
+    def __init__(self, source: dp.iter.IterDataPipe) -> None:
+        super().__init__(source)
+        self.User: Field = self.fields[USER, ID]
+        self.Item: Field = self.fields[ITEM, ID]
+        self.prepare()
 
-    def prepare(self, dataset: RecDataSet):
+    def prepare(self):
         pass
 
     @property
@@ -57,7 +53,7 @@ class BaseSampler(Postprocessor):
 
     @property
     def unseenItems(self) -> Tuple:
-        raise self.__unseenItems
+        return self.__unseenItems
     
     @unseenItems.setter
     def unseenItems(self, unseenItems: Iterable):
@@ -70,15 +66,19 @@ class BaseSampler(Postprocessor):
 @dp.functional_datapipe("gen_train_sampling_pos_")
 class GenTrainPositiveSampler(BaseSampler):
 
+    def __init__(self, source: dp.iter.IterDataPipe) -> None:
+        super().__init__(source)
+        self.IPos = self.Item.fork(POSITIVE)
+
     @timemeter
-    def prepare(self, dataset: RecDataSet):
+    def prepare(self):
         seenItems = [set() for _ in range(self.User.count)]
 
-        for chunk in dataset.train():
-            self.listmap(
-                lambda user, item: seenItems[user].add(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
+        self.listmap(
+            lambda user, item: seenItems[user].add(item),
+            self.dataset.train().interdata[self.User],
+            self.dataset.train().interdata[self.Item]
+        )
 
         # sorting for ordered positives
         self.seenItems = [sorted(items) for items in seenItems]
@@ -103,9 +103,13 @@ class GenTrainPositiveSampler(BaseSampler):
         return len(self.seenItems[user]) > 0
 
     def __iter__(self):
-        for user in self.source:
+        for row in self.source:
+            user = row[self.User]
             if self._check(user):
-                yield [user, self._sample_pos(user)]
+                row.update([
+                    (self.IPos, self._sample_pos(user))
+                ])
+                yield row
 
 
 @dp.functional_datapipe("gen_train_sampling_neg_")
@@ -113,10 +117,11 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
 
     def __init__(
         self, 
-        source_dp: dp.iter.IterDataPipe, dataset: RecDataSet,
+        source: dp.iter.IterDataPipe,
         unseen_only: bool = True, num_negatives: int = 1
     ) -> None:
-        super().__init__(source_dp, dataset)
+        super().__init__(source)
+        self.INeg = self.Item.fork(NEGATIVE)
         self.unseen_only = unseen_only
         self.num_negatives = num_negatives
 
@@ -142,8 +147,12 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
         )
 
     def __iter__(self):
-        for user, positive in self.source:
-            yield [user, positive, self._sample_neg(user)]
+        for row in self.source:
+            user = row[self.User]
+            row.update([
+                (self.INeg, self._sample_neg(user))
+            ])
+            yield row
 
 
 @dp.functional_datapipe("seq_train_yielding_pos_")
@@ -175,21 +184,30 @@ class SeqTrainPositiveYielder(BaseSampler):
 
     def __init__(
         self, 
-        source_dp: dp.iter.IterableWrapper,
-        dataset: Optional[RecDataSet] = None,
+        source: dp.iter.IterableWrapper,
         start_idx_for_target: Optional[int] = 1, 
         end_idx_for_input: Optional[int] = -1,
     ) -> None:
-        super().__init__(source_dp, dataset)
+        super().__init__(source)
+        self.ISeq = self.Item.fork(SEQUENCE)
+        self.IPos = self.Item.fork(POSITIVE)
         self.start_idx_for_target = start_idx_for_target
         self.end_idx_for_input = end_idx_for_input
 
+    def _check(self, seq: Iterable) -> bool:
+        return len(seq) > 1
+
     def __iter__(self):
-        for user, seq in self.source:
+        for row in self.source:
+            seq = row[self.ISeq]
             if self._check(seq):
                 positives = seq[self.start_idx_for_target:]
                 seq = seq[:self.end_idx_for_input]
-                yield [user, seq, positives]
+                row.update([
+                    (self.ISeq, seq),
+                    (self.IPos, positives)
+                ])
+                yield row
 
 
 @dp.functional_datapipe("seq_train_sampling_neg_")
@@ -197,21 +215,26 @@ class SeqTrainNegativeSampler(BaseSampler):
 
     def __init__(
         self, 
-        source_dp: dp.iter.IterDataPipe, dataset: RecDataSet,
+        source: dp.iter.IterDataPipe,
         unseen_only: bool = True, num_negatives: int = 1
     ) -> None:
-        super().__init__(source_dp, dataset)
+        super().__init__(source)
+        self.ISeq = self.Item.fork(SEQUENCE)
+        self.IPos = self.Item.fork(POSITIVE)
+        self.INeg = self.Item.fork(NEGATIVE)
         self.unseen_only = unseen_only
         self.num_negatives = num_negatives
 
     @timemeter
-    def prepare(self, dataset: RecDataSet):
+    def prepare(self):
         seenItems = [set() for _ in range(self.User.count)]
-        for chunk in dataset.train():
-            self.listmap(
-                lambda user, item: seenItems[user].add(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
+
+        self.listmap(
+            lambda user, item: seenItems[user].add(item),
+            self.dataset.train().interdata[self.User],
+            self.dataset.train().interdata[self.Item],
+        )
+
         # sorting for ordered positives
         self.seenItems = [sorted(items) for items in seenItems]
 
@@ -238,9 +261,14 @@ class SeqTrainNegativeSampler(BaseSampler):
         )
 
     def __iter__(self):
-        for user, seq, positives in self.source:
-            negatives = self._sample_neg(user, positives)
-            yield [user, seq, positives, negatives]
+        for row in self.source:
+            negatives = self._sample_neg(
+                row[self.User], row[self.IPos]
+            )
+            row.update([
+                (self.INeg, negatives)
+            ])
+            yield row
 
 
 #===============================For Evaluation===============================
@@ -249,29 +277,34 @@ class SeqTrainNegativeSampler(BaseSampler):
 class ValidSampler(BaseSampler):
 
     def __init__(
-        self, source_dp: dp.iter.IterDataPipe, dataset: RecDataSet, 
+        self, source: dp.iter.IterDataPipe,
         ranking: str = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING
     ) -> None:
-        super().__init__(source_dp, dataset)
+        super().__init__(source)
+        self.ISeq = self.Item.fork(SEQUENCE)
+        self.IUnseen = self.Item.fork(UNSEEN)
+        self.ISeen = self.Item.fork(SEEN)
+
         assert ranking in ('full', 'pool'), f"`ranking` should be 'full' or 'pool' but {ranking} received ..."
         self.sampling_neg = True if ranking == 'pool' else False
         self.num_negatives = num_negatives
 
     @timemeter
-    def prepare(self, dataset: RecDataSet):
+    def prepare(self):
         seenItems = [[] for _ in range(self.User.count)]
         unseenItems = [[] for _ in range(self.User.count)]
 
-        for chunk in dataset.train():
-            self.listmap(
-                lambda user, item: seenItems[user].append(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-        for chunk in dataset.valid():
-            self.listmap(
-                lambda user, item: unseenItems[user].append(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
+        self.listmap(
+            lambda user, item: seenItems[user].append(item),
+            self.dataset.train().interdata[self.User],
+            self.dataset.train().interdata[self.Item],
+        )
+
+        self.listmap(
+            lambda user, item: unseenItems[user].append(item),
+            self.dataset.valid().interdata[self.User],
+            self.dataset.valid().interdata[self.Item],
+        )
 
         self.seenItems = seenItems
         self.unseenItems = unseenItems
@@ -295,42 +328,46 @@ class ValidSampler(BaseSampler):
         return len(self.unseenItems[user]) > 0
 
     def _matching_from_pool(self):
-        for user in self.source:
+        for row in self.source:
+            user = row[self.User]
             seq = seen = self.seenItems[user]
             for k, positive in enumerate(self.unseenItems[user]):
                 unseen = (positive,) + self._sample_neg(user, k, positive, seen)
-                yield [user, seq, unseen, seen]
+                yield {self.User: user, self.ISeq: seq, self.IUnseen: unseen, self.ISeen: seen}
 
     def _matching_from_full(self):
-        for user in self.source:
+        for row in self.source:
+            user = row[self.User]
             if self._check(user): 
                 seq = seen = self.seenItems[user]
                 unseen = self.unseenItems[user]
-                yield [user, seq, unseen, seen]
+                yield {self.User: user, self.ISeq: seq, self.IUnseen: unseen, self.ISeen: seen}
 
     def _nextitem_from_pool(self):
-        for user in self.source:
+        for row in self.source:
+            user = row[self.User]
             seen = self.seenItems[user]
             for k, positive in enumerate(self.unseenItems[user]):
                 seq = self.seenItems[user] + self.unseenItems[user][:k]
                 unseen = (positive,) + self._sample_neg(user, k, positive, seen)
-                yield [user, seq, unseen, seen]
+                yield {self.User: user, self.ISeq: seq, self.IUnseen: unseen, self.ISeen: seen}
 
     def _nextitem_from_full(self):
-        for user in self.source:
+        for row in self.source:
+            user = row[self.User]
             seen = self.seenItems[user]
             for k, positive in enumerate(self.unseenItems[user]):
                 seq = self.seenItems[user] + self.unseenItems[user][:k]
                 unseen = (positive,)
-                yield [user, seq, unseen, seen]
+                yield {self.User: user, self.ISeq: seq, self.IUnseen: unseen, self.ISeen: seen}
 
     def __iter__(self):
-        if self.dataset.DATATYPE is MATCHING:
+        if self.dataset.TASK is MATCHING:
             if self.sampling_neg:
                 yield from self._matching_from_pool()
             else:
                 yield from self._matching_from_full()
-        elif self.dataset.DATATYPE is NEXTITEM:
+        elif self.dataset.TASK is NEXTITEM:
             if self.sampling_neg:
                 yield from self._nextitem_from_pool()
             else:
@@ -341,25 +378,28 @@ class ValidSampler(BaseSampler):
 class TestSampler(ValidSampler):
 
     @timemeter
-    def prepare(self, dataset: RecDataSet):
+    def prepare(self):
         seenItems = [[] for _ in range(self.User.count)]
         unseenItems = [[] for _ in range(self.User.count)]
 
-        for chunk in dataset.train():
-            self.listmap(
-                lambda user, item: seenItems[user].append(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-        for chunk in dataset.valid():
-            self.listmap(
-                lambda user, item: seenItems[user].append(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
-        for chunk in dataset.test():
-            self.listmap(
-                lambda user, item: unseenItems[user].append(item),
-                chunk[USER, ID], chunk[ITEM, ID]
-            )
+        self.listmap(
+            lambda user, item: seenItems[user].append(item),
+            self.dataset.train().interdata[self.User],
+            self.dataset.train().interdata[self.Item],
+        )
+
+        self.listmap(
+            lambda user, item: seenItems[user].append(item),
+            self.dataset.valid().interdata[self.User],
+            self.dataset.valid().interdata[self.Item],
+        )
+
+
+        self.listmap(
+            lambda user, item: unseenItems[user].append(item),
+            self.dataset.test().interdata[self.User],
+            self.dataset.test().interdata[self.Item],
+        )
 
         self.seenItems = seenItems
         self.unseenItems = unseenItems

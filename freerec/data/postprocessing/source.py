@@ -1,21 +1,21 @@
 
 
-from typing import Iterable, Sequence
+from typing import Any, Iterable, Dict
 
-import random
 import torchdata.datapipes as dp
 
-from .base import BaseProcessor
+from .base import Source
+from ..datasets.base import RecDataSet
 from ..fields import Field
 
 
 __all__ = [
     'RandomChoicedSource', 'RandomShuffledSource', 'OrderedSource',
-    'RandomIDs', 'OrderedIDs', 'DummySource'
 ]
 
 
-class RandomChoicedSource(BaseProcessor):
+@dp.functional_datapipe("choiced_source_")
+class RandomChoicedSource(Source):
     r"""
     DataPipe that generates random items from given source.
     Note that this sampling is with replacement.
@@ -29,24 +29,23 @@ class RandomChoicedSource(BaseProcessor):
     """
 
     def __init__(
-        self, source: Iterable, datasize: int
+        self, dataset: RecDataSet, source: Iterable[Dict[Field, Any]]
     ) -> None:
-        super().__init__(None)
+        super().__init__(dataset)
 
-        self.source = tuple(source)
-        self.datasize = datasize
-        self._rng = random.Random()
-        self.set_seed(1)
+        self.datasize = dataset.datasize
+        self.source = tuple(tuple(source))
 
-    def set_seed(self, seed: int):
-        self._rng.seed(seed)
+    def __len__(self):
+        return self.datasize
 
     def __iter__(self):
         for _ in range(self.datasize):
-            yield self._rng.choice(self.source)
+            yield self._rng.choice(self.source).copy()
 
 
-class RandomShuffledSource(BaseProcessor):
+@dp.functional_datapipe("shuffled_source_")
+class RandomShuffledSource(Source):
     r"""
     DataPipe that generates shuffled source.
     In this vein, every sample will be selected once per epoch.
@@ -57,22 +56,22 @@ class RandomShuffledSource(BaseProcessor):
         The source data to start.
     """
 
-    def __init__(self, source) -> None:
-        super().__init__(None)
+    def __init__(self, dataset: RecDataSet, source: Iterable[Dict[Field, Any]]) -> None:
+        super().__init__(dataset)
 
         self.source = list(source)
-        self._rng = random.Random()
-        self.set_seed(1)
 
-    def set_seed(self, seed: int):
-        self._rng.seed(seed)
+    def __len__(self):
+        return len(self.source)
 
     def __iter__(self):
         self._rng.shuffle(self.source)
-        yield from iter(self.source)
+        for row in self.source:
+            yield row.copy()
 
 
-class OrderedSource(BaseProcessor):
+@dp.functional_datapipe("ordered_source_")
+class OrderedSource(Source):
     r"""
     DataPipe that generates ordered items from given source.
 
@@ -80,77 +79,16 @@ class OrderedSource(BaseProcessor):
     -----------
     source: Sequence 
         The source data to start.
-    datasize: int 
-        Datasize.
     """
 
-    def __init__(self, source: Sequence) -> None:
-        super().__init__(None)
+    def __init__(self, dataset: RecDataSet, source: Iterable[Dict[Field, Any]]) -> None:
+        super().__init__(dataset)
 
-        assert isinstance(source, Sequence), f"Sequence type is required but received {type(source)} type."
         self.source = tuple(source)
 
+    def __len__(self):
+        return len(self.source)
+
     def __iter__(self):
-        yield from iter(self.source)
-
-
-class RandomIDs(RandomChoicedSource):
-    r"""
-    DataPipe that generates random IDs according to SparseField.
-
-    Parameters:
-    -----------
-    field: SparseField 
-        ID values to select from.
-    datasize: int 
-        Number of IDs to generate.
-    """
-
-    def __init__(
-        self, field: Field,
-        datasize: int,
-    ) -> None:
-        super().__init__(field.enums, datasize)
-
-
-class OrderedIDs(OrderedSource):
-    r"""
-    DataPipe that generates ordered IDs.
-
-    Parameters:
-    -----------
-    field: SparseField 
-        ID values to select from.
-    """
-
-    def __init__(self, field: Field) -> None:
-        super().__init__(field.enums)
-
-
-class DummySource(OrderedSource):
-    r"""
-    DataPipe that generates dummy data.
-
-    Parameters:
-    -----------
-    datasize: int 
-        Number of data to generate.
-    """
-    def __init__(self, datasize: int) -> None:
-        super().__init__(range(datasize))
-
-
-@dp.functional_datapipe("dummy_")
-class _DummySource(DummySource):
-    r"""
-    Functional DataPipe wrapper for DummySource.
-
-    Parameters:
-    -----------
-    source_dp: dp.iter.IterDataPipe 
-        The source DataPipe (No use here).
-    datasize: int 
-        Number of data to generate.
-    """
-    def __init__(self, source_dp: dp.iter.IterDataPipe, datasize: int) -> None:
-        super().__init__(datasize)
+        for row in self.source:
+            yield row.copy()
