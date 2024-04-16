@@ -1,13 +1,13 @@
 
 
-from typing import TypeVar, Literal, Optional, Union, Any, Iterator, Iterable, Callable, Dict, List
+from typing import TypeVar, Any, Literal, Optional, Union, Iterator, Iterable, Callable, Dict, List
 
 import torchdata.datapipes as dp
 from torch.utils.data import DataChunk, default_collate
 
-from ..datasets.base import RecDataSet
-from ..fields import Field, FieldTuple
 from .sampler import NUM_NEGS_FOR_SAMPLE_BASED_RANKING
+from ..datasets import RecDataSet
+from ..fields import Field, FieldTuple
 
 
 __all__ = ['BaseProcessor', 'Postprocessor']
@@ -79,19 +79,25 @@ class BaseProcessor(dp.iter.IterDataPipe):
     def test_sampling_(self, ranking: Literal['full', 'pool'] = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING) -> BaseProcessor: ...
 
     # Functional form of 'LeftPruningRow'
-    def lprune_(self, maxlen: int, *, modified_fields: Iterable[Field]) -> BaseProcessor: ...
+    def lprune_(self, maxlen: int, modified_fields: Iterable[Field]) -> BaseProcessor: ...
 
     # Functional form of 'RightPruningRow'
-    def rprune_(self, maxlen: int, *, modified_fields: Iterable[Field]) -> BaseProcessor: ...
+    def rprune_(self, maxlen: int, modified_fields: Iterable[Field]) -> BaseProcessor: ...
 
     # Functional form of 'AddingRow'
-    def add_(self, offset: int, *, modified_fields: Iterable[Field]) -> BaseProcessor: ...
+    def add_(self, offset: int, modified_fields: Iterable[Field]) -> BaseProcessor: ...
 
     # Functional form of 'LeftPaddingRow'
-    def lpad_(self, maxlen: int, *, modified_fields: Iterable[Field], padding_value: int = 0) -> BaseProcessor: ...
+    def lpad_(self, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0) -> BaseProcessor: ...
 
     # Functional form of 'RightPaddingRow'
-    def rpad_(self, maxlen: int, *, modified_fields: Iterable[Field], padding_value: int = 0) -> BaseProcessor: ...
+    def rpad_(self, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0) -> BaseProcessor: ...
+
+    # Functional form of 'Batcher_'
+    def batch_(self, batch_size: int, drop_last: bool = False) -> BaseProcessor: ...
+
+    # Functional form of 'ToTensor'
+    def tensor_(self) -> BaseProcessor: ...
 
     #========================================Functional forms from IterDataPipe========================================
 

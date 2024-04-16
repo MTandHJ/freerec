@@ -87,7 +87,7 @@ class Source(BaseProcessor):
         self._rng.seed(seed)
 
 
-class Postprocessor(BaseProcessor):
+class PostProcessor(BaseProcessor):
     r"""
     A post-processor that wraps another IterDataPipe object.
 

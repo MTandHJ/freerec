@@ -651,7 +651,6 @@ class RecDataSet(BaseSet):
         from ..postprocessing.source import OrderedSource
         User = self.fields[USER, ID]
         source = self.to_rows({User: list(range(User.count))})
-        # return self.ordered_source_(source)
         return OrderedSource(self, source)
 
     @safe_mode('train')

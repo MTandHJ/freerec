@@ -5,7 +5,7 @@ from typing import List, Tuple, Optional, Iterable
 import random
 import torchdata.datapipes as dp
 
-from .base import Postprocessor
+from .base import PostProcessor
 from ..datasets.base import RecDataSet
 from ..fields import Field
 from ..tags import USER, ITEM, ID, SEQUENCE, UNSEEN, SEEN, POSITIVE, NEGATIVE,  MATCHING, NEXTITEM
@@ -23,7 +23,7 @@ __all__ = [
 NUM_NEGS_FOR_SAMPLE_BASED_RANKING = 100
 
 
-class BaseSampler(Postprocessor):
+class BaseSampler(PostProcessor):
     r"""
     Base Sampler for training.
 
@@ -106,9 +106,7 @@ class GenTrainPositiveSampler(BaseSampler):
         for row in self.source:
             user = row[self.User]
             if self._check(user):
-                row.update([
-                    (self.IPos, self._sample_pos(user))
-                ])
+                row[self.IPos] = self._sample_pos(user)
                 yield row
 
 
@@ -149,9 +147,7 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
     def __iter__(self):
         for row in self.source:
             user = row[self.User]
-            row.update([
-                (self.INeg, self._sample_neg(user))
-            ])
+            row[self.INeg] = self._sample_neg(user)
             yield row
 
 
@@ -262,12 +258,9 @@ class SeqTrainNegativeSampler(BaseSampler):
 
     def __iter__(self):
         for row in self.source:
-            negatives = self._sample_neg(
+            row[self.INeg] = self._sample_neg(
                 row[self.User], row[self.IPos]
             )
-            row.update([
-                (self.INeg, negatives)
-            ])
             yield row
 
 

@@ -6,7 +6,7 @@ import numpy as np
 import torchdata.datapipes as dp
 from itertools import repeat, chain
 
-from .base import Postprocessor
+from .base import PostProcessor
 from ..fields import Field
 
 
@@ -18,7 +18,7 @@ __all__ = [
 
 
 #==================================Filter==================================
-class RowFilter(Postprocessor):
+class RowFilter(PostProcessor):
     r"""
     Apply a function to specific indices of each row in an IterableDataset.
 
@@ -64,7 +64,7 @@ class RowFilter(Postprocessor):
 
 
 #==================================Mapper==================================
-class RowMapper(Postprocessor):
+class RowMapper(PostProcessor):
     r"""
     Apply a function to specific indices of each row in an IterableDataset.
 
@@ -123,8 +123,7 @@ class LeftPruningRow(RowMapper):
         The maximum length to prune the input data to.
     """
     def __init__(
-        self, source: dp.iter.IterDataPipe, maxlen: int, 
-        *, modified_fields: Iterable[Field]
+        self, source: dp.iter.IterDataPipe, maxlen: int, modified_fields: Iterable[Field]
     ) -> None:
 
         self.maxlen = maxlen
@@ -173,8 +172,7 @@ class AddingRow(RowMapper):
     """
 
     def __init__(
-        self, source: dp.iter.IterDataPipe, offset: int, 
-        *, modified_fields: Iterable[Field]
+        self, source: dp.iter.IterDataPipe, offset: int, modified_fields: Iterable[Field]
     ) -> None:
 
         self.offset = offset
@@ -220,8 +218,7 @@ class LeftPaddingRow(RowMapper):
     """
 
     def __init__(
-        self, source: dp.iter.IterDataPipe, maxlen: int, 
-        *, modified_fields: Iterable[Field], padding_value: int = 0
+        self, source: dp.iter.IterDataPipe, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0
     ) -> None:
 
         self.maxlen = maxlen

@@ -34,6 +34,11 @@ setuptools.setup(
   long_description_content_type="text/markdown",
   license='MIT License',
   url="https://github.com/MTandHJ/freerec",
+  package_data={
+      "freerec": [
+          "data/postprocessing/*.pyi",
+      ],
+  },
   packages=setuptools.find_packages(),
   python_requires='>=3.9',
   install_requires=requires,

@@ -5,7 +5,7 @@ from typing import Iterator, Iterable, List, Union, TypeVar, Dict
 import torch
 import torchdata.datapipes as dp
 
-from .base import Postprocessor
+from .base import PostProcessor
 
 
 __all__ = [
@@ -14,7 +14,7 @@ __all__ = [
 
 
 @dp.functional_datapipe("batch_")
-class Batcher_(Postprocessor):
+class Batcher_(PostProcessor):
     r"""
     A postprocessor that converts a batch of samples into columns.
     Columner takes a datapipe that yields a batch of samples, and converts them into columns. 
@@ -27,13 +27,12 @@ class Batcher_(Postprocessor):
     """
 
     def __init__(
-        self, source: Postprocessor, 
+        self, source: PostProcessor, 
         batch_size: int, drop_last: bool = False
     ) -> None:
         super().__init__(source)
 
         self.input_fields = tuple(self.sure_input_fields())
-        self.batch_size = batch_size
         self.source = source.batch(batch_size, drop_last)
 
     def __iter__(self):
@@ -42,7 +41,7 @@ class Batcher_(Postprocessor):
 
 
 @dp.functional_datapipe("tensor_")
-class ToTensor(Postprocessor):
+class ToTensor(PostProcessor):
     r"""
     A datapipe that converts lists into torch Tensors.
     This class converts a List into a torch.Tensor.
