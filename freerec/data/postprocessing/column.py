@@ -33,12 +33,18 @@ class Columner(Postprocessor):
 
     Parameters:
     -----------
-    source_dp: dp.IterDataPipe 
+    source: dp.IterDataPipe 
         A datapipe that yields a batch samples.
     """
 
+    def __init__(self, source: Postprocessor) -> None:
+        super().__init__(source)
+
+        self.input_fields = tuple(self.sure_input_fields())
+
     def __iter__(self):
         for batch in self.source:
+            yield {field: list(row[field] for row in batch) for field in self.input_fields}
             yield list(zip(*batch))
 
 

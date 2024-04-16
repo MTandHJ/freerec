@@ -1,15 +1,16 @@
 
 
-from typing import Iterable, Union, Any, Callable, List, Tuple
+from typing import Iterable, Union, Any, Callable, List, Tuple, Dict
 
 import numpy as np
 import torchdata.datapipes as dp
 
+from .base import Postprocessor
+from ..fields import Field
+
 
 __all__ = [
-    "DropEmpty", 
     "LeftPruningRow", "RightPruningRow",
-    "DropingDuplicates",
     "AddingRow",
     "LeftPaddingRow", "RightPaddingRow",
 ]
@@ -19,7 +20,7 @@ def _to_array(x: Union[np.ndarray, Iterable]) -> np.ndarray:
     return x if isinstance(x, np.ndarray) else np.array(x)
 
 #==================================Filter==================================
-class RowFilter(dp.iter.IterDataPipe):
+class RowFilter(Postprocessor):
     r"""
     Apply a function to specific indices of each row in an IterableDataset.
 
@@ -48,70 +49,24 @@ class RowFilter(dp.iter.IterDataPipe):
     """
 
     def __init__(
-        self, source_dp: dp.iter.IterableWrapper,
-        fn: Callable, indices: Iterable[int]
+        self, source: dp.iter.IterableWrapper,
+        fn: Callable, checked_fields: Iterable[Field]
     ):
-        super().__init__()
-
-        assert isinstance(indices, Iterable), \
-            f"{self.__class__.__name__} requires iterable indices but {type(indices)} recevied ..."
-
-        self.source = source_dp
+        super().__init__(source)
         self.fn = fn
-        self.indices = sorted(set(indices))
+        self.checked_fields = set(self.sure_input_fields()) & set(checked_fields)
 
-    def _apply_fn(self, row: Union[List, Tuple]):
-        r"""
-        Apply the specified function to the elements of the row at the specified indices.
-
-        Parameters:
-        -----------
-        row : list or tuple
-            The row of data to check.
-
-        Returns:
-        --------
-        bool
-            The final results over specified indices.
-        """
-        return all(self.fn(row[i]) for i in self.indices)
+    def _check(self, row: Dict[Field, Any]) -> bool:
+        return all(self.fn(row[field]) for field in self.checked_fields)
 
     def __iter__(self):
         for row in self.source:
-            if self._apply_fn(row):
+            if self._check(row):
                 yield row
 
 
-@dp.functional_datapipe("drop_empty_")
-class DropEmpty(RowFilter):
-    r"""
-    A functional datapipe that drops empty data from a given datapipe.
-
-    Parameters:
-    -----------
-    source_dp: IterDataPipe 
-        The input datapipe to filter.
-    indices : Iterable[int]
-        The indices of the elements in each row to which `fn` should be applied.
-    """
-    def __init__(
-        self, 
-        source_dp: dp.iter.IterDataPipe, 
-        indices: Iterable[int]
-    ) -> None:
-
-        super().__init__(
-            source_dp=source_dp,
-            fn=self._check,
-            indices=indices
-        )
-
-    def _check(self, x: Any) -> bool:
-        return (not isinstance(x, Iterable)) or len(x) > 0
-
-
 #==================================Mapper==================================
-class RowMapper(dp.iter.IterDataPipe):
+class RowMapper(Postprocessor):
     r"""
     Apply a function to specific indices of each row in an IterableDataset.
 
@@ -135,45 +90,24 @@ class RowMapper(dp.iter.IterDataPipe):
         The source IterableDataset.
     fn : Callable
         The function to apply to the specified indices of each row.
-    indices : list of int
-        The indices of the elements in each row to which `fn` should be applied.
+    modified_fields : Itertable[Field]
+        The fields to be modified by given `fn`
     """
 
     def __init__(
-        self, source_dp: dp.iter.IterableWrapper,
-        fn: Callable, indices: Iterable[int]
+        self, source: dp.iter.IterableWrapper,
+        fn: Callable, modified_fields: Iterable[Field]
     ):
-        super().__init__()
+        super().__init__(source)
 
-        assert isinstance(indices, Iterable), \
-            f"{self.__class__.__name__} requires iterable indices but {type(indices)} recevied ..."
-
-        self.source = source_dp
         self.fn = fn
-        self.indices = sorted(set(indices))
-
-    def _apply_fn(self, row: Union[List, Tuple]) -> List:
-        r"""
-        Apply the specified function to the elements of the row at the specified indices.
-
-        Parameters:
-        -----------
-        row : list or tuple
-            The row of data to transform.
-
-        Returns:
-        --------
-        list
-            The transformed row.
-        """
-        row = row if isinstance(row, list) else list(row)
-        for i in self.indices:
-            row[i] = self.fn(row[i])
-        return row
+        self.modified_fields = set(self.sure_input_fields()) & set(modified_fields)
 
     def __iter__(self):
         for row in self.source:
-            yield self._apply_fn(row)
+            for field in self.modified_fields:
+                row[field] = self.fn(row[field])
+            yield row
 
 
 @dp.functional_datapipe("lprune_")
@@ -191,17 +125,15 @@ class LeftPruningRow(RowMapper):
         The maximum length to prune the input data to.
     """
     def __init__(
-        self, source_dp: dp.iter.IterDataPipe, 
-        indices: Union[None, int, Iterable[int]],
-        maxlen: int
+        self, source: dp.iter.IterDataPipe, maxlen: int, 
+        *, modified_fields: Iterable[Field]
     ) -> None:
 
         self.maxlen = maxlen
 
         super().__init__(
-            source_dp=source_dp, 
-            fn=self._lprune,
-            indices=indices
+            source, self._lprune,
+            modified_fields
         )
 
     def _lprune(self, x: Iterable) -> Iterable:
@@ -224,63 +156,19 @@ class RightPruningRow(RowMapper):
     """
 
     def __init__(
-        self, source_dp: dp.iter.IterDataPipe, 
-        indices: Union[None, int, Iterable[int]],
-        maxlen: int
+        self, source: dp.iter.IterDataPipe, maxlen: int, 
+        *, modified_fields: Iterable[Field]
     ) -> None:
 
         self.maxlen = maxlen
 
         super().__init__(
-            source_dp=source_dp, 
-            fn=self._rprune,
-            indices=indices
+            source, self._rprune,
+            modified_fields
         )
 
     def _rprune(self, x: Iterable) -> Iterable:
         return x[:self.maxlen]
-
-
-@dp.functional_datapipe("drop_duplicates_")
-class DropingDuplicates(RowMapper):
-    r"""
-    A functional datapipe that drop the duplicates.
-
-    Parameters:
-    -----------
-    source_dp: IterDataPipe 
-        The input datapipe to prune.
-    indices : Iterable[int]
-        The indices of the elements in each row to which `fn` should be applied.
-    ordered: bool
-        `True`: keeping order.
-    """
-
-    def __init__(
-        self, source_dp: dp.iter.IterDataPipe, 
-        indices: Union[None, int, Iterable[int]],
-        ordered: bool = True
-    ) -> None:
-
-        self.ordered = ordered
-
-        super().__init__(
-            source_dp=source_dp, 
-            fn=self._drop_in_order if self.ordered else self._drop,
-            indices=indices
-        )
-
-    def _drop(self, x: Union[np.ndarray, Iterable]) -> Union[np.ndarray, List]:
-        if isinstance(x, np.ndarray):
-            return np.unique(x)
-        else:
-            return list(set(x))
-
-    def _drop_in_order(self, x: Union[np.ndarray, Iterable]) -> Union[np.ndarray, List]:
-        if isinstance(x, np.ndarray):
-            return np.unique(x)
-        else:
-            return sorted(set(x), key=x.index)
 
 
 @dp.functional_datapipe("add_")
@@ -299,17 +187,15 @@ class AddingRow(RowMapper):
     """
 
     def __init__(
-        self, source_dp: dp.iter.IterDataPipe, 
-        indices: Union[None, int, Iterable[int]],
-        offset: int
+        self, source: dp.iter.IterDataPipe, offset: int, 
+        *, modified_fields: Iterable[Field]
     ) -> None:
 
         self.offset = offset
 
         super().__init__(
-            source_dp=source_dp, 
-            fn=self._add,
-            indices=indices
+            source, self._add,
+            modified_fields
         )
 
     def _add(self, x: Union[np.ndarray, Iterable]) -> np.ndarray:
@@ -348,25 +234,23 @@ class LeftPaddingRow(RowMapper):
     """
 
     def __init__(
-        self, source_dp: dp.iter.IterDataPipe, 
-        indices: Union[None, int, Iterable[int]],
-        maxlen: int, padding_value: int = 0,
+        self, source: dp.iter.IterDataPipe, maxlen: int, 
+        *, modified_fields: Iterable[Field], padding_value: int = 0
     ) -> None:
 
         self.maxlen = maxlen
-        self.padding_value = padding_value
+        self.padding_value = int(padding_value)
 
         super().__init__(
-            source_dp=source_dp, 
-            fn=self._lpad,
-            indices=indices
+            source, self._lpad,
+            modified_fields
         )
 
     def _lpad(self, x: Union[np.ndarray, Iterable]) -> np.ndarray:
         x = _to_array(x)
         if len(x) >= self.maxlen:
             return x
-        elif len(x) > 0:
+        elif len(x) > 0: 
             p = np.empty_like(x[0])
             p.fill(self.padding_value)
             p = np.stack(
@@ -401,18 +285,16 @@ class RightPaddingRow(RowMapper):
     """
 
     def __init__(
-        self, source_dp: dp.iter.IterDataPipe, 
-        indices: Union[None, int, Iterable[int]],
-        maxlen: int, padding_value: int = 0,
+        self, source: dp.iter.IterDataPipe, maxlen: int, 
+        *, modified_fields: Iterable[Field], padding_value: int = 0,
     ) -> None:
 
         self.maxlen = maxlen
         self.padding_value = padding_value
 
         super().__init__(
-            source_dp=source_dp, 
-            fn=self._rpad,
-            indices=indices
+            source, self._rpad,
+            modified_fields
         )
 
     def _rpad(self, x: Union[np.ndarray, Iterable]) -> np.ndarray:

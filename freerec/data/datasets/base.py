@@ -637,7 +637,7 @@ class RecDataSet(BaseSet):
         )
 
     @safe_mode('valid', 'test')
-    def to_ordered_user_ids(self) -> dp.iter.IterDataPipe:
+    def ordered_user_ids_source(self):
         r"""
         To ordered User ID source.
 
@@ -648,12 +648,14 @@ class RecDataSet(BaseSet):
         >>> len(datapipe) == dataset.fields[USER, ID].count
         True
         """
+        from ..postprocessing.source import OrderedSource
         User = self.fields[USER, ID]
         source = self.to_rows({User: list(range(User.count))})
-        return self.ordered_source_(source)
+        # return self.ordered_source_(source)
+        return OrderedSource(self, source)
 
     @safe_mode('train')
-    def to_choiced_user_ids(self) -> dp.iter.IterDataPipe:
+    def choiced_user_ids_source(self):
         r"""
         To random choiced User ID source.
         The datasize equals the current dataset's datasize.
@@ -665,12 +667,13 @@ class RecDataSet(BaseSet):
         >>> len(datapipe) == dataset.trainsize
         True
         """
+        from ..postprocessing.source import RandomChoicedSource
         User = self.fields[USER, ID]
         source = self.to_rows({User: list(range(User.count))})
-        return self.choiced_source_(source)
+        return RandomChoicedSource(self, source)
 
     @safe_mode('train')
-    def to_shuffled_pairs(self) -> dp.iter.IterDataPipe:
+    def shuffled_pairs_source(self):
         r"""
         To random shuffled (User, Item) pairs source.
         The datasize equals the current dataset's datasize.
@@ -684,10 +687,11 @@ class RecDataSet(BaseSet):
         >>> list(datapipe)[0].keys()
         dict_keys([Field(USER:ID,USER), Field(ITEM:ID,ITEM)])
         """
-        return self.shuffled_source_(self.to_pairs())
+        from ..postprocessing.source import RandomShuffledSource
+        return RandomShuffledSource(self, self.to_pairs())
 
     @safe_mode('train')
-    def to_shuffled_seqs(self) -> dp.iter.IterDataPipe:
+    def shuffled_seqs_source(self):
         r"""
         To random shuffled (User, ISeq) source.
 
@@ -700,13 +704,14 @@ class RecDataSet(BaseSet):
         >>> list(datapipe)[0].keys()
         dict_keys([Field(USER:ID,USER), Field(ITEM:ID,ITEM,SEQUENCE)])
         """
-        return self.shuffled_source_(self.to_seqs())
+        from ..postprocessing.source import RandomShuffledSource
+        return RandomShuffledSource(self, self.to_seqs())
 
     @safe_mode('train')
-    def to_shuffled_roll_seqs(
+    def shuffled_roll_seqs_source(
         self, minlen: int = 2, maxlen: Optional[int] = None,
         keep_at_least_itself: bool = True
-    ) -> dp.iter.IterDataPipe:
+    ):
         r"""
         To random shuffled (User, ISeq) rolling source.
 
@@ -717,8 +722,9 @@ class RecDataSet(BaseSet):
         >>> list(datapipe)[0].keys()
         dict_keys([Field(USER:ID,USER), Field(ITEM:ID,ITEM,SEQUENCE)])
         """
-        return self.shuffled_source_(
-            self.to_roll_seqs(minlen, maxlen, keep_at_least_itself)
+        from ..postprocessing.source import RandomShuffledSource
+        return RandomShuffledSource(
+            self, self.to_roll_seqs(minlen, maxlen, keep_at_least_itself)
         )
 
     def summary(self):

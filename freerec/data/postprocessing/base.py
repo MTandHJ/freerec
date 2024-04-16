@@ -73,7 +73,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
             lambda values: dict(zip(fields, values)),
             zip(*field_dict.values())
         )
-
+    
 
 class Source(BaseProcessor):
     """Source datapipe. The start point of Train/valid/test datapipe"""
@@ -81,6 +81,7 @@ class Source(BaseProcessor):
     def __init__(self, dataset: RecDataSet) -> None:
         super().__init__(dataset)
         self._rng = random.Random()
+        self.set_seed(0)
 
     def set_seed(self, seed: int):
         self._rng.seed(seed)
@@ -92,11 +93,11 @@ class Postprocessor(BaseProcessor):
 
     Parameters:
     -----------
-    source: dp.iter.IterDataPipe 
+    source: BaseProcessor
         The data pipeline to be wrapped.
     """
 
-    def __init__(self, source: dp.iter.IterDataPipe) -> None:
+    def __init__(self, source: BaseProcessor) -> None:
         graph = torch.utils.data.graph.traverse_dps(source)
         for pipe in get_all_graph_pipes(graph):
             if isinstance(pipe, RecDataSet):
@@ -104,3 +105,8 @@ class Postprocessor(BaseProcessor):
                 break
         super().__init__(dataset)
         self.source: Iterator[Dict[Field, Any]] = source
+
+    def sure_input_fields(self) -> List[Field]:
+        return list(next(iter(self.source)).keys())
+
+
