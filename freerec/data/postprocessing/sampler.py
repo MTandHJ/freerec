@@ -320,7 +320,7 @@ class ValidSampler(BaseSampler):
             self.negItems[idx] = tuple(
                 negsamp_vectorized_bsearch(
                     seen, self.Item.count, self.num_negatives
-                ).tolist()
+                )
             )
         return self.negItems[idx]
 

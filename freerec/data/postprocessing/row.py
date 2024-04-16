@@ -4,6 +4,7 @@ from typing import Iterable, Union, Any, Callable, List, Tuple, Dict
 
 import numpy as np
 import torchdata.datapipes as dp
+from itertools import repeat, chain
 
 from .base import Postprocessor
 from ..fields import Field
@@ -15,9 +16,6 @@ __all__ = [
     "LeftPaddingRow", "RightPaddingRow",
 ]
 
-
-def _to_array(x: Union[np.ndarray, Iterable]) -> np.ndarray:
-    return x if isinstance(x, np.ndarray) else np.array(x)
 
 #==================================Filter==================================
 class RowFilter(Postprocessor):
@@ -57,7 +55,7 @@ class RowFilter(Postprocessor):
         self.checked_fields = set(self.sure_input_fields()) & set(checked_fields)
 
     def _check(self, row: Dict[Field, Any]) -> bool:
-        return all(self.fn(row[field]) for field in self.checked_fields)
+        return all(self.fn(field, row[field]) for field in self.checked_fields)
 
     def __iter__(self):
         for row in self.source:
@@ -106,7 +104,7 @@ class RowMapper(Postprocessor):
     def __iter__(self):
         for row in self.source:
             for field in self.modified_fields:
-                row[field] = self.fn(row[field])
+                row[field] = self.fn(field, row[field])
             yield row
 
 
@@ -132,16 +130,16 @@ class LeftPruningRow(RowMapper):
         self.maxlen = maxlen
 
         super().__init__(
-            source, self._lprune,
+            source, self._prune,
             modified_fields
         )
 
-    def _lprune(self, x: Iterable) -> Iterable:
+    def _prune(self, field: Field, x: Iterable) -> Iterable:
         return x[-self.maxlen:]
 
 
 @dp.functional_datapipe("rprune_")
-class RightPruningRow(RowMapper):
+class RightPruningRow(LeftPruningRow):
     r"""
     A functional datapipe that prunes the right side of a given datapipe to a specified maximum length.
 
@@ -155,19 +153,7 @@ class RightPruningRow(RowMapper):
         The maximum length to prune the input data to.
     """
 
-    def __init__(
-        self, source: dp.iter.IterDataPipe, maxlen: int, 
-        *, modified_fields: Iterable[Field]
-    ) -> None:
-
-        self.maxlen = maxlen
-
-        super().__init__(
-            source, self._rprune,
-            modified_fields
-        )
-
-    def _rprune(self, x: Iterable) -> Iterable:
+    def _prune(self, field: Field, x: Iterable) -> Iterable:
         return x[:self.maxlen]
 
 
@@ -198,7 +184,7 @@ class AddingRow(RowMapper):
             modified_fields
         )
 
-    def _add(self, x: Union[np.ndarray, Iterable]) -> np.ndarray:
+    def _add(self, field: Field, x: Iterable) -> List:
         r"""
         Examples:
         ---------
@@ -208,7 +194,7 @@ class AddingRow(RowMapper):
         >>> _add(x) # self.offset = -1
         [0, 1, 2]
         """
-        return _to_array(x) + self.offset
+        return (np.array(x, copy=False) + self.offset).tolist()
 
 
 @dp.functional_datapipe("lpad_")
@@ -242,28 +228,33 @@ class LeftPaddingRow(RowMapper):
         self.padding_value = int(padding_value)
 
         super().__init__(
-            source, self._lpad,
+            source, self._pad,
             modified_fields
         )
 
-    def _lpad(self, x: Union[np.ndarray, Iterable]) -> np.ndarray:
-        x = _to_array(x)
-        if len(x) >= self.maxlen:
-            return x
-        elif len(x) > 0: 
-            p = np.empty_like(x[0])
-            p.fill(self.padding_value)
-            p = np.stack(
-                [p] * (self.maxlen - len(x)),
-                axis=0
-            )
-            return np.concatenate((p, x), axis=0)
-        else:
-            raise ValueError("Cannot pad an empty element")
+        self.sure_zero_elems()
+
+    def sure_zero_elems(self):
+        def guess_zero(field: Field, value: Iterable):
+            if isinstance(value, Iterable):
+                if isinstance(value[0], Iterable):
+                    return (self.padding_value,) * len(value[0])
+                else:
+                    return self.padding_value
+            else:
+                raise ValueError(f"{value} for {field} is not non-iterable ...")
+
+        row = next(iter(self.source))
+        self.zeros = dict()
+        for field in self.modified_fields:
+            self.zeros[field] = guess_zero(field, row[field])
+
+    def _pad(self, field: Field, x: Iterable) -> List:
+        return list(chain(repeat(self.zeros[field], self.maxlen - len(x)), x))
 
 
 @dp.functional_datapipe("rpad_")
-class RightPaddingRow(RowMapper):
+class RightPaddingRow(LeftPaddingRow):
     r"""
     A functional data pipeline component that right pads sequences to a maximum length.
 
@@ -284,30 +275,5 @@ class RightPaddingRow(RowMapper):
         To pad an empty element.
     """
 
-    def __init__(
-        self, source: dp.iter.IterDataPipe, maxlen: int, 
-        *, modified_fields: Iterable[Field], padding_value: int = 0,
-    ) -> None:
-
-        self.maxlen = maxlen
-        self.padding_value = padding_value
-
-        super().__init__(
-            source, self._rpad,
-            modified_fields
-        )
-
-    def _rpad(self, x: Union[np.ndarray, Iterable]) -> np.ndarray:
-        x = _to_array(x)
-        if len(x) >= self.maxlen:
-            return x
-        elif len(x) > 0:
-            p = np.empty_like(x[0])
-            p.fill(self.padding_value)
-            p = np.stack(
-                [p] * (self.maxlen - len(x)),
-                axis=0
-            )
-            return np.concatenate((x, p), axis=0)
-        else:
-            raise ValueError("Cannot pad an empty element")
+    def _pad(self, field: Field, x: Iterable) -> List:
+        return list(chain(x, repeat(self.zeros[field], self.maxlen - len(x))))

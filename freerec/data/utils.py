@@ -221,7 +221,7 @@ def negsamp_vectorized_bsearch(
     positives: Union[Tuple, List], n_items: int, 
     size: Union[int, List[int], Tuple[int]] = 1,
     replacement: bool = True
-) -> np.ndarray:
+) -> List:
     r"""
     Uniformly sampling negatives according to a list of ordered positives
     See [here](https://tech.hbc.com/2018-03-23-negative-sampling-in-numpy.html) for more details.
@@ -229,7 +229,7 @@ def negsamp_vectorized_bsearch(
     Parameters:
     -----------
     positives: Union[Tuple, List], 1-D
-        The positive indices should be ordered.
+        The positive indices should be in ordered.
     n_items: int
         The number of all items.
     size: int or List[int] or Tuple[int]
@@ -244,11 +244,6 @@ def negsamp_vectorized_bsearch(
         Given `positives` is not 1-D.
     ValueError:
         Too much negatives required.
-    
-    Returns:
-    --------
-    neg_inds: np.ndarray
-        A list of negatives in the size of `size`.
     """
     positives = np.array(positives, copy=False)
     assert positives.ndim == 1, f"positives should be 1-D array but {positives.ndim}-D received ..."
@@ -264,4 +259,4 @@ def negsamp_vectorized_bsearch(
     pos_inds_adj = positives - np.arange(len(positives))
     ss = np.searchsorted(pos_inds_adj, raw_samp, side='right')
     neg_inds = raw_samp + ss
-    return neg_inds
+    return neg_inds.tolist()
