@@ -9,6 +9,8 @@ from .base import SeqRecArch
 from ..data.fields import Field
 from ..data.datasets import RecDataSet
 from ..data.postprocessing import PostProcessor
+from ..criterions import BCELoss4Logits
+
 
 class PointWiseFeedForward(nn.Module):
 
@@ -97,6 +99,8 @@ class SASRec(SeqRecArch):
             torch.ones((maxlen, maxlen), dtype=torch.bool).triu(diagonal=1)
         )
 
+        self.criterion = BCELoss4Logits(reduction='mean')
+
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -161,8 +165,17 @@ class SASRec(SeqRecArch):
         userEmbds, itemEmbds = self.encode(data)
         posEmbds = itemEmbds[data[self.IPos]] # (B, S, D)
         negEmbds = itemEmbds[data[self.INeg]] # (B, S, K, D)
-        return torch.einsum("BSD,BSD->BS", userEmbds, posEmbds).unsqueeze(-1), \
-            torch.einsum("BSD,BSKD->BSK", userEmbds, negEmbds)
+
+        posLogits = torch.einsum("BSD,BSD->BS", userEmbds, posEmbds)
+        negLogits = torch.einsum("BSD,BSKD->BSK", userEmbds, negEmbds)
+        posLabels = torch.ones_like(posLogits)
+        negLabels = torch.ones_like(negLogits)
+
+        indices = data[self.ISeq] != 0
+        rec_loss = self.criterion(posLogits[indices], posLabels[indices]) + \
+            self.criterion(negLogits[indices], negLabels[indices])
+
+        return rec_loss
 
     def recommend_from_full(self, data: Dict[Field, torch.Tensor]) -> torch.Tensor:
         userEmbds, itemEmbds = self.encode(data)

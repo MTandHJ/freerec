@@ -9,6 +9,7 @@ from .base import GenRecArch
 from ..data.datasets.base import RecDataSet
 from ..data.postprocessing import PostProcessor
 from ..data.fields import Field
+from ..criterions import BPRLoss
 
 
 class LightGCN(GenRecArch):
@@ -39,6 +40,8 @@ class LightGCN(GenRecArch):
                 normalization='sym'
             )
         )
+
+        self.criterion = BPRLoss(reduction='mean')
 
         self.reset_parameters()
 
@@ -75,11 +78,24 @@ class LightGCN(GenRecArch):
 
     def fit(self, data: Dict[Field, torch.Tensor]) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
         userEmbds, itemEmbds = self.encode()
-        userEmbds = userEmbds[data[self.User]] # (B, 1, D)
-        iposEmbds = itemEmbds[data[self.IPos]] # (B, 1, D)
-        inegEmbds = itemEmbds[data[self.INeg]] # (B, K, D)
-        return torch.einsum("BKD,BKD->BK", userEmbds, iposEmbds), \
+        users, positives, negatives = data[self.User], data[self.IPos], data[self.INeg]
+        userEmbds = userEmbds[users] # (B, 1, D)
+        iposEmbds = itemEmbds[positives] # (B, 1, D)
+        inegEmbds = itemEmbds[negatives] # (B, K, D)
+
+        rec_loss = self.criterion(
+            torch.einsum("BKD,BKD->BK", userEmbds, iposEmbds),
             torch.einsum("BKD,BKD->BK", userEmbds, inegEmbds)
+        )
+        emb_loss = self.criterion.regularize(
+            [
+                self.User.embeddings(users),
+                self.Item.embeddings(positives),
+                self.Item.embeddings(negatives)
+            ], rtype='l2'
+        ) / len(users)
+
+        return rec_loss, emb_loss
 
     def reset_ranking_buffers(self):
         userEmbds, itemEmbds = self.encode()

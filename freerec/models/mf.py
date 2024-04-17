@@ -9,6 +9,7 @@ from .base import GenRecArch
 from ..data.datasets.base import RecDataSet
 from ..data.postprocessing import PostProcessor
 from ..data.fields import Field
+from ..criterions import BPRLoss
 
 
 class MF(GenRecArch):
@@ -30,6 +31,8 @@ class MF(GenRecArch):
                 self.Item.count, embedding_dim
             )
         )
+
+        self.criterion = BPRLoss(reduction='mean')
 
         self.reset_parameters()
 
@@ -54,13 +57,27 @@ class MF(GenRecArch):
     def encode(self) -> Tuple[torch.Tensor, torch.Tensor]:
         return self.User.embeddings.weight, self.Item.embeddings.weight
 
+    def reg_loss(self, *embds: torch.Tensor):
+        loss = 0
+        for embd in embds:
+            loss += embd.square().sum()
+        loss /= embds[0].size(0)
+        loss /= 2
+        return loss
+
     def fit(self, data: Dict[Field, torch.Tensor]) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
         userEmbds, itemEmbds = self.encode()
-        userEmbds = userEmbds[data[self.User]] # (B, 1, D)
-        iposEmbds = itemEmbds[data[self.IPos]] # (B, 1, D)
-        inegEmbds = itemEmbds[data[self.INeg]] # (B, K, D)
-        return torch.einsum("BKD,BKD->BK", userEmbds, iposEmbds), \
+        users, positives, negatives = data[self.User], data[self.IPos], data[self.INeg]
+        userEmbds = userEmbds[users] # (B, 1, D)
+        iposEmbds = itemEmbds[positives] # (B, 1, D)
+        inegEmbds = itemEmbds[negatives] # (B, K, D)
+
+        rec_loss = self.criterion(
+            torch.einsum("BKD,BKD->BK", userEmbds, iposEmbds),
             torch.einsum("BKD,BKD->BK", userEmbds, inegEmbds)
+        )
+
+        return rec_loss
 
     def reset_ranking_buffers(self):
         userEmbds, itemEmbds = self.encode()
