@@ -443,7 +443,7 @@ class RecDataSet(BaseSet):
     @lru_cache()
     def has_duplicates(self) -> bool:
         """Check whether the dataset has repeated interactions."""
-        ISeq = self.fields[ITEM, ID]
+        ISeq = self.fields[ITEM, ID].fork(SEQUENCE)
         traindata = self.train().to_seqs()
         validdata = self.valid().to_seqs()
         testdata = self.test().to_seqs()

@@ -3,8 +3,9 @@
 from typing import Iterable, Tuple, Union
 
 import torch
+import numpy as np
 import pandas as pd
-from functools import lru_cache
+from itertools import chain
 
 from .tags import FieldTags
 
@@ -97,6 +98,13 @@ class Field:
         field.count = self.count
         return field
 
+    def to_module(self) -> 'FieldModule':
+        field = FieldModule(
+            self.name, *self.tags
+        )
+        field.count = self.count
+        return field
+
     def match(self, *tags: FieldTags) -> bool:
         """True if `self` matches all tags."""
         return self.__tags.issuperset(tags)
@@ -138,8 +146,48 @@ class Field:
     def __str__(self) -> str:
         return f"{self.name}:{','.join(map(lambda tag: tag.name, self.tags))}"
 
+    def to_csr(self, data: Iterable) -> torch.Tensor:
+        r"""
+        Convert batch of data to CSR Tensor.
+
+        Parameters:
+        -----------
+        data: 2-d array
+
+        Returns:
+        --------
+        data: torch.Tensor, (B, #Items)
+
+        Examples:
+        ---------
+        >>> Item: Field
+        >>> Item.count = 5
+        >>> data = [[1, 2], [3, 4]]
+        >>> Item.to_csr(data)
+        tensor(crow_indices=tensor([0, 2, 4]),
+            col_indices=tensor([1, 2, 3, 4]),
+            values=tensor([1, 1, 1, 1]), size=(2, 5), nnz=4,
+            layout=torch.sparse_csr)
+        """
+        if isinstance(data, (torch.Tensor, np.ndarray)):
+            data = data.tolist()
+        assert isinstance(data[0], (list, tuple)), f"Each row of data should be `list'|`tuple' but `{type(data[0])}' received ..."
+
+        crow_indices = np.cumsum([0] + list(map(len, data)), dtype=np.int64)
+        col_indices = list(chain(*data))
+
+        values = np.ones_like(col_indices, dtype=np.int64)
+        return torch.sparse_csr_tensor(
+            crow_indices=crow_indices,
+            col_indices=col_indices,
+            values=values,
+            size=(len(data), self.count) # B x Num of Items
+        )
+
 
 class FieldModule(Field, torch.nn.Module):
+
+    embeddings: torch.nn.Embedding
 
     def __init__(self, name: str, *tags: FieldTags) -> None:
         torch.nn.Module.__init__(self)
@@ -265,77 +313,44 @@ class FieldTuple(tuple):
 
 
 class FieldModuleList(torch.nn.ModuleList):
-    r"""A collection of fields.
-    
-    Attributes:
-        fields (nn.ModuleList): A list of fields.
-
-    Examples:
-        >>> from freerec.data.datasets import Gowalla_m1
-        >>> basepipe = Gowalla_m1("../data")
-        >>> fields = basepipe.fields
-        >>> fields = FieldModule(fields)
-    """
+    r"""A collection of fields."""
 
     def __init__(self, fields: Iterable[FieldModule]) -> None:
         super().__init__(fields)
+        assert all(isinstance(field, FieldModule) for field in self), "'FieldModuleList' receives 'FieldModule' only ..."
 
-    @lru_cache(maxsize=4)
-    def groupby(self, *tags: FieldTags) -> FieldTuple[FieldModule]:
-        r"""
-        Return those fields matching given tags.
+    def match(self, *tags: FieldTags) -> 'FieldModuleList':
+        """Return those fields matching all given tags."""
+        return FieldModuleList(field for field in self if field.match(*tags))
 
-        Parameters:
-        -----------
-        *tags: FieldTags 
-            Variable length argument list of FieldTags to filter the fields by.
+    def match_all(self, *tags: FieldTags) -> 'FieldModuleList':
+        """Return those fields matching all given tags."""
+        return FieldModuleList(field for field in self if field.match_all(*tags))
 
-        Returns:
-        --------
-        A new FieldTuple that contains only the fields whose tags match the given tags.
+    def match_any(self, *tags: FieldTags) -> 'FieldModuleList':
+        """Return those fields matching any given tags."""
+        return FieldModuleList(field for field in self if field.match_any(*tags))
 
-        Examples:
-        ---------
-        >>> from freerec.data.tags import USER, ID
-        >>> User = fields.groupby(USER, ID)
-        >>> isinstance(User, List)
-        True
-        >>> Item = fields.groupby(ITEM, ID)[0]
-        >>> Item.match(ITEM)
-        True
-        >>> Item.match(ID)
-        True
-        >>> Item.match(User)
-        False
-        """
-        return FieldTuple(field for field in self.fields if field.match(*tags))
+    def insert(self, index: int, field: FieldModule) -> None:
+        assert isinstance(field, FieldModule), "'FieldModuleList' receives 'FieldModule' only ..."
+        return super().insert(index, field)
+    
+    def append(self, field: FieldModule) -> 'FieldModuleList':
+        assert isinstance(field, FieldModule), "'FieldModuleList' receives 'FieldModule' only ..."
+        return super().append(field)
+    
+    def extend(self, fields: Iterable[FieldModule]) -> 'FieldModuleList':
+        fields = list(fields)
+        assert all(isinstance(field, FieldModule) for field in fields), "'FieldModuleList' receives 'FieldModule' only ..."
+        return super().extend(fields)
 
-    @lru_cache(maxsize=4)
-    def groupbynot(self, *tags: FieldTags) -> FieldTuple:
-        r"""
-        Return those fields not matching given tags.
-
-        Parameters:
-        -----------
-        *tags: FieldTags 
-            Variable length argument list of FieldTags to filter the fields by.
-
-        Returns:
-        --------
-            A new FieldTuple that contains only the fields whose tags do not match the given tags.
-        """
-        return FieldTuple(field for field in self.fields if not field.match(*tags))
-
-    def __len__(self):
-        return len(self.fields)
-
-    def __getitem__(self, index: Union[int, str, FieldTags, Iterable[FieldTags]]) -> Union[FieldModule, FieldTuple, None]:
+    def __getitem__(self, index: Union[int, str, FieldTags, Iterable[FieldTags]]) -> Union[FieldModule, 'FieldModuleList', None]:
         r"""
         Get fields by index.
 
         Parameters:
         -----------
-        index: Union[int, FieldTags, Iterable[FieldTags]]
+        index: Union[int, slice, FieldTags, Iterable[FieldTags]]
             - int: Return the field at position `int`.
             - str: Return the field with a name of `str`.
             - slice: Return the fields at positions of `slice`.
@@ -344,16 +359,16 @@ class FieldModuleList(torch.nn.ModuleList):
 
         Returns:
         --------
-        Fields: Union[FieldModule, FieldList, None]
-            - Field: If only one field matches given tags.
+        Fields: Union[Field, FieldTuple, None]
+            - FieldModule: If only one field matches given tags.
             - None: If none of fields matches given tags.
-            - FieldTuple: If more than one field match given tags.
+            - FieldModuleList: If more than one field match given tags.
 
         Examples:
         ---------
         >>> from freerec.data.tags import USER, ITEM, ID
-        >>> User = SparseField('User', None, int, tags=(USER, ID))
-        >>> Item = SparseField('Item', None, int, tags=(ITEM, ID))
+        >>> User = FieldModule('User', USER, ID)
+        >>> Item = FieldModule('Item', ITEM, ID)
         >>> fields = FieldModuleList([User, Item])
         >>> fields[USER, ID] is User
         True
@@ -373,22 +388,21 @@ class FieldModuleList(torch.nn.ModuleList):
         2
         >>> len(fields[:])
         2
-        >>> isinstance(fields[ID], FieldList)
+        >>> isinstance(fields[ID], FieldTuple)
         True
         """
-
         if isinstance(index, int):
             return super().__getitem__(index)
+        elif isinstance(index, str):
+            fields = FieldModuleList(field for field in self if field.name == index)
         elif isinstance(index, slice):
-            fields = FieldTuple(
+            fields = FieldModuleList(
                 super().__getitem__(index)
             )
-        elif isinstance(index, str):
-            fields = FieldTuple(field for field in self if field.name == index)
         elif isinstance(index, FieldTags):
-            fields =  self.groupby(index)
+            fields =  self.match(index)
         else:
-            fields = self.groupby(*index)
+            fields = self.match(*index)
         if len(fields) == 1:
             return fields[0]
         elif len(fields) == 0:

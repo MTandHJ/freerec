@@ -1,6 +1,6 @@
 
 
-from typing import Any, Callable, Iterable, List, Dict, Optional, Tuple, Union
+from typing import Any, Literal, Callable, Iterable, List, Dict, Optional, Tuple, Union
 
 import torch, abc, os, time, sys, signal, psutil, atexit
 import torch.distributed as dist
@@ -12,7 +12,8 @@ from itertools import product
 from collections import defaultdict
 
 from .data.datasets import RecDataSet
-from .data.fields import FieldModule, FieldTuple
+from .data.fields import Field, FieldTuple
+from .data.tags import USER, ITEM, ID, UNSEEN, SEEN
 from .data.dataloader import DataLoader
 from .models import RecSysArch
 from .criterions import BaseCriterion
@@ -20,7 +21,7 @@ from .dict2obj import Config
 from .utils import AverageMeter, Monitor, timemeter, infoLogger, import_pickle, export_pickle
 from .metrics import *
 from .parser import TIME, Parser
-from .ddp import is_main_process, main_process_only, is_distributed, shared_random_seed, synchronize
+from .ddp import is_main_process, main_process_only, shared_random_seed, synchronize
 
 
 __all__ = [
@@ -136,14 +137,14 @@ class ChiefCoach(metaclass=abc.ABCMeta):
 
     def __init__(
         self, *,
-        dataset: RecDataSet, trainpipe: IterDataPipe, validpipe: Optional[IterDataPipe], testpipe: Optional[IterDataPipe],
-        model: Union[RecSysArch, torch.nn.Module, None], criterion: Union[BaseCriterion, Callable], 
+        dataset: RecDataSet, trainpipe: IterDataPipe, validpipe: IterDataPipe, testpipe: Optional[IterDataPipe],
+        model: RecSysArch, criterion: Union[BaseCriterion, Callable], 
         optimizer: Optional[torch.optim.Optimizer], lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler],
         device: Union[torch.device, str, int]
     ):
 
         self.dataset = dataset
-        self.fields: FieldTuple[FieldModule] = FieldTuple(dataset.fields)
+        self.fields: FieldTuple[Field] = FieldTuple(dataset.fields)
         self.device = torch.device(device)
 
         self._set_datapipe(trainpipe, validpipe, testpipe)
@@ -165,23 +166,23 @@ class ChiefCoach(metaclass=abc.ABCMeta):
     def _set_datapipe(
         self,
         trainpipe,
-        validpipe=None,
+        validpipe,
         testpipe=None,
     ):
         """Set the data pipe for training, validation and test."""
         self.trainpipe = trainpipe
-        self.validpipe = self.trainpipe if validpipe is None else validpipe
+        self.validpipe = validpipe
         self.testpipe = self.validpipe if testpipe is None else testpipe
 
     def _set_other(
-        self,
-        model=None, criterion=None, optimizer=None, lr_scheduler=None,
+        self, model, 
+        criterion=None, optimizer=None, lr_scheduler=None,
     ):
         """Set the other necessary components."""
         self.criterion = criterion
-        self.model = model.to(self.device) if model else _DummyModule()
-        self.optimizer = optimizer if optimizer else _DummyModule()
-        self.lr_scheduler = lr_scheduler if lr_scheduler else _DummyModule()
+        self.model: RecSysArch = model.to(self.device)
+        self.optimizer: Optional[torch.optim.Optimizer] = optimizer if optimizer else _DummyModule()
+        self.lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = lr_scheduler if lr_scheduler else _DummyModule()
 
     def get_res_sys_arch(self) -> RecSysArch:
         model = self.model
@@ -222,7 +223,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         """Start validation and return the validation metrics."""
         self.__mode = 'valid'
         self.model.eval()
-        return self.evaluate(epoch=epoch, prefix='valid')
+        return self.evaluate(epoch=epoch, mode='valid')
 
     @timemeter
     @torch.no_grad()
@@ -230,7 +231,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         """Start testing and return the test metrics."""
         self.__mode = 'test'
         self.model.eval()
-        return self.evaluate(epoch=epoch, prefix='test')
+        return self.evaluate(epoch=epoch, mode='test')
 
     @abc.abstractmethod
     def train_per_epoch(self, epoch: int):
@@ -239,7 +240,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         )
 
     @abc.abstractmethod
-    def evaluate(self, epoch: int, prefix: str = 'valid'):
+    def evaluate(self, epoch: int, mode: str = 'valid'):
         raise NotImplementedError(
             f"{self.__class__.__name__}.evaluate() should be implemented ..."
         )
@@ -363,7 +364,7 @@ class Coach(ChiefCoach):
         self.__monitors['test'] = defaultdict(list)
 
         def set_monitor(
-            name: str, lastname: str, prefix: str = 'train', **kwargs
+            name: str, lastname: str, mode: str = 'train', **kwargs
         ):
             """Add a monitor for the specified metric."""
             try:
@@ -373,7 +374,7 @@ class Coach(ChiefCoach):
                         fmt=DEFAULT_FMTS[lastname],
                         best_caster=DEFAULT_BEST_CASTER[lastname]
                     )
-                self.__monitors[prefix][lastname].append(meter)
+                self.__monitors[mode][lastname].append(meter)
             except KeyError:
                 raise KeyError(
                     f"The metric of {lastname} is not included. "
@@ -387,13 +388,13 @@ class Coach(ChiefCoach):
         monitors = sorted(set(monitors), key=monitors.index)
 
         for name in monitors:
-            for prefix in ('train', 'valid', 'test'):
+            for mode in ('train', 'valid', 'test'):
                 if '@' in name:
                     lastname, K = name.split('@')
                     meter = set_monitor(
                         name=name,
                         lastname=lastname,
-                        prefix=prefix,
+                        mode=mode,
                         k=int(K)
                     )
                 else:
@@ -401,9 +402,9 @@ class Coach(ChiefCoach):
                     meter = set_monitor(
                         name=name,
                         lastname=lastname,
-                        prefix=prefix
+                        mode=mode
                     )
-                if prefix == 'valid' and name == which4best:
+                if mode == 'valid' and name == which4best:
                     self.meter4best = meter
                     self._best = -float('inf') if meter.caster is max else float('inf')
                     self._best_epoch = 0
@@ -543,8 +544,9 @@ class Coach(ChiefCoach):
     @torch.no_grad()
     def monitor(
         self, *values,
-        n: int = 1, mode: str = 'mean', 
-        prefix: str = 'train', pool: Optional[Iterable] = None
+        n: int = 1, reduction: str = 'mean', 
+        mode: Literal['train', 'valid', 'test'] = 'train', 
+        pool: Optional[Iterable] = None
     ):
 
         r"""
@@ -556,19 +558,19 @@ class Coach(ChiefCoach):
             The data values to be logged.
         n : int
             The batch size in general.
+        reduction : str, optional
+            The reduction to compute the metric. Can be 'sum' or 'mean' (default).
         mode : str, optional
-            The mode to compute the metric. Can be 'sum' or 'mean' (default).
-        prefix : str, optional
-            The prefix string indicating which mode the values belong to. Can be 'train', 'test' or 'valid'.
+            The mode string indicating which mode the values belong to. Can be 'train', 'test' or 'valid'.
         pool : List[str], optional
-            A list of metric names to log. If None, all metrics in the pool of `prefix` will be logged.
+            A list of metric names to log. If None, all metrics in the pool of `mode` will be logged.
         """
 
-        metrics: Dict[List] = self.monitors[prefix]
+        metrics: Dict[List] = self.monitors[mode]
         pool = metrics if pool is None else pool
         for lastname in pool:
             for meter in metrics.get(lastname.upper(), []):
-                meter(*values, n=n, mode=mode)
+                meter(*values, n=n, reduction=reduction)
 
     def step(self, epoch: int):
         r"""
@@ -585,8 +587,8 @@ class Coach(ChiefCoach):
         None
         """
         metrics: Dict[str, List[AverageMeter]]
-        for prefix, metrics in self.monitors.items():
-            infos = [f"[Coach] >>> {prefix.upper():5} @Epoch: {epoch:<4d} >>> "]
+        for mode, metrics in self.monitors.items():
+            infos = [f"[Coach] >>> {mode.upper():5} @Epoch: {epoch:<4d} >>> "]
             for meters in metrics.values():
                 infos += [meter.step() for meter in meters if meter.active]
             infoLogger(' || '.join(infos))
@@ -605,37 +607,37 @@ class Coach(ChiefCoach):
         """
         import pandas as pd
 
-        s = "|  {prefix}  |   {name}   |   {val}   |   {epoch}   |   {img}   |\n"
+        s = "|  {mode}  |   {name}   |   {val}   |   {epoch}   |   {img}   |\n"
         info = ""
-        info += "|  Prefix  |   Metric   |   Best   |   @Epoch   |   Img   |\n"
+        info += "|  Mode  |   Metric   |   Best   |   @Epoch   |   Img   |\n"
         info += "| :-------: | :-------: | :-------: | :-------: | :-------: |\n"
         data = []
         best = defaultdict(dict)
 
-        for prefix, metrics in self.monitors.items():
+        for mode, metrics in self.monitors.items():
             metrics: defaultdict[str, List[AverageMeter]]
-            freq = 1 if prefix == 'train' else self.cfg.eval_freq
+            freq = 1 if mode == 'train' else self.cfg.eval_freq
             for lastname, meters in metrics.items():
                 for meter in meters:
                     # Skip those meters never activated.
                     if len(meter.history) == 0:
                         continue
                     meter.plot(freq=freq)
-                    imgname = meter.save(path=os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR), prefix=prefix)
+                    imgname = meter.save(path=os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR), mode=mode)
                     epoch, val = meter.argbest(freq)
                     info += s.format(
-                        prefix=prefix, name=meter.name,
+                        mode=mode, name=meter.name,
                         val=val, epoch=epoch, img=f"![]({imgname})"
                     )
-                    data.append([prefix, meter.name, val, epoch])
+                    data.append([mode, meter.name, val, epoch])
                     if val != -1: # Only save available data.
-                        best[prefix][meter.name] = val
+                        best[mode][meter.name] = val
 
         file_ = os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR, self.cfg.SUMMARY_FILENAME)
         with open(file_, "w", encoding="utf8") as fh:
             fh.write(info)
 
-        df = pd.DataFrame(data, columns=['Prefix', 'Metric', 'Best', '@Epoch'])
+        df = pd.DataFrame(data, columns=['Mode', 'Metric', 'Best', '@Epoch'])
         infoLogger(str(df))
         infoLogger(f"[LoG_PaTH] >>> {self.cfg.LOG_PATH}")
 
@@ -644,20 +646,27 @@ class Coach(ChiefCoach):
 
         return best
 
-    def evaluate(self, epoch: int, prefix: str = 'valid'):
+    def try_to_device(self, data: Dict[Field, Any]) -> Dict[Field, Any]:
+        return {field: value.to(self.device) if isinstance(value, torch.Tensor) else value for field, value in data.items()}
+
+    def evaluate(self, epoch: int, mode: str = 'valid'):
         model = self.get_res_sys_arch()
         model.reset_ranking_buffers()
+        User = self.fields[USER, ID]
+        Item = self.fields[ITEM, ID]
+        IUnseen = Item.fork(UNSEEN)
+        ISeen = Item.fork(SEEN)
         for data in self.dataloader:
+            data = self.try_to_device(data)
+            users = data[User]
             if self.cfg.ranking == 'full':
-                users, seqs, unseen, seen = [col.to(self.device)for col in data]
-                scores = model.recommend(users=users.data, seqs=seqs.data)
+                scores = model.recommend_from_full(data)
                 if self.remove_seen:
-                    seen = seen.to_csr().to(self.device).to_dense().bool()
+                    seen = Item.to_csr(data[ISeen]).to(self.device).to_dense().bool()
                     scores[seen] = -1e23
-                targets = unseen.to_csr().to(self.device).to_dense()
+                targets = Item.to_csr(data[IUnseen]).to(self.device).to_dense()
             elif self.cfg.ranking == 'pool':
-                users, seqs, unseen, seen = [col.to(self.device).data for col in data]
-                scores = model.recommend(users=users, seqs=seqs, pool=unseen)
+                scores = model.recommend_from_pool(data)
                 targets = torch.zeros_like(scores)
                 targets[:, 0].fill_(1)
             else:
@@ -667,7 +676,7 @@ class Coach(ChiefCoach):
 
             self.monitor(
                 scores, targets,
-                n=len(users), mode="mean", prefix=prefix,
+                n=len(users), reduction="mean", mode=mode,
                 pool=['HITRATE', 'PRECISION', 'RECALL', 'NDCG', 'MRR']
             )
             
@@ -855,10 +864,10 @@ class Adapter:
             path = os.path.join(self.cfg.CORE_LOG_PATH, id_)
             with SummaryWriter(log_dir=path) as writer:
                 metrics = dict()
-                for prefix, best in data.items():
+                for mode, best in data.items():
                     for metric, val in best.items():
                         val = val if isinstance(val, (int, float)) else -1
-                        metrics['/'.join([prefix, metric])] = val
+                        metrics['/'.join([mode, metric])] = val
                 writer.add_hparams(
                     params, metrics,
                 )

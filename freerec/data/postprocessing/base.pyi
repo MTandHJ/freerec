@@ -6,7 +6,6 @@ import torchdata.datapipes as dp
 from torch.utils.data import DataChunk, default_collate
 
 from .sampler import NUM_NEGS_FOR_SAMPLE_BASED_RANKING
-from ..datasets import RecDataSet
 from ..fields import Field, FieldTuple
 
 
@@ -33,9 +32,6 @@ class BaseProcessor(dp.iter.IterDataPipe):
     AttributeError: 
         If `fields' are not given or `None` before using.
     """
-
-    @property
-    def dataset(self) -> RecDataSet: ...
 
     @property
     def fields(self) -> FieldTuple[Field]: ...
@@ -281,10 +277,6 @@ class BaseProcessor(dp.iter.IterDataPipe):
    
 class Source(BaseProcessor):
     """Source datapipe. The start point of Train/valid/test datapipe"""
-
-    dataset: RecDataSet
-
-    def __init__(self, dataset: RecDataSet) -> None: ...
 
     def set_seed(self, seed: int) -> None: ...
 

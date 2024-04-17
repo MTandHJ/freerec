@@ -80,19 +80,19 @@ class AverageMeter:
         self.count = 0
         self.active = False
 
-    def gather(self, val: float, n: int, mode: str):
+    def gather(self, val: float, n: int, reduction: str):
         """Gather metrics from other processes (DDP)."""
         vals = all_gather(val)
         ns = all_gather(n)
-        if mode == "mean":
+        if reduction == "mean":
             val = sum([val * n for val, n in zip(vals, ns)])
-        elif mode == "sum":
+        elif reduction == "sum":
             val = sum(vals)
         else:
-            raise ValueError(f"Receive mode {mode} but 'mean' or 'sum' expected ...")
+            raise ValueError(f"Receive reduction {reduction} but 'mean' or 'sum' expected ...")
         return val, int(sum(ns))
 
-    def update(self, val: float, n: int = 1, mode: str = "mean") -> None:
+    def update(self, val: float, n: int = 1, reduction: str = "mean") -> None:
         r"""
         Updates the meter.
 
@@ -102,10 +102,10 @@ class AverageMeter:
             Value.
         n: int, optional (default: 1)
             Batch size.
-        mode: str, optional (default: "mean")
-            Mode: 'sum'|'mean'.
+        reduction: str, optional (default: "mean")
+            Reduction: 'sum'|'mean'.
         """
-        val, n = self.gather(val, n, mode)
+        val, n = self.gather(val, n, reduction)
         self.val = val
         self.count += n
         self.sum += val
@@ -166,7 +166,7 @@ class AverageMeter:
         )
         ax.set_title(self.name)
 
-    def save(self, path: str, prefix: str = '') -> None:
+    def save(self, path: str, mode: str = '') -> None:
         r"""
         Save the curves as a PNG file.
 
@@ -174,15 +174,15 @@ class AverageMeter:
         -----------
         path : str
             The path to save the file to.
-        prefix : str, optional
-            The prefix to add to the filename.
+        mode : str, optional
+            The mode to add to the filename.
 
         Returns:
         --------
         filename : str
             The filename of the saved file.
         """
-        filename = f"{prefix}{self.name}.png"
+        filename = f"{mode}{self.name}.png"
         self.fig.savefig(os.path.join(path, filename))
         plt.close(self.fig)
         return filename
@@ -230,7 +230,7 @@ class AverageMeter:
         fmtstr = "{name} Avg: {avg:{fmt}}"
         return fmtstr.format(**self.__dict__)
 
-    def __call__(self, *values, n: int = 1, mode: str = "mean")  -> None:
+    def __call__(self, *values, n: int = 1, reduction: str = "mean")  -> None:
         r"""
         Add a new data point to the history.
 
@@ -240,14 +240,13 @@ class AverageMeter:
             The value(s) to add to the history.
         n : int, optional
             The number of times to add each value, defaults to 1.
-        mode : str, optional
-            The mode of adding values: 'mean' or 'sum', defaults to 'mean'.
+        reduction : str, optional
+            The reduction of adding values: 'mean' or 'sum', defaults to 'mean'.
         """
         self.active = True
         self.update(
-            val = self.check(*values),
-            n = n,
-            mode = mode
+            val=self.check(*values),
+            n=n, reduction=reduction
         )
 
 
