@@ -22,7 +22,7 @@ class BERT4Rec(SeqRecArch):
         self, dataset: RecDataSet,
         maxlen: int = 50, embedding_dim: int = 64,
         mask_ratio: float = 0.3, dropout_rate: float = 0.2, 
-        num_blocks: int = 2, num_heads: int = 4,
+        num_blocks: int = 1, num_heads: int = 2,
     ) -> None:
         super().__init__(dataset)
 
@@ -32,7 +32,8 @@ class BERT4Rec(SeqRecArch):
 
         self.Item.add_module(
             "embeddings", nn.Embedding(
-                self.Item.count + self.NUM_PADS, embedding_dim
+                self.Item.count + self.NUM_PADS, embedding_dim,
+                padding_idx=self.PADDING_VALUE
             )
         )
 
@@ -57,7 +58,7 @@ class BERT4Rec(SeqRecArch):
             num_layers=num_blocks
         )
 
-        self.fc = nn.Linear(embedding_dim, self.Item.count)
+        self.fc = nn.Linear(embedding_dim, self.Item.count + self.NUM_PADS)
 
         self.criterion = CrossEntropy4Logits(reduction='mean')
 
@@ -75,10 +76,9 @@ class BERT4Rec(SeqRecArch):
                 m.weight.data.clamp_(-0.02, 0.02)
 
     def sure_trainpipe(self, maxlen: int, batch_size: int) -> PostProcessor:
-        return self.dataset.train().shuffled_seqs_source().sharding_filter(
-        ).lprune_(
-            maxlen, modified_fields=(self.ISeq,)
-        ).add_(
+        return self.dataset.train().shuffled_seqs_source(
+            maxlen
+        ).sharding_filter().add_(
             self.NUM_PADS, modified_fields=(self.ISeq,)
         ).lpad_(
             maxlen, modified_fields=(self.ISeq,)
@@ -167,10 +167,10 @@ class BERT4Rec(SeqRecArch):
     def recommend_from_full(self, data: Dict[Field, torch.Tensor]) -> torch.Tensor:
         userEmbds = self.encode(data)
         userEmbds = userEmbds[:, -1, :] # (B, D)
-        return self.fc(userEmbds)
+        return self.fc(userEmbds)[:, self.NUM_PADS:]
 
     def recommend_from_pool(self, data: Dict[Field, torch.Tensor]) -> torch.Tensor:
         userEmbds = self.encode(data)
         userEmbds = userEmbds[:, -1, :] # (B, D)
-        scores = self.fc(userEmbds) # (B, N)
+        scores = self.fc(userEmbds)[:, self.NUM_PADS:] # (B, N)
         return scores.gather(data[self.IUnseen]) # (B, 101)

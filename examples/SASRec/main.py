@@ -3,7 +3,7 @@
 import torch
 import freerec
 
-freerec.declare(version='0.7.5')
+freerec.declare(version='1.0.1')
 
 cfg = freerec.parser.Parser()
 cfg.add_argument("--maxlen", type=int, default=50)
@@ -36,8 +36,12 @@ class CoachForSASRec(freerec.launcher.Coach):
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
-            
-            self.monitor(loss.item(), n=len(data[self.model.User]), reduction="mean", mode='train', pool=['LOSS'])
+           
+            self.monitor(
+                loss.item(), 
+                n=len(data[self.model.User]), reduction="mean", 
+                mode='train', pool=['LOSS']
+            )
 
 
 def main():

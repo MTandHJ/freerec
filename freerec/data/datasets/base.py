@@ -370,8 +370,17 @@ class RecDataSet(BaseSet):
         users, items = self.interdata[User], self.interdata[Item]
         return self.to_rows({User: users, Item:items})
 
-    def to_seqs(self) -> List[Dict[Field, Union[int, Tuple[int]]]]:
-        """Return dataset in sequence."""
+    def to_seqs(self, maxlen: Optional[int] = None) -> List[Dict[Field, Union[int, Tuple[int]]]]:
+        r"""
+        Return dataset in sequence.
+
+        Parameters:
+        -----------
+        maxlen: int, optional
+            Maximum length
+            `None`: return the whole sequence
+            `int`: return the recent `maxlen` items
+        """
         User = self.fields[USER, ID]
         Item = self.fields[ITEM, ID]
         seqs = [[] for id_ in range(User.count)]
@@ -381,7 +390,10 @@ class RecDataSet(BaseSet):
             self.to_pairs()
         )
         users = list(range(User.count))
-        seqs = [tuple(items) for items in seqs]
+        if maxlen is not None:
+            seqs = [tuple(items[-maxlen:]) for items in seqs]
+        else:
+            seqs = [tuple(items) for items in seqs]
 
         return self.to_rows({User: users, Item.fork(SEQUENCE): seqs})
 
@@ -404,13 +416,11 @@ class RecDataSet(BaseSet):
         """
         User = self.fields[USER, ID]
         ISeq = self.fields[ITEM, ID].fork(SEQUENCE)
-        data = self.to_seqs()
+        data = self.to_seqs(maxlen)
 
         roll_seqs = []
         for row in data:
             user, seq = row[User], row[ISeq]
-            if maxlen is not None:
-                seq = seq[-maxlen:]
             if len(seq) <= minlen and keep_at_least_itself:
                 roll_seqs.append(
                     {User: user, ISeq: seq}
@@ -690,9 +700,16 @@ class RecDataSet(BaseSet):
         return RandomShuffledSource(self, self.to_pairs())
 
     @safe_mode('train')
-    def shuffled_seqs_source(self):
+    def shuffled_seqs_source(self, maxlen: Optional[int] = None):
         r"""
         To random shuffled (User, ISeq) source.
+
+        Parameters:
+        -----------
+        maxlen: int, optional
+            Maximum length
+            `None`: return the whole sequence
+            `int`: return the recent `maxlen` items
 
         Examples:
         ---------
@@ -704,7 +721,7 @@ class RecDataSet(BaseSet):
         dict_keys([Field(USER:ID,USER), Field(ITEM:ID,ITEM,SEQUENCE)])
         """
         from ..postprocessing.source import RandomShuffledSource
-        return RandomShuffledSource(self, self.to_seqs())
+        return RandomShuffledSource(self, self.to_seqs(maxlen))
 
     @safe_mode('train')
     def shuffled_roll_seqs_source(

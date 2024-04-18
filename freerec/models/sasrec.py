@@ -117,11 +117,12 @@ class SASRec(SeqRecArch):
                 nn.init.constant_(m.bias, 0.)
 
     def sure_trainpipe(self, maxlen: int, batch_size: int) -> PostProcessor:
-        return self.dataset.train().shuffled_seqs_source().sharding_filter(
-        ).seq_train_yielding_pos_().seq_train_sampling_neg_(
+        return self.dataset.train().shuffled_seqs_source(
+           maxlen=maxlen 
+        ).sharding_filter().seq_train_yielding_pos_(
+            start_idx_for_target=1, end_idx_for_input=-1
+        ).seq_train_sampling_neg_(
             num_negatives=1
-        ).lprune_(
-            maxlen, modified_fields=(self.ISeq, self.IPos, self.INeg)
         ).add_(
             offset=self.NUM_PADS, modified_fields=(self.ISeq,)
         ).lpad_(
