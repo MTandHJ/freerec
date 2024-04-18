@@ -5,8 +5,7 @@ from typing import List, Tuple, Optional, Iterable
 import random
 import torchdata.datapipes as dp
 
-from .base import PostProcessor
-from ..datasets.base import RecDataSet
+from .base import PostProcessor, BaseProcessor
 from ..fields import Field
 from ..tags import USER, ITEM, ID, SEQUENCE, UNSEEN, SEEN, POSITIVE, NEGATIVE,  MATCHING, NEXTITEM
 from ..utils import negsamp_vectorized_bsearch
@@ -34,7 +33,7 @@ class BaseSampler(PostProcessor):
         The dataset that provides the data source.
     """
 
-    def __init__(self, source: dp.iter.IterDataPipe) -> None:
+    def __init__(self, source: BaseProcessor) -> None:
         super().__init__(source)
         self.User: Field = self.fields[USER, ID]
         self.Item: Field = self.fields[ITEM, ID]
@@ -66,7 +65,7 @@ class BaseSampler(PostProcessor):
 @dp.functional_datapipe("gen_train_sampling_pos_")
 class GenTrainPositiveSampler(BaseSampler):
 
-    def __init__(self, source: dp.iter.IterDataPipe) -> None:
+    def __init__(self, source: BaseProcessor) -> None:
         super().__init__(source)
         self.IPos = self.Item.fork(POSITIVE)
 
@@ -115,8 +114,8 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
 
     def __init__(
         self, 
-        source: dp.iter.IterDataPipe,
-        unseen_only: bool = True, num_negatives: int = 1
+        source: BaseProcessor,
+        num_negatives: int = 1, unseen_only: bool = True
     ) -> None:
         super().__init__(source)
         self.INeg = self.Item.fork(NEGATIVE)
@@ -180,7 +179,7 @@ class SeqTrainPositiveYielder(BaseSampler):
 
     def __init__(
         self, 
-        source: dp.iter.IterableWrapper,
+        source: BaseProcessor,
         start_idx_for_target: Optional[int] = 1, 
         end_idx_for_input: Optional[int] = -1,
     ) -> None:
@@ -211,8 +210,8 @@ class SeqTrainNegativeSampler(BaseSampler):
 
     def __init__(
         self, 
-        source: dp.iter.IterDataPipe,
-        unseen_only: bool = True, num_negatives: int = 1
+        source: BaseProcessor,
+        num_negatives: int = 1, unseen_only: bool = True
     ) -> None:
         super().__init__(source)
         self.ISeq = self.Item.fork(SEQUENCE)
@@ -270,7 +269,7 @@ class SeqTrainNegativeSampler(BaseSampler):
 class ValidSampler(BaseSampler):
 
     def __init__(
-        self, source: dp.iter.IterDataPipe,
+        self, source: BaseProcessor,
         ranking: str = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING
     ) -> None:
         super().__init__(source)

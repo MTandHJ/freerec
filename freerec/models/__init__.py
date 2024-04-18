@@ -5,6 +5,9 @@ from .base import (
 )
 
 from .lightgcn import LightGCN
+from .mf import MF
+
+from .bert4rec import BERT4Rec
 from .sasrec import SASRec
 
 
@@ -12,6 +15,8 @@ __all__ = [
     'RecSysArch', 'GenRecArch', 'SeqRecArch',
     # General
     'LightGCN',
+    'MF',
     # Sequential
+    'BERT4Rec',
     'SASRec',
 ]

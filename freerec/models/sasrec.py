@@ -169,7 +169,7 @@ class SASRec(SeqRecArch):
         posLogits = torch.einsum("BSD,BSD->BS", userEmbds, posEmbds)
         negLogits = torch.einsum("BSD,BSKD->BSK", userEmbds, negEmbds)
         posLabels = torch.ones_like(posLogits)
-        negLabels = torch.ones_like(negLogits)
+        negLabels = torch.zeros_like(negLogits)
 
         indices = data[self.ISeq] != 0
         rec_loss = self.criterion(posLogits[indices], posLabels[indices]) + \

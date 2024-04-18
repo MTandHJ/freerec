@@ -16,7 +16,6 @@ from .data.fields import Field, FieldTuple
 from .data.tags import USER, ITEM, ID, UNSEEN, SEEN
 from .data.dataloader import DataLoader
 from .models import RecSysArch
-from .criterions import BaseCriterion
 from .dict2obj import Config
 from .utils import AverageMeter, Monitor, timemeter, infoLogger, import_pickle, export_pickle
 from .metrics import *
@@ -119,8 +118,6 @@ class ChiefCoach(metaclass=abc.ABCMeta):
     model : Union[RecSysArch, torch.nn.Module, None]
         Model for training and evaluating. 
         If `None`, use _DummyModule instead, which should not call `forward`.
-    criterion : Union[BaseCriterion, Callable]
-        Callable for computing the loss function.
     optimizer : torch.optim.Optimizer, optional
         Optimizer for updating model parameters. 
         If `None`, use _DummyModule instead, which should not call `step` and `backward`.
@@ -138,8 +135,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
     def __init__(
         self, *,
         dataset: RecDataSet, trainpipe: IterDataPipe, validpipe: IterDataPipe, testpipe: Optional[IterDataPipe],
-        model: RecSysArch, criterion: Union[BaseCriterion, Callable], 
-        optimizer: Optional[torch.optim.Optimizer], lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler],
+        model: RecSysArch, optimizer: Optional[torch.optim.Optimizer], lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler],
         device: Union[torch.device, str, int]
     ):
 
@@ -148,7 +144,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         self.device = torch.device(device)
 
         self._set_datapipe(trainpipe, validpipe, testpipe)
-        self._set_other(model, criterion, optimizer, lr_scheduler)
+        self._set_other(model, optimizer, lr_scheduler)
 
         self.__mode = 'train'
 
@@ -175,11 +171,9 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         self.testpipe = self.validpipe if testpipe is None else testpipe
 
     def _set_other(
-        self, model, 
-        criterion=None, optimizer=None, lr_scheduler=None,
+        self, model, optimizer=None, lr_scheduler=None,
     ):
         """Set the other necessary components."""
-        self.criterion = criterion
         self.model: RecSysArch = model.to(self.device)
         self.optimizer: Optional[torch.optim.Optimizer] = optimizer if optimizer else _DummyModule()
         self.lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = lr_scheduler if lr_scheduler else _DummyModule()

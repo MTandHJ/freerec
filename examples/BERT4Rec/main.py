@@ -10,10 +10,11 @@ cfg.add_argument("--maxlen", type=int, default=50)
 cfg.add_argument("--num-heads", type=int, default=1)
 cfg.add_argument("--num-blocks", type=int, default=2)
 cfg.add_argument("--embedding-dim", type=int, default=64)
+cfg.add_argument("--mask-ratio", type=float, default=0.3)
 cfg.add_argument("--dropout-rate", type=float, default=0.2)
 
 cfg.set_defaults(
-    description="SASRec",
+    description="BERT4Rec",
     root="../../data",
     dataset='Amazon2014Beauty_550_LOU',
     epochs=200,
@@ -26,7 +27,7 @@ cfg.set_defaults(
 cfg.compile()
 
 
-class CoachForSASRec(freerec.launcher.Coach):
+class CoachForBERT4Rec(freerec.launcher.Coach):
 
     def train_per_epoch(self, epoch: int):
         for data in self.dataloader:
@@ -47,10 +48,11 @@ def main():
     except AttributeError:
         dataset = freerec.data.datasets.RecDataSet(cfg.root, cfg.dataset, tasktag=cfg.tasktag)
 
-    model = freerec.models.SASRec(
-        dataset, maxlen=cfg.maxlen, 
-        embedding_dim=cfg.embedding_dim, dropout_rate=cfg.dropout_rate,
-        num_blocks=cfg.num_blocks, num_heads=cfg.num_heads,
+    model = freerec.models.BERT4Rec(
+        dataset, 
+        maxlen=cfg.maxlen, embedding_dim=cfg.embedding_dim, 
+        mask_ratio=cfg.mask_ratio, dropout_rate=cfg.dropout_rate,
+        num_blocks=cfg.num_blocks, num_heads=cfg.num_heads
     )
 
     # datapipe
@@ -78,7 +80,7 @@ def main():
             weight_decay=cfg.weight_decay
         )
 
-    coach = CoachForSASRec(
+    coach = CoachForBERT4Rec(
         dataset=dataset,
         trainpipe=trainpipe,
         validpipe=validpipe,

@@ -34,7 +34,7 @@ class RandomChoicedSource(Source):
         super().__init__(dataset)
 
         self.datasize = dataset.datasize
-        self.source = tuple(tuple(source))
+        self.source = tuple(source)
 
     def __len__(self):
         return self.datasize

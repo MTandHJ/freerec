@@ -81,6 +81,7 @@ class MF(GenRecArch):
 
     def reset_ranking_buffers(self):
         userEmbds, itemEmbds = self.encode()
+        self.ranking_buffer = dict()
         self.ranking_buffer[self.User] = userEmbds.detach().clone()
         self.ranking_buffer[self.Item] = itemEmbds.detach().clone()
 

@@ -158,6 +158,7 @@ class Parser(Config):
 
         self.add_argument("--root", type=str, default=".", help="data path")
         self.add_argument("--dataset", type=str, default="RecDataSet", help="useless if no need to automatically select a dataset")
+        self.add_argument("--tasktag", type=str, choices=('MATCHING', 'NEXTITEM'), default=None, help="to specify a tasktag for dataset")
         self.add_argument("--config", type=str, default=None, help="config.yaml")
         self.add_argument("--ranking", type=str, choices=('full', 'pool'), default='full', help="full: full ranking; pool: sampled-based ranking")
         self.add_argument("--retain-seen", action="store_true", default=False, help="True: retain seen candidates during evaluation")
@@ -251,6 +252,11 @@ class Parser(Config):
             # synchronize ids
             self.id = all_gather(self.id)[0]
             infoLogger(f"[DDP] >>> DDP is activated ...")
+
+    def set_tasktag(self):
+        from .data.tags import TaskTags
+        if self.tasktag is not None:
+            self['tasktag'] = TaskTags(self.tasktag.upper())
     
     @timemeter
     def load(self):
@@ -314,6 +320,8 @@ class Parser(Config):
 
         activate_benchmark(self.benchmark)
         self.seed = set_seed(self.seed)
+
+        self.set_tasktag()
 
         self.readme(self.CHECKPOINT_PATH) # create README.md
         self.readme(self.LOG_PATH)

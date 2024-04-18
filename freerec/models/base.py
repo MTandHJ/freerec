@@ -9,6 +9,7 @@ from ..data.datasets.base import RecDataSet
 from ..data.postprocessing import PostProcessor
 from ..data.fields import Field, FieldModule, FieldModuleList
 from ..data.tags import USER, ITEM, ID, SEQUENCE, UNSEEN, SEEN, POSITIVE, NEGATIVE
+from ..criterions import BaseCriterion
 
 __all__ = ['RecSysArch', 'GenRecArch', 'SeqRecArch']
 
@@ -18,6 +19,8 @@ class RecSysArch(nn.Module):
     A PyTorch Module for recommendation system architecture.
     This module contains methods for broadcasting tensors and initializing the module parameters.
     """
+
+    criterion: BaseCriterion
 
     def __init__(self, dataset: RecDataSet) -> None:
         super().__init__()

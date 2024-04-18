@@ -70,7 +70,7 @@ class LightGCN(GenRecArch):
         avgEmbds = allEmbds / (self.num_layers + 1)
         for _ in range(self.num_layers):
             allEmbds = self.Adj @ allEmbds
-            avgEmbds == allEmbds / (self.num_layers + 1)
+            avgEmbds += allEmbds / (self.num_layers + 1)
         userEmbds, itemEmbds = torch.split(
             avgEmbds, (self.User.count, self.Item.count)
         )
@@ -99,6 +99,7 @@ class LightGCN(GenRecArch):
 
     def reset_ranking_buffers(self):
         userEmbds, itemEmbds = self.encode()
+        self.ranking_buffer = dict()
         self.ranking_buffer[self.User] = userEmbds.detach().clone()
         self.ranking_buffer[self.Item] = itemEmbds.detach().clone()
 
