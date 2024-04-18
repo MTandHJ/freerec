@@ -22,7 +22,7 @@ class BERT4Rec(SeqRecArch):
         self, dataset: RecDataSet,
         maxlen: int = 50, embedding_dim: int = 64,
         mask_ratio: float = 0.3, dropout_rate: float = 0.2, 
-        num_blocks: int = 1, num_heads: int = 2,
+        num_blocks: int = 2, num_heads: int = 4,
     ) -> None:
         super().__init__(dataset)
 
@@ -30,10 +30,16 @@ class BERT4Rec(SeqRecArch):
         self.mask_ratio = mask_ratio
         self.num_blocks = num_blocks
 
+        self.Item.add_module(
+            "embeddings", nn.Embedding(
+                self.Item.count + self.NUM_PADS, embedding_dim
+            )
+        )
+
         self.Position = nn.Embedding(maxlen, embedding_dim)
         self.embdDropout = nn.Dropout(p=dropout_rate)
         self.register_buffer(
-            "positions_ids",
+            "positions",
             torch.tensor(range(0, maxlen), dtype=torch.long).unsqueeze(0)
         )
 
@@ -87,9 +93,9 @@ class BERT4Rec(SeqRecArch):
         ).add_(
             self.NUM_PADS, modified_fields=(self.ISeq,)
         ).lpad_(
-            maxlen - 1, modified_fields=(self.ISeq,)
+            maxlen - 1, modified_fields=(self.ISeq,), padding_value=self.PADDING_VALUE
         ).rpad_(
-            maxlen, modified_fields=(self.ISeq,)
+            maxlen, modified_fields=(self.ISeq,), padding_value=self.MASKING_VALUE
         ).batch_(batch_size).tensor_()
 
     def sure_testpipe(self, maxlen: int, ranking: str = 'full', batch_size: int = 256):
@@ -127,7 +133,7 @@ class BERT4Rec(SeqRecArch):
     def encode(self, data: Dict[Field, torch.Tensor]) -> torch.Tensor:
         seqs = data[self.ISeq]
         padding_mask = seqs == 0
-        seqs = self.mark_position(self.Item.look_up(seqs)) # (B, S) -> (B, S, D)
+        seqs = self.mark_position(self.Item.embeddings(seqs)) # (B, S) -> (B, S, D)
         seqs = self.dropout(self.layernorm(seqs))
         seqs = self.encoder(seqs, src_key_padding_mask=padding_mask) # (B, S, D)
 

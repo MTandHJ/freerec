@@ -7,7 +7,7 @@ freerec.declare(version='0.7.5')
 
 cfg = freerec.parser.Parser()
 cfg.add_argument("--maxlen", type=int, default=50)
-cfg.add_argument("--num-heads", type=int, default=1)
+cfg.add_argument("--num-heads", type=int, default=4)
 cfg.add_argument("--num-blocks", type=int, default=2)
 cfg.add_argument("--embedding-dim", type=int, default=64)
 cfg.add_argument("--mask-ratio", type=float, default=0.3)
