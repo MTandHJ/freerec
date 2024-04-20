@@ -66,7 +66,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     _open_kwargs = Config(
         trainfile='train.txt', validfile='valid.txt', testfile='test.txt',
         userfile='user.txt', itemfile='item.txt',
-        delimiter='\t'
+        sep='\t'
     )
 
     TASK: TaskTags
@@ -218,15 +218,15 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         """
         train_df = pd.read_csv(
             os.path.join(self.path, self._open_kwargs.trainfile),
-            delimiter=self._open_kwargs.delimiter
+            sep=self._open_kwargs.sep
         )
         valid_df = pd.read_csv(
             os.path.join(self.path, self._open_kwargs.validfile),
-            delimiter=self._open_kwargs.delimiter
+            sep=self._open_kwargs.sep
         )
         test_df = pd.read_csv(
             os.path.join(self.path, self._open_kwargs.testfile),
-            delimiter=self._open_kwargs.delimiter
+            sep=self._open_kwargs.sep
         )
 
         self.trainsize = len(train_df)
@@ -255,7 +255,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     def load_user(self):
         user_df = pd.read_csv(
             os.path.join(self.path, self._open_kwargs.userfile),
-            delimiter=self._open_kwargs.delimiter
+            sep=self._open_kwargs.sep
         )
         fields = self.build_fields(user_df.columns, USER)
         self.__userdata = {}
@@ -268,7 +268,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     def load_item(self):
         item_df = pd.read_csv(
             os.path.join(self.path, self._open_kwargs.itemfile),
-            delimiter=self._open_kwargs.delimiter
+            sep=self._open_kwargs.sep
         )
         fields = self.build_fields(item_df.columns, ITEM)
         self.__itemdata = {}

@@ -9,7 +9,7 @@ from math import floor, ceil
 
 from ..tags import USER, ITEM, ID, RATING, TIMESTAMP, FEATURE
 from ..fields import Field, FieldTuple
-
+from ..utils import download_from_url, extract_archive
 from ...utils import infoLogger, warnLogger, mkdirs
 
 
@@ -56,13 +56,34 @@ class AtomicConverter:
     ) -> None:
         super().__init__()
 
+        self.root = root
         self.dataset = dataset
         filedir = filedir if filedir else dataset
-        self.path = os.path.join(root, filedir)
-        if not os.path.exists(self.path) or not any(True for _ in os.scandir(self.path)):
-            raise FileNotFoundError(f"No such file of {self.path}, or this dir is empty ...")
+        self.path = os.path.join(self.root, filedir)
 
-        self.root = root
+        if not os.path.exists(self.path) or not any(True for _ in os.scandir(self.path)):
+            infoLogger(f"[Converter] >>> {self.path} is not available ...")
+            zipfile = dataset + ".zip"
+            zippath = os.path.join(self.root, zipfile)
+            if os.path.exists(zippath):
+                infoLogger(f"[Converter] >>> Find a compressed file: {zipfile} ...")
+                extract_archive(
+                    zippath, 
+                    self.path
+                )
+            else:
+                try:
+                    extract_archive(
+                        download_from_url(
+                            URLS[self.dataset], 
+                            root=self.root, filename=zipfile, 
+                            overwrite=False
+                        ),
+                        self.path
+                    )
+                except KeyError:
+                    raise FileNotFoundError(f"No such file of {self.path} and no such dataset {self.dataset} online...")
+
         self.dataset = dataset if dataset else self.__class__.__name__
 
         self.name_converter = {
@@ -93,7 +114,7 @@ class AtomicConverter:
             if not filename.endswith('.inter'):
                 continue
             file_ = os.path.join(self.path, filename)
-            df = pd.read_csv(file_, delimiter='\t')
+            df = pd.read_csv(file_, sep='\t')
             infoLogger(f"[Converter] >>> Load `{filename}' ...")
             return self.convert_by_column(df)
         infoLogger(f"[Converter] >>> No file ends with `.inter' ...")
@@ -104,7 +125,7 @@ class AtomicConverter:
             if not filename.endswith('.user'):
                 continue
             file_ = os.path.join(self.path, filename)
-            df = pd.read_csv(file_, delimiter='\t')
+            df = pd.read_csv(file_, sep='\t')
             infoLogger(f"[Converter] >>> Load `{filename}' ...")
             return self.convert_by_column(df)
         infoLogger(f"[Converter] >>> No file ends with `.user' ...")
@@ -115,7 +136,7 @@ class AtomicConverter:
             if not filename.endswith('.item'):
                 continue
             file_ = os.path.join(self.path, filename)
-            df = pd.read_csv(file_, delimiter='\t')
+            df = pd.read_csv(file_, sep='\t')
             infoLogger(f"[Converter] >>> Load `{filename}' ...")
             return self.convert_by_column(df)
         infoLogger(f"[Converter] >>> No file ends with `.item' ...")
@@ -521,3 +542,92 @@ class AtomicConverter:
             (trainsize + validsize + testsize) / (self.userCount * self.itemCount)
         ])
         infoLogger(table)
+
+
+URLS = {
+    # =====================================Amazon2014=====================================
+    "Amazon2014APPs": "https://zenodo.org/records/10995912/files/Amazon2014Apps.zip",
+    "Amazon2014Automotive": "https://zenodo.org/records/10995912/files/Amazon2014Automotive.zip",
+    "Amazon2014Baby": "https://zenodo.org/records/10995912/files/Amazon2014Baby.zip",
+    "Amazon2014Beauty": "https://zenodo.org/records/10995912/files/Amazon2014Beauty.zip",
+    "Amazon2014Books": "https://zenodo.org/records/10995912/files/Amazon2014Books.zip",
+    "Amazon2014CDs": "https://zenodo.org/records/10995912/files/Amazon2014CDs.zip",
+    "Amazon2014Cell": "https://zenodo.org/records/10995912/files/Amazon2014Cell.zip",
+    "Amazon2014Clothing": "https://zenodo.org/records/10995912/files/Amazon2014Clothing.zip",
+    "Amazon2014Digital": "https://zenodo.org/records/10995912/files/Amazon2014Digital.zip",
+    "Amazon2014Electronics": "https://zenodo.org/records/10995912/files/Amazon2014Electronics.zip",
+    "Amazon2014Grocery": "https://zenodo.org/records/10995912/files/Amazon2014Grocery.zip",
+    "Amazon2014Health": "https://zenodo.org/records/10995912/files/Amazon2014Health.zip",
+    "Amazon2014Home": "https://zenodo.org/records/10995912/files/Amazon2014Home.zip",
+    "Amazon2014Instant": "https://zenodo.org/records/10995912/files/Amazon2014Instant.zip",
+    "Amazon2014Kindle": "https://zenodo.org/records/10995912/files/Amazon2014Kindle.zip",
+    "Amazon2014Movies": "https://zenodo.org/records/10995912/files/Amazon2014Movies.zip",
+    "Amazon2014Musical": "https://zenodo.org/records/10995912/files/Amazon2014Musical.zip",
+    "Amazon2014Office": "https://zenodo.org/records/10995912/files/Amazon2014Office.zip",
+    "Amazon2014Patio": "https://zenodo.org/records/10995912/files/Amazon2014Patio.zip",
+    "Amazon2014Pet": "https://zenodo.org/records/10995912/files/Amazon2014Pet.zip",
+    "Amazon2014Sports": "https://zenodo.org/records/10995912/files/Amazon2014Sports.zip",
+    "Amazon2014Tools": "https://zenodo.org/records/10995912/files/Amazon2014Tools.zip",
+    "Amazon2014Toys": "https://zenodo.org/records/10995912/files/Amazon2014Toys.zip",
+    "Amazon2014Video": "https://zenodo.org/records/10995912/files/Amazon2014Video.zip",
+
+    # =====================================Amazon2018=====================================
+    "Amazon2018AllBeauty": "https://zenodo.org/records/10997743/files/Amazon2018AllBeauty.zip",
+    "Amazon2018Appliances": "https://zenodo.org/records/10997743/files/Amazon2018Appliances.zip",
+    "Amazon2018Arts": "https://zenodo.org/records/10997743/files/Amazon2018Arts.zip",
+    "Amazon2018Automotive": "https://zenodo.org/records/10997743/files/Amazon2018Automotive.zip",
+    "Amazon2018Books": "https://zenodo.org/records/10997743/files/Amazon2018Books.zip",
+    "Amazon2018CDs": "https://zenodo.org/records/10997743/files/Amazon2018CDs.zip",
+    "Amazon2018Cell": "https://zenodo.org/records/10997743/files/Amazon2018Cell.zip",
+    "Amazon2018Clothing": "https://zenodo.org/records/10997743/files/Amazon2018Clothing.zip",
+    "Amazon2018Digital": "https://zenodo.org/records/10997743/files/Amazon2018Digital.zip",
+    "Amazon2018Electronics": "https://zenodo.org/records/10997743/files/Amazon2018Electronics.zip",
+    "Amazon2018Fashion": "https://zenodo.org/records/10997743/files/Amazon2018Fashion.zip",
+    "Amazon2018Gift": "https://zenodo.org/records/10997743/files/Amazon2018Gift.zip",
+    "Amazon2018Grocery": "https://zenodo.org/records/10997743/files/Amazon2018Grocery.zip",
+    "Amazon2018Home": "https://zenodo.org/records/10997743/files/Amazon2018Home.zip",
+    "Amazon2018Industrial": "https://zenodo.org/records/10997743/files/Amazon2018Industrial.zip",
+    "Amazon2018Kindle": "https://zenodo.org/records/10997743/files/Amazon2018Kindle.zip",
+    "Amazon2018Luxury": "https://zenodo.org/records/10997743/files/Amazon2018Luxury.zip",
+    "Amazon2018Magazine": "https://zenodo.org/records/10997743/files/Amazon2018Magazine.zip",
+    "Amazon2018Movies": "https://zenodo.org/records/10997743/files/Amazon2018Movies.zip",
+    "Amazon2018Musical": "https://zenodo.org/records/10997743/files/Amazon2018Musical.zip",
+    "Amazon2018Office": "https://zenodo.org/records/10997743/files/Amazon2018Office.zip",
+    "Amazon2018Patio": "https://zenodo.org/records/10997743/files/Amazon2018Patio.zip",
+    "Amazon2018Pet": "https://zenodo.org/records/10997743/files/Amazon2018Pet.zip",
+    "Amazon2018Prime": "https://zenodo.org/records/10997743/files/Amazon2018Prime.zip",
+    "Amazon2018Software": "https://zenodo.org/records/10997743/files/Amazon2018Software.zip",
+    "Amazon2018Sports": "https://zenodo.org/records/10997743/files/Amazon2018Sports.zip",
+    "Amazon2018Tools": "https://zenodo.org/records/10997743/files/Amazon2018Tools.zip",
+    "Amazon2018Toys": "https://zenodo.org/records/10997743/files/Amazon2018Toys.zip",
+    "Amazon2018Video": "https://zenodo.org/records/10997743/files/Amazon2018Video.zip",
+
+    # =====================================MovieLens=====================================
+    "MovieLens100K": "https://zenodo.org/records/10998034/files/MovieLens100K.zip",
+    "MovieLens10M": "https://zenodo.org/records/10998034/files/MovieLens10M.zip",
+    "MovieLens1M": "https://zenodo.org/records/10998034/files/MovieLens1M.zip",
+    "MovieLens20M": "https://zenodo.org/records/10998034/files/MovieLens20M.zip",
+
+    # =====================================Tmall=====================================
+    "Tmall2016Buy": "https://zenodo.org/records/10998081/files/Tmall2016Buy.zip",
+    "Tmall2016Click": "https://zenodo.org/records/10998081/files/Tmall2016Click.zip",
+
+    # =====================================Gowalla=====================================
+    "Gowalla2010": "https://zenodo.org/records/10997653/files/Gowalla2010.zip",
+
+    # =====================================Yelp=====================================
+    "Yelp2018": "https://zenodo.org/records/10998102/files/Yelp2018.zip",
+    "Yelp2021": "https://zenodo.org/records/10998102/files/Yelp2021.zip",
+    "Yelp2022": "https://zenodo.org/records/10998102/files/Yelp2022.zip",
+
+    # =====================================Steam=====================================
+    "Steam": "https://zenodo.org/records/10998197/files/Steam.zip",
+
+    # =====================================Retailrocket=====================================
+    "RetailrocketAddtocart": "https://zenodo.org/records/10998222/files/RetailrocketAddtocart.zip",
+    "RetailrocketTransaction": "https://zenodo.org/records/10998222/files/RetailrocketTransaction.zip",
+    "RetailrocketView": "https://zenodo.org/records/10998222/files/RetailrocketView.zip",
+
+    # =====================================YahooMusic=====================================
+    "YahooMusicR1": "https://zenodo.org/records/10998284/files/YahooMusicR1.zip",
+}

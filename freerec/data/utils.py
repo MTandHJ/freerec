@@ -95,7 +95,7 @@ def download_from_url(
         filename = url.split('/')[-1]
         # Empty filenames are invalid
         assert filename, 'Can\'t construct file-name from this URL. ' \
-            'Please set the `path` option manually.'
+            'Please set the `filename` option manually.'
     file_ = os.path.join(root, filename)
 
     assert retries >= 0, "Number of retries should be at least 0"
@@ -116,13 +116,17 @@ def download_from_url(
                 if log:
                     infoLogger('[DataSet] >>> Downloading %s from %s...' % (file_, url))
                 r = requests.get(url, stream=True, verify=verify_ssl)
+                filesize = int(r.headers.get("Content-Length", 0))
                 if r.status_code != 200:
                     raise RuntimeError("Failed downloading url %s" % url)
                 with open(file_, 'wb') as f:
                     if log:
-                        for chunk in tqdm.tqdm(r.iter_content(chunk_size=chunk_size), leave=False, desc="վ'ᴗ' ի-"):
+                        progress_bar = tqdm.tqdm(total=filesize, unit="B", unit_scale=True, desc="վ'ᴗ' ի-")
+                        for chunk in r.iter_content(chunk_size=chunk_size):
                             if chunk:  # filter out keep-alive new chunks
+                                progress_bar.update(len(chunk))
                                 f.write(chunk)
+                        progress_bar.close()
                     else:
                         for chunk in r.iter_content(chunk_size=chunk_size):
                             if chunk:  # filter out keep-alive new chunks
