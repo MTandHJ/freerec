@@ -38,7 +38,7 @@ or (for latest)
 
 ## Data Pipeline
 
-> Refer to [here](./dataset%20pre-processing.md) for dataset processing and splitting.
+> Refer to [here](./dataset%20processing.md) for dataset processing and splitting.
 
 ![](docs/src/pipeline.png)
 

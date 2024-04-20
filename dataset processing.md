@@ -205,8 +205,7 @@ The datasets listed below can be downloaded automatically.
 
 ### Atomic files
 
-The following datasets are some of atmoics files from [RecBole](https://github.com/RUCAIBox/RecSysDatasets). We change their column (field) names to match the FreeRec's requirements. Other raw atmoics file can be used by manually setting `userColname, itemColname, ratingColname, timestampColname`.
-
+The following datasets are some of (`not-merged`) atmoics files from [RecBole](https://github.com/RUCAIBox/RecSysDatasets). We change their column (field) names to match the FreeRec's requirements. Other raw atmoics file can be used by manually setting `userColname, itemColname, ratingColname, timestampColname`.
 
 
 |  Dataset   |   Download |
