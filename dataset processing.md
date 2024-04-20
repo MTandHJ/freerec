@@ -67,7 +67,7 @@ freerec make [Dataset Name] --root [root] --filedir [filedir] --splitting [split
 
 - `dataset`: the 'output' dataset name
 - `root`: root path
-- `filedir`: using `dataset` instead if given `None` (default)
+- `filedir`: the directory storing `.inter, .user, .item` files. Using `dataset` instead if given `None` (default)
 - `splitting`: splitting method
     - `ROU`: Ratio On User.
         - `train`: some of the earliest interactions for each user
