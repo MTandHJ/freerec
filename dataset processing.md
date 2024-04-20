@@ -1,6 +1,6 @@
 
 
-## Dataset pre-processing
+## Dataset Processing
 
 
 ### Step 1: prepare the raw dataset
@@ -57,7 +57,7 @@ Then, in this case, we have
 - `ratingColname`: `RATING`
 - `timestampColname`: `TIMESTAMP`
 
-### Step 2: freerec make
+### Step 2: splitting using `freerec make`
 
 The following command can be used to split dataset:
 
@@ -199,9 +199,15 @@ And the pre-processed files look like:
 
 
 
-### Available datasets
+## Available datasets
 
 The datasets listed below can be downloaded automatically.
+
+### Atomic files
+
+The following datasets are some of atmoics files from [RecBole](https://github.com/RUCAIBox/RecSysDatasets). We change their column (field) names to match the FreeRec's requirements. Other raw atmoics file can be used by manually setting `userColname, itemColname, ratingColname, timestampColname`.
+
+
 
 |  Dataset   |   Download |
 | :-------------: | :-----------: |
