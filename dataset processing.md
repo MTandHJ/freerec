@@ -69,14 +69,20 @@ freerec make [Dataset Name] --root [root] --filedir [filedir] --splitting [split
 - `root`: root path
 - `filedir`: using `dataset` instead if given `None` (default)
 - `splitting`: splitting method
-    - `ROU`: Ratio On User. ![](docs/src/ROU.png)
+    - `ROU`: Ratio On User.
+        - `train`: some of the earliest interactions for each user
+        - `valid`: some of the interactions in the middle period for each user
+        - `test`: the last interactions for each user
 
     - `ROD`: Ratio On Dataset (according to `ratios`)
         - `train`: some of the earliest interactions
         - `valid`: some of the interactions in the middle period
-        - `test`: the last interactions ![](docs/src/ROD.png)
+        - `test`: the last interactions
 
-    - `LOU`: Leave-One-Out ![](docs/src/LOU.png)
+    - `LOU`: Leave-One-Out
+        - `train`: the whole user sequence except the last two
+        - `valid`: the penultimate interaction for each user
+        - `test`: the last interaction for each user
 
     - `DOU`: Day On User
         - `train`: all users whose last interaction occurred before `last_timestamp - 2 * days`
@@ -87,6 +93,9 @@ freerec make [Dataset Name] --root [root] --filedir [filedir] --splitting [split
         - `train`: all interactions occurred before `last_timestamp - 2 * days`
         - `valid`: all interactions occurred between `last_timestamp - 2 * days` and `last_timestamp - days`
         - `test`: all interactions occurred after `last_timestamp - days`
+
+![](docs/src/splitting.png)
+
 - `star4pos`: interactions will be filtered by `Rating >= star4pos` (default 0)
 - `kcore4user`: users will be filtered by $|\{i: (u, i) \in \mathcal{E}\}| \ge k$ (default $k=10$)
 - `kcore4item`: items will be filtered by $|\{u: (u, i) \in \mathcal{E}\}| \ge k$ (default $k=10$)
