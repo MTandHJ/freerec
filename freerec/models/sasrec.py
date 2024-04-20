@@ -126,7 +126,8 @@ class SASRec(SeqRecArch):
         ).add_(
             offset=self.NUM_PADS, modified_fields=(self.ISeq,)
         ).lpad_(
-            maxlen, modified_fields=(self.ISeq, self.IPos, self.INeg)
+            maxlen, modified_fields=(self.ISeq, self.IPos, self.INeg),
+            padding_value=self.PADDING_VALUE
         ).batch_(batch_size).tensor_()
 
     def mark_position(self, seqs: torch.Tensor):

@@ -4,11 +4,6 @@ from enum import Enum
 
 
 class FieldTags(Enum):
-    STR = 'STR'
-    INT = 'INT'
-    FLOAT = 'FLOAT'
-    TOKEN = 'TOKEN'
-
     ID = 'ID'
     USER = 'USER'
     ITEM = 'ITEM'
@@ -25,12 +20,6 @@ class FieldTags(Enum):
 class TaskTags(Enum):
     MATCHING = 'MATCHING'
     NEXTITEM = 'NEXTITEM'
-
-
-STR = FieldTags('STR')
-INT = FieldTags('INT')
-FLOAT = FieldTags('FLOAT')
-TOKEN = FieldTags('TOKEN')
 
 ID = FieldTags('ID')
 USER = FieldTags('USER')

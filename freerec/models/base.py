@@ -161,7 +161,7 @@ class GenRecArch(RecSysArch):
 
     def sure_validpipe(
         self, ranking: str = 'full', batch_size: int = 256
-    ):
+    ) -> PostProcessor:
         return self.dataset.valid().ordered_user_ids_source(
         ).sharding_filter().valid_sampling_(
             ranking
@@ -169,7 +169,7 @@ class GenRecArch(RecSysArch):
 
     def sure_testpipe(
         self, ranking: str = 'full', batch_size: int = 256
-    ):
+    ) -> PostProcessor:
         return self.dataset.test().ordered_user_ids_source(
         ).sharding_filter().test_sampling_(
             ranking
@@ -183,24 +183,28 @@ class SeqRecArch(RecSysArch):
 
     def sure_validpipe(
         self, maxlen: int, ranking: str = 'full', batch_size: int = 256,
-    ):
+    ) -> PostProcessor:
         return self.dataset.valid().ordered_user_ids_source(
-        ).sharding_filter().valid_sampling_(ranking).lprune_(
+        ).sharding_filter().valid_sampling_(
+            ranking
+        ).lprune_(
             maxlen, modified_fields=(self.ISeq,)
         ).add_(
             offset=self.NUM_PADS, modified_fields=(self.ISeq,)
         ).lpad_(
-            maxlen, modified_fields=(self.ISeq,), padding_value=self.PADDING_VALUE
+            maxlen, modified_fields=(self.ISeq,), 
+            padding_value=self.PADDING_VALUE
         ).batch_(batch_size).tensor_()
 
     def sure_testpipe(
         self, maxlen: int, ranking: str = 'full', batch_size: int = 256,
-    ):
+    ) -> PostProcessor:
         return self.dataset.test().ordered_user_ids_source(
         ).sharding_filter().test_sampling_(ranking).lprune_(
             maxlen, modified_fields=(self.ISeq,)
         ).add_(
             offset=self.NUM_PADS, modified_fields=(self.ISeq,)
         ).lpad_(
-            maxlen, modified_fields=(self.ISeq,), padding_value=self.PADDING_VALUE
+            maxlen, modified_fields=(self.ISeq,), 
+            padding_value=self.PADDING_VALUE
         ).batch_(batch_size).tensor_()

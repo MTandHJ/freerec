@@ -70,33 +70,16 @@ freerec make [Dataset Name] --root [root] --filedir [filedir] --splitting [split
 - `filedir`: using `dataset` instead if given `None` (default)
 - `splitting`: splitting method
     - `ROU`: Ratio On User.
-        $$
-        \underbrace{[0, 1, 2, \ldots, 18, 19]}_{\text{user sequence}}
-        \mathop{\Longrightarrow} 
-        \limits_{\text{ratios: 8,1,1}}^{
-            \text{ROU}
-        }
-        \underbrace{[0, 1, 2, \ldots, 14, 15]}_{\text{train}},
-        \underbrace{[16, 17]}_{\text{validation}},
-        \underbrace{[18, 19]}_{\text{test}},
-        $$
+        ![](docs/src/ROU.png)
 
     - `ROD`: Ratio On Dataset (according to `ratios`)
         - `train`: some of the earliest interactions
         - `valid`: some of the interactions in the middle period
         - `test`: the last interactions
+        ![](docs/src/ROD.png)
 
     - `LOU`: Leave-One-Out
-        $$
-        \underbrace{[0, 1, 2, \ldots, 18, 19]}_{\text{user sequence}}
-        \mathop{\Longrightarrow} 
-        \limits^{
-            \text{LOU}
-        }
-        \underbrace{[0, 1, 2, \ldots, 14, 15]}_{\text{train}},
-        \underbrace{[16, 17]}_{\text{validation}},
-        \underbrace{[18, 19]}_{\text{test}},
-        $$
+        ![](docs/src/LOU.png)
 
     - `DOU`: Day On User
         - `train`: all users whose last interaction occurred before `last_timestamp - 2 * days`
