@@ -71,18 +71,18 @@ freerec make [Dataset Name] --root [root] --filedir [filedir] --splitting [split
 - `splitting`: splitting method
     - `ROU`: Ratio On User.
 
-        ![](docs/src/ROU.png)
+![](docs/src/ROU.png)
 
     - `ROD`: Ratio On Dataset (according to `ratios`)
         - `train`: some of the earliest interactions
         - `valid`: some of the interactions in the middle period
         - `test`: the last interactions
 
-        ![](docs/src/ROD.png)
+![](docs/src/ROD.png)
 
     - `LOU`: Leave-One-Out
 
-        ![](docs/src/LOU.png)
+![](docs/src/LOU.png)
 
     - `DOU`: Day On User
         - `train`: all users whose last interaction occurred before `last_timestamp - 2 * days`
