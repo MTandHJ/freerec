@@ -64,7 +64,6 @@ class Amazon2014CDs_10104811_ROU(MatchingRecDataSet):
     |  9954 | 10877 |     272086    | 213755 | 26342  | 31989 | 0.002513040172344499 |
     +-------+-------+---------------+--------+--------+-------+----------------------+
     """
-    URL = "https://zenodo.org/record/7683693/files/AmazonCDs_10104811_ROU.zip"
 
 
 class Amazon2014CDs_10104712_ROU(MatchingRecDataSet):
@@ -85,7 +84,6 @@ class Amazon2014CDs_10104712_ROU(MatchingRecDataSet):
     |  9954 | 10877 |     272086    | 186347 | 27408  | 58331 | 0.002513040172344499 |
     +-------+-------+---------------+--------+--------+-------+----------------------+
     """
-    URL = "https://zenodo.org/record/7683693/files/AmazonCDs_10104712_ROU.zip"
 
 
 class Amazon2014Movies_10104811_ROU(MatchingRecDataSet):
@@ -106,7 +104,6 @@ class Amazon2014Movies_10104811_ROU(MatchingRecDataSet):
     | 21506 | 15269 |     580420    | 455956 | 56162  | 68302 | 0.0017675517274430242 |
     +-------+-------+---------------+--------+--------+-------+-----------------------+
     """
-    URL = "https://zenodo.org/record/7683693/files/AmazonMovies_10104811_ROU.zip"
 
 
 class Amazon2014Movies_10104712_ROU(MatchingRecDataSet):
@@ -127,7 +124,6 @@ class Amazon2014Movies_10104712_ROU(MatchingRecDataSet):
     | 21506 | 15269 |     580420    | 397557 | 58399  | 124464 | 0.0017675517274430242 |
     +-------+-------+---------------+--------+--------+--------+-----------------------+
     """
-    URL = "https://zenodo.org/record/7683693/files/AmazonMovies_10104712_ROU.zip"
 
 
 class Amazon2014Beauty_10104811_ROU(MatchingRecDataSet):
@@ -148,7 +144,6 @@ class Amazon2014Beauty_10104811_ROU(MatchingRecDataSet):
     |  973  |  645  |     19263     | 15008  |  1845  |  2410 | 0.030693850235426277 |
     +-------+-------+---------------+--------+--------+-------+----------------------+
     """
-    URL = "https://zenodo.org/record/7683693/files/AmazonBeauty_10104811_ROU.zip"
 
 
 class Amazon2014Beauty_10104712_ROU(MatchingRecDataSet):
@@ -169,7 +164,6 @@ class Amazon2014Beauty_10104712_ROU(MatchingRecDataSet):
     |  973  |  645  |     19263     | 13063  |  1945  |  4255 | 0.030693850235426277 |
     +-------+-------+---------------+--------+--------+-------+----------------------+
     """
-    URL = "https://zenodo.org/record/7683693/files/AmazonBeauty_10104712_ROU.zip"
 
 
 class Amazon2014Electronics_10104811_ROU(MatchingRecDataSet):
@@ -190,7 +184,6 @@ class Amazon2014Electronics_10104811_ROU(MatchingRecDataSet):
     |  9279 |  6065 |     158979    | 123648 | 14988  | 20343 | 0.002824930586818252 |
     +-------+-------+---------------+--------+--------+-------+----------------------+
     """
-    URL = "https://zenodo.org/record/7683693/files/AmazonElectronics_10104811_ROU.zip"
 
 
 class Amazon2014Electronics_10104712_ROU(MatchingRecDataSet):
