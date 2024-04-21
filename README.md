@@ -6,7 +6,7 @@
     <p>
         <a href="https://github.com/MTandHJ/freerec/blob/master/dataset%20processing.md">Dataset processing</a> |
         <a href="https://github.com/MTandHJ/freerec/blob/master/training%20and%20tuning.md">Training and Tuning</a> |
-        <a href="https://painted-lilac-f2f.notion.site/Baselines-43ed27a7e7d54e3390fbbcbb293df485?pvs=4">RecBoard</a>
+        <a href="https://github.com/MTandHJ/RecBoard">RecBoard</a>
     </p>
 </h4>
 
