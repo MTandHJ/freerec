@@ -2,7 +2,13 @@
 
 ![](docs/src/logo.png)
 
-
+<h4 align="center">
+    <p>
+        <a href="https://github.com/MTandHJ/freerec/blob/master/dataset%20processing.md">Dataset processing</a> |
+        <a href="https://github.com/MTandHJ/freerec/blob/master/training%20and%20tuning.md">Training and Tuning</a> |
+        <a href="https://painted-lilac-f2f.notion.site/Baselines-43ed27a7e7d54e3390fbbcbb293df485?pvs=4">RecBoard</a>
+    </p>
+</h4>
 
 FreeRec is a repository designed for easy (recommendation) data pre-processing and model training.
 I am a beginner in the field of recommender systems, so much of FreeRec's designs may not be as effective. In addition, you are free to specify your own framework based on FreeRec.
