@@ -350,6 +350,9 @@ class Coach(ChiefCoach):
         >>> coach: Coach
         >>> coach.compile(cfg, monitors=['loss', 'recall@10', 'recall@20', 'ndcg@10', 'ndcg@20'])
         """
+        assert isinstance(monitors, List), f"'monitors' should be a list but {type(monitors)} received ..."
+        assert isinstance(which4best, str), f"'which4best' should be a str but {type(which4best)} received ..."
+
         self.cfg = cfg
         # meters for train|valid|test
         self.__monitors = Monitor()
