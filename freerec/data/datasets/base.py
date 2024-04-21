@@ -70,7 +70,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     )
 
     TASK: TaskTags
-    URL: str
+    URL: Optional[str] = None
 
     def __init__(
         self, 
@@ -89,13 +89,16 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         filedir = filedir if filedir else self.__class__.__name__
         self.path = os.path.join(root, 'Processed', filedir)
         if not os.path.exists(self.path) or not any(True for _ in os.scandir(self.path)):
-            if download:
+            if download and self.URL is not None:
                 extract_archive(
                     download_from_url(self.URL, root, overwrite=False),
                     self.path
                 )
             else:
-                raise FileNotFoundError(f"No such file of {self.path}, or this dir is empty ...")
+                raise FileNotFoundError(
+                    f"No such file of {self.path}, or this dir is empty. \n"
+                    f"Please use `freerec make` to prepare the dataset with the following setting: \n {self.__class__.__doc__}"
+                )
 
         self.compile()
         self.check()
@@ -757,3 +760,11 @@ class RecDataSet(BaseSet):
         ])
 
         infoLogger(table)
+
+
+class MatchingRecDataSet(RecDataSet):
+    TASK = TaskTags.MATCHING
+
+
+class NextItemRecDataSet(RecDataSet):
+    TASK = TaskTags.NEXTITEM
