@@ -16,14 +16,15 @@ __all__ = [
 @dp.functional_datapipe("batch_")
 class Batcher_(PostProcessor):
     r"""
-    A postprocessor that converts a batch of samples into columns.
-    Columner takes a datapipe that yields a batch of samples, and converts them into columns. 
-    This can be useful for the following transformation (by column).
+    A postprocessor that converts a batch of rows into:
+        Dict[Field, List[Any]]
 
     Parameters:
     -----------
     source: dp.IterDataPipe 
         A datapipe that yields a batch samples.
+    batch_size: int
+    drop_last: bool, default False
     """
 
     def __init__(
@@ -45,6 +46,10 @@ class ToTensor(PostProcessor):
     r"""
     A datapipe that converts lists into torch Tensors.
     This class converts a List into a torch.Tensor.
+
+    Notes:
+    ------
+    The returned tensor is at least 2d. 
     """
 
     def at_least_2d(self, vals: torch.Tensor):

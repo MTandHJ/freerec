@@ -1,6 +1,6 @@
 
 
-from typing import List, Tuple, Optional, Iterable
+from typing import Literal, List, Tuple, Optional, Iterable
 
 import random
 import torchdata.datapipes as dp
@@ -29,8 +29,6 @@ class BaseSampler(PostProcessor):
     Parameters:
     -----------
     source: Source datapipe defined in source.py
-    dataset: RecDataSet 
-        The dataset that provides the data source.
     """
 
     def __init__(self, source: BaseProcessor) -> None:
@@ -64,6 +62,16 @@ class BaseSampler(PostProcessor):
 
 @dp.functional_datapipe("gen_train_sampling_pos_")
 class GenTrainPositiveSampler(BaseSampler):
+    r"""
+    Sampling a positive item for each user.
+
+    Examples:
+    ---------
+    >>> dataset: RecDataSet
+    >>> datapipe = dataset.train().choiced_user_ids_source().gen_train_sampling_pos_()
+    >>> next(iter(datapipe))
+    {Field(USER:ID,USER): 12623, Field(ITEM:ID,ITEM,POSITIVE): 6467}
+    """
 
     def __init__(self, source: BaseProcessor) -> None:
         super().__init__(source)
@@ -111,6 +119,30 @@ class GenTrainPositiveSampler(BaseSampler):
 
 @dp.functional_datapipe("gen_train_sampling_neg_")
 class GenTrainNegativeSampler(GenTrainPositiveSampler):
+    r"""
+    Sampling negatives for each user.
+
+    Parameters:
+    -----------
+    num_negatives: int, default to 1
+        The number of negatives for each row.
+    unseen_only: bool, default to `True`
+        `True`: sampling negatives from the unseen.
+        `False`: sampling negatives from all items.
+
+    Examples:
+    ---------
+    >>> dataset: RecDataSet
+    >>> datapipe = dataset.train().choiced_user_ids_source(
+    ).gen_train_sampling_pos_(
+    ).gen_train_sampling_neg(
+        num_negatives=2
+    )
+    >>> next(iter(datapipe))
+    {Field(USER:ID,USER): 12623,
+    Field(ITEM:ID,ITEM,POSITIVE): 6471,
+    Field(ITEM:ID,ITEM,NEGATIVE): [7415, 2353]}
+    """
 
     def __init__(
         self, 
@@ -153,12 +185,10 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
 @dp.functional_datapipe("seq_train_yielding_pos_")
 class SeqTrainPositiveYielder(BaseSampler):
     r"""
-    Sequence sampler for training.
+    Yielding positive sequence for each user sequence.
 
     Parameters:
     -----------
-    yielding_target_only: bool, default to `False`,
-        `False`: Only yielding (user, sequence)
     start_idx_for_target: int, optional
         Target sequence as seq[start_idx_for_target:]
         `None`: seq
@@ -166,15 +196,27 @@ class SeqTrainPositiveYielder(BaseSampler):
         Input sequence as seq[:end_idx_for_input]
         `None`: seq
 
-    Flows:
-    ------
-    - yielding_target_only == True:
-        yielding (user, seq)
-    - yielding_target_only == False and sampling_neg == False:
-        yielding (user, seq[:end_idx_for_input], seq[start_idx_for_target:])
-    - yielding_target_only == False and sampling_neg == True:
-        yielding (user, seq[:end_idx_for_input], seq[start_idx_for_target:], negatives)
-    where negatives is in the size of  (len(positives), num_negatives)
+    Examples:
+    ---------
+    >>> dataset: RecDataSet
+    >>> datapipe = dataset.train().shuffled_seqs_source(
+        maxlen=10
+    ).seq_train_yielding_pos_(
+        1, -1
+    )
+    >>> next(iter(datapipe))
+    {Field(USER:ID,USER): 21853,
+    Field(ITEM:ID,ITEM,SEQUENCE): (3562, 9621, 9989),
+    Field(ITEM:ID,ITEM,POSITIVE): (9621, 9989, 10579)}
+    >>> datapipe = dataset.train().shuffled_seqs_source(
+        maxlen=10
+    ).seq_train_yielding_pos_(
+        None, None
+    )
+    >>> next(iter(datapipe))
+    {Field(USER:ID,USER): 21853,
+    Field(ITEM:ID,ITEM,SEQUENCE): (3562, 9621, 9989, 10579),
+    Field(ITEM:ID,ITEM,POSITIVE): (3562, 9621, 9989, 10579)}
     """
 
     def __init__(
@@ -207,6 +249,32 @@ class SeqTrainPositiveYielder(BaseSampler):
 
 @dp.functional_datapipe("seq_train_sampling_neg_")
 class SeqTrainNegativeSampler(BaseSampler):
+    r"""
+    Sampling negatives for each positive.
+
+    Parameters:
+    -----------
+    num_negatives: int, default to 1
+        The number of negatives for each row.
+    unseen_only: bool, default to `True`
+        `True`: sampling negatives from the unseen.
+        `False`: sampling negatives from all items.
+
+    Examples:
+    ---------
+    >>> dataset: RecDataSet
+    >>> datapipe = dataset.train().shuffled_seqs_source(
+        maxlen=10
+    ).seq_train_yielding_pos_(
+    ).seq_train_sampling_neg_(
+        num_negatives=2
+    )
+    >>> next(iter(datapipe))
+    {Field(USER:ID,USER): 21853,
+    Field(ITEM:ID,ITEM,SEQUENCE): (3562, 9621, 9989),
+    Field(ITEM:ID,ITEM,POSITIVE): (9621, 9989, 10579),
+    Field(ITEM:ID,ITEM,NEGATIVE): [[4263, 5582], [1439, 1800], [7969, 9149]]}
+    """
 
     def __init__(
         self, 
@@ -267,10 +335,48 @@ class SeqTrainNegativeSampler(BaseSampler):
 
 @dp.functional_datapipe("valid_sampling_")
 class ValidSampler(BaseSampler):
+    r"""
+    Sampler for validation.
+
+    Parameters:
+    -----------
+    ranking: 'full' or 'pool', default to 'full'
+        'full': full ranking
+        'pool': sampling-based ranking
+    num_negatives: int, default to 100
+        The number of negatives for 'pool'.
+    
+    Yields:
+    -------
+    Field(USER:ID,USER): user id
+    Field(ITEM:ID,ITEM,SEQUENCE): user sequence
+    Field(ITEM:ID,ITEM,UNSEEN):
+        'full': target items
+        'pool': target items + negatives items
+    Field(ITEM:ID,ITEM,SEEN): seen items
+    
+    Examples:
+    ---------
+    >>> dataset: RecDataSet
+    >>> datapipe = dataset.valid().ordered_user_ids_source(
+    ).valid_sampling_(ranking='full')
+    >>> next(iter(datapipe))
+    {Field(USER:ID,USER): 0,
+    Field(ITEM:ID,ITEM,SEQUENCE): (9449, 9839, 10076, 11155),
+    Field(ITEM:ID,ITEM,UNSEEN): (11752,),
+    Field(ITEM:ID,ITEM,SEEN): (9449, 9839, 10076, 11155)}
+    >>> datapipe = dataset.valid().ordered_user_ids_source(
+    ).valid_sampling_(ranking='pool', num_negatives=5)
+    >>> next(iter(datapipe))
+    {Field(USER:ID,USER): 0,
+    Field(ITEM:ID,ITEM,SEQUENCE): (9449, 9839, 10076, 11155),
+    Field(ITEM:ID,ITEM,UNSEEN): (11752, 7021, 11954, 1052, 11116, 10916),
+    Field(ITEM:ID,ITEM,SEEN): (9449, 9839, 10076, 11155)}
+    """
 
     def __init__(
         self, source: BaseProcessor,
-        ranking: str = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING
+        ranking: Literal['full', 'pool'] = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING
     ) -> None:
         super().__init__(source)
         self.ISeq = self.Item.fork(SEQUENCE)
@@ -368,6 +474,44 @@ class ValidSampler(BaseSampler):
 
 @dp.functional_datapipe("test_sampling_")
 class TestSampler(ValidSampler):
+    r"""
+    Sampler for test.
+
+    Parameters:
+    -----------
+    ranking: 'full' or 'pool', default to 'full'
+        'full': full ranking
+        'pool': sampling-based ranking
+    num_negatives: int, default to 100
+        The number of negatives for 'pool'.
+    
+    Yields:
+    -------
+    Field(USER:ID,USER): user id
+    Field(ITEM:ID,ITEM,SEQUENCE): user sequence
+    Field(ITEM:ID,ITEM,UNSEEN):
+        'full': target items
+        'pool': target items + negatives items
+    Field(ITEM:ID,ITEM,SEEN): seen items
+    
+    Examples:
+    ---------
+    >>> dataset: RecDataSet
+    >>> datapipe = dataset.test().ordered_user_ids_source(
+    ).valid_sampling_(ranking='full')
+    >>> next(iter(datapipe))
+    {Field(USER:ID,USER): 0,
+    Field(ITEM:ID,ITEM,SEQUENCE): (9449, 9839, 10076, 11155),
+    Field(ITEM:ID,ITEM,UNSEEN): (11752,),
+    Field(ITEM:ID,ITEM,SEEN): (9449, 9839, 10076, 11155)}
+    >>> datapipe = dataset.test().ordered_user_ids_source(
+    ).valid_sampling_(ranking='pool', num_negatives=5)
+    >>> next(iter(datapipe))
+    {Field(USER:ID,USER): 0,
+    Field(ITEM:ID,ITEM,SEQUENCE): (9449, 9839, 10076, 11155),
+    Field(ITEM:ID,ITEM,UNSEEN): (11752, 10413, 9774, 487, 4114, 10546),
+    Field(ITEM:ID,ITEM,SEEN): (9449, 9839, 10076, 11155)}
+    """
 
     @timemeter
     def prepare(self):

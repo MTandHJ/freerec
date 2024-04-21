@@ -28,22 +28,13 @@ class RowFilter(PostProcessor):
         The source IterableDataset.
     fn : Callable
         The function to apply to the specified indices of each row.
-    indices : Iterable[int]
-        The indices of the elements in each row to which `fn` should be applied.
+    checked_fields : Iterable[Field]
+        The fields to be checked.
 
     Raises:
     -------
     TypeError
         If `indices` is not an iterable.
-
-    Attributes:
-    -----------
-    source : tud.IterableDataset
-        The source IterableDataset.
-    fn : Callable
-        The function to apply to the specified indices of each row.
-    indices : list of int
-        The indices of the elements in each row to which `fn` should be applied.
     """
 
     def __init__(
@@ -74,22 +65,13 @@ class RowMapper(PostProcessor):
         The source IterableDataset.
     fn : Callable
         The function to apply to the specified indices of each row.
-    indices : Iterable[int]
-        The indices of the elements in each row to which `fn` should be applied.
+    modified_fields : Iterable[Field]
+        The fields to be modified.
 
     Raises:
     -------
     TypeError
         If `indices` is not an iterable.
-
-    Attributes:
-    -----------
-    source : tud.IterableDataset
-        The source IterableDataset.
-    fn : Callable
-        The function to apply to the specified indices of each row.
-    modified_fields : Itertable[Field]
-        The fields to be modified by given `fn`
     """
 
     def __init__(
@@ -115,13 +97,31 @@ class LeftPruningRow(RowMapper):
 
     Parameters:
     -----------
-    source_dp: IterDataPipe 
-        The input datapipe to prune.
-    indices : Iterable[int]
-        The indices of the elements in each row to which `fn` should be applied.
     maxlen: int 
         The maximum length to prune the input data to.
+    modifields_fields: Iterable[Field]
+        The fields to be modified.
+
+    Flows:
+    ------
+    [1, 2, 3, 4] --(maxlen=3)--> [2, 3, 4]
+    [3, 4] --(maxlen=3)--> [3, 4]
+
+    Examples:
+    ---------
+    >>> dataset: RecDataSet
+    >>> ISeq = dataset[ITEM, ID].fork(SEQUENCE)
+    >>> datapipe = dataset.valid().ordered_user_ids_source(
+    ).valid_sampling_().lprune_(
+        3, modified_fields=(ISeq,)
+    )
+    >>> next(iter(datapipe))
+    {Field(USER:ID,USER): 0,
+    Field(ITEM:ID,ITEM,SEQUENCE): (9839, 10076, 11155),
+    Field(ITEM:ID,ITEM,UNSEEN): (11752,),
+    Field(ITEM:ID,ITEM,SEEN): (9449, 9839, 10076, 11155)}
     """
+
     def __init__(
         self, source: dp.iter.IterDataPipe, maxlen: int, modified_fields: Iterable[Field]
     ) -> None:
@@ -144,12 +144,29 @@ class RightPruningRow(LeftPruningRow):
 
     Parameters:
     -----------
-    source_dp: IterDataPipe 
-        The input datapipe to prune.
-    indices : Iterable[int]
-        The indices of the elements in each row to which `fn` should be applied.
     maxlen: int 
         The maximum length to prune the input data to.
+    modifields_fields: Iterable[Field]
+        The fields to be modified.
+
+    Flows:
+    ------
+    [1, 2, 3, 4] --(maxlen=3)--> [1, 2, 3]
+    [3, 4] --(maxlen=3)--> [3, 4]
+
+    Examples:
+    ---------
+    >>> dataset: RecDataSet
+    >>> ISeq = dataset[ITEM, ID].fork(SEQUENCE)
+    >>> datapipe = dataset.valid().ordered_user_ids_source(
+    ).valid_sampling_().rprune_(
+        3, modified_fields=(ISeq,)
+    )
+    >>> next(iter(datapipe))
+    {Field(USER:ID,USER): 0,
+    Field(ITEM:ID,ITEM,SEQUENCE): (9449, 9839, 10076),
+    Field(ITEM:ID,ITEM,UNSEEN): (11752,),
+    Field(ITEM:ID,ITEM,SEEN): (9449, 9839, 10076, 11155)}
     """
 
     def _prune(self, field: Field, x: Iterable) -> Iterable:
@@ -163,12 +180,25 @@ class AddingRow(RowMapper):
 
     Parameters:
     -----------
-    source_dp: dp.iter.IterDataPipe
-        Input datapipeline.
-    indices : Iterable[int]
-        The indices of the elements in each row to which `fn` should be applied.
     offset: int
         Amount to add the input data by.   
+    modifields_fields: Iterable[Field]
+        The fields to be modified.
+
+    Flows:
+    ------
+    [1, 2, 3, 4] --(offset=1)--> [2, 3, 4, 5]
+
+    Examples:
+    ---------
+    >>> dataset: RecDataSet
+    >>> ISeq = dataset[ITEM, ID].fork(SEQUENCE)
+    >>> datapipe = dataset.valid().ordered_user_ids_source(
+    ).valid_sampling_().rprune_(
+        3, modified_fields=(ISeq,)
+    ).add_(
+        1, modified_fields=(ISeq,)
+    )
     """
 
     def __init__(
@@ -202,19 +232,35 @@ class LeftPaddingRow(RowMapper):
 
     Parameters:
     -----------
-    source_dp : dp.iter.IterDataPipe
-        The source data pipeline to operate on.
-    indices : Iterable[int]
-        The indices of the elements in each row to which `fn` should be applied.
     maxlen : int
         The maximum length to pad the sequences to.
+    modifields_fields: Iterable[Field]
+        The fields to be modified.
     padding_value : int, optional (default=0)
         The value to use for padding.
 
-    Raises:
-    -------
-    ValueError:
-        To pad an empty element.
+    Flows:
+    ------
+    [1, 2, 3, 4] --(maxlen=7, padding_value=0)--> [0, 0, 0, 1, 2, 3, 4]
+    [1, 2, 3, 4] --(maxlen=4, padding_value=0)--> [1, 2, 3, 4]
+
+    Examples:
+    ---------
+    >>> dataset: RecDataSet
+    >>> ISeq = dataset[ITEM, ID].fork(SEQUENCE)
+    >>> datapipe = dataset.valid().ordered_user_ids_source(
+    ).valid_sampling_().lprune_(
+        3, modified_fields=(ISeq,)
+    ).add_(
+        1, modified_fields=(ISeq,)
+    ).lpad_(
+        5, modified_fields=(ISeq,)
+    )
+    >>> next(iter(datapipe))
+    {Field(USER:ID,USER): 0,
+    Field(ITEM:ID,ITEM,SEQUENCE): [0, 0, 9840, 10077, 11156],
+    Field(ITEM:ID,ITEM,UNSEEN): (11752,),
+    Field(ITEM:ID,ITEM,SEEN): (9449, 9839, 10076, 11155)}
     """
 
     def __init__(
@@ -257,19 +303,35 @@ class RightPaddingRow(LeftPaddingRow):
 
     Parameters:
     -----------
-    source_dp : dp.iter.IterDataPipe
-        The source data pipeline to operate on.
-    indices : Iterable[int]
-        The indices of the elements in each row to which `fn` should be applied.
     maxlen : int
-        The maximum length to right pad the sequences to.
+        The maximum length to pad the sequences to.
+    modifields_fields: Iterable[Field]
+        The fields to be modified.
     padding_value : int, optional (default=0)
         The value to use for padding.
 
-    Raises:
-    -------
-    ValueError:
-        To pad an empty element.
+    Flows:
+    ------
+    [1, 2, 3, 4] --(maxlen=7, padding_value=0)--> [1, 2, 3, 4, 0, 0, 0]
+    [1, 2, 3, 4] --(maxlen=4, padding_value=0)--> [1, 2, 3, 4]
+
+    Examples:
+    ---------
+    >>> dataset: RecDataSet
+    >>> ISeq = dataset[ITEM, ID].fork(SEQUENCE)
+    >>> datapipe = dataset.valid().ordered_user_ids_source(
+    ).valid_sampling_().rprune_(
+        3, modified_fields=(ISeq,)
+    ).add_(
+        1, modified_fields=(ISeq,)
+    ).rpad_(
+        5, modified_fields=(ISeq,)
+    )
+    >>> next(iter(datapipe))
+    {Field(USER:ID,USER): 0,
+    Field(ITEM:ID,ITEM,SEQUENCE): [9450, 9840, 10077, 0, 0],
+    Field(ITEM:ID,ITEM,UNSEEN): (11752,),
+    Field(ITEM:ID,ITEM,SEEN): (9449, 9839, 10076, 11155)}
     """
 
     def _pad(self, field: Field, x: Iterable) -> List:

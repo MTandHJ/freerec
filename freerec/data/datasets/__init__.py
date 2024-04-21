@@ -30,6 +30,19 @@ from .amazon2014 import (
     Amazon2014Office_550_LOU, Amazon2014Office_500_LOU,
 )
 
+from .amazon2018 import (
+    # NextItem
+    Amazon2018Books_550_LOU,
+    Amazon2018CDs_550_LOU,
+    Amazon2018Clothing_550_LOU,
+    Amazon2018Electronics_550_LOU,
+    Amazon2018Movies_550_LOU,
+    Amazon2018Office_550_LOU,
+    Amazon2018Sports_550_LOU,
+    Amazon2018Tools_550_LOU,
+    Amazon2018Toys_550_LOU
+)
+
 from .gowalla import (
     # Matching
     Gowalla2010_10100811_ROU, Gowalla2010_10100712_ROU

@@ -108,5 +108,3 @@ class PostProcessor(BaseProcessor):
 
     def sure_input_fields(self) -> List[Field]:
         return list(next(iter(self.source)).keys())
-
-

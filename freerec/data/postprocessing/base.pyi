@@ -57,43 +57,385 @@ class BaseProcessor(dp.iter.IterDataPipe):
         ...
 
     # Functional form of 'GenTrainPositiveSampler'
-    def gen_train_sampling_pos_(self) -> BaseProcessor: ...
+    def gen_train_sampling_pos_(self) -> BaseProcessor:
+        r"""
+        Sampling a positive item for each user.
+
+        Examples:
+        ---------
+        >>> dataset: RecDataSet
+        >>> datapipe = dataset.train().choiced_user_ids_source().gen_train_sampling_pos_()
+        >>> next(iter(datapipe))
+        {Field(USER:ID,USER): 12623, Field(ITEM:ID,ITEM,POSITIVE): 6467}
+        """
 
     # Functional form of 'GenTrainNegativeSampler'
-    def gen_train_sampling_neg_(self, num_negatives: int = 1, unseen_only: bool = True) -> BaseProcessor: ...
+    def gen_train_sampling_neg_(self, num_negatives: int = 1, unseen_only: bool = True) -> BaseProcessor:
+        r"""
+        Sampling negatives for each user.
+
+        Parameters:
+        -----------
+        num_negatives: int, default to 1
+            The number of negatives for each row.
+        unseen_only: bool, default to `True`
+            `True`: sampling negatives from the unseen.
+            `False`: sampling negatives from all items.
+
+        Examples:
+        ---------
+        >>> dataset: RecDataSet
+        >>> datapipe = dataset.train().choiced_user_ids_source(
+        ).gen_train_sampling_pos_(
+        ).gen_train_sampling_neg(
+            num_negatives=2
+        )
+        >>> next(iter(datapipe))
+        {Field(USER:ID,USER): 12623,
+        Field(ITEM:ID,ITEM,POSITIVE): 6471,
+        Field(ITEM:ID,ITEM,NEGATIVE): [7415, 2353]}
+        """
 
     # Functional form of 'SeqTrainPositiveSampler'
-    def seq_train_yielding_pos_(self, start_idx_for_target: Optional[int] = 1, end_idx_for_input: Optional[int] = -1) -> BaseProcessor: ...
+    def seq_train_yielding_pos_(self, start_idx_for_target: Optional[int] = 1, end_idx_for_input: Optional[int] = -1) -> BaseProcessor:
+        r"""
+        Yielding positive sequence for each user sequence.
+
+        Parameters:
+        -----------
+        start_idx_for_target: int, optional
+            Target sequence as seq[start_idx_for_target:]
+            `None`: seq
+        end_idx_for_input: int, optional
+            Input sequence as seq[:end_idx_for_input]
+            `None`: seq
+
+        Examples:
+        ---------
+        >>> dataset: RecDataSet
+        >>> datapipe = dataset.train().shuffled_seqs_source(
+            maxlen=10
+        ).seq_train_yielding_pos_(
+            1, -1
+        )
+        >>> next(iter(datapipe))
+        {Field(USER:ID,USER): 21853,
+        Field(ITEM:ID,ITEM,SEQUENCE): (3562, 9621, 9989),
+        Field(ITEM:ID,ITEM,POSITIVE): (9621, 9989, 10579)}
+        >>> datapipe = dataset.train().shuffled_seqs_source(
+            maxlen=10
+        ).seq_train_yielding_pos_(
+            None, None
+        )
+        >>> next(iter(datapipe))
+        {Field(USER:ID,USER): 21853,
+        Field(ITEM:ID,ITEM,SEQUENCE): (3562, 9621, 9989, 10579),
+        Field(ITEM:ID,ITEM,POSITIVE): (3562, 9621, 9989, 10579)}
+        """
         
     # Functional form of 'SeqTrainNegativeSampler'
-    def seq_train_sampling_neg_(self, num_negatives: int = 1, unseen_only: bool = True) -> BaseProcessor: ...
+    def seq_train_sampling_neg_(self, num_negatives: int = 1, unseen_only: bool = True) -> BaseProcessor:
+        r"""
+        Sampling negatives for each positive.
+
+        Parameters:
+        -----------
+        num_negatives: int, default to 1
+            The number of negatives for each row.
+        unseen_only: bool, default to `True`
+            `True`: sampling negatives from the unseen.
+            `False`: sampling negatives from all items.
+
+        Examples:
+        ---------
+        >>> dataset: RecDataSet
+        >>> datapipe = dataset.train().shuffled_seqs_source(
+            maxlen=10
+        ).seq_train_yielding_pos_(
+        ).seq_train_sampling_neg_(
+            num_negatives=2
+        )
+        >>> next(iter(datapipe))
+        {Field(USER:ID,USER): 21853,
+        Field(ITEM:ID,ITEM,SEQUENCE): (3562, 9621, 9989),
+        Field(ITEM:ID,ITEM,POSITIVE): (9621, 9989, 10579),
+        Field(ITEM:ID,ITEM,NEGATIVE): [[4263, 5582], [1439, 1800], [7969, 9149]]}
+        """
 
     # Functional form of 'ValidSampler'
-    def valid_sampling_(self, ranking: Literal['full', 'pool'] = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING) -> BaseProcessor: ...
+    def valid_sampling_(self, ranking: Literal['full', 'pool'] = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING) -> BaseProcessor:
+        r"""
+        Sampler for validation.
+
+        Parameters:
+        -----------
+        ranking: 'full' or 'pool', default to 'full'
+            'full': full ranking
+            'pool': sampling-based ranking
+        num_negatives: int, default to 100
+            The number of negatives for 'pool'.
+        
+        Yields:
+        -------
+        Field(USER:ID,USER): user id
+        Field(ITEM:ID,ITEM,SEQUENCE): user sequence
+        Field(ITEM:ID,ITEM,UNSEEN):
+            'full': target items
+            'pool': target items + negatives items
+        Field(ITEM:ID,ITEM,SEEN): seen items
+        
+        Examples:
+        ---------
+        >>> dataset: RecDataSet
+        >>> datapipe = dataset.valid().ordered_user_ids_source(
+        ).valid_sampling_(ranking='full')
+        >>> next(iter(datapipe))
+        {Field(USER:ID,USER): 0,
+        Field(ITEM:ID,ITEM,SEQUENCE): (9449, 9839, 10076, 11155),
+        Field(ITEM:ID,ITEM,UNSEEN): (11752,),
+        Field(ITEM:ID,ITEM,SEEN): (9449, 9839, 10076, 11155)}
+        >>> datapipe = dataset.valid().ordered_user_ids_source(
+        ).valid_sampling_(ranking='pool', num_negatives=5)
+        >>> next(iter(datapipe))
+        {Field(USER:ID,USER): 0,
+        Field(ITEM:ID,ITEM,SEQUENCE): (9449, 9839, 10076, 11155),
+        Field(ITEM:ID,ITEM,UNSEEN): (11752, 7021, 11954, 1052, 11116, 10916),
+        Field(ITEM:ID,ITEM,SEEN): (9449, 9839, 10076, 11155)}
+        """
 
     # Functional form of 'TestSampler'
-    def test_sampling_(self, ranking: Literal['full', 'pool'] = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING) -> BaseProcessor: ...
+    def test_sampling_(self, ranking: Literal['full', 'pool'] = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING) -> BaseProcessor:
+        r"""
+        Sampler for test.
+
+        Parameters:
+        -----------
+        ranking: 'full' or 'pool', default to 'full'
+            'full': full ranking
+            'pool': sampling-based ranking
+        num_negatives: int, default to 100
+            The number of negatives for 'pool'.
+        
+        Yields:
+        -------
+        Field(USER:ID,USER): user id
+        Field(ITEM:ID,ITEM,SEQUENCE): user sequence
+        Field(ITEM:ID,ITEM,UNSEEN):
+            'full': target items
+            'pool': target items + negatives items
+        Field(ITEM:ID,ITEM,SEEN): seen items
+        
+        Examples:
+        ---------
+        >>> dataset: RecDataSet
+        >>> datapipe = dataset.test().ordered_user_ids_source(
+        ).valid_sampling_(ranking='full')
+        >>> next(iter(datapipe))
+        {Field(USER:ID,USER): 0,
+        Field(ITEM:ID,ITEM,SEQUENCE): (9449, 9839, 10076, 11155),
+        Field(ITEM:ID,ITEM,UNSEEN): (11752,),
+        Field(ITEM:ID,ITEM,SEEN): (9449, 9839, 10076, 11155)}
+        >>> datapipe = dataset.test().ordered_user_ids_source(
+        ).valid_sampling_(ranking='pool', num_negatives=5)
+        >>> next(iter(datapipe))
+        {Field(USER:ID,USER): 0,
+        Field(ITEM:ID,ITEM,SEQUENCE): (9449, 9839, 10076, 11155),
+        Field(ITEM:ID,ITEM,UNSEEN): (11752, 10413, 9774, 487, 4114, 10546),
+        Field(ITEM:ID,ITEM,SEEN): (9449, 9839, 10076, 11155)}
+        """
 
     # Functional form of 'LeftPruningRow'
-    def lprune_(self, maxlen: int, modified_fields: Iterable[Field]) -> BaseProcessor: ...
+    def lprune_(self, maxlen: int, modified_fields: Iterable[Field]) -> BaseProcessor:
+        r"""
+        A functional datapipe that prunes the left side of a given datapipe to a specified maximum length.
+
+        Parameters:
+        -----------
+        maxlen: int 
+            The maximum length to prune the input data to.
+        modifields_fields: Iterable[Field]
+            The fields to be modified.
+
+        Flows:
+        ------
+        [1, 2, 3, 4] --(maxlen=3)--> [2, 3, 4]
+        [3, 4] --(maxlen=3)--> [3, 4]
+        
+        Examples:
+        ---------
+        >>> dataset: RecDataSet
+        >>> ISeq = dataset[ITEM, ID].fork(SEQUENCE)
+        >>> datapipe = dataset.valid().ordered_user_ids_source(
+        ).valid_sampling_().lprune_(
+            3, modified_fields=(ISeq,)
+        )
+        >>> next(iter(datapipe))
+        {Field(USER:ID,USER): 0,
+        Field(ITEM:ID,ITEM,SEQUENCE): (9839, 10076, 11155),
+        Field(ITEM:ID,ITEM,UNSEEN): (11752,),
+        Field(ITEM:ID,ITEM,SEEN): (9449, 9839, 10076, 11155)}
+        """
 
     # Functional form of 'RightPruningRow'
-    def rprune_(self, maxlen: int, modified_fields: Iterable[Field]) -> BaseProcessor: ...
+    def rprune_(self, maxlen: int, modified_fields: Iterable[Field]) -> BaseProcessor:
+        r"""
+        A functional datapipe that prunes the right side of a given datapipe to a specified maximum length.
+
+        Parameters:
+        -----------
+        maxlen: int 
+            The maximum length to prune the input data to.
+        modifields_fields: Iterable[Field]
+            The fields to be modified.
+
+        Flows:
+        ------
+        [1, 2, 3, 4] --(maxlen=3)--> [1, 2, 3]
+        [3, 4] --(maxlen=3)--> [3, 4]
+
+        Examples:
+        ---------
+        >>> dataset: RecDataSet
+        >>> ISeq = dataset[ITEM, ID].fork(SEQUENCE)
+        >>> datapipe = dataset.valid().ordered_user_ids_source(
+        ).valid_sampling_().rprune_(
+            3, modified_fields=(ISeq,)
+        )
+        >>> next(iter(datapipe))
+        {Field(USER:ID,USER): 0,
+        Field(ITEM:ID,ITEM,SEQUENCE): (9449, 9839, 10076),
+        Field(ITEM:ID,ITEM,UNSEEN): (11752,),
+        Field(ITEM:ID,ITEM,SEEN): (9449, 9839, 10076, 11155)}
+        """
 
     # Functional form of 'AddingRow'
-    def add_(self, offset: int, modified_fields: Iterable[Field]) -> BaseProcessor: ...
+    def add_(self, offset: int, modified_fields: Iterable[Field]) -> BaseProcessor:
+        r"""
+        Mapper that adds the input data by a specified offset.
+
+        Parameters:
+        -----------
+        offset: int
+            Amount to add the input data by.   
+        modifields_fields: Iterable[Field]
+            The fields to be modified.
+
+        Flows:
+        ------
+        [1, 2, 3, 4] --(offset=1)--> [2, 3, 4, 5]
+
+        Examples:
+        ---------
+        >>> dataset: RecDataSet
+        >>> ISeq = dataset[ITEM, ID].fork(SEQUENCE)
+        >>> datapipe = dataset.valid().ordered_user_ids_source(
+        ).valid_sampling_().lprune_(
+            3, modified_fields=(ISeq,)
+        ).add_(
+            1, modified_fields=(ISeq,)
+        )
+        """
 
     # Functional form of 'LeftPaddingRow'
-    def lpad_(self, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0) -> BaseProcessor: ...
+    def lpad_(self, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0) -> BaseProcessor:
+        r"""
+        A functional data pipeline component that left pads sequences to a maximum length.
+
+        Parameters:
+        -----------
+        maxlen : int
+            The maximum length to pad the sequences to.
+        modifields_fields: Iterable[Field]
+            The fields to be modified.
+        padding_value : int, optional (default=0)
+            The value to use for padding.
+
+        Flows:
+        ------
+        [1, 2, 3, 4] --(maxlen=7, padding_value=0)--> [0, 0, 0, 1, 2, 3, 4]
+        [1, 2, 3, 4] --(maxlen=4, padding_value=0)--> [1, 2, 3, 4]
+
+        Examples:
+        ---------
+        >>> dataset: RecDataSet
+        >>> ISeq = dataset[ITEM, ID].fork(SEQUENCE)
+        >>> datapipe = dataset.valid().ordered_user_ids_source(
+        ).valid_sampling_().lprune_(
+            3, modified_fields=(ISeq,)
+        ).add_(
+            1, modified_fields=(ISeq,)
+        ).lpad_(
+            5, modified_fields=(ISeq,)
+        )
+        >>> next(iter(datapipe))
+        {Field(USER:ID,USER): 0,
+        Field(ITEM:ID,ITEM,SEQUENCE): [0, 0, 9840, 10077, 11156],
+        Field(ITEM:ID,ITEM,UNSEEN): (11752,),
+        Field(ITEM:ID,ITEM,SEEN): (9449, 9839, 10076, 11155)}
+        """
 
     # Functional form of 'RightPaddingRow'
-    def rpad_(self, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0) -> BaseProcessor: ...
+    def rpad_(self, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0) -> BaseProcessor:
+        r"""
+        A functional data pipeline component that right pads sequences to a maximum length.
+
+        Parameters:
+        -----------
+        maxlen : int
+            The maximum length to pad the sequences to.
+        modifields_fields: Iterable[Field]
+            The fields to be modified.
+        padding_value : int, optional (default=0)
+            The value to use for padding.
+
+        Flows:
+        ------
+        [1, 2, 3, 4] --(maxlen=7, padding_value=0)--> [1, 2, 3, 4, 0, 0, 0]
+        [1, 2, 3, 4] --(maxlen=4, padding_value=0)--> [1, 2, 3, 4]
+
+        Examples:
+        ---------
+        >>> dataset: RecDataSet
+        >>> ISeq = dataset[ITEM, ID].fork(SEQUENCE)
+        >>> datapipe = dataset.valid().ordered_user_ids_source(
+        ).valid_sampling_().rprune_(
+            3, modified_fields=(ISeq,)
+        ).add_(
+            1, modified_fields=(ISeq,)
+        ).rpad_(
+            5, modified_fields=(ISeq,)
+        )
+        >>> next(iter(datapipe))
+        {Field(USER:ID,USER): 0,
+        Field(ITEM:ID,ITEM,SEQUENCE): [9450, 9840, 10077, 0, 0],
+        Field(ITEM:ID,ITEM,UNSEEN): (11752,),
+        Field(ITEM:ID,ITEM,SEEN): (9449, 9839, 10076, 11155)}
+        """
 
     # Functional form of 'Batcher_'
-    def batch_(self, batch_size: int, drop_last: bool = False) -> BaseProcessor: ...
+    def batch_(self, batch_size: int, drop_last: bool = False) -> BaseProcessor:
+        r"""
+        A postprocessor that converts a batch of rows into:
+            Dict[Field, List[Any]]
+
+        Parameters:
+        -----------
+        source: dp.IterDataPipe 
+            A datapipe that yields a batch samples.
+        batch_size: int
+        drop_last: bool, default False
+        """
 
     # Functional form of 'ToTensor'
-    def tensor_(self) -> BaseProcessor: ...
+    def tensor_(self) -> BaseProcessor:
+        r"""
+        A datapipe that converts lists into torch Tensors.
+        This class converts a List into a torch.Tensor.
+
+        Notes:
+        ------
+        The returned tensor is at least 2d. 
+        """
 
     #========================================Functional forms from IterDataPipe========================================
 
