@@ -171,7 +171,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         -----------
         ranking: 'full' or 'pool', default to 'full'
             'full': full ranking
-            'pool': sampling-based ranking
+            'pool': sampled-based ranking
         num_negatives: int, default to 100
             The number of negatives for 'pool'.
         
@@ -212,7 +212,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         -----------
         ranking: 'full' or 'pool', default to 'full'
             'full': full ranking
-            'pool': sampling-based ranking
+            'pool': sampled-based ranking
         num_negatives: int, default to 100
             The number of negatives for 'pool'.
         

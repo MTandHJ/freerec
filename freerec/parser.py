@@ -10,7 +10,7 @@ from .dict2obj import Config
 from .ddp import is_distributed, main_process_only, is_main_process, all_gather
 from .utils import (
     mkdirs, timemeter, set_color, set_seed, activate_benchmark, 
-    set_logger, infoLogger
+    set_logger, infoLogger, warnLogger
 )
 
 
@@ -92,6 +92,10 @@ CONFIG = Config(
     SUMMARY_FILENAME = "SUMMARY.md",
     MONITOR_FILENAME = "monitors.pkl",
     MONITOR_BEST_FILENAME = "best.pkl",
+
+    # monitors
+    monitors = [],
+    which4best = "LOSS"
 )
 
 CORE_CONFIG = Config(
@@ -126,6 +130,9 @@ class Parser(Config):
     SUMMARY_DIR: str
     CHECKPOINT_PATH: str
     LOG_PATH: str
+
+    monitors: list
+    which4best: str
 
     def __init__(self) -> None:
         super().__init__(**CONFIG)
@@ -282,8 +289,11 @@ class Parser(Config):
                         self.set_defaults(**{key: val})
                     elif key.upper() in self:
                         self[key.upper()] = val
+                    elif key in self:
+                        self[key] = val
                     else:
-                        raise KeyError(f"Unexpected parameter of `{key}' in `{args.config}' ...")
+                        self[key] = val
+                        warnLogger(f"Find an undefined parameter `{key}' in `{args.config}' ...")
         return self.parser.parse_args()
 
     @timemeter
