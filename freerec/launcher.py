@@ -257,6 +257,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         """Start training and return the training loss."""
         self.__mode = 'train'
         self.model.train()
+        self.dataloader.seed(epoch)
         return self.train_per_epoch(epoch)
 
     @timemeter

@@ -156,7 +156,7 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
         self.INeg = self.Item.fork(NEGATIVE)
         self.unseen_only = unseen_only
         self.num_negatives = num_negatives
-        self.nums_need_vectorized_bsearch = nums_need_vectorized_bsearch
+        self.need_vectorized_bsearch = self.num_negatives >= nums_need_vectorized_bsearch
 
     def _sample_one(self, seen: Iterable[int]) -> int:
         neg = random.randint(0, self.Item.count - 1)
@@ -181,12 +181,12 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
                 A list of negative items from [0, self.Item.count - 1]
         """
         seen = self.seenItems[user] if self.unseen_only else []
-        if self.num_negatives < self.nums_need_vectorized_bsearch:
-            return [self._sample_one(seen) for _ in range(self.num_negatives)]
-        else:
+        if self.need_vectorized_bsearch:
             return negsamp_vectorized_bsearch(
                 seen, self.Item.count, self.num_negatives
             )
+        else:
+            return [self._sample_one(seen) for _ in range(self.num_negatives)]
 
     def __iter__(self):
         for row in self.source:
@@ -303,7 +303,9 @@ class SeqTrainNegativeSampler(BaseSampler):
         self.INeg = self.Item.fork(NEGATIVE)
         self.unseen_only = unseen_only
         self.num_negatives = num_negatives
-        self.nums_need_vectorized_bsearch = nums_need_vectorized_bsearch
+
+        num_positives = max(self.listmap(lambda row: len(row[self.IPos]), iter(self.source)))
+        self.need_vectorized_bsearch = self.num_negatives * num_positives >= nums_need_vectorized_bsearch
 
     @timemeter
     def prepare(self):
@@ -342,15 +344,15 @@ class SeqTrainNegativeSampler(BaseSampler):
                 A list of negative items from [0, self.Item.count - 1]
         """
         seen = self.seenItems[user] if self.unseen_only else []
-        if len(positives) * self.num_negatives < self.nums_need_vectorized_bsearch:
+        if self.need_vectorized_bsearch:
+            return negsamp_vectorized_bsearch(
+                seen, self.Item.count, (len(positives), self.num_negatives)
+            )
+        else:
             return [
                 [self._sample_one(seen) for _ in range(self.num_negatives)]
                 for _ in range(len(positives))
             ]
-        else:
-            return negsamp_vectorized_bsearch(
-                seen, self.Item.count, (len(positives), self.num_negatives)
-            )
 
     def __iter__(self):
         for row in self.source:
