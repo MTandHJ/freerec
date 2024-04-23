@@ -9,6 +9,7 @@ from itertools import product
 from collections import defaultdict
 
 from .data.datasets import RecDataSet
+from .data.postprocessing import PostProcessor
 from .data.fields import Field, FieldTuple
 from .data.tags import USER, ITEM, ID, UNSEEN, SEEN
 from .models import RecSysArch
@@ -102,14 +103,24 @@ class ChiefCoach(metaclass=abc.ABCMeta):
     -----------
     dataset: RecDataSet,
         The original dataset.
+    trainpipe : IterDataPipe
+        Iterable data pipeline for training data.
+    validpipe : IterDataPipe, optional
+        Iterable data pipeline for validation data.
+    testpipe : IterDataPipe, optional
+        Iterable data pipeline for testing data.
+        If `None`, use `validpipe` instead.
     model : RecSysArch
         Model for training and evaluating. 
+    cfg: Parser
+        Configuration file.
     """
-
 
     def __init__(
         self, *,
-        dataset: RecDataSet, model: RecSysArch, cfg: Parser
+        dataset: RecDataSet,
+        trainpipe: PostProcessor, validpipe: PostProcessor, testpipe: Optional[PostProcessor], 
+        model: RecSysArch, cfg: Parser
     ):
 
         self.cfg = cfg
@@ -118,9 +129,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         self.set_device(self.cfg.device)
         self.set_dataset(dataset)
         self.set_datapipe(
-            model.sure_trainpipe(),
-            model.sure_validpipe(),
-            model.sure_testpipe()
+            trainpipe, validpipe, testpipe
         )
         self.set_dataloader()
 
@@ -354,6 +363,11 @@ class ChiefCoach(metaclass=abc.ABCMeta):
             )
         return meter
 
+    @property
+    def monitors(self) -> Monitor:
+        """Return the monitor dictionary for the different modes ('train', 'valid', 'test')."""
+        return self.__monitors
+
     def reset_monitors(
         self, monitors: List[str], which4best: str = 'LOSS'
     ):
@@ -411,10 +425,6 @@ class ChiefCoach(metaclass=abc.ABCMeta):
 
 class Coach(ChiefCoach):
 
-    @property
-    def monitors(self) -> Monitor:
-        """Return the monitor dictionary for the different modes ('train', 'valid', 'test')."""
-        return self.__monitors
 
     @property
     def meter4best(self):
@@ -670,19 +680,18 @@ class Coach(ChiefCoach):
         return {field: value.to(self.device) if isinstance(value, torch.Tensor) else value for field, value in data.items()}
 
     def evaluate(self, epoch: int, mode: str = 'valid'):
-        model = self.get_res_sys_arch()
-        model.reset_ranking_buffers()
+        self.get_res_sys_arch().reset_ranking_buffers()
         for data in self.dataloader:
             data = self.dict_to_device(data)
             users = data[self.User]
             if self.cfg.ranking == 'full':
-                scores = model.recommend_from_full(data)
+                scores = self.model(data, ranking='full')
                 if self.remove_seen:
                     seen = self.Item.to_csr(data[self.ISeen]).to(self.device).to_dense().bool()
                     scores[seen] = -1e23
                 targets = self.Item.to_csr(data[self.IUnseen]).to(self.device).to_dense()
             elif self.cfg.ranking == 'pool':
-                scores = model.recommend_from_pool(data)
+                scores = self.model(data, ranking='pool')
                 targets = torch.zeros_like(scores)
                 targets[:, 0].fill_(1)
             else:
