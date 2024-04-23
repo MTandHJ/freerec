@@ -2,7 +2,7 @@
 
 from typing import TypeVar, Any, Iterator, Iterable, Callable, Dict, List
 
-import torch, random
+import torch
 import torchdata.datapipes as dp
 from torch.utils.data.graph_settings import get_all_graph_pipes
 
@@ -10,7 +10,7 @@ from ..datasets.base import RecDataSet
 from ..fields import Field, FieldTuple
 
 
-__all__ = ['BaseProcessor', 'Postprocessor']
+__all__ = ['BaseProcessor', 'Source', 'PostProcessor']
 
 
 T = TypeVar('T')
@@ -78,13 +78,9 @@ class BaseProcessor(dp.iter.IterDataPipe):
 class Source(BaseProcessor):
     """Source datapipe. The start point of Train/valid/test datapipe"""
 
-    def __init__(self, dataset: RecDataSet) -> None:
+    def __init__(self, dataset: RecDataSet, source: Iterable) -> None:
         super().__init__(dataset)
-        self._rng = random.Random()
-        self.set_seed(0)
-
-    def set_seed(self, seed: int):
-        self._rng.seed(seed)
+        self.source = tuple(source)
 
 
 class PostProcessor(BaseProcessor):

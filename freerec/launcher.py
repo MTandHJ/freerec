@@ -5,7 +5,6 @@ from typing import Any, Literal, Callable, Iterable, List, Dict, Optional, Tuple
 import torch, abc, os, time, sys, signal, psutil, atexit
 import torch.distributed as dist
 from torchdata.datapipes.iter import IterDataPipe
-from torch.utils.data.graph_settings import get_all_graph_pipes
 from torch.utils.tensorboard import SummaryWriter
 from functools import partial
 from itertools import product
@@ -14,13 +13,12 @@ from collections import defaultdict
 from .data.datasets import RecDataSet
 from .data.fields import Field, FieldTuple
 from .data.tags import USER, ITEM, ID, UNSEEN, SEEN
-from .data.dataloader import DataLoader
 from .models import RecSysArch
 from .dict2obj import Config
 from .utils import AverageMeter, Monitor, timemeter, infoLogger, import_pickle, export_pickle
 from .metrics import *
 from .parser import TIME, Parser
-from .ddp import is_main_process, main_process_only, shared_random_seed, synchronize
+from .ddp import is_main_process, main_process_only, is_distributed, synchronize
 
 
 __all__ = [
@@ -187,17 +185,6 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         assert isinstance(model, RecSysArch), "No RecSysArch found ..."
         return model
 
-    def seed_worker(self):
-        """Set seed to keep consistent across differents ranks."""
-        datapipe = self.trainpipe
-        if isinstance(datapipe, IterDataPipe):
-            graph = torch.utils.data.graph.traverse_dps(datapipe)
-            for pipe in get_all_graph_pipes(graph):
-                if hasattr(pipe, "set_seed"):
-                    pipe.set_seed(
-                        shared_random_seed()
-                    )
-
     @property
     def mode(self):
         """Get the current mode of the chief coach."""
@@ -207,7 +194,6 @@ class ChiefCoach(metaclass=abc.ABCMeta):
     def train(self, epoch: int):
         """Start training and return the training loss."""
         self.__mode = 'train'
-        self.seed_worker()
         self.model.train()
         return self.train_per_epoch(epoch)
 
@@ -281,20 +267,33 @@ class Coach(ChiefCoach):
 
     def prepare_dataloader(self) -> None:
         """Prepare data loaders for training, validation, and testing data."""
-        self.trainloader = DataLoader(
+        from torchdata.dataloader2 import (
+            DataLoader2, 
+            MultiProcessingReadingService, DistributedReadingService, 
+            SequentialReadingService
+        )
+
+        def get_reading_servie():
+            if is_distributed():
+                rs = SequentialReadingService(
+                    DistributedReadingService(),
+                    MultiProcessingReadingService(self.cfg.num_workers)
+                )
+            else:
+                rs = MultiProcessingReadingService(self.cfg.num_workers)
+            return rs
+
+        self.trainloader = DataLoader2(
             datapipe=self.trainpipe, 
-            num_workers=self.cfg.num_workers,
-            pin_memory=self.cfg.pin_memory,
+            reading_service=get_reading_servie()
         )
-        self.validloader = DataLoader(
+        self.validloader = DataLoader2(
             datapipe=self.validpipe, 
-            num_workers=self.cfg.num_workers,
-            pin_memory=self.cfg.pin_memory,
+            reading_service=get_reading_servie()
         )
-        self.testloader = DataLoader(
+        self.testloader = DataLoader2(
             datapipe=self.testpipe, 
-            num_workers=self.cfg.num_workers,
-            pin_memory=self.cfg.pin_memory,
+            reading_service=get_reading_servie()
         )
     
     @property
@@ -676,12 +675,18 @@ class Coach(ChiefCoach):
                 n=len(users), reduction="mean", mode=mode,
                 pool=['HITRATE', 'PRECISION', 'RECALL', 'NDCG', 'MRR']
             )
+    
+    def shutdown(self):
+        self.trainloader.shutdown()
+        self.validloader.shutdown()
+        self.testloader.shutdown()
             
     @timemeter
     def fit(self):
 
         def signal_handler(sig, frame):
             infoLogger(f"\033[0;31;47m===============================TERMINATE CURRENT PROCESS===============================\033[0m")
+            self.shutdown()
             sys.exit()
         signal.signal(signal.SIGINT, signal_handler)
 
@@ -711,6 +716,8 @@ class Coach(ChiefCoach):
 
         self.eval_at_best()
         self.easy_record_best(best)
+
+        self.shutdown()
 
 
 class Adapter:

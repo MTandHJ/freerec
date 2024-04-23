@@ -10,8 +10,7 @@
     </p>
 </h4>
 
-FreeRec is a repository designed for easy (recommendation) data pre-processing and model training.
-I am a beginner in the field of recommender systems, so much of FreeRec's designs may not be as effective. In addition, you are free to specify your own framework based on FreeRec.
+FreeRec is a repository designed for easy (recommendation) data pre-processing and model training. You are free to specify your own framework based on FreeRec.
 
 
 ## Requirements: 

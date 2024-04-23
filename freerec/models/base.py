@@ -11,6 +11,7 @@ from ..data.fields import Field, FieldModule, FieldModuleList
 from ..data.tags import USER, ITEM, ID, SEQUENCE, UNSEEN, SEEN, POSITIVE, NEGATIVE
 from ..criterions import BaseCriterion
 
+
 __all__ = ['RecSysArch', 'GenRecArch', 'SeqRecArch']
 
 
@@ -103,7 +104,7 @@ class RecSysArch(nn.Module):
         raise NotImplementedError
     
     def reset_ranking_buffers(self):
-        """This method will be runed before evaluation."""
+        """This method will be executed before evaluation."""
         self.ranking_buffer = dict()
 
     def recommend_from_full(self, data: Dict[Field, torch.Tensor]) -> torch.Tensor:
@@ -160,7 +161,7 @@ class RecSysArch(nn.Module):
 class GenRecArch(RecSysArch):
 
     def sure_validpipe(
-        self, ranking: str = 'full', batch_size: int = 256
+        self, ranking: str = 'full', batch_size: int = 512
     ) -> PostProcessor:
         return self.dataset.valid().ordered_user_ids_source(
         ).sharding_filter().valid_sampling_(
@@ -168,7 +169,7 @@ class GenRecArch(RecSysArch):
         ).batch_(batch_size).tensor_()
 
     def sure_testpipe(
-        self, ranking: str = 'full', batch_size: int = 256
+        self, ranking: str = 'full', batch_size: int = 512
     ) -> PostProcessor:
         return self.dataset.test().ordered_user_ids_source(
         ).sharding_filter().test_sampling_(
@@ -182,7 +183,7 @@ class SeqRecArch(RecSysArch):
     PADDING_VALUE: int = 0
 
     def sure_validpipe(
-        self, maxlen: int, ranking: str = 'full', batch_size: int = 256,
+        self, maxlen: int, ranking: str = 'full', batch_size: int = 512,
     ) -> PostProcessor:
         return self.dataset.valid().ordered_user_ids_source(
         ).sharding_filter().valid_sampling_(
@@ -197,7 +198,7 @@ class SeqRecArch(RecSysArch):
         ).batch_(batch_size).tensor_()
 
     def sure_testpipe(
-        self, maxlen: int, ranking: str = 'full', batch_size: int = 256,
+        self, maxlen: int, ranking: str = 'full', batch_size: int = 512,
     ) -> PostProcessor:
         return self.dataset.test().ordered_user_ids_source(
         ).sharding_filter().test_sampling_(ranking).lprune_(

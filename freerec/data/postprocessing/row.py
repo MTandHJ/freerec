@@ -222,7 +222,7 @@ class AddingRow(RowMapper):
         >>> _add(x) # self.offset = -1
         [0, 1, 2]
         """
-        return (np.array(x, copy=False) + self.offset).tolist()
+        return np.add(x, self.offset).tolist()
 
 
 @dp.functional_datapipe("lpad_")

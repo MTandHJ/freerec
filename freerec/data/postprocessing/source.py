@@ -2,6 +2,7 @@
 
 from typing import Any, Iterable, Dict
 
+import random
 import torchdata.datapipes as dp
 
 from .base import Source
@@ -12,6 +13,26 @@ from ..fields import Field
 __all__ = [
     'RandomChoicedSource', 'RandomShuffledSource', 'OrderedSource',
 ]
+
+
+class Launcher(dp.iter.IterDataPipe):
+
+    def __init__(self, datasize: int, shuffle: bool = True):
+        super().__init__()
+
+        self.source = list(range(datasize))
+        self.shuffle = shuffle
+
+        self._rng = random.Random()
+        self.set_seed(0)
+
+    def set_seed(self, seed: int):
+        self._rng.seed(seed)
+
+    def __iter__(self):
+        if self.shuffle:
+            self._rng.shuffle(self.source)
+        yield from iter(self.source)
 
 
 @dp.functional_datapipe("choiced_source_")
@@ -31,16 +52,19 @@ class RandomChoicedSource(Source):
     def __init__(
         self, dataset: RecDataSet, source: Iterable[Dict[Field, Any]]
     ) -> None:
-        super().__init__(dataset)
+        super().__init__(dataset, source)
 
         self.datasize = dataset.datasize
-        self.source = tuple(source)
+        self.launcher = Launcher(self.datasize, shuffle=False).sharding_filter()
 
-    def __len__(self):
-        return self.datasize
+        self._rng = random.Random()
+        self.set_seed(0)
+
+    def set_seed(self, seed: int):
+        self._rng.seed(seed)
 
     def __iter__(self):
-        for _ in range(self.datasize):
+        for _ in self.launcher:
             yield self._rng.choice(self.source).copy()
 
 
@@ -57,17 +81,14 @@ class RandomShuffledSource(Source):
     """
 
     def __init__(self, dataset: RecDataSet, source: Iterable[Dict[Field, Any]]) -> None:
-        super().__init__(dataset)
+        super().__init__(dataset, source)
 
-        self.source = list(source)
-
-    def __len__(self):
-        return len(self.source)
+        self.datasize = len(self.source)
+        self.launcher = Launcher(self.datasize, shuffle=True).sharding_filter()
 
     def __iter__(self):
-        self._rng.shuffle(self.source)
-        for row in self.source:
-            yield row.copy()
+        for i in self.launcher:
+            yield self.source[i].copy()
 
 
 @dp.functional_datapipe("ordered_source_")
@@ -82,13 +103,11 @@ class OrderedSource(Source):
     """
 
     def __init__(self, dataset: RecDataSet, source: Iterable[Dict[Field, Any]]) -> None:
-        super().__init__(dataset)
+        super().__init__(dataset, source)
 
-        self.source = tuple(source)
-
-    def __len__(self):
-        return len(self.source)
+        self.datasize = len(self.source)
+        self.launcher = Launcher(self.datasize, shuffle=False).sharding_filter()
 
     def __iter__(self):
-        for row in self.source:
-            yield row.copy()
+        for i in self.launcher:
+            yield self.source[i].copy()

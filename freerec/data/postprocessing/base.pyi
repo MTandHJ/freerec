@@ -81,6 +81,8 @@ class BaseProcessor(dp.iter.IterDataPipe):
         unseen_only: bool, default to `True`
             `True`: sampling negatives from the unseen.
             `False`: sampling negatives from all items.
+        nums_need_vectorized_bsearch: int, default to 10
+            The number negatives suitable for using vectorized bsearch.
 
         Examples:
         ---------
@@ -145,6 +147,8 @@ class BaseProcessor(dp.iter.IterDataPipe):
         unseen_only: bool, default to `True`
             `True`: sampling negatives from the unseen.
             `False`: sampling negatives from all items.
+        nums_need_vectorized_bsearch: int, default to 10
+            The number negatives suitable for using vectorized bsearch.
 
         Examples:
         ---------
@@ -619,8 +623,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
    
 class Source(BaseProcessor):
     """Source datapipe. The start point of Train/valid/test datapipe"""
-
-    def set_seed(self, seed: int) -> None: ...
+    source: Iterable
 
 
 class Postprocessor(BaseProcessor):

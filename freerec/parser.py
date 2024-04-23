@@ -194,7 +194,6 @@ class Parser(Config):
         self.add_argument("--eval-freq", type=int, default=5, help="the evaluation frequency")
 
         self.add_argument("--num-workers", type=int, default=4)
-        self.add_argument("--pin-memory", action="store_true", default=False)
 
         self.add_argument("--seed", type=int, default=1, help="calling --seed=-1 for a random seed")
         self.add_argument("--benchmark", action="store_true", default=False, help="cudnn.benchmark == True ?")
