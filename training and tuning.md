@@ -31,6 +31,14 @@ monitors: [LOSS, HitRate@1, HitRate@5, HitRate@10, NDCG@5, NDCG@10]
 which4best: NDCG@10
 ```
 
+### TorchRun
+
+Distributed training can be performed by
+
+```
+torchrun --nproc_per_node=4 main.py --config=XXX.yaml
+```
+
 
 ### Tuning
 
