@@ -1,10 +1,8 @@
 
 
-from typing import Any, Literal, Callable, Iterable, List, Dict, Optional, Tuple, Union
+from typing import Any, Literal, Callable, Iterable, List, Dict, Optional, Tuple
 
-import torch, abc, os, time, sys, signal, psutil, atexit
-import torch.distributed as dist
-from torchdata.datapipes.iter import IterDataPipe
+import torch, abc, os, time, sys, signal
 from torch.utils.tensorboard import SummaryWriter
 from functools import partial
 from itertools import product
@@ -22,8 +20,7 @@ from .ddp import is_main_process, main_process_only, is_distributed, synchronize
 
 
 __all__ = [
-    'ChiefCoach', 'Coach', 'Adapter',
-    'GenCoach', 'SeqCoach', 'SessCoach'
+    'ChiefCoach', 'Coach', 'Adapter'
 ]
 
 
@@ -105,77 +102,125 @@ class ChiefCoach(metaclass=abc.ABCMeta):
     -----------
     dataset: RecDataSet,
         The original dataset.
-    trainpipe : IterDataPipe
-        Iterable data pipeline for training data.
-    validpipe : IterDataPipe, optional
-        Iterable data pipeline for validation data.
-        If `None`, use `trainpipe` instead.
-    testpipe : IterDataPipe, optional
-        Iterable data pipeline for testing data.
-        If `None`, use `validpipe` instead.
-    model : Union[RecSysArch, torch.nn.Module, None]
+    model : RecSysArch
         Model for training and evaluating. 
-        If `None`, use _DummyModule instead, which should not call `forward`.
-    optimizer : torch.optim.Optimizer, optional
-        Optimizer for updating model parameters. 
-        If `None`, use _DummyModule instead, which should not call `step` and `backward`.
-    lr_scheduler : torch.optim.lr_scheduler._LRScheduler, optional
-        Learning rate scheduler. If `None`, use _DummyModule instead, 
-        which should not call `step`.
-    device : Union[torch.device, str, int]
-        Device on which to run the computation. 
-            - `torch.device`
-            - `str`: Like `cpu`, `cuda:0`.
-            - `int`: Using cuda:`int`.
     """
 
 
     def __init__(
         self, *,
-        dataset: RecDataSet, trainpipe: IterDataPipe, validpipe: IterDataPipe, testpipe: Optional[IterDataPipe],
-        model: RecSysArch, optimizer: Optional[torch.optim.Optimizer], lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler],
-        device: Union[torch.device, str, int]
+        dataset: RecDataSet, model: RecSysArch, cfg: Parser
     ):
 
-        self.dataset = dataset
-        self.fields: FieldTuple[Field] = FieldTuple(dataset.fields)
-        self.device = torch.device(device)
-
-        self._set_datapipe(trainpipe, validpipe, testpipe)
-        self._set_other(model, optimizer, lr_scheduler)
-
+        self.cfg = cfg
         self.__mode = 'train'
 
-        def clean():
-            if dist.is_available() and dist.is_initialized(): # clean up DDP
-                dist.destroy_process_group()
-            parent = psutil.Process(os.getpid())
-            children = parent.children(recursive=True)
-            for process in children:
-                process.send_signal(signal.SIGTERM)
-            psutil.wait_procs(children, timeout=5)
+        self.set_device(self.cfg.device)
+        self.set_dataset(dataset)
+        self.set_datapipe(
+            model.sure_trainpipe(),
+            model.sure_validpipe(),
+            model.sure_testpipe()
+        )
+        self.set_dataloader()
 
-        atexit.register(clean)
+        self.set_model(model)
+        self.set_optimizer()
+        self.set_lr_scheduler()
+        self.reset_monitors(self.cfg.monitors, self.cfg.which4best)
 
-    def _set_datapipe(
+        # Other setup can be placed here
+        self.set_other()
+
+    def set_device(self, device):
+        self.device = torch.device(device)
+
+    def set_dataset(self, dataset: RecDataSet):
+        self.dataset = dataset
+        self.fields: FieldTuple[Field] = FieldTuple(dataset.fields)
+        self.User = self.fields[USER, ID]
+        self.Item = self.fields[ITEM, ID]
+        self.ISeen = self.Item.fork(SEEN)
+        self.IUnseen = self.Item.fork(UNSEEN)
+
+    def set_datapipe(
         self,
         trainpipe,
         validpipe,
         testpipe=None,
     ):
-        """Set the data pipe for training, validation and test."""
         self.trainpipe = trainpipe
         self.validpipe = validpipe
         self.testpipe = self.validpipe if testpipe is None else testpipe
 
-    def _set_other(
-        self, model, optimizer=None, lr_scheduler=None,
+    def set_model(
+        self, model: RecSysArch
     ):
-        """Set the other necessary components."""
-        self.model: RecSysArch = model.to(self.device)
-        self.optimizer: Optional[torch.optim.Optimizer] = optimizer if optimizer else _DummyModule()
-        self.lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = lr_scheduler if lr_scheduler else _DummyModule()
+        self.model = model.to(self.device)
+        if is_distributed():
+            self.model = torch.nn.parallel.DistributedDataParallel(model)
+    
+    def set_optimizer(self):
+        if self.cfg.optimizer.lower() == 'sgd':
+            self.optimizer = torch.optim.SGD(
+                self.model.parameters(), lr=self.cfg.lr, 
+                momentum=self.cfg.momentum,
+                nesterov=self.cfg.nesterov,
+                weight_decay=self.cfg.weight_decay
+            )
+        elif self.cfg.optimizer.lower() == 'adam':
+            self.optimizer = torch.optim.Adam(
+                self.model.parameters(), lr=self.cfg.lr,
+                betas=(self.cfg.beta1, self.cfg.beta2),
+                weight_decay=self.cfg.weight_decay
+            )
+        elif self.cfg.optimizer.lower() == 'adamw':
+            self.optimizer = torch.optim.AdamW(
+                self.model.parameters(), lr=self.cfg.lr,
+                betas=(self.cfg.beta1, self.cfg.beta2),
+                weight_decay=self.cfg.weight_decay
+            )
+        else:
+            raise NotImplementedError(
+                f"Unexpected optimizer {self.cfg.optimizer} ..."
+            )
 
+    def set_lr_scheduler(self):
+        self.lr_scheduler = _DummyModule()
+
+    def set_dataloader(self) -> None:
+        from torchdata.dataloader2 import (
+            DataLoader2, 
+            MultiProcessingReadingService, DistributedReadingService, 
+            SequentialReadingService
+        )
+
+        def get_reading_servie():
+            if is_distributed():
+                rs = SequentialReadingService(
+                    DistributedReadingService(),
+                    MultiProcessingReadingService(self.cfg.num_workers)
+                )
+            else:
+                rs = MultiProcessingReadingService(self.cfg.num_workers)
+            return rs
+
+        self.trainloader = DataLoader2(
+            datapipe=self.trainpipe, 
+            reading_service=get_reading_servie()
+        )
+        self.validloader = DataLoader2(
+            datapipe=self.validpipe, 
+            reading_service=get_reading_servie()
+        )
+        self.testloader = DataLoader2(
+            datapipe=self.testpipe, 
+            reading_service=get_reading_servie()
+        )
+
+    def set_other(self):
+        ...
+    
     def get_res_sys_arch(self) -> RecSysArch:
         model = self.model
         if isinstance(self.model, torch.nn.parallel.DataParallel):
@@ -184,6 +229,14 @@ class ChiefCoach(metaclass=abc.ABCMeta):
             model = self.model.module
         assert isinstance(model, RecSysArch), "No RecSysArch found ..."
         return model
+
+    @property
+    def fields(self) -> FieldTuple[Field]:
+        return self.__fields
+
+    @fields.setter
+    def fields(self, fields):
+        self.__fields = FieldTuple(fields)
 
     @property
     def mode(self):
@@ -212,6 +265,20 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         self.__mode = 'test'
         self.model.eval()
         return self.evaluate(epoch=epoch, mode='test')
+
+    @property
+    def dataloader(self):
+        if self.mode == 'train':
+            return self.trainloader
+        elif self.mode == 'valid':
+            return self.validloader
+        else:
+            return self.testloader
+
+    def shutdown(self):
+        self.trainloader.shutdown()
+        self.validloader.shutdown()
+        self.testloader.shutdown()
 
     @abc.abstractmethod
     def train_per_epoch(self, epoch: int):
@@ -261,50 +328,88 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         DEFAULT_FMTS[name] = fmt
         DEFAULT_BEST_CASTER[name] = best_caster
 
+        for mode in ('train', 'valid', 'test'):
+            self._set_monitor(
+                name=name,
+                lastname=name,
+                mode=mode
+            )
+
+    def _set_monitor(
+        self, name: str, lastname: str, mode: str = 'train', **kwargs
+    ):
+        """Add a monitor for the specified metric."""
+        try:
+            meter = AverageMeter(
+                    name=name,
+                    metric=partial(DEFAULT_METRICS[lastname], **kwargs),
+                    fmt=DEFAULT_FMTS[lastname],
+                    best_caster=DEFAULT_BEST_CASTER[lastname]
+                )
+            self.__monitors[mode][lastname].append(meter)
+        except KeyError:
+            raise KeyError(
+                f"The metric of {lastname} is not included. "
+                f"You can register by calling `register_metric(...)' ..."
+            )
+        return meter
+
+    def reset_monitors(
+        self, monitors: List[str], which4best: str = 'LOSS'
+    ):
+        r"""
+        Set up monitors for training.
+
+        Parameters
+        ----------
+        monitors : List[str]
+            A list of metric names to be monitored during training.
+        which4best : str, defaults `LOSS'
+            The metric used for selecting the best checkpoint.
+
+        Examples
+        --------
+        >>> coach: Coach
+        >>> coach.compile(monitors=['loss', 'recall@10', 'recall@20', 'ndcg@10', 'ndcg@20'])
+        """
+        assert isinstance(monitors, List), f"'monitors' should be a list but {type(monitors)} received ..."
+        assert isinstance(which4best, str), f"'which4best' should be a str but {type(which4best)} received ..."
+
+        # meters for train|valid|test
+        self.__monitors = Monitor()
+        self.__monitors['train'] = defaultdict(list)
+        self.__monitors['valid'] = defaultdict(list)
+        self.__monitors['test'] = defaultdict(list)
+
+        # UPPER
+        which4best = which4best.upper()
+        monitors = ['LOSS'] + [name.upper() for name in monitors] + [which4best]
+        monitors = sorted(set(monitors), key=monitors.index)
+
+        for name in monitors:
+            for mode in ('train', 'valid', 'test'):
+                if '@' in name:
+                    lastname, K = name.split('@')
+                    meter = self._set_monitor(
+                        name=name,
+                        lastname=lastname,
+                        mode=mode,
+                        k=int(K)
+                    )
+                else:
+                    lastname = name
+                    meter = self._set_monitor(
+                        name=name,
+                        lastname=lastname,
+                        mode=mode
+                    )
+                if mode == 'valid' and name == which4best:
+                    self.meter4best = meter
+                    self._best = -float('inf') if meter.caster is max else float('inf')
+                    self._best_epoch = 0
+
 
 class Coach(ChiefCoach):
-    """The framework for training."""
-
-    def prepare_dataloader(self) -> None:
-        """Prepare data loaders for training, validation, and testing data."""
-        from torchdata.dataloader2 import (
-            DataLoader2, 
-            MultiProcessingReadingService, DistributedReadingService, 
-            SequentialReadingService
-        )
-
-        def get_reading_servie():
-            if is_distributed():
-                rs = SequentialReadingService(
-                    DistributedReadingService(),
-                    MultiProcessingReadingService(self.cfg.num_workers)
-                )
-            else:
-                rs = MultiProcessingReadingService(self.cfg.num_workers)
-            return rs
-
-        self.trainloader = DataLoader2(
-            datapipe=self.trainpipe, 
-            reading_service=get_reading_servie()
-        )
-        self.validloader = DataLoader2(
-            datapipe=self.validpipe, 
-            reading_service=get_reading_servie()
-        )
-        self.testloader = DataLoader2(
-            datapipe=self.testpipe, 
-            reading_service=get_reading_servie()
-        )
-    
-    @property
-    def dataloader(self):
-        """Return the corresponding data loader depending on the current mode."""
-        if self.mode == 'train':
-            return self.trainloader
-        elif self.mode == 'valid':
-            return self.validloader
-        else:
-            return self.testloader
 
     @property
     def monitors(self) -> Monitor:
@@ -326,87 +431,6 @@ class Coach(ChiefCoach):
         # 1) retain_seen is not activated and
         # 2) dataset has no duplicates
         return not (self.cfg.retain_seen or self.dataset.has_duplicates())
-
-    @timemeter
-    def compile(
-        self, cfg: Parser, monitors: List[str], 
-        which4best: str = 'LOSS'
-    ):
-        r"""
-        Load the configuration and set up monitors for training.
-
-        Parameters
-        ----------
-        cfg : Config
-            A configuration object with the training details.
-        monitors : List[str]
-            A list of metric names to be monitored during training.
-        which4best : str, defaults `LOSS'
-            The metric used for selecting the best checkpoint.
-
-        Examples
-        --------
-        >>> coach: Coach
-        >>> coach.compile(cfg, monitors=['loss', 'recall@10', 'recall@20', 'ndcg@10', 'ndcg@20'])
-        """
-        assert isinstance(monitors, List), f"'monitors' should be a list but {type(monitors)} received ..."
-        assert isinstance(which4best, str), f"'which4best' should be a str but {type(which4best)} received ..."
-
-        self.cfg = cfg
-        # meters for train|valid|test
-        self.__monitors = Monitor()
-        self.__monitors['train'] = defaultdict(list)
-        self.__monitors['valid'] = defaultdict(list)
-        self.__monitors['test'] = defaultdict(list)
-
-        def set_monitor(
-            name: str, lastname: str, mode: str = 'train', **kwargs
-        ):
-            """Add a monitor for the specified metric."""
-            try:
-                meter = AverageMeter(
-                        name=name,
-                        metric=partial(DEFAULT_METRICS[lastname], **kwargs),
-                        fmt=DEFAULT_FMTS[lastname],
-                        best_caster=DEFAULT_BEST_CASTER[lastname]
-                    )
-                self.__monitors[mode][lastname].append(meter)
-            except KeyError:
-                raise KeyError(
-                    f"The metric of {lastname} is not included. "
-                    f"You can register by calling `register_metric(...)' ..."
-                )
-            return meter
-
-        # UPPER
-        which4best = which4best.upper()
-        monitors = ['LOSS'] + [name.upper() for name in monitors] + [which4best]
-        monitors = sorted(set(monitors), key=monitors.index)
-
-        for name in monitors:
-            for mode in ('train', 'valid', 'test'):
-                if '@' in name:
-                    lastname, K = name.split('@')
-                    meter = set_monitor(
-                        name=name,
-                        lastname=lastname,
-                        mode=mode,
-                        k=int(K)
-                    )
-                else:
-                    lastname = name
-                    meter = set_monitor(
-                        name=name,
-                        lastname=lastname,
-                        mode=mode
-                    )
-                if mode == 'valid' and name == which4best:
-                    self.meter4best = meter
-                    self._best = -float('inf') if meter.caster is max else float('inf')
-                    self._best_epoch = 0
-
-        # Prepare data loaders
-        self.prepare_dataloader()
 
     def save(self, filename: Optional[str] = None) -> None:
         r"""
@@ -642,25 +666,21 @@ class Coach(ChiefCoach):
 
         return best
 
-    def try_to_device(self, data: Dict[Field, Any]) -> Dict[Field, Any]:
+    def dict_to_device(self, data: Dict[Field, Any]) -> Dict[Field, Any]:
         return {field: value.to(self.device) if isinstance(value, torch.Tensor) else value for field, value in data.items()}
 
     def evaluate(self, epoch: int, mode: str = 'valid'):
         model = self.get_res_sys_arch()
         model.reset_ranking_buffers()
-        User = self.fields[USER, ID]
-        Item = self.fields[ITEM, ID]
-        IUnseen = Item.fork(UNSEEN)
-        ISeen = Item.fork(SEEN)
         for data in self.dataloader:
-            data = self.try_to_device(data)
-            users = data[User]
+            data = self.dict_to_device(data)
+            users = data[self.User]
             if self.cfg.ranking == 'full':
                 scores = model.recommend_from_full(data)
                 if self.remove_seen:
-                    seen = Item.to_csr(data[ISeen]).to(self.device).to_dense().bool()
+                    seen = self.Item.to_csr(data[self.ISeen]).to(self.device).to_dense().bool()
                     scores[seen] = -1e23
-                targets = Item.to_csr(data[IUnseen]).to(self.device).to_dense()
+                targets = self.Item.to_csr(data[self.IUnseen]).to(self.device).to_dense()
             elif self.cfg.ranking == 'pool':
                 scores = model.recommend_from_pool(data)
                 targets = torch.zeros_like(scores)
@@ -675,20 +695,9 @@ class Coach(ChiefCoach):
                 n=len(users), reduction="mean", mode=mode,
                 pool=['HITRATE', 'PRECISION', 'RECALL', 'NDCG', 'MRR']
             )
-    
-    def shutdown(self):
-        self.trainloader.shutdown()
-        self.validloader.shutdown()
-        self.testloader.shutdown()
             
     @timemeter
     def fit(self):
-
-        def signal_handler(sig, frame):
-            infoLogger(f"\033[0;31;47m===============================TERMINATE CURRENT PROCESS===============================\033[0m")
-            self.shutdown()
-            sys.exit()
-        signal.signal(signal.SIGINT, signal_handler)
 
         start_epoch = self.resume()
         for epoch in range(start_epoch, self.cfg.epochs):

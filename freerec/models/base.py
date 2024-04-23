@@ -164,7 +164,7 @@ class GenRecArch(RecSysArch):
         self, ranking: str = 'full', batch_size: int = 512
     ) -> PostProcessor:
         return self.dataset.valid().ordered_user_ids_source(
-        ).sharding_filter().valid_sampling_(
+        ).valid_sampling_(
             ranking
         ).batch_(batch_size).tensor_()
 
@@ -172,7 +172,7 @@ class GenRecArch(RecSysArch):
         self, ranking: str = 'full', batch_size: int = 512
     ) -> PostProcessor:
         return self.dataset.test().ordered_user_ids_source(
-        ).sharding_filter().test_sampling_(
+        ).test_sampling_(
             ranking
         ).batch_(batch_size).tensor_()
         
@@ -186,7 +186,7 @@ class SeqRecArch(RecSysArch):
         self, maxlen: int, ranking: str = 'full', batch_size: int = 512,
     ) -> PostProcessor:
         return self.dataset.valid().ordered_user_ids_source(
-        ).sharding_filter().valid_sampling_(
+        ).valid_sampling_(
             ranking
         ).lprune_(
             maxlen, modified_fields=(self.ISeq,)
@@ -201,7 +201,7 @@ class SeqRecArch(RecSysArch):
         self, maxlen: int, ranking: str = 'full', batch_size: int = 512,
     ) -> PostProcessor:
         return self.dataset.test().ordered_user_ids_source(
-        ).sharding_filter().test_sampling_(ranking).lprune_(
+        ).test_sampling_(ranking).lprune_(
             maxlen, modified_fields=(self.ISeq,)
         ).add_(
             offset=self.NUM_PADS, modified_fields=(self.ISeq,)
