@@ -1,6 +1,5 @@
 
-
-from typing import Dict, Tuple
+from typing import Dict
 
 import torch
 import torch.nn as nn
@@ -10,10 +9,8 @@ freerec.declare(version='1.0.1')
 
 cfg = freerec.parser.Parser()
 cfg.add_argument("--embedding-dim", type=int, default=64)
-cfg.add_argument("--num-layers", type=int, default=3)
-
 cfg.set_defaults(
-    description="LightGCN",
+    description="MF-BPR",
     root="../../data",
     dataset='Yelp2018_10104811_ROU',
     epochs=1000,
@@ -26,15 +23,13 @@ cfg.set_defaults(
 cfg.compile()
 
 
-class LightGCN(freerec.models.GenRecArch):
+class MF(freerec.models.GenRecArch):
 
     def __init__(
         self, dataset: freerec.data.datasets.RecDataSet,
-        embedding_dim: int = 64, num_layers: int = 3
+        embedding_dim: int = 64
     ) -> None:
         super().__init__(dataset)
-
-        self.num_layers = num_layers
 
         self.User.add_module(
             "embeddings", nn.Embedding(
@@ -45,13 +40,6 @@ class LightGCN(freerec.models.GenRecArch):
         self.Item.add_module(
             "embeddings", nn.Embedding(
                 self.Item.count, embedding_dim
-            )
-        )
-
-        self.register_buffer(
-            "Adj",
-            self.dataset.train().to_normalized_adj(
-                normalization='sym'
             )
         )
 
@@ -77,18 +65,16 @@ class LightGCN(freerec.models.GenRecArch):
             num_negatives=1
         ).batch_(batch_size).tensor_()
 
-    def encode(self) -> Tuple[torch.Tensor, torch.Tensor]:
-        allEmbds = torch.cat(
-            (self.User.embeddings.weight, self.Item.embeddings.weight), dim=0
-        ) # (N, D)
-        avgEmbds = allEmbds / (self.num_layers + 1)
-        for _ in range(self.num_layers):
-            allEmbds = self.Adj @ allEmbds
-            avgEmbds += allEmbds / (self.num_layers + 1)
-        userEmbds, itemEmbds = torch.split(
-            avgEmbds, (self.User.count, self.Item.count)
-        )
-        return userEmbds, itemEmbds
+    def encode(self):
+        return self.User.embeddings.weight, self.Item.embeddings.weight
+
+    def reg_loss(self, *embds: torch.Tensor):
+        loss = 0
+        for embd in embds:
+            loss += embd.square().sum()
+        loss /= embds[0].size(0)
+        loss /= 2
+        return loss
 
     def fit(self, data: Dict[freerec.data.fields.Field, torch.Tensor]):
         userEmbds, itemEmbds = self.encode()
@@ -101,18 +87,10 @@ class LightGCN(freerec.models.GenRecArch):
             torch.einsum("BKD,BKD->BK", userEmbds, iposEmbds),
             torch.einsum("BKD,BKD->BK", userEmbds, inegEmbds)
         )
-        emb_loss = self.criterion.regularize(
-            [
-                self.User.embeddings(users),
-                self.Item.embeddings(positives),
-                self.Item.embeddings(negatives)
-            ], rtype='l2'
-        ) / len(users)
 
-        return rec_loss, emb_loss
+        return rec_loss
 
     def reset_ranking_buffers(self):
-        """This method will be executed before evaluation."""
         userEmbds, itemEmbds = self.encode()
         self.ranking_buffer = dict()
         self.ranking_buffer[self.User] = userEmbds.detach().clone()
@@ -129,38 +107,12 @@ class LightGCN(freerec.models.GenRecArch):
         return torch.einsum("BKD,BKD->BK", userEmbds, itemEmbds)
 
 
-class CoachForLightGCN(freerec.launcher.Coach):
-
-    def set_optimizer(self):
-        if self.cfg.optimizer.lower() == 'sgd':
-            self.optimizer = torch.optim.SGD(
-                self.model.parameters(), lr=self.cfg.lr, 
-                momentum=self.cfg.momentum,
-                nesterov=self.cfg.nesterov,
-                # weight_decay=self.cfg.weight_decay
-            )
-        elif self.cfg.optimizer.lower() == 'adam':
-            self.optimizer = torch.optim.Adam(
-                self.model.parameters(), lr=self.cfg.lr,
-                betas=(self.cfg.beta1, self.cfg.beta2),
-                # weight_decay=self.cfg.weight_decay
-            )
-        elif self.cfg.optimizer.lower() == 'adamw':
-            self.optimizer = torch.optim.AdamW(
-                self.model.parameters(), lr=self.cfg.lr,
-                betas=(self.cfg.beta1, self.cfg.beta2),
-                # weight_decay=self.cfg.weight_decay
-            )
-        else:
-            raise NotImplementedError(
-                f"Unexpected optimizer {self.cfg.optimizer} ..."
-            )
+class CoachForMFBPR(freerec.launcher.Coach):
 
     def train_per_epoch(self, epoch: int):
-        for data in self.dataloader:
+        for i, data in enumerate(self.dataloader):
             data = self.dict_to_device(data)
-            rec_loss, emb_loss = self.model(data)
-            loss = rec_loss + self.cfg.weight_decay * emb_loss
+            loss = self.model(data)
 
             self.optimizer.zero_grad()
             loss.backward()
@@ -171,6 +123,13 @@ class CoachForLightGCN(freerec.launcher.Coach):
                 n=len(data[self.User]), reduction="mean", 
                 mode='train', pool=['LOSS']
             )
+            count = len(data[self.User])
+
+            self.monitor(
+                count,
+                n=1, reduction='mean',
+                mode='train', pool=['COUNT']
+            )
 
 
 def main():
@@ -179,23 +138,25 @@ def main():
         dataset = getattr(freerec.data.datasets, cfg.dataset)(root=cfg.root)
     except AttributeError:
         dataset = freerec.data.datasets.RecDataSet(cfg.root, cfg.dataset, tasktag=cfg.tasktag)
-
-    model = LightGCN(
+    
+    model = MF(
         dataset,
-        embedding_dim=cfg.embedding_dim, num_layers=cfg.num_layers
+        embedding_dim=cfg.embedding_dim
     )
-
     trainpipe = model.sure_trainpipe(cfg.batch_size)
     validpipe = model.sure_validpipe(cfg.ranking)
     testpipe = model.sure_testpipe(cfg.ranking)
 
-    coach = CoachForLightGCN(
+    coach = CoachForMFBPR(
         dataset=dataset,
         trainpipe=trainpipe,
         validpipe=validpipe,
         testpipe=testpipe,
         model=model,
         cfg=cfg
+    )
+    coach.register_metric(
+        'Count', lambda x: x, best_caster=max
     )
     coach.fit()
 
