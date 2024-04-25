@@ -467,8 +467,8 @@ class RecDataSet(BaseSet):
                 return True
         return False
 
-    @timemeter
     @safe_mode('train')
+    @timemeter
     def to_heterograph(self, *edge_types: Tuple[Tuple[FieldTags], Optional[str], Tuple[FieldTags]]):
         r"""
         Convert datapipe to a heterograph.

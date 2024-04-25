@@ -185,6 +185,10 @@ class MovieLens100K_550_LOU(NextItemRecDataSet):
     +-------+-------+---------------+--------+--------+-------+---------------------+
     |  943  |  1349 |     99287     | 97401  |  943   |  943  | 0.07804925214624242 |
     +-------+-------+---------------+--------+--------+-------+---------------------+
+
+    Notes:
+    MovieLens is not suitable for next-item recommendation.
+    Refer to [this paper](https://ceur-ws.org/Vol-2955/paper8.pdf) for details.
     """
 
 
@@ -204,6 +208,10 @@ class MovieLens100K_500_LOU(NextItemRecDataSet):
     +-------+-------+---------------+--------+--------+-------+---------------------+
     |  943  |  1682 |     100000    | 98114  |  943   |  943  | 0.06304669364224531 |
     +-------+-------+---------------+--------+--------+-------+---------------------+
+
+    Notes:
+    MovieLens is not suitable for next-item recommendation.
+    Refer to [this paper](https://ceur-ws.org/Vol-2955/paper8.pdf) for details.
     """
 
 
@@ -223,6 +231,10 @@ class MovieLens1M_550_LOU(NextItemRecDataSet):
     +-------+-------+---------------+--------+--------+-------+----------------------+
     |  6040 |  3416 |     999611    | 987531 |  6040  |  6040 | 0.048448041549699894 |
     +-------+-------+---------------+--------+--------+-------+----------------------+
+
+    Notes:
+    MovieLens is not suitable for next-item recommendation.
+    Refer to [this paper](https://ceur-ws.org/Vol-2955/paper8.pdf) for details.
     """
 
 
@@ -242,6 +254,10 @@ class MovieLens1M_500_LOU(NextItemRecDataSet):
     +-------+-------+---------------+--------+--------+-------+----------------------+
     |  6040 |  3706 |    1000209    | 988129 |  6040  |  6040 | 0.044683625622312845 |
     +-------+-------+---------------+--------+--------+-------+----------------------+
+
+    Notes:
+    MovieLens is not suitable for next-item recommendation.
+    Refer to [this paper](https://ceur-ws.org/Vol-2955/paper8.pdf) for details.
     """
 
 
@@ -261,6 +277,10 @@ class MovieLens10M_550_LOU(NextItemRecDataSet):
     +-------+-------+---------------+---------+--------+-------+---------------------+
     | 69878 | 10196 |    9998816    | 9859060 | 69878  | 69878 | 0.01403389695234235 |
     +-------+-------+---------------+---------+--------+-------+---------------------+
+
+    Notes:
+    MovieLens is not suitable for next-item recommendation.
+    Refer to [this paper](https://ceur-ws.org/Vol-2955/paper8.pdf) for details.
     """
 
 
@@ -280,6 +300,10 @@ class MovieLens10M_500_LOU(NextItemRecDataSet):
     +-------+-------+---------------+---------+--------+-------+----------------------+
     | 69878 | 10677 |    10000054   | 9860298 | 69878  | 69878 | 0.013403327706083809 |
     +-------+-------+---------------+---------+--------+-------+----------------------+
+
+    Notes:
+    MovieLens is not suitable for next-item recommendation.
+    Refer to [this paper](https://ceur-ws.org/Vol-2955/paper8.pdf) for details.
     """
 
 
@@ -299,6 +323,10 @@ class MovieLens20M_550_LOU(NextItemRecDataSet):
     +--------+-------+---------------+----------+--------+--------+----------------------+
     | 138493 | 18345 |    19984024   | 19707038 | 138493 | 138493 | 0.007865700457998398 |
     +--------+-------+---------------+----------+--------+--------+----------------------+
+
+    Notes:
+    MovieLens is not suitable for next-item recommendation.
+    Refer to [this paper](https://ceur-ws.org/Vol-2955/paper8.pdf) for details.
     """
 
 
@@ -318,4 +346,8 @@ class MovieLens20M_500_LOU(NextItemRecDataSet):
     +--------+-------+---------------+----------+--------+--------+-----------------------+
     | 138493 | 26744 |    20000263   | 19723277 | 138493 | 138493 | 0.0053998478135544505 |
     +--------+-------+---------------+----------+--------+--------+-----------------------+
+
+    Notes:
+    MovieLens is not suitable for next-item recommendation.
+    Refer to [this paper](https://ceur-ws.org/Vol-2955/paper8.pdf) for details.
     """
