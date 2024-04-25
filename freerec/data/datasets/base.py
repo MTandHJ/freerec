@@ -439,7 +439,7 @@ class RecDataSet(BaseSet):
     def seqlens(self) -> List[int]:
         ISeq = self.fields[ITEM, ID].fork(SEQUENCE)
         seqlens = [len(row[ISeq]) for row in self.to_seqs()]
-        return list(filter(lambda x: x > 0, seqlens))
+        return seqlens
 
     @property
     def maxlen(self) -> int:
@@ -753,7 +753,7 @@ class RecDataSet(BaseSet):
 
         table = PrettyTable(['#Users', '#Items', 'Avg.Len', '#Interactions', '#Train', '#Valid', '#Test', 'Density'])
         table.add_row([
-            User.count, Item.count, self.train().meanlen + 2,
+            User.count, Item.count, self.train().meanlen + self.valid().meanlen + self.test().meanlen,
             self.trainsize + self.validsize + self.testsize,
             self.trainsize, self.validsize, self.testsize,
             (self.trainsize + self.validsize + self.testsize) / (User.count * Item.count)
