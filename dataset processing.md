@@ -81,7 +81,7 @@ freerec make [Dataset Name] --root [root] --filedir [filedir] --splitting [split
         - `valid`: some of the interactions in the middle period
         - `test`: the last interactions
 
-    - `LOU`: Leave-One-Out
+    - `LOU`: Leave-one-out On User
         - `train`: the whole user sequence except the last two
         - `valid`: the penultimate interaction for each user
         - `test`: the last interaction for each user

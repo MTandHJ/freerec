@@ -353,7 +353,7 @@ class AtomicConverter:
         return ''.join(map(str, ratios)) + '_ROD'
 
     def split_by_LOU(self):
-        infoLogger(f"[Converter] >>> Split by LOU (Leave-One-Out) ...")
+        infoLogger(f"[Converter] >>> Split by LOU (Leave-one-out On User) ...")
         traingroups = []
         validgroups = []
         testgroups = []
@@ -490,7 +490,7 @@ class AtomicConverter:
         splitting: str ('ROU', 'ROD', 'LOU', 'DOU', 'DOD')
             `ROU`: Ratio on User
             `ROD`: Ratio on Dataset
-            `LOU`: Leave-One-Out
+            `LOU`: Leave-one-out on User
             `DOU`: Day on User
             `DOD`: Day on Dataset
         ratios: Tuple[int, int, int], default to (8, 1, 1)
