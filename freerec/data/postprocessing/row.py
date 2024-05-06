@@ -280,7 +280,9 @@ class LeftPaddingRow(RowMapper):
     def sure_zero_elems(self):
         def guess_zero(field: Field, value: Iterable):
             if isinstance(value, Iterable):
-                if isinstance(value[0], Iterable):
+                if len(value) == 0:
+                    return self.padding_value
+                elif isinstance(value[0], Iterable):
                     return (self.padding_value,) * len(value[0])
                 else:
                     return self.padding_value
