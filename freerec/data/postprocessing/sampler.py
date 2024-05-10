@@ -190,8 +190,9 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
 
     def __iter__(self):
         for row in self.source:
-            user = row[self.User]
-            row[self.INeg] = self._sample_neg(user)
+            row[self.INeg] = self._sample_neg(
+                row[self.User]
+            )
             yield row
 
 

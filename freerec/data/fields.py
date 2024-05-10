@@ -32,12 +32,6 @@ class Field:
     >>> UserID = User.fork(ID)
     >>> UserID
     Field(User:ID,USER)
-    >>> UserID == User
-    False
-    >>> UserID >= User
-    False
-    >>> UserID <= User
-    True
     >>> Field.issubfield(UserID, User)
     True
     >>> Field.issuperfield(User, UserID)
@@ -57,15 +51,14 @@ class Field:
     >>> UserID1 = Field('UserID1', USER, ID)
     >>> UserID2 = Field('UserID2', USER, ID)
     >>> UserID1 == UserID2
-    True
-    >>> hash(UserID1) == hash(UserID2)
     False
     """
 
     def __init__(self, name: str,  *tags: FieldTags) -> None:
-        self.__name = name
+        self.__name = str(name)
         self.__tags = set(tags)
         self.__identifier = (name,) + tuple(sorted(self.__tags, key=lambda tag: tag.value))
+        self.__hash_value = hash(self.identifier)
         self.count = None
 
     @property
@@ -128,17 +121,11 @@ class Field:
     def __iter__(self):
         return iter(self.tags)
 
-    def __eq__(self, other) -> bool:
-        return isinstance(other, Field) and self.tags == other.tags
-
-    def __le__(self, other: 'Field') -> bool:
-        return self.issubfield(other)
-
-    def __ge__(self, other: 'Field') -> bool:
-        return self.issuperfield(other)
-
     def __hash__(self) -> int:
-        return hash(self.identifier)
+        return self.__hash_value
+
+    def __eq__(self, other) -> bool:
+        return isinstance(other, Field) and hash(self) == hash(other)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({str(self)})"
