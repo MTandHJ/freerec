@@ -43,6 +43,18 @@ from .amazon2018 import (
     Amazon2018Toys_550_LOU
 )
 
+
+from .amazon2023 import(
+    # Matching
+    Amazon2023Baby_554811_ROU,
+    Amazon2023Beauty_554811_ROU, Amazon2023Beauty_10104811_ROU,
+    Amazon2023Fashion_554811_ROU,
+    Amazon2023Games_554811_ROU,
+    Amazon2023Office_554811_ROU,
+    Amazon2023Toys_554811_ROU, Amazon2023Toys_10104811_ROU
+)
+
+
 from .gowalla import (
     # Matching
     Gowalla2010_10100811_ROU, Gowalla2010_10100712_ROU
@@ -79,3 +91,5 @@ from .yelp import (
     # NextItem (S3Rec)
     Yelp2019_550_S3Rec,
 )
+
+from .microlens import MicroLens100K
