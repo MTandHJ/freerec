@@ -82,9 +82,9 @@ def extract_from_amazon2023(
 
     # find review/meta data
     if meta_file is None:
-        meta_file = next(filter(lambda file: file.startswith('meta'), os.listdir(root)))
+        meta_file = next(filter(lambda file: file.endswith('gz') and file.startswith('meta'), os.listdir(root)))
     if review_file is None:
-        review_file = next(filter(lambda file: not file.startswith('meta'), os.listdir(root)))
+        review_file = next(filter(lambda file: file.endswith('gz') and not file.startswith('meta'), os.listdir(root)))
 
     # fields
     inter_fields.update(INTER_FIELDS)
@@ -97,6 +97,7 @@ def extract_from_amazon2023(
         [[row[key] for key in ego_cols] for row in raw_inter],
         columns=cur_cols
     )
+    del raw_inter
 
     # item meta data
     ego_cols, cur_cols = list(item_fields.keys()), list(item_fields.values())
