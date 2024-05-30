@@ -138,7 +138,7 @@ def download_from_url(
                         'If the "repo_url" is overridden, consider switching to '
                         'the default repo.'.format(file_)
                     )
-                break
+                return file_
             except Exception as e:
                 retries -= 1
                 if retries <= 0:
@@ -147,8 +147,7 @@ def download_from_url(
                     if log:
                         infoLogger("[DataSet] >>> Download failed, retrying, {} attempt{} left"
                               .format(retries, 's' if retries > 1 else ''))
-
-    infoLogger("Failed downloading url %s" % url)
+        infoLogger("Failed downloading url %s" % url)
     return file_
 
 
