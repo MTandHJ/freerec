@@ -148,6 +148,7 @@ def download_from_url(
                         infoLogger("[DataSet] >>> Download failed, retrying, {} attempt{} left"
                               .format(retries, 's' if retries > 1 else ''))
 
+    infoLogger("Failed downloading url %s" % url)
     return file_
 
 
