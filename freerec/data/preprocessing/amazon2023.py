@@ -63,22 +63,8 @@ def extract_from_amazon2023(
     ---------
     >>> from freerec.data.preprocessing.amazon2023 import extract_from_amazon2023
     >>> inter_df, item_df = extract_from_amazon2023(
-        "../RecSets/Amazon2023/Fashion",
+        "../RecSets/Amazon2023/Baby",
     )
-    >>> inter_df.head(5)
-    USER	ITEM	RATING	TIMESTAMP	parent_asin
-    0	AGBFYI2DDIKXC5Y4FARTYDTQBMFQ	B00LOPVX74	5.0	1578528394489	B00LOPVX74
-    1	AFQLNQNQYFWQZPJQZS6V3NZU4QBQ	B07B4JXK8D	5.0	1608426246701	B07B4JXK8D
-    2	AHITBJSS7KYUBVZPX7M2WJCOIVKQ	B007ZSEQ4Q	2.0	1432344828000	B007ZSEQ4Q
-    3	AFVNEEPDEIH5SPUN5BWC6NKL3WNQ	B07F2BTFS9	1.0	1546289847095	B07F2BTFS9
-    4	AHSPLDNW5OOUK2PLH7GXLACFBZNQ	B00PKRFU4O	5.0	1439476166000	B00XESJTDE
-    >>> item_df.head(5)
-        ITEM	parent_asin	title	features	description	image_urls
-    0	B00LOPVX74	B00LOPVX74	CHUVORA 925 Sterling Silver Open Celtic Knot C...	[STAMPED 925 STERLING SILVER - This high quali...	[This beautiful jewelry would be a great addit...	[{'thumb': 'https://m.media-amazon.com/images/...
-    1	B07B4JXK8D	B07B4JXK8D	XX-Large Slip Stop Single Tread Slipper Socks ...	[Cozy Slipper Socks For Men; Bariatric Slipper...	[Anyone looking for the best in single tread s...	[{'thumb': 'https://m.media-amazon.com/images/...
-    2	B007ZSEQ4Q	B007ZSEQ4Q	Sterling Silver 3mm Round Cut CZ Tennis Bracel...	[]	[]	[{'thumb': 'https://m.media-amazon.com/images/...
-    3	B07F2BTFS9	B07F2BTFS9	VERO MONTE 4 Pairs Womens TRULY No Show Socks ...	[Machine Wash]	[]	[{'thumb': 'https://m.media-amazon.com/images/...
-    4	B00PKRFU4O	B00XESJTDE	SA106 Womens Rhinestone Jewel Polarized Lens 6...	[Imported, Plastic frame, anti-reflective lens...	[Men's anti-glare lens sunglasses 100% UVA & U...	[{'thumb': 'https://m.media-amazon.com/images/...
     """
 
     # find review/meta data
