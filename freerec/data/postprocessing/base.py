@@ -96,8 +96,8 @@ class PostProcessor(BaseProcessor):
     def __init__(self, source: BaseProcessor) -> None:
         graph = torch.utils.data.graph.traverse_dps(source)
         for pipe in get_all_graph_pipes(graph):
-            if isinstance(pipe, RecDataSet):
-                dataset = pipe
+            if isinstance(pipe, BaseProcessor):
+                dataset = pipe.dataset
                 break
         super().__init__(dataset)
         self.source: Iterator[Dict[Field, Any]] = source
