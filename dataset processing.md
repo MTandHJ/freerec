@@ -76,6 +76,8 @@ freerec make [Dataset Name] --root [root] --filedir [filedir] --splitting [split
         - `valid`: some of the interactions in the middle period for each user
         - `test`: the last interactions for each user
 
+    - `RAU`: Ratio and At least one on User. In contrast to `ROU`, at least one item will be left for test.
+
     - `ROD`: Ratio On Dataset (according to `ratios`)
         - `train`: some of the earliest interactions
         - `valid`: some of the interactions in the middle period

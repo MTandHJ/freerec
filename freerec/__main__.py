@@ -73,8 +73,8 @@ def main():
     )
 
     make_parser.add_argument(
-        "--splitting", type=str, choices=('ROU', 'ROD', 'LOU', 'DOU', 'DOD'), default='ROU',
-        help="ROU: Ratio On User (default); ROD: Ratio On Dataset; LOU: Leave-one-out On User; DOU: Day On User; DOD: Day On Dataset"
+        "--splitting", type=str, choices=('ROU', 'RAU', 'ROD', 'LOU', 'DOU', 'DOD'), default='ROU',
+        help="ROU: Ratio On User (default); 'RAU': Ratio and At least one on User; ROD: Ratio On Dataset; LOU: Leave-one-out On User; DOU: Day On User; DOD: Day On Dataset"
     )
 
     make_parser.add_argument("-sp", "--star4pos", type=int, default=0, help="select interactions with `Rating >= star4pos (default: 0)'")

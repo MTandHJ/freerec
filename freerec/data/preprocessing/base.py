@@ -337,6 +337,30 @@ class AtomicConverter:
 
         return ''.join(map(str, ratios)) + '_ROU'
 
+    def split_by_RAU(self, ratios: Iterable = (8, 1, 1)):
+        infoLogger(f"[Converter] >>> Split by RAU (Ratio and At least one on User): {ratios} ...")
+        traingroups = []
+        validgroups = []
+        testgroups = []
+        markers = np.cumsum(ratios)
+        for _, group in self.interactions.groupby(USER.name):
+            if len(group) == 0:
+                continue
+            l = floor(markers[0] * len(group) / markers[-1])
+            l = max(min(l, len(group) - 2), 1)
+            r = floor(markers[1] * len(group) / markers[-1])
+            r = min(r, len(group) - 1)
+            traingroups.append(group[:l])
+            if l < r:
+                validgroups.append(group[l:r])
+            testgroups.append(group[r:])
+
+        self.trainiter = pd.concat(traingroups)
+        self.validiter = pd.concat(validgroups)
+        self.testiter = pd.concat(testgroups)
+
+        return ''.join(map(str, ratios)) + '_RAU'
+
     def split_by_ROD(self, ratios: Iterable = (8, 1, 1)):
         infoLogger(f"[Converter] >>> Split by ROT (Ratio On Dataset): {ratios} ...")
         self.interactions = self.sort_by_timestamp(
@@ -489,6 +513,7 @@ class AtomicConverter:
             Select interactions with `Rating >= star4pos'.
         splitting: str ('ROU', 'ROD', 'LOU', 'DOU', 'DOD')
             `ROU`: Ratio on User
+            `RAU`: Ratio and At least one on User
             `ROD`: Ratio on Dataset
             `LOU`: Leave-one-out on User
             `DOU`: Day on User
@@ -510,6 +535,8 @@ class AtomicConverter:
         self.interactions = self.sort_by_timestamp(self.interactions)
         if splitting == 'ROU':
             s = self.split_by_ROU(ratios)
+        elif splitting == 'RAU':
+            s = self.split_by_RAU(ratios)
         elif splitting == 'ROD':
             s = self.split_by_ROD(ratios)
         elif splitting == 'LOU':
