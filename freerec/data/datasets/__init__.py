@@ -81,7 +81,7 @@ from .tiktok import (
 
 from .yelp import (
     # Matching
-    Yelp2018_10104811_ROU, Yelp2018_10104712_ROU,
+    Yelp2018_10104811_ROU, Yelp2018_10104712_ROU, Yelp2018_554311_ROU,
     Yelp2021_10104811_ROU, Yelp2021_10104712_ROU,
 
     # NextItem
