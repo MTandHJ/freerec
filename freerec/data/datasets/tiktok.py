@@ -33,4 +33,3 @@ class Tiktok_000811_RAU(MatchingRecDataSet):
     Notes:
     Some of users have empty interactions.
     """
-    URL = "https://zenodo.org/records/11003235/files/Tiktok_MMSSL.zip"
