@@ -324,11 +324,11 @@ class AtomicConverter:
             if len(group) == 0:
                 continue
             l = max(floor(markers[0] * len(group) / markers[-1]), 1)
-            r = floor(markers[1] * len(group) / markers[-1])
+            r = max(floor(markers[1] * len(group) / markers[-1]), l)
             traingroups.append(group[:l])
             if l < r:
                 validgroups.append(group[l:r])
-            if r < len(group):
+            if r <= len(group):
                 testgroups.append(group[r:])
 
         self.trainiter = pd.concat(traingroups)
@@ -349,11 +349,12 @@ class AtomicConverter:
             l = floor(markers[0] * len(group) / markers[-1])
             l = max(min(l, len(group) - 2), 1)
             r = floor(markers[1] * len(group) / markers[-1])
-            r = min(r, len(group) - 1)
+            r = max(min(r, len(group) - 1), l)
             traingroups.append(group[:l])
             if l < r:
                 validgroups.append(group[l:r])
-            testgroups.append(group[r:])
+            if r <= len(group):
+                testgroups.append(group[r:])
 
         self.trainiter = pd.concat(traingroups)
         self.validiter = pd.concat(validgroups)
