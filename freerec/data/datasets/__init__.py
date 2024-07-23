@@ -78,7 +78,9 @@ from .movielens import (
 
 from .tiktok import (
     # Matching (MMSSL)
-    Tiktok_MMSSL,
+    Tiktok_MMSSL, 
+    # Matching (MMGCN)
+    Tiktok_000811_RAU
 )
 
 from .yelp import (
