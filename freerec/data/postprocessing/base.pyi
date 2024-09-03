@@ -6,6 +6,7 @@ import torchdata.datapipes as dp
 from torch.utils.data import DataChunk, default_collate
 
 from .sampler import NUM_NEGS_FOR_SAMPLE_BASED_RANKING
+from ..datasets.base import RecDataSet
 from ..fields import Field, FieldTuple
 
 
@@ -14,6 +15,13 @@ __all__ = ['BaseProcessor', 'Postprocessor']
 
 T = TypeVar('T')
 T_co = TypeVar('T_co', covariant=True)
+
+
+class Launcher(dp.iter.IterDataPipe):
+
+    def __init__(self, datasize: int, shuffle: bool = True): ...
+
+    def set_seed(self, seed: int) -> None: ...
 
 
 class BaseProcessor(dp.iter.IterDataPipe):
@@ -32,6 +40,12 @@ class BaseProcessor(dp.iter.IterDataPipe):
     AttributeError: 
         If `fields' are not given or `None` before using.
     """
+
+    def __init__(self, dataset: RecDataSet) -> None: ...
+
+    @property
+    def dataset(self) -> RecDataSet:
+        return self.__dataset
 
     @property
     def fields(self) -> FieldTuple[Field]: ...
@@ -625,6 +639,14 @@ class Source(BaseProcessor):
     """Source datapipe. The start point of Train/valid/test datapipe"""
     source: Iterable
 
+    def __init__(
+        self, dataset: RecDataSet, source: Iterable, 
+        datasize: Optional[int] = None, shuffle: bool = True
+    ) -> None:
+        self.source: Iterable[Dict[Field, Any]]
+        self.datasize: int
+        self.lanucher: Launcher
+
 
 class Postprocessor(BaseProcessor):
     r"""
@@ -638,6 +660,7 @@ class Postprocessor(BaseProcessor):
 
     source: BaseProcessor
     
-    def __init__(self, source: BaseProcessor) -> None: ...
+    def __init__(self, source: BaseProcessor) -> None:
+        self.source: Iterator[Dict[Field, Any]]
 
     def sure_input_fields(self) -> List[Field]: ...

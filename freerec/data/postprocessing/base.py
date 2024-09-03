@@ -1,10 +1,11 @@
 
 
-from typing import TypeVar, Any, Iterator, Iterable, Callable, Dict, List
+from typing import TypeVar, Any, Iterator, Iterable, Callable, Dict, List, Optional
 
-import torch
+import torch, random
 import torchdata.datapipes as dp
 from torch.utils.data.graph_settings import get_all_graph_pipes
+from torch.utils.data.datapipes.datapipe import IterDataPipe
 
 from ..datasets.base import RecDataSet
 from ..fields import Field, FieldTuple
@@ -14,6 +15,26 @@ __all__ = ['BaseProcessor', 'Source', 'PostProcessor']
 
 
 T = TypeVar('T')
+
+
+class Launcher(dp.iter.IterDataPipe):
+
+    def __init__(self, datasize: int, shuffle: bool = True):
+        super().__init__()
+
+        self.source = list(range(datasize))
+        self.shuffle = shuffle
+
+        self._rng = random.Random()
+        self.set_seed(0)
+
+    def set_seed(self, seed: int):
+        self._rng.seed(seed)
+
+    def __iter__(self):
+        if self.shuffle:
+            self._rng.shuffle(self.source)
+        yield from iter(self.source)
 
 
 class BaseProcessor(dp.iter.IterDataPipe):
@@ -78,9 +99,23 @@ class BaseProcessor(dp.iter.IterDataPipe):
 class Source(BaseProcessor):
     """Source datapipe. The start point of Train/valid/test datapipe"""
 
-    def __init__(self, dataset: RecDataSet, source: Iterable) -> None:
+    def __init__(
+        self, dataset: RecDataSet, source: Iterable, 
+        datasize: Optional[int] = None, shuffle: bool = True
+    ) -> None:
         super().__init__(dataset)
         self.source = tuple(source)
+        self.datasize = len(self.source) if datasize is None else datasize
+        self.launcher = Launcher(self.datasize, shuffle=shuffle).sharding_filter()
+
+    def __getstate__(self):
+        # `traverse_dps' will be particularly time-consuming
+        # if a lot of data is buffered.
+        # Hence, we directly return the connected datapipes.
+        state = self.__dict__
+        if IterDataPipe.getstate_hook is not None:
+            return self.launcher
+        return state
 
 
 class PostProcessor(BaseProcessor):
@@ -104,3 +139,12 @@ class PostProcessor(BaseProcessor):
 
     def sure_input_fields(self) -> List[Field]:
         return list(next(iter(self.source)).keys())
+
+    def __getstate__(self):
+        # `traverse_dps' will be particularly time-consuming
+        # if a lot of data is buffered.
+        # Hence, we directly return the connected datapipes.
+        state = self.__dict__
+        if IterDataPipe.getstate_hook is not None:
+            return self.source
+        return state

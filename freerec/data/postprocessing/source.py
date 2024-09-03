@@ -15,26 +15,6 @@ __all__ = [
 ]
 
 
-class Launcher(dp.iter.IterDataPipe):
-
-    def __init__(self, datasize: int, shuffle: bool = True):
-        super().__init__()
-
-        self.source = list(range(datasize))
-        self.shuffle = shuffle
-
-        self._rng = random.Random()
-        self.set_seed(0)
-
-    def set_seed(self, seed: int):
-        self._rng.seed(seed)
-
-    def __iter__(self):
-        if self.shuffle:
-            self._rng.shuffle(self.source)
-        yield from iter(self.source)
-
-
 @dp.functional_datapipe("choiced_source_")
 class RandomChoicedSource(Source):
     r"""
@@ -52,10 +32,7 @@ class RandomChoicedSource(Source):
     def __init__(
         self, dataset: RecDataSet, source: Iterable[Dict[Field, Any]]
     ) -> None:
-        super().__init__(dataset, source)
-
-        self.datasize = dataset.datasize
-        self.launcher = Launcher(self.datasize, shuffle=False).sharding_filter()
+        super().__init__(dataset, source, dataset.datasize, shuffle=False)
 
         self._rng = random.Random()
         self.set_seed(0)
@@ -81,10 +58,7 @@ class RandomShuffledSource(Source):
     """
 
     def __init__(self, dataset: RecDataSet, source: Iterable[Dict[Field, Any]]) -> None:
-        super().__init__(dataset, source)
-
-        self.datasize = len(self.source)
-        self.launcher = Launcher(self.datasize, shuffle=True).sharding_filter()
+        super().__init__(dataset, source, shuffle=True)
 
     def __iter__(self):
         for i in self.launcher:
@@ -103,10 +77,7 @@ class OrderedSource(Source):
     """
 
     def __init__(self, dataset: RecDataSet, source: Iterable[Dict[Field, Any]]) -> None:
-        super().__init__(dataset, source)
-
-        self.datasize = len(self.source)
-        self.launcher = Launcher(self.datasize, shuffle=False).sharding_filter()
+        super().__init__(dataset, source, shuffle=False)
 
     def __iter__(self):
         for i in self.launcher:
