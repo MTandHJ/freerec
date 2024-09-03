@@ -287,7 +287,7 @@ class LeftPaddingRow(RowMapper):
                 else:
                     return self.padding_value
             else:
-                raise ValueError(f"{value} for {field} is not non-iterable ...")
+                raise ValueError(f"{value} for {field} is non-iterable ...")
 
         row = next(iter(self.source))
         self.zeros = dict()
