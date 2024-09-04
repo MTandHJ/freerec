@@ -268,12 +268,8 @@ class SeqTrainPositiveYielder(BaseSampler):
         for row in self.source:
             seq = row[self.ISeq]
             if self._check(seq):
-                positives = seq[self.start_idx_for_target:]
-                seq = seq[:self.end_idx_for_input]
-                row.update([
-                    (self.ISeq, seq),
-                    (self.IPos, positives)
-                ])
+                row[self.IPos] = seq[self.start_idx_for_target:]
+                row[self.ISeq] = seq[:self.end_idx_for_input]
                 yield row
 
 
