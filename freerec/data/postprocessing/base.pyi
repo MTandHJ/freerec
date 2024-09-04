@@ -71,7 +71,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         ...
 
     # Functional form of 'GenTrainPositiveSampler'
-    def gen_train_sampling_pos_(self) -> BaseProcessor:
+    def gen_train_sampling_pos_(self: T) -> T:
         r"""
         Sampling a positive item for each user.
 
@@ -84,7 +84,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'GenTrainNegativeSampler'
-    def gen_train_sampling_neg_(self, num_negatives: int = 1, unseen_only: bool = True) -> BaseProcessor:
+    def gen_train_sampling_neg_(self: T, num_negatives: int = 1, unseen_only: bool = True) -> T:
         r"""
         Sampling negatives for each user.
 
@@ -113,7 +113,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'SeqTrainPositiveSampler'
-    def seq_train_yielding_pos_(self, start_idx_for_target: Optional[int] = 1, end_idx_for_input: Optional[int] = -1) -> BaseProcessor:
+    def seq_train_yielding_pos_(self: T, start_idx_for_target: Optional[int] = 1, end_idx_for_input: Optional[int] = -1) -> T:
         r"""
         Yielding positive sequence for each user sequence.
 
@@ -150,7 +150,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
         
     # Functional form of 'SeqTrainNegativeSampler'
-    def seq_train_sampling_neg_(self, num_negatives: int = 1, unseen_only: bool = True) -> BaseProcessor:
+    def seq_train_sampling_neg_(self: T, num_negatives: int = 1, unseen_only: bool = True) -> T:
         r"""
         Sampling negatives for each positive.
 
@@ -181,7 +181,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'ValidSampler'
-    def valid_sampling_(self, ranking: Literal['full', 'pool'] = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING) -> BaseProcessor:
+    def valid_sampling_(self: T, ranking: Literal['full', 'pool'] = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING) -> T:
         r"""
         Sampler for validation.
 
@@ -222,7 +222,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'TestSampler'
-    def test_sampling_(self, ranking: Literal['full', 'pool'] = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING) -> BaseProcessor:
+    def test_sampling_(self: T, ranking: Literal['full', 'pool'] = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING) -> T:
         r"""
         Sampler for test.
 
@@ -263,7 +263,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'LeftPruningRow'
-    def lprune_(self, maxlen: int, modified_fields: Iterable[Field]) -> BaseProcessor:
+    def lprune_(self: T, maxlen: int, modified_fields: Iterable[Field]) -> T:
         r"""
         A functional datapipe that prunes the left side of a given datapipe to a specified maximum length.
 
@@ -295,7 +295,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'RightPruningRow'
-    def rprune_(self, maxlen: int, modified_fields: Iterable[Field]) -> BaseProcessor:
+    def rprune_(self: T, maxlen: int, modified_fields: Iterable[Field]) -> T:
         r"""
         A functional datapipe that prunes the right side of a given datapipe to a specified maximum length.
 
@@ -327,7 +327,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'AddingRow'
-    def add_(self, offset: int, modified_fields: Iterable[Field]) -> BaseProcessor:
+    def add_(self: T, offset: int, modified_fields: Iterable[Field]) -> T:
         r"""
         Mapper that adds the input data by a specified offset.
 
@@ -355,7 +355,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'LeftPaddingRow'
-    def lpad_(self, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0) -> BaseProcessor:
+    def lpad_(self: T, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0) -> T:
         r"""
         A functional data pipeline component that left pads sequences to a maximum length.
 
@@ -393,7 +393,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'RightPaddingRow'
-    def rpad_(self, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0) -> BaseProcessor:
+    def rpad_(self: T, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0) -> T:
         r"""
         A functional data pipeline component that right pads sequences to a maximum length.
 
@@ -431,7 +431,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'Batcher_'
-    def batch_(self, batch_size: int, drop_last: bool = False) -> BaseProcessor:
+    def batch_(self: T, batch_size: int, drop_last: bool = False) -> T:
         r"""
         A postprocessor that converts a batch of rows into:
             Dict[Field, List[Any]]
@@ -445,7 +445,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'ToTensor'
-    def tensor_(self) -> BaseProcessor:
+    def tensor_(self: T) -> T:
         r"""
         A datapipe that converts lists into torch Tensors.
         This class converts a List into a torch.Tensor.
@@ -458,7 +458,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
     #========================================Functional forms from IterDataPipe========================================
 
     # Functional form of 'Batcher'
-    def batch(self, batch_size: int, drop_last: bool = False, wrapper_class=DataChunk) -> BaseProcessor:
+    def batch(self: T, batch_size: int, drop_last: bool = False, wrapper_class=DataChunk) -> T:
         r"""
         Creates mini-batches of data (functional name: ``batch``). An outer dimension will be added as
         ``batch_size`` if ``drop_last`` is set to ``True``, or ``length % batch_size`` for the
@@ -481,7 +481,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
     
     # Functional form of 'CollatorIterDataPipe'
-    def collate(self, conversion: Optional[Union[Callable[..., Any],Dict[Union[str, Any], Union[Callable, Any]],]] = default_collate, collate_fn: Optional[Callable] = None) -> BaseProcessor:
+    def collate(self: T, conversion: Optional[Union[Callable[..., Any],Dict[Union[str, Any], Union[Callable, Any]],]] = default_collate, collate_fn: Optional[Callable] = None) -> T:
         r"""
         Collates samples from DataPipe to Tensor(s) by a custom collate function (functional name: ``collate``).
         By default, it uses :func:`torch.utils.data.default_collate`.
@@ -523,7 +523,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'MapperIterDataPipe'
-    def map(self, fn: Callable, input_col=None, output_col=None) -> BaseProcessor:
+    def map(self: T, fn: Callable, input_col=None, output_col=None) -> T:
         r"""
         Applies a function over each item from the source DataPipe (functional name: ``map``).
         The function can be any regular Python function or partial object. Lambda
@@ -563,7 +563,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'ShardingFilterIterDataPipe'
-    def sharding_filter(self, sharding_group_filter=None) -> BaseProcessor:
+    def sharding_filter(self: T, sharding_group_filter=None) -> T:
         r"""
         Wrapper that allows DataPipe to be sharded (functional name: ``sharding_filter``). After ``apply_sharding`` is
         called, each instance of the DataPipe (on different workers) will have every `n`-th element of the
@@ -574,7 +574,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'UnBatcherIterDataPipe'
-    def unbatch(self, unbatch_level: int = 1) -> BaseProcessor:
+    def unbatch(self: T, unbatch_level: int = 1) -> T:
         r"""
         Undoes batching of data (functional name: ``unbatch``). In other words, it flattens the data up to the specified level
         within a batched DataPipe.
@@ -597,7 +597,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'BatchMapperIterDataPipe'
-    def map_batches(self, fn: Callable, batch_size: int, input_col=None) -> BaseProcessor:
+    def map_batches(self: T, fn: Callable, batch_size: int, input_col=None) -> T:
         r"""
         Combines elements from the source DataPipe to batches and applies a function
         over each batch, then flattens the outputs to a single, unnested IterDataPipe

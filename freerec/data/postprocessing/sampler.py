@@ -129,7 +129,7 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
     unseen_only: bool, default to `True`
         `True`: sampling negatives from the unseen.
         `False`: sampling negatives from all items.
-    nums_need_vectorized_bsearch: int, default to 10
+    nums_need_vectorized_bsearch: int, default to 17
         The number negatives suitable for using vectorized bsearch.
 
     Examples:
@@ -150,7 +150,7 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
         self, 
         source: BaseProcessor,
         num_negatives: int = 1, unseen_only: bool = True,
-        nums_need_vectorized_bsearch: int = 10
+        nums_need_vectorized_bsearch: int = 17
     ) -> None:
         self.unseen_only = unseen_only
         super().__init__(source)
@@ -289,7 +289,7 @@ class SeqTrainNegativeSampler(BaseSampler):
     unseen_only: bool, default to `True`
         `True`: sampling negatives from the unseen.
         `False`: sampling negatives from all items.
-    nums_need_vectorized_bsearch: int, default to 10
+    nums_need_vectorized_bsearch: int, default to 17
         The number negatives suitable for using vectorized bsearch.
 
     Examples:
@@ -312,7 +312,7 @@ class SeqTrainNegativeSampler(BaseSampler):
         self, 
         source: BaseProcessor,
         num_negatives: int = 1, unseen_only: bool = True,
-        nums_need_vectorized_bsearch: int = 10
+        nums_need_vectorized_bsearch: int = 17
     ) -> None:
         self.unseen_only = unseen_only
         super().__init__(source)
