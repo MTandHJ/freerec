@@ -1,10 +1,10 @@
 
 
-from typing import Iterable, Tuple, Union
+from typing import Iterable, Tuple, Union, Literal
 
 import torch
 import numpy as np
-import pandas as pd
+import polars as pl
 from itertools import chain
 
 from .tags import FieldTags
@@ -73,18 +73,36 @@ class Field:
     def identifier(self) -> Tuple:
         return self.__identifier
 
-    def try_to_numeric(self, data: Iterable) -> Tuple:
-        data = pd.Series(data)
+    def cast(
+        self, 
+        data: pl.LazyFrame, 
+        dtype: Union[None, int, float, str, pl.DataType] = None,
+        strict: bool = False,
+        fill_null_strategy: Literal['forward', 'backward', 'min', 'max', 'zero', 'one'] = 'zero'
+    ) -> pl.Series:
         if self.match(FieldTags.ID):
-            data = data.astype(int)
+            dtype, strict = int, True
         elif self.match(FieldTags.RATING) or self.match(FieldTags.TIMESTAMP):
-            data = data.astype(float)
-        else:
-            try:
-                data = pd.to_numeric(data, errors='raise')
-            except ValueError:
-                pass
-        return tuple(data.to_list())
+            dtype = float
+
+        data = data.collect().to_series()
+        if dtype is not None:
+            data = data.cast(dtype, strict=strict)
+        try:
+            data = data.fill_nan(None)
+        except Exception:
+            # Skip `fill_nan` for String data
+            pass
+        finally:
+            data = data.fill_null(strategy=fill_null_strategy)
+
+        return data
+
+    def standard_scale(self, data: pl.Series, eps: float = 1.e-8) -> pl.Series:
+        return (data - data.mean()) / (data.std() + eps)
+
+    def minmax_scale(self, data: pl.Series, eps: float = 1.e-8) -> pl.Series:
+        return (data - data.min()) / (data.max() - data.min() + eps)
 
     def fork(self, *tags: FieldTags) -> 'Field':
         field = Field(self.name, *self.tags, *tags)

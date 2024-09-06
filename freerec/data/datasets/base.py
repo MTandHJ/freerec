@@ -4,7 +4,7 @@ from typing import Any, TypeVar, Literal, Union, Optional, Callable, Iterator, I
 
 import torch, os, abc
 import numpy as np
-import pandas as pd
+import polars as pl
 import torchdata.datapipes as dp
 from copy import copy
 from functools import lru_cache
@@ -219,22 +219,22 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         3. Build fields.
         4. Transform each field data.
         """
-        train_df = pd.read_csv(
+        train_df = pl.scan_csv(
             os.path.join(self.path, self._open_kwargs.trainfile),
-            sep=self._open_kwargs.sep
+            separator=self._open_kwargs.sep
         )
-        valid_df = pd.read_csv(
+        valid_df = pl.scan_csv(
             os.path.join(self.path, self._open_kwargs.validfile),
-            sep=self._open_kwargs.sep
+            separator=self._open_kwargs.sep
         )
-        test_df = pd.read_csv(
+        test_df = pl.scan_csv(
             os.path.join(self.path, self._open_kwargs.testfile),
-            sep=self._open_kwargs.sep
+            separator=self._open_kwargs.sep
         )
 
-        self.trainsize = len(train_df)
-        self.validsize = len(valid_df)
-        self.testsize = len(test_df)
+        self.trainsize = len(train_df.collect())
+        self.validsize = len(valid_df.collect())
+        self.testsize = len(test_df.collect())
 
         self.__fields = self.build_fields(train_df.columns)
 
@@ -243,41 +243,55 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         }
         for field in self.fields:
             colname = field.name
-            traindata = field.try_to_numeric(train_df[colname])
-            validdata = field.try_to_numeric(valid_df[colname])
-            testdata = field.try_to_numeric(test_df[colname])
 
-            field.count = len(
-                set(traindata) | set(validdata) | set(testdata)
-            )
+            # pre-process
+            coldata = pl.concat((
+                train_df.select(pl.col(colname)),
+                valid_df.select(pl.col(colname)),
+                test_df.select(pl.col(colname))
+            ))
+            coldata = field.cast(coldata)
+
+            # summary
+            coldata = tuple(coldata.to_list())
+            field.count = len(set(coldata))
+
+            # splitting
+            traindata = coldata[:self.trainsize]
+            validdata = coldata[self.trainsize:self.trainsize + self.validsize]
+            testdata = coldata[self.trainsize + self.validsize:]
 
             self.__interdata['train'][field] = traindata
             self.__interdata['valid'][field] = validdata
             self.__interdata['test'][field] = testdata
 
     def load_user(self):
-        user_df = pd.read_csv(
+        user_df = pl.scan_csv(
             os.path.join(self.path, self._open_kwargs.userfile),
-            sep=self._open_kwargs.sep
+            separator=self._open_kwargs.sep
         )
         fields = self.build_fields(user_df.columns, USER)
         self.__userdata = {}
         for field in fields:
             colname = field.name
-            data = field.try_to_numeric(user_df[colname])
+            data = field.cast(
+                user_df.select(pl.col(colname))
+            )
             field.count = len(set(data))
             self.__userdata[field] = data
 
     def load_item(self):
-        item_df = pd.read_csv(
+        item_df = pl.scan_csv(
             os.path.join(self.path, self._open_kwargs.itemfile),
-            sep=self._open_kwargs.sep
+            separator=self._open_kwargs.sep
         )
         fields = self.build_fields(item_df.columns, ITEM)
         self.__itemdata = {}
         for field in fields:
             colname = field.name
-            data = field.try_to_numeric(item_df[colname])
+            data = field.cast(
+                item_df.select(pl.col(colname))
+            )
             field.count = len(set(data))
             self.__itemdata[field] = data
 
