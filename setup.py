@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 requires = [
     # "torchdata==0.4.1",
     # "freeplot>=0.4.5",
-    "polars>=1.6.0"
+    "polars>=1.6.0",
     "PyYAML>=6.0",
     "tensorboard>=2.10.0",
     "prettytable>=3.4.1"
