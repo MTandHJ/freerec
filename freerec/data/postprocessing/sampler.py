@@ -545,14 +545,14 @@ class TestSampler(ValidSampler):
     ---------
     >>> dataset: RecDataSet
     >>> datapipe = dataset.test().ordered_user_ids_source(
-    ).valid_sampling_(ranking='full')
+    ).test_sampling_(ranking='full')
     >>> next(iter(datapipe))
     {Field(USER:ID,USER): 0,
     Field(ITEM:ID,ITEM,SEQUENCE): (9449, 9839, 10076, 11155),
     Field(ITEM:ID,ITEM,UNSEEN): (11752,),
     Field(ITEM:ID,ITEM,SEEN): (9449, 9839, 10076, 11155)}
     >>> datapipe = dataset.test().ordered_user_ids_source(
-    ).valid_sampling_(ranking='pool', num_negatives=5)
+    ).test_sampling_(ranking='pool', num_negatives=5)
     >>> next(iter(datapipe))
     {Field(USER:ID,USER): 0,
     Field(ITEM:ID,ITEM,SEQUENCE): (9449, 9839, 10076, 11155),
