@@ -236,7 +236,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         self.validsize = len(valid_df.collect())
         self.testsize = len(test_df.collect())
 
-        self.__fields = self.build_fields(train_df.columns)
+        self.__fields = self.build_fields(train_df.collect_schema().names())
 
         self.__interdata = {
             'train': dict(), 'valid': dict(), 'test': dict()
@@ -270,7 +270,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
             os.path.join(self.path, self._open_kwargs.userfile),
             separator=self._open_kwargs.sep
         )
-        fields = self.build_fields(user_df.columns, USER)
+        fields = self.build_fields(user_df.collect_schema().names(), USER)
         self.__userdata = {}
         for field in fields:
             colname = field.name
@@ -285,7 +285,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
             os.path.join(self.path, self._open_kwargs.itemfile),
             separator=self._open_kwargs.sep
         )
-        fields = self.build_fields(item_df.columns, ITEM)
+        fields = self.build_fields(item_df.collect_schema().names(), ITEM)
         self.__itemdata = {}
         for field in fields:
             colname = field.name
