@@ -2,7 +2,7 @@
 
 from typing import Any, TypeVar, Literal, Union, Optional, Callable, Iterator, Iterable, Dict, Tuple, List
 
-import torch, os, abc
+import torch, os, abc, yaml
 import numpy as np
 import polars as pl
 import torchdata.datapipes as dp
@@ -63,11 +63,21 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         TIMESTAMP.name: Field(TIMESTAMP.name, TIMESTAMP)
     }
 
+    _field_processor_kwargs = {
+        'tags': tuple(),
+        'dtype': None,
+        'fill_null_strategy': 'zero',
+        'normalizer': None,
+        'tokenizer': None,
+    }
+
     _open_kwargs = Config(
         trainfile='train.txt', validfile='valid.txt', testfile='test.txt',
         userfile='user.txt', itemfile='item.txt',
         sep='\t'
     )
+
+    _cfg_file: str = "config.yaml"
 
     TASK: TaskTags
     URL: Optional[str] = None
@@ -77,7 +87,8 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         root: str, 
         filedir: Optional[str] = None, 
         download: bool = True,
-        tasktag: Optional[TaskTags] = None
+        tasktag: Optional[TaskTags] = None,
+        cfg: Union[None, str, Dict] = None
     ) -> None:
         super().__init__()
 
@@ -100,8 +111,30 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
                     f"Please use `freerec make` to prepare the dataset with the following setting: \n {self.__class__.__doc__}"
                 )
 
+        self.set_config(cfg)
         self.compile()
         self.check()
+
+    def set_config(self, cfg: Union[None, str, Dict] = None):
+        """Set config for fields."""
+        if cfg is None:
+            cfg = os.path.join(self.path, self._cfg_file)
+            if os.path.exists(cfg):
+                with open(cfg, encoding="UTF-8", mode='r') as f:
+                    cfg = yaml.full_load(f)
+            else:
+                cfg = dict()
+        elif isinstance(cfg, str):
+            with open(cfg, encoding="UTF-8", mode='r') as f:
+                cfg = yaml.full_load(f)
+        
+        self.cfg: Dict[str, Dict] = dict()
+        for field_name in cfg:
+            field_cfg = cfg[field_name]
+            self.cfg[field_name.upper()] = {
+                key: field_cfg.get(key, default) 
+                for key, default in self._field_processor_kwargs.items()
+            }
 
     def check(self):
         """Self-check program should be placed here."""
@@ -197,14 +230,15 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
             'train': traindata, 'valid': validdata, 'test': testdata
         }
 
-    @classmethod
-    def build_fields(cls, columns: Iterable[str], *tags: FieldTags) -> FieldTuple[Field]:
+    def build_fields(self, columns: Iterable[str], *tags: FieldTags) -> FieldTuple[Field]:
         fields = []
         for colname in columns:
-            field = cls._field_builder.get(
+            field_cfg = self.cfg.get(colname, self._field_processor_kwargs).copy()
+            field = self._field_builder.get(
                 colname,
                 Field(colname, FEATURE)
-            ).fork(*tags)
+            ).fork(*tags, *field_cfg.pop('tags'))
+            field.set_processor(**field_cfg)
             fields.append(field)
         return FieldTuple(fields)
 
@@ -241,6 +275,8 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         self.__interdata = {
             'train': dict(), 'valid': dict(), 'test': dict()
         }
+
+        field: Field
         for field in self.fields:
             colname = field.name
 
@@ -250,11 +286,8 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
                 valid_df.select(pl.col(colname)),
                 test_df.select(pl.col(colname))
             ))
-            coldata = field.cast(coldata)
-
-            # summary
+            coldata = field.fit(coldata)
             coldata = tuple(coldata.to_list())
-            field.count = len(set(coldata))
 
             # splitting
             traindata = coldata[:self.trainsize]
@@ -274,10 +307,9 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         self.__userdata = {}
         for field in fields:
             colname = field.name
-            data = field.cast(
+            data = field.fit(
                 user_df.select(pl.col(colname))
             )
-            field.count = len(set(data))
             self.__userdata[field] = data
 
     def load_item(self):
@@ -289,10 +321,9 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         self.__itemdata = {}
         for field in fields:
             colname = field.name
-            data = field.cast(
+            data = field.fit(
                 item_df.select(pl.col(colname))
             )
-            field.count = len(set(data))
             self.__itemdata[field] = data
 
     def summary(self):

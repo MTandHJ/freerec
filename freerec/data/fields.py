@@ -1,6 +1,6 @@
 
 
-from typing import Iterable, Tuple, Union, Literal
+from typing import Iterable, Tuple, Union, Literal, Callable, Optional
 
 import torch
 import numpy as np
@@ -73,37 +73,6 @@ class Field:
     def identifier(self) -> Tuple:
         return self.__identifier
 
-    def cast(
-        self, 
-        data: pl.LazyFrame, 
-        dtype: Union[None, int, float, str, pl.DataType] = None,
-        strict: bool = False,
-        fill_null_strategy: Literal['forward', 'backward', 'min', 'max', 'zero', 'one'] = 'zero'
-    ) -> pl.Series:
-        if self.match(FieldTags.ID):
-            dtype, strict = int, True
-        elif self.match(FieldTags.RATING) or self.match(FieldTags.TIMESTAMP):
-            dtype = float
-
-        data = data.collect().to_series()
-        if dtype is not None:
-            data = data.cast(dtype, strict=strict)
-        try:
-            data = data.fill_nan(None)
-        except Exception:
-            # Skip `fill_nan` for String data
-            pass
-        finally:
-            data = data.fill_null(strategy=fill_null_strategy)
-
-        return data
-
-    def standard_scale(self, data: pl.Series, eps: float = 1.e-8) -> pl.Series:
-        return (data - data.mean()) / (data.std() + eps)
-
-    def minmax_scale(self, data: pl.Series, eps: float = 1.e-8) -> pl.Series:
-        return (data - data.min()) / (data.max() - data.min() + eps)
-
     def fork(self, *tags: FieldTags) -> 'Field':
         field = Field(self.name, *self.tags, *tags)
         field.count = self.count
@@ -150,6 +119,104 @@ class Field:
 
     def __str__(self) -> str:
         return f"{self.name}:{','.join(map(lambda tag: tag.name, self.tags))}"
+
+    def set_processor(
+        self, 
+        dtype: Union[None, Literal['int', 'float', 'str'], int, float, str, pl.DataType] = None,
+        fill_null_strategy: Literal['forward', 'backward', 'min', 'max', 'zero', 'one'] = 'zero',
+        normalizer: Union[None, Literal['standard', 'minmax'], Callable] = None,
+        tokenizer: Union[None, Literal['numerical'], Callable] = None
+    ):
+        r"""
+        Field processor for casting, normalization and tokenization.
+
+        Parameters:
+        -----------
+        field: Field
+        dtype: Union[None, Literal['int', 'float', 'str'], int, float, str, pl.DataType]
+            - `None`: no operation
+        fill_null_strategy: the null_strategy used in polars
+            - `None`: no operation
+        normalizer: Union[str, Callable]
+            - `None`: no operation
+            - `standard`: applying standard normalization
+            - `minmax`: applying minmax normalization
+            - `Callable`: applying given normalization
+        tokenizer: Union[std, Callable]
+            - `None`: no operation
+            - `numerical`: mapping each to a number
+            - `Callable`: mapping by given tokenizer
+        """
+        if self.match(FieldTags.ID):
+            dtype = int
+        elif self.match(FieldTags.RATING) or self.match(FieldTags.TIMESTAMP):
+            dtype = float
+        assert normalizer is None or tokenizer is None, "Both `normalizer` and `tokenizer` are active ..."
+
+        self._dtype = eval(dtype) if isinstance(dtype, str) else dtype
+        self._fill_null_strategy = fill_null_strategy
+        self._normalizer = normalizer
+        self._tokenizer = tokenizer
+
+    def cast(
+        self, data: pl.Series, strict: bool = False
+    ) -> pl.Series:
+        if self._dtype is not None:
+            data = data.cast(self._dtype, strict=strict)
+        try:
+            data = data.fill_nan(None)
+        except Exception:
+            # Skip `fill_nan` for String data
+            pass
+        finally:
+            data = data.fill_null(strategy=self._fill_null_strategy)
+            return data
+
+    def normalize(
+        self, data: pl.Series, eps: float = 1.e-8
+    ) -> pl.Series:
+        if self._normalizer is None:
+            return data
+        elif self._normalizer == 'standard':
+            return (data - data.mean()) / (data.std() + eps)
+        elif self._normalizer == 'minmax':
+            return (data - data.min()) / (data.max() - data.min() + eps)
+        else:
+            return self._normalizer(data)
+
+    def tokenize(
+        self, data: pl.Series
+    ) -> pl.Series:
+        if self._tokenizer is None:
+            return data
+
+        keys = data.unique().sort()
+        if self._tokenizer == 'numerical':
+            values = list(range(len(keys)))
+        else:
+            values = self._tokenizer(keys)
+
+        return data.replace_strict(old=keys, new=values)
+
+    def fit(self, data: Union[pl.Series, pl.LazyFrame]) -> pl.Series:
+        r"""
+        Fit the whole data column and return the processed.
+
+        Flows:
+        ------
+                        ----> normalization ---->
+                        |                       |
+        data -> cast --->                       ---> data
+                        |                       |
+                        ----> tokenization ----->
+        """
+        if isinstance(data, pl.LazyFrame):
+            data = data.collect().to_series()
+        data = self.cast(data)
+        data = self.normalize(data)
+        data = self.tokenize(data)
+        self.count = data.n_unique()
+        return data
 
     def to_csr(self, data: Iterable) -> torch.Tensor:
         r"""
