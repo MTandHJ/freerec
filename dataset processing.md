@@ -62,7 +62,7 @@ Then, in this case, we have
 The following command can be used to split dataset:
 
 ```
-freerec make [Dataset Name] --root [root] --filedir [filedir] --splitting [splitting method] --star4pos [filter by >= star/rating] --kcore4user [filter by >= kcore4user] --ratios [ratios] --days [days] --userColname [colname of user id] --itemColname [colname of item id] --ratingColname [colname of rating] --timestampColname [colname of timestamp]
+freerec make [Dataset Name] --root [root] --filedir [filedir] --splitting [splitting method] --star4pos [filter by >= star/rating] --kcore4user [filter by >= kcore4user] --kcore4user [filter by >= kcore4item] --ratios [ratios] --days [days] --userColname [colname of user id] --itemColname [colname of item id] --ratingColname [colname of rating] --timestampColname [colname of timestamp]
 ```
 
 - `dataset`: the 'output' dataset name
