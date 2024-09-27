@@ -119,7 +119,7 @@ Finally, the output dataset will be named as:
 
 ### Example
 
-Let us pre-process `MovieLens1M` in a `LOU` fashion with `star4pos=0, kcore4user=5, kcore4item = 5`:
+Let us pre-process `MovieLens1M` in a `LOU` fashion with `star4pos=0, kcore4user=5, kcore4item=5`:
 
     freerec make MovieLens1M --root ./data --star4pos 0 --kcore4user 5 --kcore4item 5 --splitting LOU
 
