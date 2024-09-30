@@ -9,7 +9,7 @@ import torchdata.datapipes as dp
 from copy import copy
 from functools import lru_cache
 
-from ..tags import FieldTags, TaskTags, USER, ITEM, ID, RATING, TIMESTAMP, FEATURE, SEQUENCE
+from ..tags import FieldTags, TaskTags, USER, ITEM, LABEL, ID, RATING, TIMESTAMP, FEATURE, SEQUENCE
 from ..fields import Field, FieldTuple
 from ..utils import download_from_url, extract_archive
 from ...utils import timemeter, infoLogger, warnLogger
@@ -59,6 +59,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     _field_builder = {
         USER.name: Field(USER.name, USER, ID),
         ITEM.name: Field(ITEM.name, ITEM, ID),
+        LABEL.name: Field(LABEL.name, LABEL),
         RATING.name: Field(RATING.name, RATING),
         TIMESTAMP.name: Field(TIMESTAMP.name, TIMESTAMP)
     }
@@ -789,6 +790,25 @@ class RecDataSet(BaseSet):
         from ..postprocessing.source import RandomShuffledSource
         return RandomShuffledSource(
             self, self.to_roll_seqs(minlen, maxlen, keep_at_least_itself)
+        )
+
+    def ordered_inter_source(self):
+        r"""
+        To ordered [User, Item, Label, Feature1, Feature2, ...] source.
+        """
+        from ..postprocessing.source import OrderedSource
+        return OrderedSource(
+            self, list(self)
+        )
+
+    @safe_mode('train')
+    def shuffled_inter_source(self):
+        r"""
+        To shuffled [User, Item, Label, Feature1, Feature2, ...] source.
+        """
+        from ..postprocessing.source import RandomShuffledSource
+        return RandomShuffledSource(
+            self, list(self)
         )
 
     def summary(self):

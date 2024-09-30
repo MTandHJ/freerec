@@ -7,6 +7,7 @@ class FieldTags(Enum):
     ID = 'ID'
     USER = 'USER'
     ITEM = 'ITEM'
+    LABEL = 'LABEL'
     RATING = 'RATING'
     FEATURE = 'FEATURE'
     TIMESTAMP = 'TIMESTAMP'
@@ -24,6 +25,7 @@ class TaskTags(Enum):
 ID = FieldTags('ID')
 USER = FieldTags('USER')
 ITEM = FieldTags('ITEM')
+LABEL = FieldTags('LABEL')
 RATING = FieldTags('RATING')
 FEATURE = FieldTags('FEATURE')
 TIMESTAMP = FieldTags('TIMESTAMP')
