@@ -134,6 +134,9 @@ class PostProcessor(BaseProcessor):
             if isinstance(pipe, BaseProcessor):
                 dataset = pipe.dataset
                 break
+            elif isinstance(pipe, RecDataSet):
+                dataset = pipe
+                break
         super().__init__(dataset)
         self.source: Iterator[Dict[Field, Any]] = source
 
