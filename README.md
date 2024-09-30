@@ -15,7 +15,7 @@ FreeRec is a repository designed for easy (recommendation) data pre-processing a
 
 ## Requirements: 
 
-Python >= 3.9 | [PyTorch >=2.0](https://pytorch.org/) | [TorchData >=0.6.0](https://github.com/pytorch/data) | [PyG >=2.3](https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html#)
+3.9 <= Python <= 3.11 | [PyTorch >=2.0](https://pytorch.org/) | [0.6.0 <= TorchData <= 0.8.0](https://github.com/pytorch/data) | [PyG >=2.3](https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html#)
 
 
 ```
@@ -23,11 +23,8 @@ conda create --name=FreeRec python=3.9
 conda activate FreeRec
 ```
 
-
-**Note:** After PyTorch 2.0, `TorchData` seems to have stopped being updated, and you can install it with `--no-deps` to avoid installing dependencies.
-
 ```
-pip install --no-deps torchdata
+pip install --no-deps torchdata==0.7.0
 ```
 
 
