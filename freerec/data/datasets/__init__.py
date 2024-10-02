@@ -1,6 +1,6 @@
 
 
-from .base import RecDataSet
+from .base import RecDataSet, MatchingRecDataSet, NextItemRecDataSet, PredictionRecDataSet
 
 from .allrecipes import (
     # Matching (MMSSL)
@@ -45,7 +45,6 @@ from .amazon2018 import (
     Amazon2018Toys_550_LOU
 )
 
-
 from .amazon2023 import(
     # Matching
     Amazon2023Baby_554811_ROU,
@@ -56,10 +55,19 @@ from .amazon2023 import(
     Amazon2023Toys_554811_ROU, Amazon2023Toys_10104811_ROU
 )
 
+from .frappe import (
+    # Prediction
+    Frappe_x1_BARS
+)
 
 from .gowalla import (
     # Matching
     Gowalla2010_10100811_ROU, Gowalla2010_10100712_ROU
+)
+
+from .microlens import (
+    # Matching
+    MicroLens100K
 )
 
 from .movielens import (
@@ -95,5 +103,3 @@ from .yelp import (
     # NextItem (S3Rec)
     Yelp2019_550_S3Rec,
 )
-
-from .microlens import MicroLens100K

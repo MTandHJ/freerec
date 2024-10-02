@@ -833,3 +833,7 @@ class MatchingRecDataSet(RecDataSet):
 
 class NextItemRecDataSet(RecDataSet):
     TASK = TaskTags.NEXTITEM
+
+
+class PredictionRecDataSet(RecDataSet):
+    TASK = TaskTags.PREDICTION

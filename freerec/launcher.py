@@ -11,7 +11,7 @@ from collections import defaultdict
 from .data.datasets import RecDataSet
 from .data.postprocessing import PostProcessor
 from .data.fields import Field, FieldTuple
-from .data.tags import USER, ITEM, ID, UNSEEN, SEEN
+from .data.tags import USER, ITEM, ID, LABEL, UNSEEN, SEEN
 from .models import RecSysArch
 from .dict2obj import Config
 from .utils import AverageMeter, Monitor, timemeter, infoLogger, import_pickle, export_pickle
@@ -35,12 +35,15 @@ DEFAULT_METRICS = {
     'PRECISION': precision,
     'RECALL': recall,
     'F1': f1_score,
-    'AUC': auroc,
     'HITRATE': hit_rate,
     #############
     'NDCG': normalized_dcg,
     'MRR': mean_reciprocal_rank,
-    'MAP': mean_average_precision
+    'MAP': mean_average_precision,
+    #############
+    'AUC': auroc,
+    'GAUC': group_auroc,
+    'LOGLOSS': log_loss
 }
 
 DEFAULT_FMTS = {
@@ -53,12 +56,15 @@ DEFAULT_FMTS = {
     'PRECISION': ".4f",
     'RECALL': ".4f",
     'F1': ".4f",
-    'AUC': ".4f",
     'HITRATE': ".4f",
     #############
     'NDCG': ".4f",
     'MRR': ".4f",
     'MAP': ".4f",
+    #############
+    'AUC': ".4f",
+    'GAUC': ".4f",
+    'LOGLOSS': ".5f"
 }
 
 DEFAULT_BEST_CASTER = {
@@ -71,12 +77,15 @@ DEFAULT_BEST_CASTER = {
     'PRECISION': max,
     'RECALL': max,
     'F1': max,
-    'AUC': max,
     'HITRATE': max,
     #############
     'NDCG': max,
     'MRR': max,
     'MAP': max,
+    #############
+    'AUC': max,
+    'GAUC': max,
+    'LOGLOSS': min
 }
 
 
@@ -149,6 +158,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         self.fields: FieldTuple[Field] = FieldTuple(dataset.fields)
         self.User = self.fields[USER, ID]
         self.Item = self.fields[ITEM, ID]
+        self.Label = self.fields[LABEL]
         self.ISeen = self.Item.fork(SEEN)
         self.IUnseen = self.Item.fork(UNSEEN)
 
@@ -682,6 +692,9 @@ class Coach(ChiefCoach):
 
     def evaluate(self, epoch: int, mode: str = 'valid'):
         self.get_res_sys_arch().reset_ranking_buffers()
+        y_pred = []
+        y_true = []
+        groups = []
         for data in self.dataloader:
             data = self.dict_to_device(data)
             users = data[self.User]
@@ -693,18 +706,38 @@ class Coach(ChiefCoach):
                 targets = self.Item.to_csr(data[self.IUnseen]).to(self.device).to_dense()
             elif self.cfg.ranking == 'pool':
                 scores = self.model(data, ranking='pool')
-                targets = torch.zeros_like(scores)
-                targets[:, 0].fill_(1)
+                if self.Label in data:
+                    targets = data[self.Label]
+                else:
+                    targets = torch.zeros_like(scores)
+                    targets[:, 0].fill_(1)
             else:
                 raise NotImplementedError(
                     f"`ranking` should be 'full' or 'pool' but {self.cfg.ranking} received ..."
                 )
+
+            if self.Label in data:
+                groups += users.flatten().tolist()
+                y_pred += scores.flatten().tolist()
+                y_true += targets.flatten().tolist()
 
             self.monitor(
                 scores, targets,
                 n=len(users), reduction="mean", mode=mode,
                 pool=['HITRATE', 'PRECISION', 'RECALL', 'NDCG', 'MRR']
             )
+        
+        # TODO: Multi GPUs Support
+        self.monitor(
+            y_pred, y_true,
+            n=1, reduction="mean", mode=mode,
+            pool=['LOGLOSS', 'AUC']
+        )
+        self.monitor(
+            y_pred, y_true, groups,
+            n=len(users), reduction="mean", mode=mode,
+            pool=['GAUC']
+        )
             
     @timemeter
     def fit(self):

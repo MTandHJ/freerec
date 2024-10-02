@@ -1,6 +1,6 @@
 
 
-from typing import Iterable, Tuple, Union, Literal, Callable, Optional
+from typing import Iterable, Tuple, Union, Literal, Callable, Iterator
 
 import torch
 import numpy as np
@@ -281,6 +281,10 @@ class FieldTuple(tuple):
         """Return those fields matching any given tags."""
         return FieldTuple(field for field in self if field.match_any(*tags))
 
+    def match_not(self, *tags: FieldTags) -> 'FieldTuple':
+        """Return those fields not matching given tags."""
+        return FieldTuple(field for field in self if not field.match_all(*tags))
+
     def copy(self) -> 'FieldTuple':
         r"""
         Return a copy of the FieldTuple.
@@ -316,6 +320,9 @@ class FieldTuple(tuple):
         1
         """
         return super().index(self[tags])
+
+    def __iter__(self) -> Iterator[FieldModule]:
+        return super().__iter__()
 
     def __getitem__(self, index: Union[int, str, slice, FieldTags, Iterable[FieldTags]]) -> Union[Field, 'FieldTuple', None]:
         r"""
@@ -403,6 +410,10 @@ class FieldModuleList(torch.nn.ModuleList):
         """Return those fields matching any given tags."""
         return FieldModuleList(field for field in self if field.match_any(*tags))
 
+    def match_not(self, *tags: FieldTags) -> 'FieldModuleList':
+        """Return those fields not matching all given tags."""
+        return FieldModuleList(field for field in self if not field.match_all(*tags))
+
     def insert(self, index: int, field: FieldModule) -> None:
         assert isinstance(field, FieldModule), "'FieldModuleList' receives 'FieldModule' only ..."
         return super().insert(index, field)
@@ -415,6 +426,9 @@ class FieldModuleList(torch.nn.ModuleList):
         fields = list(fields)
         assert all(isinstance(field, FieldModule) for field in fields), "'FieldModuleList' receives 'FieldModule' only ..."
         return super().extend(fields)
+
+    def __iter__(self) -> Iterator[FieldModule]:
+        return super().__iter__()
 
     def __getitem__(self, index: Union[int, str, FieldTags, Iterable[FieldTags]]) -> Union[FieldModule, 'FieldModuleList', None]:
         r"""

@@ -7,20 +7,24 @@ for formal definitions.
 The implementations below are fully due to torchmetrics.
 """
 
-from typing import Optional, Union, List 
+from typing import Optional, Union, List, Iterable, Literal
 from functools import  partial
 
 import torch
+import numpy as np
+from sklearn.metrics import roc_auc_score
+from collections import defaultdict
 
 
 __all__ = [
     'mean_abs_error', 'mean_squared_error', 'root_mse',
-    'precision', 'recall', 'f1_score', 'auroc', 'hit_rate',
-    'normalized_dcg', 'mean_reciprocal_rank', 'mean_average_precision'
+    'precision', 'recall', 'f1_score', 'hit_rate',
+    'normalized_dcg', 'mean_reciprocal_rank', 'mean_average_precision',
+    'log_loss', 'auroc', 'group_auroc'
 ]
 
 
-def _reduce(reduction='mean'):
+def _reduce(reduction: Literal['mean', 'sum', 'none'] ='mean'):
     r"""
     A decorator that applies a reduction operation to the output of a given function.
 
@@ -364,54 +368,6 @@ def f1_score(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = N
     score[valid] /= part2[valid]
     return score
 
-@_reduce("mean") #TODO: This implementation has not been verified.
-def auroc(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-    r"""
-    AUC (Area Under the ROC Curve) represents the area under the Receiver Operating Characteristic (ROC) curve, 
-    which is a curve showing the performance of a binary classifier system.
-
-    .. math::
-
-        \frac{n - (|N_+| - 1) / 2 - (\sum_{v \in |N_+|} rank(v)) / |N_+|}{n - |N_+|}
-
-    where :math: `n` and :math: `|N_+|` denote the number of items and positive items, respectively; :math: `rank(v)` returns the rank of the positive item :math: `v`.
-
-    Parameters:
-    -----------
-    preds: torch.Tensor, shape (N, d) or (d,)
-        Predictions or a single prediction tensor.
-    targets: torch.Tensor, shape (N, d) or (d,)
-        Targets tensor in accordance with preds.
-    reduction: str, optional
-        Specifies the reduction to apply to the output:
-        - 'mean': the mean value of the error is returned. Default.
-        - 'sum': the sum of the error is returned.
-        - 'none': no reduction will be applied and a tensor of shape (n,) will be returned.
-
-    Returns:
-    --------
-    Computed AUC: torch.Tensor, shape (1,) or (N,)
-
-    Examples:
-    ---------
-    >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
-    >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
-    >>> auroc(preds, targets, reduction='none')
-    tensor([0.5000, 0.5000])
-    >>> auroc(preds, targets) 
-    tensor(0.5000)
-    """
-    preds, targets = preds.float(), targets.float()
-    preds, indices = torch.sort(preds, descending=True)
-    targets = targets.gather(-1, indices)
-    ranks = torch.arange(1, targets.size(1) + 1, device=targets.device)
-    length = targets.sum(dim=-1)
-    results = targets.size(1)
-    results -= (ranks * targets).sum(dim=-1).div(length)
-    results -= (length - 1).div(2)
-    results /= (targets.size(1) - length)
-    results[torch.isnan(results)] = 0.
-    return results
 
 @_reduce('mean')
 def hit_rate(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
@@ -462,7 +418,6 @@ def hit_rate(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = N
     indices = preds.topk(k)[1]
     relevant = targets.gather(-1, indices).sum(-1)
     return (relevant > 0).float()
-
 
 # quality of the list of recommendations
 
@@ -638,6 +593,123 @@ def mean_average_precision(preds: torch.Tensor, targets: torch.Tensor, *, k: Opt
         return torch.tensor(list(map(_single_adverage_precision, preds, targets)))
     else:
         return _single_adverage_precision(preds, targets)
+
+
+
+# quality of CTR
+
+def log_loss(
+    preds: Iterable, targets: Iterable, *, 
+    reduction: Literal['mean', 'sum', 'none'] = 'mean',
+    eps: float = 1.e-8
+) -> np.ndarray:
+    r"""
+    LogLoss.
+
+    Parameters:
+    -----------
+    preds: Iterable, shape (N,)
+        A sequence of predictions.
+    targets: Iterable, shape (N,)
+        A sequence of labels (0/1).
+    reduction: str, optional
+        Specifies the reduction to apply to the output:
+        - 'mean': the mean value of the error is returned. Default.
+        - 'sum': the sum of the error is returned.
+        - 'none': no reduction will be applied and a tensor of shape (N,) will be returned.
+
+    Examples:
+    ---------
+    >>> preds = [0.1, 0.3, 0.4, 0.5, 0.6, 0.2, 0.75, 0.33]
+    >>> targets = [0, 1, 0, 1, 1, 0, 1, 1]
+    >>> log_loss(preds, targets)
+    0.5804524803061438
+    >>> log_loss(preds, targets, reduction='none')
+    array([0.1053605 , 1.20397277, 0.51082561, 0.69314716, 0.51082561,
+        0.22314354, 0.28768206, 1.10866259])
+    """
+    preds = np.array(preds, dtype=float)
+    targets = np.array(targets)
+    loss = -(
+        targets * np.log(preds + eps) 
+        + (1 - targets) * np.log(1 - preds + eps)
+    )
+    if reduction == 'none':
+        return loss
+    elif reduction == 'mean':
+        return np.mean(loss)
+    elif reduction == 'sum':
+        return np.sum(loss)
+    else:
+        raise ValueError(f"reduction should be 'none'|'mean'|'sum' but {reduction} is received ...")
+
+def auroc(preds: Iterable, targets: Iterable) -> np.ndarray:
+    r"""
+    AUC.
+
+    Parameters:
+    -----------
+    preds: Iterable, shape (N,)
+        A sequence of predictions.
+    targets: Iterable, shape (N,)
+        A sequence of labels (0/1).
+
+    >>> preds = [0.1, 0.3, 0.4, 0.5, 0.6, 0.2, 0.75, 0.33]
+    >>> targets = [0, 1, 0, 1, 1, 0, 1, 1]
+    >>> auroc(preds, targets)
+    0.8666666666666667
+    """
+    try:
+        return roc_auc_score(targets, preds)
+    except ValueError:
+        # Return `1` if only one class presents in `targets`
+        return 1.
+
+def group_auroc(
+    preds: Iterable, targets: Iterable, groups: Iterable,
+    *, reduction: Literal['mean', 'none'] = 'mean'
+) -> np.ndarray:
+    r"""
+    Group AUC. Each user plays as a group.
+
+    Parameters:
+    -----------
+    preds: Iterable, shape (N,)
+        A sequence of predictions.
+    targets: Iterable, shape (N,)
+        A sequence of labels (0/1).
+    reduction: str, optional
+        Specifies the reduction to apply to the output:
+        - 'mean': the mean value of the error is returned. Default.
+        - 'none': no reduct
+
+    >>> preds = [0.1, 0.3, 0.4, 0.5, 0.6, 0.2, 0.75, 0.33]
+    >>> targets = [0, 1, 0, 1, 1, 0, 1, 1]
+    >>> groups = [0, 0, 0, 0, 0, 1, 1, 1]
+    >>> group_auroc(preds, targets, groups)
+    0.8958333333333333
+    >>> group_auroc(preds, targets, groups, reduction='none')
+    array([0.83333333, 1.        ])
+    """
+    group_preds = defaultdict(list)
+    group_targets = defaultdict(list)
+    for group, pred, target in zip(groups, preds, targets):
+        group_preds[group].append(pred)
+        group_targets[group].append(target)
+    group_sizes = np.array([
+        len(targets) if len(set(targets)) > 1 else 0
+        for targets in group_targets.values()
+    ])
+    aurocs = np.fromiter(map(
+        auroc, 
+        group_preds.values(), group_targets.values()
+    ), dtype=float)
+    if reduction == 'none':
+        return aurocs
+    elif reduction == 'mean':
+        return np.sum(aurocs * group_sizes) / np.sum(group_sizes)
+    else:
+        raise ValueError(f"reduction should be 'none'|'mean' but {reduction} is received ...")
 
 
 if __name__ == "__main__":

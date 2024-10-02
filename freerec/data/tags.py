@@ -21,6 +21,7 @@ class FieldTags(Enum):
 class TaskTags(Enum):
     MATCHING = 'MATCHING'
     NEXTITEM = 'NEXTITEM'
+    PREDICTION = 'PREDICTION'
 
 ID = FieldTags('ID')
 USER = FieldTags('USER')
@@ -38,3 +39,4 @@ NEGATIVE = FieldTags('NEGATIVE')
 
 MATCHING = TaskTags('MATCHING')
 NEXTITEM = TaskTags('NEXTITEM')
+PREDICTION = TaskTags('PREDICTION')

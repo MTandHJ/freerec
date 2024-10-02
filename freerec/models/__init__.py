@@ -1,5 +1,5 @@
 
 
 from .base import (
-    RecSysArch, GenRecArch, SeqRecArch
+    RecSysArch, GenRecArch, SeqRecArch, PredRecArch
 )

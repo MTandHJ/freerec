@@ -8,11 +8,11 @@ import torch.nn as nn
 from ..data.datasets.base import RecDataSet
 from ..data.postprocessing import PostProcessor
 from ..data.fields import Field, FieldModule, FieldModuleList
-from ..data.tags import USER, ITEM, ID, SEQUENCE, UNSEEN, SEEN, POSITIVE, NEGATIVE
+from ..data.tags import USER, ITEM, ID, LABEL, SEQUENCE, UNSEEN, SEEN, POSITIVE, NEGATIVE
 from ..criterions import BaseCriterion
 
 
-__all__ = ['RecSysArch', 'GenRecArch', 'SeqRecArch']
+__all__ = ['RecSysArch', 'GenRecArch', 'SeqRecArch', 'PredRecArch']
 
 
 class RecSysArch(nn.Module):
@@ -31,6 +31,7 @@ class RecSysArch(nn.Module):
 
         self.User: FieldModule = self.fields[USER, ID]
         self.Item: FieldModule = self.fields[ITEM, ID]
+        self.Label: FieldModule = self.fields[LABEL]
         self.ISeq: FieldModule = self.Item.fork(SEQUENCE)
         self.IPos: FieldModule = self.Item.fork(POSITIVE)
         self.INeg: FieldModule = self.Item.fork(NEGATIVE)
@@ -38,11 +39,11 @@ class RecSysArch(nn.Module):
         self.ISeen: FieldModule = self.Item.fork(SEEN)
     
     @property
-    def fields(self):
+    def fields(self) -> FieldModuleList:
         return self.__fields
     
     @fields.setter
-    def fields(self, fields: Iterable[Union[Field, FieldModule]]) -> FieldModuleList:
+    def fields(self, fields: Iterable[Union[Field, FieldModule]]):
         self.__fields = []
         for field in fields:
             if isinstance(field, FieldModule):
@@ -209,3 +210,20 @@ class SeqRecArch(RecSysArch):
             maxlen, modified_fields=(self.ISeq,), 
             padding_value=self.PADDING_VALUE
         ).batch_(batch_size).tensor_()
+
+
+class PredRecArch(RecSysArch):
+
+    def sure_validpipe(
+        self, batch_size: int = 4096,
+    ) -> PostProcessor:
+        return self.dataset.valid().ordered_inter_source().batch_(
+            batch_size
+        ).tensor_()
+
+    def sure_testpipe(
+        self, batch_size: int = 4096,
+    ) -> PostProcessor:
+        return self.dataset.test().ordered_inter_source().batch_(
+            batch_size
+        ).tensor_()
