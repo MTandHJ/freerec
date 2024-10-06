@@ -809,7 +809,7 @@ class RecDataSet(BaseSet):
 
     def ordered_inter_source(self):
         r"""
-        To ordered [User, Item, Label, Feature1, Feature2, ...] source.
+        To ordered [Label, Feature1, Feature2, ...] source.
         """
         from ..postprocessing.source import OrderedSource
         return OrderedSource(
@@ -819,12 +819,35 @@ class RecDataSet(BaseSet):
     @safe_mode('train')
     def shuffled_inter_source(self):
         r"""
-        To shuffled [User, Item, Label, Feature1, Feature2, ...] source.
+        To shuffled [Label, Feature1, Feature2, ...] source.
         """
         from ..postprocessing.source import RandomShuffledSource
         return RandomShuffledSource(
             self, list(self)
         )
+
+
+class MatchingRecDataSet(RecDataSet):
+    TASK = TaskTags.MATCHING
+
+    def summary(self):
+        super().summary()
+        from prettytable import PrettyTable
+        User, Item = self.fields[USER, ID], self.fields[ITEM, ID]
+
+        table = PrettyTable(['#Users', '#Items', '#Interactions', '#Train', '#Valid', '#Test', 'Density'])
+        table.add_row([
+            User.count, Item.count,
+            self.trainsize + self.validsize + self.testsize,
+            self.trainsize, self.validsize, self.testsize,
+            (self.trainsize + self.validsize + self.testsize) / (User.count * Item.count)
+        ])
+
+        infoLogger(table)
+
+
+class NextItemRecDataSet(RecDataSet):
+    TASK = TaskTags.NEXTITEM
 
     def summary(self):
         super().summary()
@@ -842,13 +865,17 @@ class RecDataSet(BaseSet):
         infoLogger(table)
 
 
-class MatchingRecDataSet(RecDataSet):
-    TASK = TaskTags.MATCHING
-
-
-class NextItemRecDataSet(RecDataSet):
-    TASK = TaskTags.NEXTITEM
-
-
 class PredictionRecDataSet(RecDataSet):
     TASK = TaskTags.PREDICTION
+
+    def summary(self):
+        super().summary()
+        from prettytable import PrettyTable
+
+        table = PrettyTable(['#Interactions', '#Train', '#Valid', '#Test'])
+        table.add_row([
+            self.trainsize + self.validsize + self.testsize,
+            self.trainsize, self.validsize, self.testsize,
+        ])
+
+        infoLogger(table)
