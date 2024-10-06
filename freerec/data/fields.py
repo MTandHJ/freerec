@@ -282,7 +282,7 @@ class FieldTuple(tuple):
         return FieldTuple(field for field in self if field.match_any(*tags))
 
     def match_not(self, *tags: FieldTags) -> 'FieldTuple':
-        """Return those fields not matching given tags."""
+        """Return those fields not matching all given tags."""
         return FieldTuple(field for field in self if not field.match_all(*tags))
 
     def copy(self) -> 'FieldTuple':

@@ -371,6 +371,21 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         dataset.fields = self.fields.match_any(*tags)
         return dataset
 
+    def match_not(self: T, *tags: FieldTags) -> T:
+        r"""
+        Return a copy of dataset with fields not matching all given tags.
+
+        Examples:
+        ---------
+        >>> dataset: BaseSet
+        RecDataSet(USER:ID,USER|ITEM:ID,ITEM|RATING:RATING|TIMESTAMP:TIMESTAMP)
+        >>> dataset.match_not(TIMESTAMP)
+        RecDataSet(USER:ID,USER|ITEM:ID,ITEM)
+        """
+        dataset = copy(self)
+        dataset.fields = self.fields.match_not(*tags)
+        return dataset
+
     @staticmethod
     def listmap(func: Callable, *iterables) -> List:
         r"""
