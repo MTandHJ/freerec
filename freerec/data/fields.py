@@ -8,6 +8,7 @@ import polars as pl
 from itertools import chain
 
 from .tags import FieldTags
+from .preprocessor import Preprocessor, StandardScaler, MinMaxScaler, Counter, ReIndexer
 
 
 __all__ = [
@@ -105,9 +106,6 @@ class Field:
         """True if `other` matches all tags of `self`."""
         return other.match(*self.tags)
 
-    def __iter__(self):
-        return iter(self.tags)
-
     def __hash__(self) -> int:
         return self.__hash_value
 
@@ -122,10 +120,10 @@ class Field:
 
     def set_processor(
         self, 
-        dtype: Union[None, Literal['int', 'float', 'str'], int, float, str, pl.DataType] = None,
+        dtype: Union[None, str, pl.DataType] = None,
         fill_null_strategy: Literal['forward', 'backward', 'min', 'max', 'zero', 'one'] = 'zero',
         normalizer: Union[None, Literal['standard', 'minmax'], Callable] = None,
-        tokenizer: Union[None, Literal['numerical'], Callable] = None
+        tokenizer: Union[None, Literal['indexing'], Callable] = None
     ):
         r"""
         Field processor for casting, normalization and tokenization.
@@ -133,8 +131,9 @@ class Field:
         Parameters:
         -----------
         field: Field
-        dtype: Union[None, Literal['int', 'float', 'str'], int, float, str, pl.DataType]
+        dtype: Union[None, str, pl.DataType]
             - `None`: no operation
+            - `str`: getattr(str, pl)
         fill_null_strategy: the null_strategy used in polars
             - `None`: no operation
         normalizer: Union[str, Callable]
@@ -144,19 +143,29 @@ class Field:
             - `Callable`: applying given normalization
         tokenizer: Union[std, Callable]
             - `None`: no operation
-            - `numerical`: mapping each to a number
+            - `indexing`: mapping each to a number
             - `Callable`: mapping by given tokenizer
         """
-        if self.match(FieldTags.ID):
-            dtype = int
-        elif self.match(FieldTags.RATING) or self.match(FieldTags.TIMESTAMP):
-            dtype = float
         assert normalizer is None or tokenizer is None, "Both `normalizer` and `tokenizer` are active ..."
 
-        self._dtype = eval(dtype) if isinstance(dtype, str) else dtype
+        self._dtype = getattr(pl, dtype) if isinstance(dtype, str) else dtype
         self._fill_null_strategy = fill_null_strategy
-        self._normalizer = normalizer
-        self._tokenizer = tokenizer
+
+        if normalizer is None:
+            self._normalizer = Preprocessor()
+        elif normalizer == 'standard':
+            self._normalizer = StandardScaler()
+        elif normalizer == 'minmax':
+            self._normalizer = MinMaxScaler()
+        else:
+            self._normalizer = normalizer
+
+        if tokenizer is None:
+            self._tokenizer = Counter()
+        elif tokenizer == 'indexing':
+            self._tokenizer = ReIndexer()
+        else:
+            self._tokenizer = tokenizer
 
     def cast(
         self, data: pl.Series, strict: bool = False
@@ -172,35 +181,57 @@ class Field:
             data = data.fill_null(strategy=self._fill_null_strategy)
             return data
 
-    def normalize(
-        self, data: pl.Series, eps: float = 1.e-8
+    def normalize(self, data: pl.Series) -> pl.Series:
+        return self._normalizer.transform(data)
+
+    def tokenize(self, data: pl.Series) -> pl.Series:
+        return self._tokenizer.transform(data)
+
+    def fit(
+        self, 
+        data: Union[pl.Series, pl.DataFrame, pl.LazyFrame],
+        partial: bool = True
     ) -> pl.Series:
-        if self._normalizer is None:
-            return data
-        elif self._normalizer == 'standard':
-            return (data - data.mean()) / (data.std() + eps)
-        elif self._normalizer == 'minmax':
-            return (data - data.min()) / (data.max() - data.min() + eps)
-        else:
-            return self._normalizer(data)
-
-    def tokenize(
-        self, data: pl.Series
-    ) -> pl.Series:
-        if self._tokenizer is None:
-            return data
-
-        keys = data.unique().sort()
-        if self._tokenizer == 'numerical':
-            values = list(range(len(keys)))
-        else:
-            values = self._tokenizer(keys)
-
-        return data.replace_strict(old=keys, new=values)
-
-    def fit(self, data: Union[pl.Series, pl.LazyFrame]) -> pl.Series:
         r"""
         Fit the whole data column and return the processed.
+
+        Parameters:
+        -----------
+        data: pl.Series or pl.DataFrame or pl.LazyFrame
+        partial: bool
+            `True`: partially fitting the given data
+            `False`: fitting the given data
+        """
+        if isinstance(data, pl.LazyFrame):
+            data = data.collect().to_series()
+        elif isinstance(data, pl.DataFrame):
+            data = data.to_series()
+
+        data = self.cast(data)
+
+        if not partial:
+            self._normalizer.reset()
+            self._tokenizer.reset()
+        self._normalizer.partial_fit(data)
+        self._tokenizer.partial_fit(data)
+
+        try:
+            self.count = self._tokenizer.count
+        except AttributeError:
+            pass
+
+        return data
+
+    def transform(
+        self, 
+        data: Union[pl.Series, pl.DataFrame, pl.LazyFrame],
+    ) -> pl.Series:
+        r"""
+        Preprocess the data.
+
+        Parameters:
+        -----------
+        data: pl.Series or pl.DataFrame or pl.LazyFrame
 
         Flows:
         ------
@@ -212,10 +243,12 @@ class Field:
         """
         if isinstance(data, pl.LazyFrame):
             data = data.collect().to_series()
+        elif isinstance(data, pl.DataFrame):
+            data = data.to_series()
+
         data = self.cast(data)
         data = self.normalize(data)
         data = self.tokenize(data)
-        self.count = data.n_unique()
         return data
 
     def to_csr(self, data: Iterable) -> torch.Tensor:

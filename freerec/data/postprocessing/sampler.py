@@ -35,6 +35,12 @@ class BaseSampler(PostProcessor):
         super().__init__(source)
         self.User: Field = self.fields[USER, ID]
         self.Item: Field = self.fields[ITEM, ID]
+        if self.Item is not None:
+            self.ISeq: Field = self.Item.fork(SEQUENCE)
+            self.IPos: Field = self.Item.fork(POSITIVE)
+            self.INeg: Field = self.Item.fork(NEGATIVE)
+            self.IUnseen: Field = self.Item.fork(UNSEEN)
+            self.ISeen: Field = self.Item.fork(SEEN)
         self.prepare()
 
     def prepare(self):
@@ -73,18 +79,13 @@ class GenTrainPositiveSampler(BaseSampler):
     {Field(USER:ID,USER): 12623, Field(ITEM:ID,ITEM,POSITIVE): 6467}
     """
 
-    def __init__(self, source: BaseProcessor) -> None:
-        super().__init__(source)
-        self.IPos = self.Item.fork(POSITIVE)
-
     @timemeter
     def prepare(self):
         seenItems = [set() for _ in range(self.User.count)]
 
         self.listmap(
-            lambda user, item: seenItems[user].add(item),
-            self.dataset.train().interdata[self.User],
-            self.dataset.train().interdata[self.Item]
+            lambda row: seenItems[row[self.User]].update(row[self.ISeq]),
+            self.dataset.train().to_seqs()
         )
 
         # sorting for ordered positives
@@ -154,7 +155,6 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
     ) -> None:
         self.unseen_only = unseen_only
         super().__init__(source)
-        self.INeg = self.Item.fork(NEGATIVE)
         self.num_negatives = num_negatives
         self.need_vectorized_bsearch = self.num_negatives >= nums_need_vectorized_bsearch
 
@@ -164,9 +164,8 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
 
         if self.unseen_only:
             self.listmap(
-                lambda user, item: seenItems[user].add(item),
-                self.dataset.train().interdata[self.User],
-                self.dataset.train().interdata[self.Item]
+                lambda row: seenItems[row[self.User]].update(row[self.ISeq]),
+                self.dataset.train().to_seqs()
             )
 
         # sorting for ordered positives
@@ -256,8 +255,6 @@ class SeqTrainPositiveYielder(BaseSampler):
         end_idx_for_input: Optional[int] = -1,
     ) -> None:
         super().__init__(source)
-        self.ISeq = self.Item.fork(SEQUENCE)
-        self.IPos = self.Item.fork(POSITIVE)
         self.start_idx_for_target = start_idx_for_target
         self.end_idx_for_input = end_idx_for_input
 
@@ -312,9 +309,6 @@ class SeqTrainNegativeSampler(BaseSampler):
     ) -> None:
         self.unseen_only = unseen_only
         super().__init__(source)
-        self.ISeq = self.Item.fork(SEQUENCE)
-        self.IPos = self.Item.fork(POSITIVE)
-        self.INeg = self.Item.fork(NEGATIVE)
         self.num_negatives = num_negatives
         self.nums_need_vectorized_bsearch = nums_need_vectorized_bsearch
 
@@ -324,9 +318,8 @@ class SeqTrainNegativeSampler(BaseSampler):
 
         if self.unseen_only: 
             self.listmap(
-                lambda user, item: seenItems[user].add(item),
-                self.dataset.train().interdata[self.User],
-                self.dataset.train().interdata[self.Item],
+                lambda row: seenItems[row[self.User]].update(row[self.ISeq]),
+                self.dataset.train().to_seqs()
             )
 
         # sorting for ordered positives
@@ -426,10 +419,6 @@ class ValidSampler(BaseSampler):
         ranking: Literal['full', 'pool'] = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING
     ) -> None:
         super().__init__(source)
-        self.ISeq = self.Item.fork(SEQUENCE)
-        self.IUnseen = self.Item.fork(UNSEEN)
-        self.ISeen = self.Item.fork(SEEN)
-
         assert ranking in ('full', 'pool'), f"`ranking` should be 'full' or 'pool' but {ranking} received ..."
         self.sampling_neg = True if ranking == 'pool' else False
         self.num_negatives = num_negatives
@@ -440,15 +429,13 @@ class ValidSampler(BaseSampler):
         unseenItems = [[] for _ in range(self.User.count)]
 
         self.listmap(
-            lambda user, item: seenItems[user].append(item),
-            self.dataset.train().interdata[self.User],
-            self.dataset.train().interdata[self.Item],
+            lambda row: seenItems[row[self.User]].extend(row[self.ISeq]),
+            self.dataset.train().to_seqs()
         )
 
         self.listmap(
-            lambda user, item: unseenItems[user].append(item),
-            self.dataset.valid().interdata[self.User],
-            self.dataset.valid().interdata[self.Item],
+            lambda row: unseenItems[row[self.User]].extend(row[self.ISeq]),
+            self.dataset.valid().to_seqs()
         )
 
         self.seenItems = seenItems
@@ -566,22 +553,18 @@ class TestSampler(ValidSampler):
         unseenItems = [[] for _ in range(self.User.count)]
 
         self.listmap(
-            lambda user, item: seenItems[user].append(item),
-            self.dataset.train().interdata[self.User],
-            self.dataset.train().interdata[self.Item],
+            lambda row: seenItems[row[self.User]].extend(row[self.ISeq]),
+            self.dataset.train().to_seqs()
         )
 
         self.listmap(
-            lambda user, item: seenItems[user].append(item),
-            self.dataset.valid().interdata[self.User],
-            self.dataset.valid().interdata[self.Item],
+            lambda row: seenItems[row[self.User]].extend(row[self.ISeq]),
+            self.dataset.valid().to_seqs()
         )
 
-
         self.listmap(
-            lambda user, item: unseenItems[user].append(item),
-            self.dataset.test().interdata[self.User],
-            self.dataset.test().interdata[self.Item],
+            lambda row: unseenItems[row[self.User]].extend(row[self.ISeq]),
+            self.dataset.test().to_seqs()
         )
 
         self.seenItems = seenItems

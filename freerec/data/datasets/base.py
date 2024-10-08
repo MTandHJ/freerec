@@ -2,7 +2,7 @@
 
 from typing import Any, TypeVar, Literal, Union, Optional, Callable, Iterator, Iterable, Dict, Tuple, List
 
-import torch, os, abc, yaml
+import torch, os, abc, yaml, glob
 import numpy as np
 import polars as pl
 import torchdata.datapipes as dp
@@ -11,9 +11,8 @@ from functools import lru_cache
 
 from ..tags import FieldTags, TaskTags, USER, ITEM, LABEL, ID, RATING, TIMESTAMP, FEATURE, SEQUENCE
 from ..fields import Field, FieldTuple
-from ..utils import download_from_url, extract_archive
-from ...utils import timemeter, infoLogger, warnLogger
-from ...dict2obj import Config
+from ..utils import download_from_url, extract_archive, is_empty_dir
+from ...utils import timemeter, infoLogger, warnLogger, mkdirs, import_pickle, export_pickle
 
 
 __all__ = ['BaseSet', 'RecDataSet']
@@ -54,9 +53,15 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         The dirname of the dataset. If `None`, set the classname as the filedir.
     download: bool 
         Download the dataset from a URL.
+    tasktag: Tasktag
+        Tasktag for subsequent sampling.
+    cfg: config
+        - `None`: search the config file in default path
+        - `str`: the path to config file
+        - `Dict`: config
     """
 
-    _field_builder = {
+    DEFAULT_FIELD_BUILDER = {
         USER.name: Field(USER.name, USER, ID),
         ITEM.name: Field(ITEM.name, ITEM, ID),
         LABEL.name: Field(LABEL.name, LABEL),
@@ -64,7 +69,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         TIMESTAMP.name: Field(TIMESTAMP.name, TIMESTAMP)
     }
 
-    _field_processor_kwargs = {
+    DEFAULT_FIELD_PROCESSOR_KWARGS = {
         'tags': tuple(),
         'dtype': None,
         'fill_null_strategy': 'zero',
@@ -72,13 +77,13 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         'tokenizer': None,
     }
 
-    _open_kwargs = Config(
-        trainfile='train.txt', validfile='valid.txt', testfile='test.txt',
-        userfile='user.txt', itemfile='item.txt',
-        sep='\t'
-    )
-
-    _cfg_file: str = "config.yaml"
+    DEFAULT_CSV_FILE = "{mode}.txt"
+    DEFAULT_CSV_SEPARATOR = "\t"
+    DEFAULT_SCHEMA_FILE = "schema.pkl"
+    DEFAULT_PARQUET_DIR = "parquet/{mode}"
+    DEFAULT_PARQUET_FILE = "p{chunk}.parquet"
+    DEFAULT_CHUNK_SIZE = 256 * 512
+    DEFAULT_CONFIG_FILE = "config.yaml"
 
     TASK: TaskTags
     URL: Optional[str] = None
@@ -87,6 +92,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         self, 
         root: str, 
         filedir: Optional[str] = None, 
+        *,
         download: bool = True,
         tasktag: Optional[TaskTags] = None,
         cfg: Union[None, str, Dict] = None
@@ -100,7 +106,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
 
         filedir = filedir if filedir else self.__class__.__name__
         self.path = os.path.join(root, 'Processed', filedir)
-        if not os.path.exists(self.path) or not any(True for _ in os.scandir(self.path)):
+        if is_empty_dir(self.path):
             if download and self.URL is not None:
                 extract_archive(
                     download_from_url(self.URL, root, overwrite=False),
@@ -119,7 +125,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     def set_config(self, cfg: Union[None, str, Dict] = None):
         """Set config for fields."""
         if cfg is None:
-            cfg = os.path.join(self.path, self._cfg_file)
+            cfg = os.path.join(self.path, self.DEFAULT_CONFIG_FILE)
             if os.path.exists(cfg):
                 with open(cfg, encoding="UTF-8", mode='r') as f:
                     cfg = yaml.full_load(f)
@@ -134,7 +140,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
             field_cfg = cfg[field_name]
             self.cfg[field_name.upper()] = {
                 key: field_cfg.get(key, default) 
-                for key, default in self._field_processor_kwargs.items()
+                for key, default in self.DEFAULT_FIELD_PROCESSOR_KWARGS.items()
             }
 
     def check(self):
@@ -172,70 +178,20 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
             return self.testsize
 
     @property
-    def interdata(self) -> Dict[Field, Tuple]:
-        r"""
-        Get interaction data.
-
-        Examples:
-        ---------
-        >>> dataset: BaseSet
-        >>> dataset.train().interdata == dataset.valid().interdata
-        False
-        """
-        return self.__interdata[self.mode]
-
-    @property
-    def userdata(self) -> Dict[Field, Tuple]:
-        try:
-            return self.__userdata
-        except AttributeError:
-            self.load_user()
-            return self.__userdata
-
-    @property
-    def itemdata(self) -> Dict[Field, Tuple]:
-        try:
-            return self.__itemdata
-        except AttributeError:
-            self.load_item()
-            return self.__itemdata
-
-    @property
     def fields(self) -> FieldTuple[Field]:
         """Return a tuple of Field."""
         return self.__fields
 
     @fields.setter
     def fields(self, fields: Iterable[Field]):
-        r"""
-        Set fields.
-
-        Notes:
-        ------
-        Set fields will change the saved interaction data.
-        """
+        """Set fields."""
         self.__fields = FieldTuple(fields)
-        traindata = dict()
-        validdata = dict()
-        testdata = dict()
-        for field in self.fields:
-            try:
-                traindata[field] = self.train().interdata[field]
-                validdata[field] = self.valid().interdata[field]
-                testdata[field] = self.test().interdata[field]
-            except KeyError:
-                raise ValueError(
-                    f"Setting a {field} not in `self.fields` ..."
-                )
-        self.__interdata = {
-            'train': traindata, 'valid': validdata, 'test': testdata
-        }
 
     def build_fields(self, columns: Iterable[str], *tags: FieldTags) -> FieldTuple[Field]:
         fields = []
         for colname in columns:
-            field_cfg = self.cfg.get(colname, self._field_processor_kwargs).copy()
-            field = self._field_builder.get(
+            field_cfg = self.cfg.get(colname, self.DEFAULT_FIELD_PROCESSOR_KWARGS).copy()
+            field = self.DEFAULT_FIELD_BUILDER.get(
                 colname,
                 Field(colname, FEATURE)
             ).fork(*tags, *field_cfg.pop('tags'))
@@ -243,89 +199,99 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
             fields.append(field)
         return FieldTuple(fields)
 
+    def parquet(
+        self, fields: Iterable[Field]
+    ) -> Iterator[pl.DataFrame]:
+        path = os.path.join(
+            self.path, 
+            self.DEFAULT_PARQUET_DIR.format(mode=self.mode),
+            self.DEFAULT_PARQUET_FILE
+        )
+        columns = [field.name for field in fields]
+        num_chunks = len(glob.glob(path.format(chunk='*')))
+        for k in range(num_chunks):
+            parquet_file = path.format(chunk=k)
+            yield pl.read_parquet(
+                parquet_file, columns=columns
+            )
+
     def load_inter(self):
         r"""
         Load interaction data.
 
         Flows:
         ------
-        1. Read dataframe according `_open_kwargs`.
-        2. Record datasize.
-        3. Build fields.
-        4. Transform each field data.
+        1. Traversing and fitting train|valid|test sets.
+        2. Transforming and splitting train|valid|test sets: csv >>> parquet
         """
-        train_df = pl.scan_csv(
-            os.path.join(self.path, self._open_kwargs.trainfile),
-            separator=self._open_kwargs.sep
-        )
-        valid_df = pl.scan_csv(
-            os.path.join(self.path, self._open_kwargs.validfile),
-            separator=self._open_kwargs.sep
-        )
-        test_df = pl.scan_csv(
-            os.path.join(self.path, self._open_kwargs.testfile),
-            separator=self._open_kwargs.sep
-        )
+        schema_file = os.path.join(self.path, self.DEFAULT_SCHEMA_FILE)
+        if os.path.exists(schema_file):
+            infoLogger(f"[DataSet] >>> Load Schema from {schema_file} ...")
+            schema = import_pickle(schema_file)
+        else:
+            schema = {
+                'trainsize': 0,
+                'validsize': 0,
+                'testsize': 0,
+            }
+            # fitting fields over csv files
+            for mode in ('train', 'valid', 'test'):
+                infoLogger(f"[DataSet] >>> Fitting fields over `{mode}` set ...")
+                df = pl.read_csv(
+                    os.path.join(
+                        self.path,
+                        self.DEFAULT_CSV_FILE.format(mode=mode)
+                    ),
+                    separator=self.DEFAULT_CSV_SEPARATOR
+                )
+                schema[mode + 'size'] = df.height
+                if schema.get('fields', None) is None:
+                    schema['fields'] = self.build_fields(
+                        df.columns
+                    )
 
-        self.trainsize = len(train_df.collect())
-        self.validsize = len(valid_df.collect())
-        self.testsize = len(test_df.collect())
+                for field in schema['fields']:
+                    field.fit(
+                        df.select(pl.col(field.name)),
+                        partial=True
+                    )
 
-        self.__fields = self.build_fields(train_df.collect_schema().names())
+            # transforming and splitting csv files into parquet formats
+            for mode in ('train', 'valid', 'test'):
+                infoLogger(f"[DataSet] >>> Transforming fields over `{mode}` set ...")
+                path = os.path.join(
+                    self.path, 
+                    self.DEFAULT_PARQUET_DIR.format(mode=mode)
+                )
+                mkdirs(path)
 
-        self.__interdata = {
-            'train': dict(), 'valid': dict(), 'test': dict()
-        }
+                df = pl.read_csv(
+                    os.path.join(
+                        self.path,
+                        self.DEFAULT_CSV_FILE.format(mode=mode)
+                    ),
+                    separator=self.DEFAULT_CSV_SEPARATOR
+                )
 
-        field: Field
-        for field in self.fields:
-            colname = field.name
-
-            # pre-process
-            coldata = pl.concat((
-                train_df.select(pl.col(colname)),
-                valid_df.select(pl.col(colname)),
-                test_df.select(pl.col(colname))
-            ))
-            coldata = field.fit(coldata)
-            coldata = tuple(coldata.to_list())
-
-            # splitting
-            traindata = coldata[:self.trainsize]
-            validdata = coldata[self.trainsize:self.trainsize + self.validsize]
-            testdata = coldata[self.trainsize + self.validsize:]
-
-            self.__interdata['train'][field] = traindata
-            self.__interdata['valid'][field] = validdata
-            self.__interdata['test'][field] = testdata
-
-    def load_user(self):
-        user_df = pl.scan_csv(
-            os.path.join(self.path, self._open_kwargs.userfile),
-            separator=self._open_kwargs.sep
-        )
-        fields = self.build_fields(user_df.collect_schema().names(), USER)
-        self.__userdata = {}
-        for field in fields:
-            colname = field.name
-            data = field.fit(
-                user_df.select(pl.col(colname))
-            )
-            self.__userdata[field] = data
-
-    def load_item(self):
-        item_df = pl.scan_csv(
-            os.path.join(self.path, self._open_kwargs.itemfile),
-            separator=self._open_kwargs.sep
-        )
-        fields = self.build_fields(item_df.collect_schema().names(), ITEM)
-        self.__itemdata = {}
-        for field in fields:
-            colname = field.name
-            data = field.fit(
-                item_df.select(pl.col(colname))
-            )
-            self.__itemdata[field] = data
+                for k, chunk in enumerate(df.iter_slices(self.DEFAULT_CHUNK_SIZE)):
+                    chunk = chunk.with_columns(
+                        field.transform(
+                            chunk.select(pl.col(field.name))
+                        )
+                        for field in schema['fields']
+                    )
+                    chunk.write_parquet(
+                        os.path.join(
+                            path,
+                            self.DEFAULT_PARQUET_FILE.format(chunk=k)
+                        )
+                    )
+            export_pickle(schema, schema_file)
+        
+        self.__fields = schema['fields']
+        self.trainsize = schema['trainsize']
+        self.validsize = schema['validsize']
+        self.testsize = schema['testsize']
 
     def summary(self):
         """Print a summary of the dataset."""
@@ -373,7 +339,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
 
     def match_not(self: T, *tags: FieldTags) -> T:
         r"""
-        Return a copy of dataset with fields not matching all given tags.
+        Return a copy of dataset with fields matching any given tags.
 
         Examples:
         ---------
@@ -381,6 +347,8 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         RecDataSet(USER:ID,USER|ITEM:ID,ITEM|RATING:RATING|TIMESTAMP:TIMESTAMP)
         >>> dataset.match_not(TIMESTAMP)
         RecDataSet(USER:ID,USER|ITEM:ID,ITEM)
+        >>> dataset.match_not()
+        RecDataSet()
         """
         dataset = copy(self)
         dataset.fields = self.fields.match_not(*tags)
@@ -403,11 +371,11 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         return list(map(func, *iterables))
 
     @classmethod
-    def to_rows(cls, field_dict: Dict[Field, Iterable[T]]) -> List[Dict[Field, T]]:
-        fields = field_dict.keys()
+    def to_rows(cls, coldata: Dict[Field, Iterable[T]]) -> List[Dict[Field, T]]:
+        fields = coldata.keys()
         return cls.listmap(
             lambda values: dict(zip(fields, values)),
-            zip(*field_dict.values())
+            zip(*coldata.values())
         )
 
     def __repr__(self) -> str:
@@ -418,10 +386,29 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         cfg = ' | '.join(map(str, self.fields))
         return f"[{self.__class__.__name__}] >>> " + cfg
 
+    def __getitem__(self, fields: Union[Field, Iterable[Field]]) -> Optional[Dict[Field, List]]:
+        r"""
+        Obtain column data according to `fields`.
+
+        Notes:
+        ------
+        It is expensive if the dataset is very large.
+        """
+        if isinstance(fields, Field):
+            fields = (fields,)
+        if len(fields) == 0:
+            return None
+        else:
+            data = pl.concat(
+                self.parquet(fields),
+                how='vertical'
+            )
+            return {field: data[field.name].to_list() for field in fields}
+
     def __iter__(self) -> Iterator[Dict[Field, Any]]:
-        yield from iter(
-            self.to_rows(self.interdata)
-        )
+        for df in self.parquet(self.fields):
+            for row in df.iter_rows():
+                yield dict(zip(self.fields, row))
 
 
 class RecDataSet(BaseSet):
@@ -431,8 +418,7 @@ class RecDataSet(BaseSet):
         """Return (User, Item) in pairs."""
         User = self.fields[USER, ID]
         Item = self.fields[ITEM, ID]
-        users, items = self.interdata[User], self.interdata[Item]
-        return self.to_rows({User: users, Item:items})
+        return self.to_rows(self[User, Item])
 
     def to_seqs(self, maxlen: Optional[int] = None) -> List[Dict[Field, Union[int, Tuple[int]]]]:
         r"""
@@ -516,16 +502,26 @@ class RecDataSet(BaseSet):
 
     @lru_cache()
     def has_duplicates(self) -> bool:
-        """Check whether the dataset has repeated interactions."""
-        ISeq = self.fields[ITEM, ID].fork(SEQUENCE)
-        traindata = self.train().to_seqs()
-        validdata = self.valid().to_seqs()
-        testdata = self.test().to_seqs()
+        r"""
+        Check whether the dataset has repeated interactions.
+        This will be used in evaluation if `seen` items should be removed.
 
-        for triplet in zip(traindata, validdata, testdata):
-            seq = triplet[0][ISeq] + triplet[1][ISeq] + triplet[2][ISeq]
-            if len(seq) != len(set(seq)):
-                return True
+        Notes:
+        ------
+        Return `False` for some CTR datasets lacking of (User, Item) fields.
+        """
+        User = self.fields[USER, ID]
+        Item = self.fields[ITEM, ID]
+        if User is not None and Item is not None:
+            ISeq = Item.fork(SEQUENCE)
+            traindata = self.train().to_seqs()
+            validdata = self.valid().to_seqs()
+            testdata = self.test().to_seqs()
+
+            for triplet in zip(traindata, validdata, testdata):
+                seq = triplet[0][ISeq] + triplet[1][ISeq] + triplet[2][ISeq]
+                if len(seq) != len(set(seq)):
+                    return True
         return False
 
     @safe_mode('train')
@@ -577,7 +573,7 @@ class RecDataSet(BaseSet):
             lambda src, edge, dst: edge if edge else f"{src.name}2{dst.name}",
             srcs, edges, dsts
         ))
-        data = {node.name: self.interdata[node] for node in nodes}
+        data = self[nodes]
         for key in data:
             data[key] = torch.tensor(data[key], dtype=torch.long)
 
@@ -588,7 +584,7 @@ class RecDataSet(BaseSet):
             if node not in srcs:
                 graph[node.name].x = torch.empty((node.count, 0), dtype=torch.long)
         for src, edge, dst in zip(srcs, edges, dsts):
-            u, v = data[src.name], data[dst.name]
+            u, v = data[src], data[dst]
             graph[src.name, edge, dst.name].edge_index = torch.stack((u, v), dim=0) # 2 x N
         return graph.coalesce()
 
@@ -807,23 +803,46 @@ class RecDataSet(BaseSet):
             self, self.to_roll_seqs(minlen, maxlen, keep_at_least_itself)
         )
 
+    @safe_mode('valid', 'test')
     def ordered_inter_source(self):
         r"""
         To ordered [Label, Feature1, Feature2, ...] source.
+
+        Examples:
+        ---------
+        >>> dataset: RecDataSet
+        >>> datapipe = dataset.valid().ordered_inter_source()
+        >>> list(datapipe)[0].keys()
+        dict_keys([Field(LABEL:LABEL), Field(USER:ID,USER), Field(ITEM:ID,ITEM), ...])
         """
-        from ..postprocessing.source import OrderedSource
-        return OrderedSource(
-            self, list(self)
+        from ..postprocessing.source import PipedSource
+        return PipedSource(
+            self, self
         )
 
     @safe_mode('train')
-    def shuffled_inter_source(self):
+    def shuffled_inter_source(
+        self, buffer_size: Optional[int] = None
+    ):
         r"""
         To shuffled [Label, Feature1, Feature2, ...] source.
+
+        Parameters:
+        -----------
+        buffer_size: int, optional
+            - `None`: use the default chunk size instead
+
+        Examples:
+        ---------
+        >>> dataset: RecDataSet
+        >>> datapipe = dataset.train().shuffled_inter_source()
+        >>> list(datapipe)[0].keys()
+        dict_keys([Field(LABEL:LABEL), Field(USER:ID,USER), Field(ITEM:ID,ITEM), ...])
         """
-        from ..postprocessing.source import RandomShuffledSource
-        return RandomShuffledSource(
-            self, list(self)
+        buffer_size = self.DEFAULT_CHUNK_SIZE if buffer_size is None else buffer_size
+        from ..postprocessing.source import PipedSource
+        return PipedSource(
+            self, self.shuffle(buffer_size=buffer_size)
         )
 
 

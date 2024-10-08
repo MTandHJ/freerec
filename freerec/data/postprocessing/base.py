@@ -100,13 +100,19 @@ class Source(BaseProcessor):
     """Source datapipe. The start point of Train/valid/test datapipe"""
 
     def __init__(
-        self, dataset: RecDataSet, source: Iterable, 
-        datasize: Optional[int] = None, shuffle: bool = True
+        self, 
+        dataset: RecDataSet, source: Iterable[Dict[Field, Any]],
+        datasize: Optional[int] = None,
+        shuffle: bool = True
     ) -> None:
         super().__init__(dataset)
-        self.source = tuple(source)
-        self.datasize = len(self.source) if datasize is None else datasize
-        self.launcher = Launcher(self.datasize, shuffle=shuffle).sharding_filter()
+        if isinstance(source, dp.iter.IterDataPipe):
+            self.source = source
+            self.launcher = source.sharding_filter()
+        else:
+            self.source = tuple(source)
+            self.datasize = len(self.source) if datasize is None else datasize
+            self.launcher = Launcher(self.datasize, shuffle=shuffle).sharding_filter()
 
     def __getstate__(self):
         # `traverse_dps' will be particularly time-consuming

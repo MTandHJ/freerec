@@ -44,8 +44,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
     def __init__(self, dataset: RecDataSet) -> None: ...
 
     @property
-    def dataset(self) -> RecDataSet:
-        return self.__dataset
+    def dataset(self) -> RecDataSet: ...
 
     @property
     def fields(self) -> FieldTuple[Field]: ...
@@ -645,7 +644,7 @@ class Source(BaseProcessor):
     ) -> None:
         self.source: Iterable[Dict[Field, Any]]
         self.datasize: int
-        self.lanucher: Launcher
+        self.launcher: Launcher
 
 
 class Postprocessor(BaseProcessor):
@@ -657,10 +656,5 @@ class Postprocessor(BaseProcessor):
     source: BaseProcessor
         The data pipeline to be wrapped.
     """
-
-    source: BaseProcessor
-    
-    def __init__(self, source: BaseProcessor) -> None:
-        self.source: Iterator[Dict[Field, Any]]
 
     def sure_input_fields(self) -> List[Field]: ...

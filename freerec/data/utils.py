@@ -220,6 +220,8 @@ def check_sha1(filename, sha1_hash):
 
     return sha1.hexdigest() == sha1_hash
 
+def is_empty_dir(path: str) -> bool:
+    return not os.path.exists(path) or not any(True for _ in os.scandir(path))
 
 def negsamp_vectorized_bsearch(
     positives: Union[Tuple, List], n_items: int, 

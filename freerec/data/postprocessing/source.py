@@ -11,7 +11,7 @@ from ..fields import Field
 
 
 __all__ = [
-    'RandomChoicedSource', 'RandomShuffledSource', 'OrderedSource',
+    'RandomChoicedSource', 'RandomShuffledSource', 'OrderedSource', 'PipedSource'
 ]
 
 
@@ -82,3 +82,22 @@ class OrderedSource(Source):
     def __iter__(self):
         for i in self.launcher:
             yield self.source[i].copy()
+
+
+@dp.functional_datapipe("piped_source_")
+class PipedSource(Source):
+    r"""
+    DataPipe that yields from the given source.
+
+    Parameters:
+    -----------
+    source: IterDataPipe
+    """
+
+    def __init__(self, dataset: RecDataSet, source: dp.iter.IterDataPipe) -> None:
+        super().__init__(dataset, source)
+        assert isinstance(source, dp.iter.IterDataPipe), f"PipedSource needs `IterDataPipe` but {type(source)} received ..."
+
+    def __iter__(self):
+        for row in self.launcher:
+            yield row
