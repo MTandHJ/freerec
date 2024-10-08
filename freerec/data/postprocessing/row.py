@@ -79,7 +79,6 @@ class RowMapper(PostProcessor):
         fn: Callable, modified_fields: Iterable[Field]
     ):
         super().__init__(source)
-
         self.fn = fn
         self.modified_fields = set(self.sure_input_fields()) & set(modified_fields)
 

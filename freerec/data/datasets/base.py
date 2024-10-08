@@ -15,7 +15,10 @@ from ..utils import download_from_url, extract_archive, is_empty_dir
 from ...utils import timemeter, infoLogger, warnLogger, mkdirs, import_pickle, export_pickle
 
 
-__all__ = ['BaseSet', 'RecDataSet']
+__all__ = [
+    'BaseSet', 'RecDataSet', 
+    'MatchingRecDataSet', 'NextItemRecDataSet', 'PredictionRecDataSet'
+]
 
 
 T = TypeVar('T')

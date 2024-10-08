@@ -636,15 +636,16 @@ class BaseProcessor(dp.iter.IterDataPipe):
    
 class Source(BaseProcessor):
     """Source datapipe. The start point of Train/valid/test datapipe"""
-    source: Iterable
 
     def __init__(
-        self, dataset: RecDataSet, source: Iterable, 
-        datasize: Optional[int] = None, shuffle: bool = True
+        self, 
+        dataset: RecDataSet, source: Iterable[Dict[Field, Any]],
+        datasize: Optional[int] = None,
+        shuffle: bool = True
     ) -> None:
         self.source: Iterable[Dict[Field, Any]]
         self.datasize: int
-        self.launcher: Launcher
+        self.launcher: Union[Launcher, Iterable[Dict[Field, Any]]]
 
 
 class Postprocessor(BaseProcessor):

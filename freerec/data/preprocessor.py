@@ -1,15 +1,10 @@
 
 
-from typing import List, Union
-
 import math
 import polars as pl
 
 
 __all__ = ['Identifier', 'Indexer', 'StandardScaler', 'MinMaxScaler']
-
-
-class preprocessorror(Exception): ...
 
 
 class Preprocessor:
@@ -28,9 +23,9 @@ class Preprocessor:
 
     Examples:
     ---------
-    >>> col = [3, 2, 1]
+    >>> col = pl.Series([3, 2, 1])
     >>> preprocessor = Preprocessor()
-    >>> preprocessor.transform(col)
+    >>> preprocessor.transform(col).to_list()
     [3, 2, 1]
     """
 
@@ -84,21 +79,19 @@ class ReIndexer(Counter):
 
     Examples:
     ---------
-    >>> col = [3, 2, 1]
-    >>> col2 = [4, 5, 6]
-    >>> preprocessor = Tokenizer()
+    >>> col = pl.Series([3, 2, 1])
+    >>> col2 = pl.Series([4, 5, 6])
+    >>> preprocessor = ReIndexer()
     >>> preprocessor.partial_fit(col)
-    >>> preprocessor.classes
+    >>> preprocessor.olds
     {1, 2, 3}
-    >>> preprocessor.mapper
-    {1: 0, 2: 1, 3: 2}
     >>> preprocessor.partial_fit(col2)
-    >>> preprocessor.classes
+    >>> preprocessor.olds
     {1, 2, 3, 4, 5, 6}
-    >>> preprocessor.mapper
-    {1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5}
-    >>> preprocessor.transform(col2)
+    >>> preprocessor.transform(col2).to_list()
     [3, 4, 5]
+    >>> preprocessor.olds
+    [1, 2, 3, 4, 5, 6]
     """
 
     def transform(self, data: pl.Series) -> pl.Series:
@@ -124,11 +117,11 @@ class StandardScaler(Preprocessor):
 
     Examples:
     ---------
-    >>> col = [3., 2., 1.]
+    >>> col = pl.Series([3., 2., 1.])
     >>> preprocessor = StandardScaler()
     >>> preprocessor.partial_fit(col)
-    >>> preprocessor.transform(col)
-    [1.2247448713915887, 0.0, -1.2247448713915887]
+    >>> preprocessor.transform(col).to_list()
+    [0.9999999900000002, 0.0, -0.9999999900000002]
     """
 
     def reset(self):
@@ -172,11 +165,11 @@ class MinMaxScaler(Preprocessor):
 
     Examples:
     ---------
-    >>> col = [3., 2., 1.]
+    >>> col = pl.Series([3., 2., 1.])
     >>> preprocessor = MinMaxScaler()
     >>> preprocessor.partial_fit(col)
-    >>> preprocessor.transform(col)
-    [1.0, 0.5, 0.0]
+    >>> preprocessor.transform(col).to_list()
+    [0.999999995, 0.4999999975, 0.0]
     """
 
     def reset(self):
