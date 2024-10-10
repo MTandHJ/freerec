@@ -11,7 +11,7 @@ from collections import defaultdict
 from .data.datasets import RecDataSet
 from .data.postprocessing import PostProcessor
 from .data.fields import Field, FieldTuple
-from .data.tags import USER, ITEM, ID, LABEL, UNSEEN, SEEN
+from .data.tags import USER, ITEM, ID, LABEL, SIZE, UNSEEN, SEEN
 from .models import RecSysArch
 from .dict2obj import Config
 from .utils import AverageMeter, Monitor, timemeter, infoLogger, import_pickle, export_pickle
@@ -159,8 +159,10 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         self.User = self.fields[USER, ID]
         self.Item = self.fields[ITEM, ID]
         self.Label = self.fields[LABEL]
-        self.ISeen = self.Item.fork(SEEN)
-        self.IUnseen = self.Item.fork(UNSEEN)
+        self.Size = Field(SIZE.name, SIZE)
+        if self.Item is not None:
+            self.ISeen = self.Item.fork(SEEN)
+            self.IUnseen = self.Item.fork(UNSEEN)
 
     def set_datapipe(
         self,
@@ -696,8 +698,13 @@ class Coach(ChiefCoach):
         y_true = []
         groups = []
         for data in self.dataloader:
+            bsz = data[self.Size]
+            if self.User in data:
+                users = data[self.User].flatten().tolist()
+            else: # No User field
+                users = [0] * bsz
+
             data = self.dict_to_device(data)
-            users = data[self.User]
             if self.cfg.ranking == 'full':
                 scores = self.model(data, ranking='full')
                 if self.remove_seen:
@@ -717,13 +724,13 @@ class Coach(ChiefCoach):
                 )
 
             if self.Label in data:
-                groups += users.flatten().tolist()
-                y_pred += scores.flatten().tolist()
-                y_true += targets.flatten().tolist()
+                groups.extend(users)
+                y_pred.extend(scores.flatten().tolist())
+                y_true.extend(targets.flatten().tolist())
 
             self.monitor(
                 scores, targets,
-                n=len(users), reduction="mean", mode=mode,
+                n=bsz, reduction="mean", mode=mode,
                 pool=['HITRATE', 'PRECISION', 'RECALL', 'NDCG', 'MRR']
             )
         
@@ -735,7 +742,7 @@ class Coach(ChiefCoach):
         )
         self.monitor(
             y_pred, y_true, groups,
-            n=len(users), reduction="mean", mode=mode,
+            n=1, reduction="mean", mode=mode,
             pool=['GAUC']
         )
             

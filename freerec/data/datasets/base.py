@@ -2,17 +2,23 @@
 
 from typing import Any, TypeVar, Literal, Union, Optional, Callable, Iterator, Iterable, Dict, Tuple, List
 
-import torch, os, abc, yaml, glob
+import torch, os, abc, glob, yaml
 import numpy as np
 import polars as pl
 import torchdata.datapipes as dp
 from copy import copy
 from functools import lru_cache
 
-from ..tags import FieldTags, TaskTags, USER, ITEM, LABEL, ID, RATING, TIMESTAMP, FEATURE, SEQUENCE
+from ..tags import (
+    FieldTags, TaskTags, 
+    USER, ITEM, LABEL, ID, RATING, TIMESTAMP, FEATURE, SEQUENCE
+)
 from ..fields import Field, FieldTuple
-from ..utils import download_from_url, extract_archive, is_empty_dir
-from ...utils import timemeter, infoLogger, warnLogger, mkdirs, import_pickle, export_pickle
+from ..utils import download_from_url, extract_archive, is_empty_dir, check_sha1
+from ...utils import (
+    timemeter, infoLogger, warnLogger, 
+    mkdirs, import_pickle, export_pickle, import_yaml
+)
 
 
 __all__ = [
@@ -44,7 +50,7 @@ class RecSetBuildingError(Exception): ...
 
 
 class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
-    r""" 
+    r"""
     Base class for data pipes. Defines basic functionality and methods for 
     pre-processing the data for the learning models.
 
@@ -72,12 +78,11 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         TIMESTAMP.name: Field(TIMESTAMP.name, TIMESTAMP)
     }
 
-    DEFAULT_FIELD_PROCESSOR_KWARGS = {
+    DEFAULT_FIELD_CONFIG = {
         'tags': tuple(),
         'dtype': None,
         'fill_null_strategy': 'zero',
         'normalizer': None,
-        'tokenizer': None,
     }
 
     DEFAULT_CSV_FILE = "{mode}.txt"
@@ -130,21 +135,16 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         if cfg is None:
             cfg = os.path.join(self.path, self.DEFAULT_CONFIG_FILE)
             if os.path.exists(cfg):
-                with open(cfg, encoding="UTF-8", mode='r') as f:
-                    cfg = yaml.full_load(f)
+                cfg = import_yaml(cfg)
             else:
                 cfg = dict()
         elif isinstance(cfg, str):
-            with open(cfg, encoding="UTF-8", mode='r') as f:
-                cfg = yaml.full_load(f)
+            cfg = import_yaml(cfg)
         
-        self.cfg: Dict[str, Dict] = dict()
-        for field_name in cfg:
-            field_cfg = cfg[field_name]
-            self.cfg[field_name.upper()] = {
-                key: field_cfg.get(key, default) 
-                for key, default in self.DEFAULT_FIELD_PROCESSOR_KWARGS.items()
-            }
+        self.cfg: Dict[str, Dict] = {
+            field_name.upper(): self.DEFAULT_FIELD_CONFIG | field_cfg
+            for field_name, field_cfg in cfg.items()
+        }
 
     def check(self):
         """Self-check program should be placed here."""
@@ -193,12 +193,13 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     def build_fields(self, columns: Iterable[str], *tags: FieldTags) -> FieldTuple[Field]:
         fields = []
         for colname in columns:
-            field_cfg = self.cfg.get(colname, self.DEFAULT_FIELD_PROCESSOR_KWARGS).copy()
+            field_cfg = self.cfg.get(colname, self.DEFAULT_FIELD_CONFIG).copy()
+            private_tags = [FieldTags(tag) for tag in field_cfg.pop('tags')]
             field = self.DEFAULT_FIELD_BUILDER.get(
                 colname,
                 Field(colname, FEATURE)
-            ).fork(*tags, *field_cfg.pop('tags'))
-            field.set_processor(**field_cfg)
+            ).fork(*tags, *private_tags)
+            field.set_normalizer(**field_cfg)
             fields.append(field)
         return FieldTuple(fields)
 
@@ -225,14 +226,25 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         Flows:
         ------
         1. Traversing and fitting train|valid|test sets.
-        2. Transforming and splitting train|valid|test sets: csv >>> parquet
+        2. Normalizing and splitting train|valid|test sets into parquet chunks.
         """
         schema_file = os.path.join(self.path, self.DEFAULT_SCHEMA_FILE)
-        if os.path.exists(schema_file):
-            infoLogger(f"[DataSet] >>> Load Schema from {schema_file} ...")
-            schema = import_pickle(schema_file)
-        else:
+        sha1_hash = check_sha1(
+            yaml.dump(self.cfg).encode()
+        )
+        try:
+            if os.path.exists(schema_file):
+                infoLogger(f"[DataSet] >>> Load Schema from {schema_file} ...")
+                schema = import_pickle(schema_file)
+                if sha1_hash != schema.get('sha1_hash', ''):
+                    infoLogger(f"[DataSet] >>> Schema's sha1 hash value is not matched ...")
+                    raise RecSetBuildingError
+            else:
+                raise RecSetBuildingError
+        except RecSetBuildingError:
             schema = {
+                'fields': None,
+                'sha1_hash': sha1_hash,
                 'trainsize': 0,
                 'validsize': 0,
                 'testsize': 0,
@@ -248,7 +260,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
                     separator=self.DEFAULT_CSV_SEPARATOR
                 )
                 schema[mode + 'size'] = df.height
-                if schema.get('fields', None) is None:
+                if schema['fields'] is None:
                     schema['fields'] = self.build_fields(
                         df.columns
                     )
@@ -261,7 +273,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
 
             # transforming and splitting csv files into parquet formats
             for mode in ('train', 'valid', 'test'):
-                infoLogger(f"[DataSet] >>> Transforming fields over `{mode}` set ...")
+                infoLogger(f"[DataSet] >>> Normalizing fields over `{mode}` set ...")
                 path = os.path.join(
                     self.path, 
                     self.DEFAULT_PARQUET_DIR.format(mode=mode)
@@ -278,7 +290,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
 
                 for k, chunk in enumerate(df.iter_slices(self.DEFAULT_CHUNK_SIZE)):
                     chunk = chunk.with_columns(
-                        field.transform(
+                        field.normalize(
                             chunk.select(pl.col(field.name))
                         )
                         for field in schema['fields']
@@ -290,11 +302,12 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
                         )
                     )
             export_pickle(schema, schema_file)
-        
-        self.__fields = schema['fields']
-        self.trainsize = schema['trainsize']
-        self.validsize = schema['validsize']
-        self.testsize = schema['testsize']
+        finally:
+            # .fork() for consistent hash value
+            self.fields = [field.fork() for field in schema['fields']]
+            self.trainsize = schema['trainsize']
+            self.validsize = schema['validsize']
+            self.testsize = schema['testsize']
 
     def summary(self):
         """Print a summary of the dataset."""

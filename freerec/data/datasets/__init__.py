@@ -55,6 +55,11 @@ from .amazon2023 import(
     Amazon2023Toys_554811_ROU, Amazon2023Toys_10104811_ROU
 )
 
+from .criteo import(
+    # Prediction
+    Criteo_x1_BARS
+)
+
 from .frappe import (
     # Prediction
     Frappe_x1_BARS

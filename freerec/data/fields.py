@@ -1,6 +1,6 @@
 
 
-from typing import Iterable, Tuple, Union, Literal, Callable, Iterator
+from typing import Iterable, Tuple, Union, Literal, Iterator
 
 import torch
 import numpy as np
@@ -8,11 +8,11 @@ import polars as pl
 from itertools import chain
 
 from .tags import FieldTags
-from .preprocessor import Preprocessor, StandardScaler, MinMaxScaler, Counter, ReIndexer
+from .normalizer import Normalizer, StandardScaler, MinMaxScaler, Counter, ReIndexer
 
 
 __all__ = [
-    'Field', 'FieldTuple', 'FieldModule'
+    'Field', 'FieldTuple', 'FieldModule', 'FieldModuleList'
 ]
 
 
@@ -118,12 +118,12 @@ class Field:
     def __str__(self) -> str:
         return f"{self.name}:{','.join(map(lambda tag: tag.name, self.tags))}"
 
-    def set_processor(
+    def set_normalizer(
         self, 
         dtype: Union[None, str, pl.DataType] = None,
         fill_null_strategy: Literal['forward', 'backward', 'min', 'max', 'zero', 'one'] = 'zero',
-        normalizer: Union[None, Literal['standard', 'minmax'], Callable] = None,
-        tokenizer: Union[None, Literal['indexing'], Callable] = None
+        normalizer: Union[None, Literal['standard', 'minmax', 'reindex'], Normalizer] = None,
+        **kwargs
     ):
         r"""
         Field processor for casting, normalization and tokenization.
@@ -140,32 +140,31 @@ class Field:
             - `None`: no operation
             - `standard`: applying standard normalization
             - `minmax`: applying minmax normalization
-            - `Callable`: applying given normalization
-        tokenizer: Union[std, Callable]
-            - `None`: no operation
-            - `indexing`: mapping each to a number
-            - `Callable`: mapping by given tokenizer
+            - `reindex`: mapping each to a number
+            - `Normalizer`: mapping by given tokenizer
+        kwargs:
+            other args for normalizer
         """
-        assert normalizer is None or tokenizer is None, "Both `normalizer` and `tokenizer` are active ..."
-
         self._dtype = getattr(pl, dtype) if isinstance(dtype, str) else dtype
         self._fill_null_strategy = fill_null_strategy
 
         if normalizer is None:
-            self._normalizer = Preprocessor()
+            normalizer = Counter
         elif normalizer == 'standard':
-            self._normalizer = StandardScaler()
+            normalizer = StandardScaler
         elif normalizer == 'minmax':
-            self._normalizer = MinMaxScaler()
+            normalizer = MinMaxScaler
+        elif normalizer == 'reindex':
+            normalizer = ReIndexer
         else:
-            self._normalizer = normalizer
-
-        if tokenizer is None:
-            self._tokenizer = Counter()
-        elif tokenizer == 'indexing':
-            self._tokenizer = ReIndexer()
-        else:
-            self._tokenizer = tokenizer
+            normalizer = normalizer
+        
+        try:
+            self._normalizer = normalizer(**kwargs)
+        except TypeError:
+            raise KeyError(
+                f"Receive invalid kwargs for {normalizer.__class__}: {kwargs}"
+            )
 
     def cast(
         self, data: pl.Series, strict: bool = False
@@ -180,12 +179,6 @@ class Field:
         finally:
             data = data.fill_null(strategy=self._fill_null_strategy)
             return data
-
-    def normalize(self, data: pl.Series) -> pl.Series:
-        return self._normalizer.transform(data)
-
-    def tokenize(self, data: pl.Series) -> pl.Series:
-        return self._tokenizer.transform(data)
 
     def fit(
         self, 
@@ -211,23 +204,21 @@ class Field:
 
         if not partial:
             self._normalizer.reset()
-            self._tokenizer.reset()
         self._normalizer.partial_fit(data)
-        self._tokenizer.partial_fit(data)
 
         try:
-            self.count = self._tokenizer.count
+            self.count = self._normalizer.count
         except AttributeError:
             pass
 
         return data
 
-    def transform(
+    def normalize(
         self, 
         data: Union[pl.Series, pl.DataFrame, pl.LazyFrame],
     ) -> pl.Series:
         r"""
-        Preprocess the data.
+        Normalizer the data.
 
         Parameters:
         -----------
@@ -235,11 +226,7 @@ class Field:
 
         Flows:
         ------
-                        ----> normalization ---->
-                        |                       |
-        data -> cast --->                       ---> data
-                        |                       |
-                        ----> tokenization ----->
+        data -> cast ---> normalization ---> data
         """
         if isinstance(data, pl.LazyFrame):
             data = data.collect().to_series()
@@ -247,8 +234,7 @@ class Field:
             data = data.to_series()
 
         data = self.cast(data)
-        data = self.normalize(data)
-        data = self.tokenize(data)
+        data = self._normalizer(data)
         return data
 
     def to_csr(self, data: Iterable) -> torch.Tensor:

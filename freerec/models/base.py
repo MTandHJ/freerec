@@ -8,7 +8,7 @@ import torch.nn as nn
 from ..data.datasets.base import RecDataSet
 from ..data.postprocessing import PostProcessor
 from ..data.fields import Field, FieldModule, FieldModuleList
-from ..data.tags import USER, ITEM, ID, LABEL, SEQUENCE, UNSEEN, SEEN, POSITIVE, NEGATIVE
+from ..data.tags import USER, ITEM, ID, LABEL, SIZE, SEQUENCE, UNSEEN, SEEN, POSITIVE, NEGATIVE
 from ..criterions import BaseCriterion
 
 
@@ -32,11 +32,13 @@ class RecSysArch(nn.Module):
         self.User: FieldModule = self.fields[USER, ID]
         self.Item: FieldModule = self.fields[ITEM, ID]
         self.Label: FieldModule = self.fields[LABEL]
-        self.ISeq: FieldModule = self.Item.fork(SEQUENCE)
-        self.IPos: FieldModule = self.Item.fork(POSITIVE)
-        self.INeg: FieldModule = self.Item.fork(NEGATIVE)
-        self.IUnseen: FieldModule = self.Item.fork(UNSEEN)
-        self.ISeen: FieldModule = self.Item.fork(SEEN)
+        self.Size: Field = Field(SIZE.name, SIZE)
+        if self.Item:
+            self.ISeq: FieldModule = self.Item.fork(SEQUENCE)
+            self.IPos: FieldModule = self.Item.fork(POSITIVE)
+            self.INeg: FieldModule = self.Item.fork(NEGATIVE)
+            self.IUnseen: FieldModule = self.Item.fork(UNSEEN)
+            self.ISeen: FieldModule = self.Item.fork(SEEN)
     
     @property
     def fields(self) -> FieldModuleList:

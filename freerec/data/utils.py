@@ -105,7 +105,7 @@ def download_from_url(
             'Unverified HTTPS request is being made (verify_ssl=False). '
             'Adding certificate verification is strongly advised.')
 
-    if overwrite or not os.path.exists(file_) or (sha1_hash and not check_sha1(file_, sha1_hash)):
+    if overwrite or not os.path.exists(file_) or (sha1_hash and sha1_hash != check_sha1(file_)):
         dirname = os.path.dirname(os.path.abspath(os.path.expanduser(file_)))
         if not os.path.exists(dirname):
             os.makedirs(dirname)
@@ -193,32 +193,32 @@ def extract_archive(file_, target_dir, overwrite=False):
     else:
         raise DataSetLoadingError('Unrecognized file type: ' + file_)
 
-
-def check_sha1(filename, sha1_hash):
+def check_sha1(data: Union[str, bytes]) -> str:
     r"""
-    Check if the SHA1 hash of a file matches the expected hash.
+    Check the SHA1 hash of the data.
 
     Parameters:
     ----------
-    filename : str
-        The path to the file to check the hash of.
-    sha1_hash : str
-        The expected SHA1 hash value.
+    data : 
+        - `str`: The path to the file to check the hash of.
+        - `bytes`: The bytes data to be checked.
 
     Returns:
     --------
-    bool
-        True if the file's hash matches the expected value, False otherwise.
+    str
+    SHA1 hash value
     """
     sha1 = hashlib.sha1()
-    with open(filename, 'rb') as f:
-        while True:
-            data = f.read(1048576)
-            if not data:
-                break
-            sha1.update(data)
-
-    return sha1.hexdigest() == sha1_hash
+    if isinstance(data, str):
+        with open(data, 'rb') as f:
+            while True:
+                data = f.read(1048576)
+                if not data:
+                    break
+                sha1.update(data)
+    else:
+        sha1.update(data)
+    return sha1.hexdigest()
 
 def is_empty_dir(path: str) -> bool:
     return not os.path.exists(path) or not any(True for _ in os.scandir(path))

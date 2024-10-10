@@ -1,15 +1,16 @@
 
 
-from typing import Any, Set, Union, List
+from typing import Union, List
 
 import torch
-import os, argparse, time, yaml
+import os, argparse, time
 from argparse import ArgumentParser
 
 from .dict2obj import Config
 from .ddp import is_distributed, main_process_only, is_main_process, all_gather
 from .utils import (
-    mkdirs, timemeter, set_color, set_seed, activate_benchmark, 
+    mkdirs, import_yaml,
+    timemeter, set_color, set_seed, activate_benchmark, 
     set_logger, infoLogger, warnLogger
 )
 
@@ -282,17 +283,16 @@ class Parser(Config):
         args = self.parser.parse_args()
         keys, _ = zip(*args._get_kwargs())
         if hasattr(args, 'config') and args.config:
-            with open(args.config, encoding="UTF-8", mode='r') as f:
-                for key, val in yaml.full_load(f).items():
-                    if key in keys: # overwriting defaults
-                        self.set_defaults(**{key: val})
-                    elif key.upper() in self:
-                        self[key.upper()] = val
-                    elif key in self:
-                        self[key] = val
-                    else:
-                        self[key] = val
-                        warnLogger(f"Find an undefined parameter `{key}' in `{args.config}' ...")
+            for key, val in import_yaml(args.config).items():
+                if key in keys: # overwriting defaults
+                    self.set_defaults(**{key: val})
+                elif key.upper() in self:
+                    self[key.upper()] = val
+                elif key in self:
+                    self[key] = val
+                else:
+                    self[key] = val
+                    warnLogger(f"Find an undefined parameter `{key}' in `{args.config}' ...")
         return self.parser.parse_args()
 
     @timemeter

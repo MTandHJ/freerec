@@ -106,6 +106,7 @@ class Source(BaseProcessor):
         shuffle: bool = True
     ) -> None:
         super().__init__(dataset)
+        self.mode = dataset.mode
         if isinstance(source, dp.iter.IterDataPipe):
             self.source = source
             self.launcher = source.sharding_filter()
@@ -113,6 +114,13 @@ class Source(BaseProcessor):
             self.source = tuple(source)
             self.datasize = len(self.source) if datasize is None else datasize
             self.launcher = Launcher(self.datasize, shuffle=shuffle).sharding_filter()
+    
+    def guard_mode(self):
+        r"""
+        Make sure the dataset is at a required mode.
+        This is especially necessary for datapipe source.
+        """
+        getattr(self.dataset, self.mode)()
 
     def __getstate__(self):
         # `traverse_dps' will be particularly time-consuming
@@ -136,18 +144,14 @@ class PostProcessor(BaseProcessor):
 
     def __init__(self, source: BaseProcessor) -> None:
         graph = torch.utils.data.graph.traverse_dps(source)
+        dataset = None
         for pipe in get_all_graph_pipes(graph):
             if isinstance(pipe, BaseProcessor):
                 dataset = pipe.dataset
                 break
-            elif isinstance(pipe, RecDataSet):
-                dataset = pipe
-                break
+        assert dataset is not None, "Make sure datapipe starts from a BaseProcessor ..."
         super().__init__(dataset)
         self.source: Iterator[Dict[Field, Any]] = source
-
-    def sure_input_fields(self) -> List[Field]:
-        return list(next(iter(self.source)).keys())
 
     def __getstate__(self):
         # `traverse_dps' will be particularly time-consuming

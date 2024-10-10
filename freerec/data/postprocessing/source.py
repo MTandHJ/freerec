@@ -41,6 +41,7 @@ class RandomChoicedSource(Source):
         self._rng.seed(seed)
 
     def __iter__(self):
+        self.guard_mode()
         for _ in self.launcher:
             yield self._rng.choice(self.source).copy()
 
@@ -61,6 +62,7 @@ class RandomShuffledSource(Source):
         super().__init__(dataset, source, shuffle=True)
 
     def __iter__(self):
+        self.guard_mode()
         for i in self.launcher:
             yield self.source[i].copy()
 
@@ -80,6 +82,7 @@ class OrderedSource(Source):
         super().__init__(dataset, source, shuffle=False)
 
     def __iter__(self):
+        self.guard_mode()
         for i in self.launcher:
             yield self.source[i].copy()
 
@@ -99,5 +102,6 @@ class PipedSource(Source):
         assert isinstance(source, dp.iter.IterDataPipe), f"PipedSource needs `IterDataPipe` but {type(source)} received ..."
 
     def __iter__(self):
+        self.guard_mode()
         for row in self.launcher:
             yield row

@@ -4,28 +4,28 @@ import math
 import polars as pl
 
 
-__all__ = ['Identifier', 'Indexer', 'StandardScaler', 'MinMaxScaler']
+__all__ = ['Normalizer', 'Counter', 'ReIndexer', 'StandardScaler', 'MinMaxScaler']
 
 
-class Preprocessor:
+class Normalizer:
     r"""
-    Transform X into X.
+    Normalize X into X.
 
     Parameters:
     -----------
     X : Any
-        The input data to be transformed.
+        The input data to be normalized.
 
     Returns:
     --------
     Any
-        The transformed data.
+        The normalized data.
 
     Examples:
     ---------
     >>> col = pl.Series([3, 2, 1])
-    >>> preprocessor = Preprocessor()
-    >>> preprocessor.transform(col).to_list()
+    >>> normalizer = Normalizer()
+    >>> normalizer.normalize(col).to_list()
     [3, 2, 1]
     """
 
@@ -42,12 +42,15 @@ class Preprocessor:
     def partial_fit(self, data: pl.Series):
         self.fitting = True
 
-    def transform(self, data: pl.Series) -> pl.Series:
+    def normalize(self, data: pl.Series) -> pl.Series:
         self.fitting = False
         return data
 
+    def __call__(self, data: pl.Series) -> pl.Series:
+        return self.normalize(data)
 
-class Counter(Preprocessor):
+
+class Counter(Normalizer):
     """Counting uniques."""
 
     def reset(self):
@@ -63,14 +66,14 @@ class Counter(Preprocessor):
         if not data.dtype.is_float():
             self.olds = set(self.olds) | set(data.unique())
 
-    def transform(self, data: pl.Series) -> pl.Series:
+    def normalize(self, data: pl.Series) -> pl.Series:
         self.fitting = False
         return data
 
 
 class ReIndexer(Counter):
     r"""
-    Transform categorical features into tokens.
+    Normalize categorical features into tokens.
 
     classes: set
         Set of unique classes seen during `fit`.
@@ -81,20 +84,20 @@ class ReIndexer(Counter):
     ---------
     >>> col = pl.Series([3, 2, 1])
     >>> col2 = pl.Series([4, 5, 6])
-    >>> preprocessor = ReIndexer()
-    >>> preprocessor.partial_fit(col)
-    >>> preprocessor.olds
+    >>> normalizer = ReIndexer()
+    >>> normalizer.partial_fit(col)
+    >>> normalizer.olds
     {1, 2, 3}
-    >>> preprocessor.partial_fit(col2)
-    >>> preprocessor.olds
+    >>> normalizer.partial_fit(col2)
+    >>> normalizer.olds
     {1, 2, 3, 4, 5, 6}
-    >>> preprocessor.transform(col2).to_list()
+    >>> normalizer.normalize(col2).to_list()
     [3, 4, 5]
-    >>> preprocessor.olds
+    >>> normalizer.olds
     [1, 2, 3, 4, 5, 6]
     """
 
-    def transform(self, data: pl.Series) -> pl.Series:
+    def normalize(self, data: pl.Series) -> pl.Series:
         if self.fitting:
             self.olds = sorted(self.olds)
             self.news = list(range(self.count))
@@ -102,7 +105,7 @@ class ReIndexer(Counter):
         return data.replace_strict(old=self.olds, new=self.news)
 
 
-class StandardScaler(Preprocessor):
+class StandardScaler(Normalizer):
     r"""
     Normalize numerical features using the standard scaler.
 
@@ -118,9 +121,9 @@ class StandardScaler(Preprocessor):
     Examples:
     ---------
     >>> col = pl.Series([3., 2., 1.])
-    >>> preprocessor = StandardScaler()
-    >>> preprocessor.partial_fit(col)
-    >>> preprocessor.transform(col).to_list()
+    >>> normalizer = StandardScaler()
+    >>> normalizer.partial_fit(col)
+    >>> normalizer.normalize(col).to_list()
     [0.9999999900000002, 0.0, -0.9999999900000002]
     """
 
@@ -147,12 +150,12 @@ class StandardScaler(Preprocessor):
         self.sum += data.sum()
         self.ssum += data.pow(2).sum()
 
-    def transform(self, data: pl.Series) -> pl.Series:
+    def normalize(self, data: pl.Series) -> pl.Series:
         self.fitting = False
         return (data - self.mean) / (self.std + self.eps)
 
 
-class MinMaxScaler(Preprocessor):
+class MinMaxScaler(Normalizer):
     r"""
     Scale data to the range [0, 1].
 
@@ -166,9 +169,9 @@ class MinMaxScaler(Preprocessor):
     Examples:
     ---------
     >>> col = pl.Series([3., 2., 1.])
-    >>> preprocessor = MinMaxScaler()
-    >>> preprocessor.partial_fit(col)
-    >>> preprocessor.transform(col).to_list()
+    >>> normalizer = MinMaxScaler()
+    >>> normalizer.partial_fit(col)
+    >>> normalizer.normalize(col).to_list()
     [0.999999995, 0.4999999975, 0.0]
     """
 
@@ -183,7 +186,7 @@ class MinMaxScaler(Preprocessor):
         self.min = min(data.min(), self.min)
         self.max = max(data.max(), self.max)
 
-    def transform(self, data: pl.Series) -> pl.Series:
+    def normalize(self, data: pl.Series) -> pl.Series:
         self.fitting = False
         return (data - self.min) / (self.max - self.min + self.eps)
 

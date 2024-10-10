@@ -43,10 +43,10 @@ class RowFilter(PostProcessor):
     ):
         super().__init__(source)
         self.fn = fn
-        self.checked_fields = set(self.sure_input_fields()) & set(checked_fields)
+        self.checked_fields = set(checked_fields)
 
     def _check(self, row: Dict[Field, Any]) -> bool:
-        return all(self.fn(field, row[field]) for field in self.checked_fields)
+        return all(self.fn(field, row.get(field, None)) for field in self.checked_fields)
 
     def __iter__(self):
         for row in self.source:
@@ -80,7 +80,7 @@ class RowMapper(PostProcessor):
     ):
         super().__init__(source)
         self.fn = fn
-        self.modified_fields = set(self.sure_input_fields()) & set(modified_fields)
+        self.modified_fields = set(modified_fields)
 
     def __iter__(self):
         for row in self.source:

@@ -1,7 +1,7 @@
 
 
 from typing import Callable, Dict, List, Union, Any, NoReturn
-import torch
+import torch, yaml
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 
@@ -359,6 +359,28 @@ def import_pickle(file: str) -> Any:
         if fh is not None:
             fh.close()
 
+def export_yaml(data: Any, file: str) -> NoReturn:
+    r"""
+    Export data into yaml format.
+
+    data: Any
+    file: str
+        The file (path/filename) to be saved
+    """
+    with open(file, encoding="UTF-8", mode="w") as fh:
+        fh.write(
+            yaml.dump(data, sort_keys=False)
+        )
+
+def import_yaml(file: str) -> Any:
+    r"""
+    Import data from given file.
+    file: str
+        The file (path/filename).
+    """
+    with open(file, encoding="UTF-8", mode='r') as f:
+        data = yaml.full_load(f)
+    return data
 
 def set_logger(
     path: str,

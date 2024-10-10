@@ -647,8 +647,13 @@ class Source(BaseProcessor):
         self.datasize: int
         self.launcher: Union[Launcher, Iterable[Dict[Field, Any]]]
 
+    def guard_mode(self):
+        r"""
+        Make sure the dataset is at a required mode.
+        This is especially necessary for datapipe source.
+        """
 
-class Postprocessor(BaseProcessor):
+class PostProcessor(BaseProcessor):
     r"""
     A post-processor that wraps another IterDataPipe object.
 
@@ -657,5 +662,3 @@ class Postprocessor(BaseProcessor):
     source: BaseProcessor
         The data pipeline to be wrapped.
     """
-
-    def sure_input_fields(self) -> List[Field]: ...
