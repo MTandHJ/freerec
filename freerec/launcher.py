@@ -264,29 +264,14 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         """Get the current mode of the chief coach."""
         return self.__mode
 
-    @timemeter
-    def train(self, epoch: int):
-        """Start training and return the training loss."""
-        self.__mode = 'train'
-        self.model.train()
-        # self.dataloader.seed(epoch)
-        return self.train_per_epoch(epoch)
-
-    @timemeter
-    @torch.no_grad()
-    def valid(self, epoch: int):
-        """Start validation and return the validation metrics."""
-        self.__mode = 'valid'
-        self.model.eval()
-        return self.evaluate(epoch=epoch, mode='valid')
-
-    @timemeter
-    @torch.no_grad()
-    def test(self, epoch: int):
-        """Start testing and return the test metrics."""
-        self.__mode = 'test'
-        self.model.eval()
-        return self.evaluate(epoch=epoch, mode='test')
+    @mode.setter
+    def mode(self, mode: str):
+        """Get the current mode of the chief coach."""
+        if mode == 'train':
+            self.model.train()
+        else:
+            self.model.eval()
+        self.__mode = mode
 
     @property
     def dataloader(self):
@@ -309,7 +294,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         )
 
     @abc.abstractmethod
-    def evaluate(self, epoch: int, mode: str = 'valid'):
+    def evaluate(self, epoch: int, step: int = -1, mode: str = 'valid'):
         raise NotImplementedError(
             f"{self.__class__.__name__}.evaluate() should be implemented ..."
         )
@@ -434,10 +419,10 @@ class ChiefCoach(metaclass=abc.ABCMeta):
                     self.meter4best = meter
                     self._best = -float('inf') if meter.caster is max else float('inf')
                     self._best_epoch = 0
+                    self._best_step = -1
 
 
 class Coach(ChiefCoach):
-
 
     @property
     def meter4best(self):
@@ -521,32 +506,47 @@ class Coach(ChiefCoach):
         synchronize()
         return checkpoint['epoch']
 
+    def resume(self) -> int:
+        r"""
+        Resume training from the last checkpoint.
+
+        Returns:
+        --------
+        start_epoch: int
+            The epoch number to resume training from.
+        """
+        start_epoch: int = 0
+        if self.cfg.resume:
+            start_epoch = self.load_checkpoint()
+            infoLogger(f"[Coach] >>> Load last checkpoint and train from epoch: {start_epoch}")
+        return start_epoch
+
     def save_best(self) -> None:
         self.save(self.cfg.BEST_FILENAME)
 
     def load_best(self) -> None:
-        infoLogger(f"[Coach] >>> Load best model @Epoch {self._best_epoch:<4d} ")
+        infoLogger(f"[Coach] >>> Load best model @Epoch: {self._best_epoch} ({self._best_step}) ")
         self.model.load_state_dict(torch.load(os.path.join(self.cfg.LOG_PATH, self.cfg.BEST_FILENAME)))
 
         synchronize()
         return
 
-    def check_best(self, epoch: int) -> None:
+    def check_best(self, epoch: int, step: int = -1) -> None:
         """Update best value."""
         if self.meter4best.active:
             best_ = self.meter4best.which_is_better(self._best)
             if best_ != self._best:
                 self._best = best_
                 self._best_epoch = epoch
+                self._best_step = step
                 infoLogger(f"[Coach] >>> Better ***{self.meter4best.name}*** of ***{self._best:.4f}*** ")
                 self.save_best()
 
     def eval_at_best(self):
         try:
             self.load_best()
-            self.valid(self._best_epoch)
-            self.test(self._best_epoch)
-            self.step(self._best_epoch)
+            self.valid(self._best_epoch, self._best_step)
+            self.test(self._best_epoch, self._best_step)
             self.load(self.cfg.LOG_PATH, self.cfg.SAVED_FILENAME)
         except FileNotFoundError:
             infoLogger(f"[Coach] >>> No best model was recorded. Skip it ...")
@@ -569,21 +569,6 @@ class Coach(ChiefCoach):
 
         export_pickle(best, os.path.join(self.cfg.LOG_PATH, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME))
 
-    def resume(self) -> int:
-        r"""
-        Resume training from the last checkpoint.
-
-        Returns:
-        --------
-        start_epoch: int
-            The epoch number to resume training from.
-        """
-        start_epoch: int = 0
-        if self.cfg.resume:
-            start_epoch = self.load_checkpoint()
-            infoLogger(f"[Coach] >>> Load last checkpoint and train from epoch: {start_epoch}")
-        return start_epoch
-
     @torch.no_grad()
     def monitor(
         self, *values,
@@ -591,7 +576,6 @@ class Coach(ChiefCoach):
         mode: Literal['train', 'valid', 'test'] = 'train', 
         pool: Optional[Iterable] = None
     ):
-
         r"""
         Log data values to specific monitors.
 
@@ -615,15 +599,17 @@ class Coach(ChiefCoach):
             for meter in metrics.get(lastname.upper(), []):
                 meter(*values, n=n, reduction=reduction)
 
-    def step(self, epoch: int):
+    def step(self, epoch: int, step: int = -1):
         r"""
-        Prints training status and evaluation results for each epoch, 
+        Prints training status and evaluation results for each epoch (or few steps),
         and resets the corresponding `AverageMeter` instances.
 
         Parameters:
         -----------
         epoch : int
             The epoch number.
+        step: int
+            The step number.
 
         Returns:
         --------
@@ -631,9 +617,14 @@ class Coach(ChiefCoach):
         """
         metrics: Dict[str, List[AverageMeter]]
         for mode, metrics in self.monitors.items():
-            infos = [f"[Coach] >>> {mode.upper():5} @Epoch: {epoch:<4d} >>> "]
+            if step == -1:
+                infos = [f"[Coach] >>> {mode.upper():5} @Epoch: {epoch} >>> "]
+            else:
+                infos = [f"[Coach] >>> {mode.upper():5} @Epoch: {epoch} ({step}) >>> "]
             for meters in metrics.values():
                 infos += [meter.step() for meter in meters if meter.active]
+            if len(infos) == 1:
+                continue
             infoLogger(' || '.join(infos))
 
     @main_process_only
@@ -650,9 +641,9 @@ class Coach(ChiefCoach):
         """
         import pandas as pd
 
-        s = "|  {mode}  |   {name}   |   {val}   |   {epoch}   |   {img}   |\n"
+        s = "|  {mode}  |   {name}   |   {val}   |   {step}   |   {img}   |\n"
         info = ""
-        info += "|  Mode  |   Metric   |   Best   |   @Epoch   |   Img   |\n"
+        info += "|  Mode  |   Metric   |   Best   |   @Step   |   Img   |\n"
         info += "| :-------: | :-------: | :-------: | :-------: | :-------: |\n"
         data = []
         best = defaultdict(dict)
@@ -667,12 +658,12 @@ class Coach(ChiefCoach):
                         continue
                     meter.plot(freq=freq)
                     imgname = meter.save(path=os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR), mode=mode)
-                    epoch, val = meter.argbest(freq)
+                    step, val = meter.argbest(freq)
                     info += s.format(
                         mode=mode, name=meter.name,
-                        val=val, epoch=epoch, img=f"![]({imgname})"
+                        val=val, step=step, img=f"![]({imgname})"
                     )
-                    data.append([mode, meter.name, val, epoch])
+                    data.append([mode, meter.name, val, step])
                     if val != -1: # Only save available data.
                         best[mode][meter.name] = val
 
@@ -680,7 +671,7 @@ class Coach(ChiefCoach):
         with open(file_, "w", encoding="utf8") as fh:
             fh.write(info)
 
-        df = pd.DataFrame(data, columns=['Mode', 'Metric', 'Best', '@Epoch'])
+        df = pd.DataFrame(data, columns=['Mode', 'Metric', 'Best', '@Step'])
         infoLogger(str(df))
         infoLogger(f"[LoG_PaTH] >>> {self.cfg.LOG_PATH}")
 
@@ -692,7 +683,7 @@ class Coach(ChiefCoach):
     def dict_to_device(self, data: Dict[Field, Any]) -> Dict[Field, Any]:
         return {field: value.to(self.device) if isinstance(value, torch.Tensor) else value for field, value in data.items()}
 
-    def evaluate(self, epoch: int, mode: str = 'valid'):
+    def evaluate(self, epoch: int, step: int = -1, mode: str = 'valid'):
         self.get_res_sys_arch().reset_ranking_buffers()
         y_pred = []
         y_true = []
@@ -745,6 +736,39 @@ class Coach(ChiefCoach):
             n=1, reduction="mean", mode=mode,
             pool=['GAUC']
         )
+
+    @timemeter
+    def train(self, epoch: int):
+        """Start training"""
+        self.mode = 'train'
+        # self.dataloader.seed(epoch)
+        self.train_per_epoch(epoch)
+        self.step(epoch)
+
+    @timemeter
+    @torch.no_grad()
+    def valid(self, epoch: int, step: int = -1):
+        """Start validation and checking the best"""
+        mode_ = self.mode
+
+        self.mode = 'valid'
+        self.evaluate(epoch=epoch, step=step, mode='valid')
+        self.check_best(epoch, step)
+        self.step(epoch, step)
+
+        self.mode = mode_
+
+    @timemeter
+    @torch.no_grad()
+    def test(self, epoch: int, step: int = -1):
+        """Start testing"""
+        mode_ = self.mode
+
+        self.mode = 'test'
+        self.evaluate(epoch=epoch, step=step, mode='test')
+        self.step(epoch, step)
+
+        self.mode = mode_
             
     @timemeter
     def fit(self):
@@ -758,8 +782,6 @@ class Coach(ChiefCoach):
                     self.valid(epoch)
                 if self.cfg.eval_test:
                     self.test(epoch)
-            self.check_best(epoch)
-            self.step(epoch)
             self.train(epoch)
 
         self.save()
@@ -767,9 +789,6 @@ class Coach(ChiefCoach):
         # last epoch
         self.valid(self.cfg.epochs)
         self.test(self.cfg.epochs)
-
-        self.check_best(self.cfg.epochs)
-        self.step(self.cfg.epochs)
 
         best = self.summary()
 
