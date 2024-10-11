@@ -402,9 +402,8 @@ class CoreParser(Config):
         --------
         None
         """
-        with open(args.config, encoding="UTF-8", mode='r') as f:
-            config = {key.upper(): vals for key, vals in yaml.full_load(f).items()}
-            self.update(**config)
+        config = {key.upper(): vals for key, vals in import_yaml(args.config).items()}
+        self.update(**config)
         self.EXCLUSIVE = args.exclusive
         self.resume = args.resume
         for key, val in args._get_kwargs():
