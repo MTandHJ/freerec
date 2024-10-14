@@ -382,7 +382,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         which4best : str, defaults `LOSS'
             The metric used for selecting the best checkpoint.
         early_stop_patience: int
-            The maximum steps for early stopping
+            The steps for early stopping
 
         Examples
         --------
