@@ -89,6 +89,8 @@ DEFAULT_BEST_CASTER = {
 }
 
 
+class EarlyStopError(Exception): ...
+
 class _DummyModule(torch.nn.Module):
     """This is a dummy module that serves as a placeholder for a real model."""
     def forward(self, *args, **kwargs):
@@ -145,7 +147,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         self.set_model(model)
         self.set_optimizer()
         self.set_lr_scheduler()
-        self.reset_monitors(self.cfg.monitors, self.cfg.which4best)
+        self.reset_monitors(self.cfg.monitors, self.cfg.which4best, self.cfg.early_stop_patience)
 
         # Other setup can be placed here
         self.set_other()
@@ -367,7 +369,8 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         return self.__monitors
 
     def reset_monitors(
-        self, monitors: List[str], which4best: str = 'LOSS'
+        self, monitors: List[str], 
+        which4best: str = 'LOSS', early_stop_patience: int = 5
     ):
         r"""
         Set up monitors for training.
@@ -378,6 +381,8 @@ class ChiefCoach(metaclass=abc.ABCMeta):
             A list of metric names to be monitored during training.
         which4best : str, defaults `LOSS'
             The metric used for selecting the best checkpoint.
+        early_stop_patience: int
+            The maximum steps for early stopping
 
         Examples
         --------
@@ -418,8 +423,10 @@ class ChiefCoach(metaclass=abc.ABCMeta):
                 if mode == 'valid' and name == which4best:
                     self.meter4best = meter
                     self._best = -float('inf') if meter.caster is max else float('inf')
-                    self._best_epoch = 0
-                    self._best_step = -1
+                    self._best_epoch: int = 0
+                    self._best_step: int = -1
+                    self._stopping_steps: int = 0
+                    self._early_stop_patience: int = early_stop_patience
 
 
 class Coach(ChiefCoach):
@@ -459,7 +466,7 @@ class Coach(ChiefCoach):
     def load(self, path: str, filename: Optional[str] = None) -> None:
         filename = self.cfg.SAVED_FILENAME if filename is None else filename
         self.model.load_state_dict(
-            torch.load(os.path.join(path, filename), map_location=self.device)
+            torch.load(os.path.join(path, filename), map_location=self.device, weights_only=True)
         )
 
         synchronize()
@@ -539,8 +546,15 @@ class Coach(ChiefCoach):
                 self._best = best_
                 self._best_epoch = epoch
                 self._best_step = step
+                self._stopping_steps = 0
                 infoLogger(f"[Coach] >>> Better ***{self.meter4best.name}*** of ***{self._best:.4f}*** ")
                 self.save_best()
+            else:
+                if self._stopping_steps >= self._early_stop_patience:
+                    self._stopping_steps = -1
+                    raise EarlyStopError
+                else:
+                    self._stopping_steps += 1
 
     def eval_at_best(self):
         try:
@@ -774,28 +788,31 @@ class Coach(ChiefCoach):
     def fit(self):
 
         start_epoch = self.resume()
-        for epoch in range(start_epoch, self.cfg.epochs):
-            if epoch % self.cfg.CHECKPOINT_FREQ == 0:
-                self.save_checkpoint(epoch)
-            if epoch % self.cfg.eval_freq == 0:
-                if self.cfg.eval_valid:
-                    self.valid(epoch)
-                if self.cfg.eval_test:
-                    self.test(epoch)
-            self.train(epoch)
+        epoch = 0
+        try:
+            for epoch in range(start_epoch, self.cfg.epochs):
+                if epoch % self.cfg.CHECKPOINT_FREQ == 0:
+                    self.save_checkpoint(epoch)
+                if epoch % self.cfg.eval_freq == 0:
+                    if self.cfg.eval_valid:
+                        self.valid(epoch)
+                    if self.cfg.eval_test:
+                        self.test(epoch)
+                self.train(epoch + 1)
 
-        self.save()
+            self.save()
 
-        # last epoch
-        self.valid(self.cfg.epochs)
-        self.test(self.cfg.epochs)
-
-        best = self.summary()
-
-        self.eval_at_best()
-        self.easy_record_best(best)
-
-        self.shutdown()
+            # last epoch
+            self.valid(self.cfg.epochs)
+            self.test(self.cfg.epochs)
+        except EarlyStopError:
+            infoLogger(f"[Coach] >>> Early Stop @Epoch: {epoch}")
+            self.save()
+        finally:
+            best = self.summary()
+            self.eval_at_best()
+            self.easy_record_best(best)
+            self.shutdown()
 
 
 class Adapter:

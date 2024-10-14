@@ -193,6 +193,7 @@ class Parser(Config):
         self.add_argument("--eval-valid", action="store_false", default=True, help="if True, evaluate validset")
         self.add_argument("--eval-test", action="store_true", default=False, help="if True, evaluate testset")
         self.add_argument("--eval-freq", type=int, default=5, help="the evaluation frequency")
+        self.add_argument("-esp", "--early-stop-patience", type=int, default=5, help="the maximum steps for early stopping")
 
         self.add_argument("--num-workers", type=int, default=4)
 
