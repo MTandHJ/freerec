@@ -151,7 +151,7 @@ def cross_entropy_with_logits(
     Shapes:
     -------
     logits:     (C,)    (B, C)  (B, C, ...)
-    targets:    ( ,)    (C,  )  (B, ...)
+    targets:    ( ,)    (B,  )  (B, ...)
     """
     return F.cross_entropy(logits, targets, reduction=reduction)
 
