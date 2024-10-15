@@ -533,7 +533,10 @@ class Coach(ChiefCoach):
 
     def load_best(self) -> None:
         infoLogger(f"[Coach] >>> Load best model @Epoch: {self._best_epoch} ({self._best_step}) ")
-        self.model.load_state_dict(torch.load(os.path.join(self.cfg.LOG_PATH, self.cfg.BEST_FILENAME)))
+        self.model.load_state_dict(torch.load(
+            os.path.join(self.cfg.LOG_PATH, self.cfg.BEST_FILENAME),
+            weights_only=True
+        ))
 
         synchronize()
         return
@@ -998,7 +1001,7 @@ class Adapter:
         """Load the rest of params."""
         infoLogger(f"[Coach] >>> Load the recent checkpoint ...")
         path = os.path.join(self.cfg.CORE_CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
-        checkpoint = torch.load(path)
+        checkpoint = torch.load(path, weights_only=True)
         return checkpoint['source']
 
     def resume(self):

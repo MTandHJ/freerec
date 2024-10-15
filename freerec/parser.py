@@ -237,7 +237,6 @@ class Parser(Config):
             self[key] = val
 
     def set_device(self, device: Union[torch.device, str, int]):
-        os.environ['CUDA_VISIBLE_DEVICES'] = '-1' if device == 'cpu' else str(device)
         try:
             device = int(device)
         except ValueError:
@@ -245,6 +244,12 @@ class Parser(Config):
 
         set_color(device)
         self.device = torch.device(device)
+        try:
+            torch.cuda.set_device(device)
+        except ValueError:
+            pass
+        except AttributeError:
+            pass
         return device
 
     def init_ddp(self):
