@@ -466,7 +466,11 @@ class Coach(ChiefCoach):
     def load(self, path: str, filename: Optional[str] = None) -> None:
         filename = self.cfg.SAVED_FILENAME if filename is None else filename
         self.model.load_state_dict(
-            torch.load(os.path.join(path, filename), map_location=self.device, weights_only=True)
+            torch.load(
+                os.path.join(path, filename), 
+                map_location=self.device,
+                weights_only=True
+            )
         )
 
         synchronize()
@@ -505,7 +509,7 @@ class Coach(ChiefCoach):
             The epoch number loaded from the checkpoint.
         """
         path = os.path.join(self.cfg.CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
-        checkpoint = torch.load(path)
+        checkpoint = torch.load(path, weights_only=False)
         for module in self.cfg.CHECKPOINT_MODULES:
             getattr(self, module).load_state_dict(checkpoint[module])
         self.monitors.load_state_dict(checkpoint['monitors'])
@@ -535,6 +539,7 @@ class Coach(ChiefCoach):
         infoLogger(f"[Coach] >>> Load best model @Epoch: {self._best_epoch} ({self._best_step}) ")
         self.model.load_state_dict(torch.load(
             os.path.join(self.cfg.LOG_PATH, self.cfg.BEST_FILENAME),
+            map_location=self.device,
             weights_only=True
         ))
 
@@ -554,7 +559,7 @@ class Coach(ChiefCoach):
                 self.save_best()
             else:
                 if self._stopping_steps >= self._early_stop_patience:
-                    self._stopping_steps = -1
+                    self.step(epoch, step)
                     raise EarlyStopError
                 else:
                     self._stopping_steps += 1
@@ -812,6 +817,7 @@ class Coach(ChiefCoach):
             infoLogger(f"[Coach] >>> Early Stop @Epoch: {epoch}")
             self.save()
         finally:
+            self._stopping_steps = -1
             best = self.summary()
             self.eval_at_best()
             self.easy_record_best(best)
