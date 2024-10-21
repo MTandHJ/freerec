@@ -1,10 +1,22 @@
 
 
+from typing import Optional
+
 import math
 import polars as pl
 
 
 __all__ = ['Normalizer', 'Counter', 'ReIndexer', 'StandardScaler', 'MinMaxScaler']
+
+
+NORMALIZERS = dict()
+
+def register_normalizer(normalizer: 'Normalizer', name: Optional[str] = None):
+    name = normalizer.__name__ if name is None else name
+    assert hasattr(normalizer, 'partial_fit'), f"`partial_fit` method is not in `{name}`"
+    assert hasattr(normalizer, 'normalize'), f"`normalize` method is not in `{name}`"
+    NORMALIZERS[name.upper()] = normalizer
+    return normalizer
 
 
 class Normalizer:
@@ -50,6 +62,7 @@ class Normalizer:
         return self.normalize(data)
 
 
+@register_normalizer
 class Counter(Normalizer):
     """Counting uniques."""
 
@@ -71,6 +84,7 @@ class Counter(Normalizer):
         return data
 
 
+@register_normalizer
 class ReIndexer(Counter):
     r"""
     Normalize categorical features into tokens.
@@ -105,6 +119,7 @@ class ReIndexer(Counter):
         return data.replace_strict(old=self.olds, new=self.news)
 
 
+@register_normalizer
 class StandardScaler(Normalizer):
     r"""
     Normalize numerical features using the standard scaler.
@@ -155,6 +170,7 @@ class StandardScaler(Normalizer):
         return (data - self.mean) / (self.std + self.eps)
 
 
+@register_normalizer
 class MinMaxScaler(Normalizer):
     r"""
     Scale data to the range [0, 1].

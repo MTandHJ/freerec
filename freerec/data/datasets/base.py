@@ -275,7 +275,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
             for mode in ('train', 'valid', 'test'):
                 infoLogger(f"[DataSet] >>> Normalizing fields over `{mode}` set ...")
                 path = os.path.join(
-                    self.path, 
+                    self.path,
                     self.DEFAULT_PARQUET_DIR.format(mode=mode)
                 )
                 mkdirs(path)

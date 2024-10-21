@@ -8,7 +8,7 @@ import polars as pl
 from itertools import chain
 
 from .tags import FieldTags
-from .normalizer import Normalizer, StandardScaler, MinMaxScaler, Counter, ReIndexer
+from .normalizer import NORMALIZERS
 
 
 __all__ = [
@@ -122,7 +122,7 @@ class Field:
         self, 
         dtype: Union[None, str, pl.DataType] = None,
         fill_null_strategy: Literal['forward', 'backward', 'min', 'max', 'zero', 'one'] = 'zero',
-        normalizer: Union[None, Literal['standard', 'minmax', 'reindex'], Normalizer] = None,
+        normalizer: Union[None, Literal['standard', 'minmax', 'reindex']] = None,
         **kwargs
     ):
         r"""
@@ -138,32 +138,27 @@ class Field:
             - `None`: no operation
         normalizer: Union[str, Callable]
             - `None`: no operation
-            - `standard`: applying standard normalization
-            - `minmax`: applying minmax normalization
-            - `reindex`: mapping each to a number
-            - `Normalizer`: mapping by given tokenizer
+            - `standardscaler`: applying standard normalization
+            - `minmaxscaler`: applying minmax normalization
+            - `reindexer`: mapping each to a number
         kwargs:
             other args for normalizer
         """
         self._dtype = getattr(pl, dtype) if isinstance(dtype, str) else dtype
         self._fill_null_strategy = fill_null_strategy
 
-        if normalizer is None:
-            normalizer = Counter
-        elif normalizer == 'standard':
-            normalizer = StandardScaler
-        elif normalizer == 'minmax':
-            normalizer = MinMaxScaler
-        elif normalizer == 'reindex':
-            normalizer = ReIndexer
-        else:
-            normalizer = normalizer
-        
+        normalizer = 'counter' if normalizer is None else normalizer
         try:
-            self._normalizer = normalizer(**kwargs)
+            self._normalizer = NORMALIZERS[normalizer.upper()](**kwargs)
+        except KeyError:
+            availables = '; '.join(NORMALIZERS.keys())
+            raise KeyError(
+                f"Receive an invalid normalizer not existing in: [{availables}]. "
+                f"You should register this via `register_normalizer(normalizer, name)` ..."
+            )
         except TypeError:
             raise KeyError(
-                f"Receive invalid kwargs for {normalizer.__class__}: {kwargs}"
+                f"Receive invalid kwargs for {normalizer}: {kwargs}"
             )
 
     def cast(
