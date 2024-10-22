@@ -15,7 +15,7 @@ FreeRec is a repository designed for easy (recommendation) data pre-processing a
 
 ## Requirements: 
 
-3.9 <= Python <= 3.11 | [PyTorch >=2.0](https://pytorch.org/) | [0.6.0 <= TorchData <= 0.8.0](https://github.com/pytorch/data) | [PyG >=2.3](https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html#)
+3.9 <= Python <= 3.11 | [PyTorch >=2.0](https://pytorch.org/) | [0.7.0 <= TorchData <= 0.8.0](https://github.com/pytorch/data) | [PyG >=2.3](https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html#)
 
 
 ```

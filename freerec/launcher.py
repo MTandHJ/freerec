@@ -816,12 +816,11 @@ class Coach(ChiefCoach):
         except EarlyStopError:
             infoLogger(f"[Coach] >>> Early Stop @Epoch: {epoch}")
             self.save()
-        finally:
-            self._stopping_steps = -1
-            best = self.summary()
-            self.eval_at_best()
-            self.easy_record_best(best)
-            self.shutdown()
+        self._stopping_steps = -1
+        best = self.summary()
+        self.eval_at_best()
+        self.easy_record_best(best)
+        self.shutdown()
 
 
 class Adapter:

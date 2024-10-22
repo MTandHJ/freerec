@@ -302,12 +302,11 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
                         )
                     )
             export_pickle(schema, schema_file)
-        finally:
-            # .fork() for consistent hash value
-            self.fields = [field.fork() for field in schema['fields']]
-            self.trainsize = schema['trainsize']
-            self.validsize = schema['validsize']
-            self.testsize = schema['testsize']
+        # .fork() for consistent hash value
+        self.fields = [field.fork() for field in schema['fields']]
+        self.trainsize = schema['trainsize']
+        self.validsize = schema['validsize']
+        self.testsize = schema['testsize']
 
     def summary(self):
         """Print a summary of the dataset."""
