@@ -88,8 +88,8 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     DEFAULT_CSV_FILE = "{mode}.txt"
     DEFAULT_CSV_SEPARATOR = "\t"
     DEFAULT_SCHEMA_FILE = "schema.pkl"
-    DEFAULT_PARQUET_DIR = "parquet/{mode}"
-    DEFAULT_PARQUET_FILE = "p{chunk}.parquet"
+    DEFAULT_CHUNK_DIR = "chunks/{mode}"
+    DEFAULT_CHUNK_FILE = "p{chunk}.pkl"
     DEFAULT_CHUNK_SIZE = 256 * 512
     DEFAULT_CONFIG_FILE = "config.yaml"
 
@@ -203,21 +203,19 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
             fields.append(field)
         return FieldTuple(fields)
 
-    def parquet(
+    def read_chunk(
         self, fields: Iterable[Field]
     ) -> Iterator[pl.DataFrame]:
         path = os.path.join(
             self.path, 
-            self.DEFAULT_PARQUET_DIR.format(mode=self.mode),
-            self.DEFAULT_PARQUET_FILE
+            self.DEFAULT_CHUNK_DIR.format(mode=self.mode),
+            self.DEFAULT_CHUNK_FILE
         )
-        columns = [field.name for field in fields]
         num_chunks = len(glob.glob(path.format(chunk='*')))
         for k in range(num_chunks):
-            parquet_file = path.format(chunk=k)
-            yield pl.read_parquet(
-                parquet_file, columns=columns
-            )
+            chunk_file = path.format(chunk=k)
+            data = import_pickle(chunk_file)
+            yield {field: data[field.name] for field in fields}
 
     def load_inter(self):
         r"""
@@ -226,7 +224,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         Flows:
         ------
         1. Traversing and fitting train|valid|test sets.
-        2. Normalizing and splitting train|valid|test sets into parquet chunks.
+        2. Normalizing and splitting train|valid|test sets into chunks.
         """
         schema_file = os.path.join(self.path, self.DEFAULT_SCHEMA_FILE)
         sha1_hash = check_sha1(
@@ -271,12 +269,12 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
                         partial=True
                     )
 
-            # transforming and splitting csv files into parquet formats
+            # transforming and splitting csv files into chunk formats
             for mode in ('train', 'valid', 'test'):
                 infoLogger(f"[DataSet] >>> Normalizing fields over `{mode}` set ...")
                 path = os.path.join(
                     self.path,
-                    self.DEFAULT_PARQUET_DIR.format(mode=mode)
+                    self.DEFAULT_CHUNK_DIR.format(mode=mode)
                 )
                 mkdirs(path)
 
@@ -295,10 +293,11 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
                         )
                         for field in schema['fields']
                     )
-                    chunk.write_parquet(
+                    export_pickle(
+                        chunk.to_dict(as_series=False),
                         os.path.join(
                             path,
-                            self.DEFAULT_PARQUET_FILE.format(chunk=k)
+                            self.DEFAULT_CHUNK_FILE.format(chunk=k)
                         )
                     )
             export_pickle(schema, schema_file)
@@ -414,16 +413,15 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         if len(fields) == 0:
             return None
         else:
-            data = pl.concat(
-                self.parquet(fields),
-                how='vertical'
-            )
-            return {field: data[field.name].to_list() for field in fields}
+            data = {field: [] for field in fields}
+            for chunk in self.read_chunk(fields):
+                for field in fields:
+                    data[field].extend(chunk[field])
+            return data
 
     def __iter__(self) -> Iterator[Dict[Field, Any]]:
-        for df in self.parquet(self.fields):
-            for row in df.iter_rows():
-                yield dict(zip(self.fields, row))
+        for chunk in self.read_chunk(self.fields):
+            yield from self.to_rows(chunk)
 
 
 class RecDataSet(BaseSet):
