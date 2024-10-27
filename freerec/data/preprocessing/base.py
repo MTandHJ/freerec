@@ -305,10 +305,10 @@ class AtomicConverter:
         try:
             if master is not None:
                 df = df.sort_values(by=[master, TIMESTAMP.name])
-                infoLogger(f"[Converter] >>> Sort by [{master}] [{TIMESTAMP.name}] ...")
+                infoLogger(f"[Converter] >>> Sort data by [{master}] [{TIMESTAMP.name}] ...")
             else:
                 df = df.sort_values(by=[TIMESTAMP.name])
-                infoLogger(f"[Converter] >>> Sort by [{TIMESTAMP.name}] ...")
+                infoLogger(f"[Converter] >>> Sort data by [{TIMESTAMP.name}] ...")
         except KeyError:
             raise KeyError(f"{master} or {TIMESTAMP.name} is not in dataframe ...")
         finally:
@@ -363,7 +363,7 @@ class AtomicConverter:
         return ''.join(map(str, ratios)) + '_RAU'
 
     def split_by_ROD(self, ratios: Iterable = (8, 1, 1)):
-        infoLogger(f"[Converter] >>> Split by ROT (Ratio On Dataset): {ratios} ...")
+        infoLogger(f"[Converter] >>> Split data by ROT (Ratio On Dataset): {ratios} ...")
         self.interactions = self.sort_by_timestamp(
             self.interactions, master=None
         )
