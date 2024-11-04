@@ -596,7 +596,8 @@ class Coach(ChiefCoach):
         self, *values,
         n: int = 1, reduction: str = 'mean', 
         mode: Literal['train', 'valid', 'test'] = 'train', 
-        pool: Optional[Iterable] = None
+        pool: Optional[Iterable] = None,
+        refresh: bool = False
     ):
         r"""
         Log data values to specific monitors.
@@ -613,6 +614,8 @@ class Coach(ChiefCoach):
             The mode string indicating which mode the values belong to. Can be 'train', 'test' or 'valid'.
         pool : List[str], optional
             A list of metric names to log. If None, all metrics in the pool of `mode` will be logged.
+        refresh: bool, default to `False`
+            `True`: refresh the monitor immediately (the metrics will be not be printed).
         """
 
         metrics: Dict[List] = self.monitors[mode]
@@ -620,6 +623,8 @@ class Coach(ChiefCoach):
         for lastname in pool:
             for meter in metrics.get(lastname.upper(), []):
                 meter(*values, n=n, reduction=reduction)
+                if refresh:
+                    meter.step()
 
     def step(self, epoch: int, step: int = -1):
         r"""
