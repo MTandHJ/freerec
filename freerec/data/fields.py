@@ -1,6 +1,6 @@
 
 
-from typing import Iterable, Tuple, Union, Literal, Iterator
+from typing import Iterable, Tuple, Union, Literal, Iterator, TypeVar
 
 import torch
 import numpy as np
@@ -15,6 +15,8 @@ __all__ = [
     'Field', 'FieldTuple', 'FieldModule', 'FieldModuleList'
 ]
 
+
+T = TypeVar('T')
 
 class Field:
     r"""
@@ -74,8 +76,8 @@ class Field:
     def identifier(self) -> Tuple:
         return self.__identifier
 
-    def fork(self, *tags: FieldTags) -> 'Field':
-        field = Field(self.name, *self.tags, *tags)
+    def fork(self: T, *tags: FieldTags) -> T:
+        field = type(self)(self.name, *self.tags, *tags)
         field.count = self.count
         return field
 
@@ -116,7 +118,7 @@ class Field:
         return f"{self.__class__.__name__}({str(self)})"
 
     def __str__(self) -> str:
-        return f"{self.name}:{','.join(map(lambda tag: tag.name, self.tags))}"
+        return f"{self.name}:{self.count}:{','.join(map(lambda tag: tag.name, self.tags))}"
 
     def set_normalizer(
         self, 
@@ -272,6 +274,31 @@ class Field:
 
 
 class FieldModule(Field, torch.nn.Module):
+    r"""
+    Field module.
+
+    Notes:
+    ------
+    The 'fixed' hash value of field/fieldmodule may raise some errors.
+    For example, 'a = A()' below. 
+    The parameters in 'a.field' can be found by 'a.parameters()'
+    but not the case for 'a.field2'. This is because 'duplicate' will be removed during collection ('field1' and 'field2' share the same hash value).
+
+    class A(nn.Module):
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+            self.field = FieldModule('a').fork()
+            self.field2 = FieldModule('a').fork()
+
+            self.field.add_module(
+                "embeddings", nn.Embedding(3, 4)
+            )
+            self.field2.add_module(
+                "embeddings", nn.Embedding(1, 4)
+            )
+    """
 
     embeddings: torch.nn.Embedding
 
