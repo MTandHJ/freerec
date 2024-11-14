@@ -89,7 +89,7 @@ class RecSysArch(nn.Module):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0.)
             elif isinstance(m, nn.Embedding):
-                nn.init.xavier_normal_(m.weight)
+                nn.init.normal_(m.weight, std=1.e-4)
             elif isinstance(m, nn.GRU):
                 nn.init.xavier_uniform_(m.weight_hh_l0)
                 nn.init.xavier_uniform_(m.weight_ih_l0)
