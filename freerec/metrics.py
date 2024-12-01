@@ -629,10 +629,11 @@ def log_loss(
         0.22314354, 0.28768206, 1.10866259])
     """
     preds = np.array(preds, dtype=float)
+    preds = np.clip(preds, eps, 1 - eps)
     targets = np.array(targets)
     loss = -(
-        targets * np.log(preds + eps) 
-        + (1 - targets) * np.log(1 - preds + eps)
+        targets * np.log(preds) 
+        + (1 - targets) * np.log(1 - preds)
     )
     if reduction == 'none':
         return loss
@@ -642,6 +643,7 @@ def log_loss(
         return np.sum(loss)
     else:
         raise ValueError(f"reduction should be 'none'|'mean'|'sum' but {reduction} is received ...")
+
 
 def auroc(preds: Iterable, targets: Iterable) -> np.ndarray:
     r"""

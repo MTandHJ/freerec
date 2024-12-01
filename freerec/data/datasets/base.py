@@ -2,7 +2,7 @@
 
 from typing import Any, TypeVar, Literal, Union, Optional, Callable, Iterator, Iterable, Dict, Tuple, List
 
-import torch, os, abc, glob, yaml
+import torch, os, abc, glob, yaml, random
 import numpy as np
 import polars as pl
 import torchdata.datapipes as dp
@@ -92,6 +92,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     DEFAULT_CHUNK_FILE = "p{chunk}.pkl"
     DEFAULT_CHUNK_SIZE = 256 * 512
     DEFAULT_CONFIG_FILE = "config.yaml"
+    STREAMING: bool = True # if `False`, iter(dataset) will shuffle the saved chunks during training.
 
     TASK: TaskTags
     URL: Optional[str] = None
@@ -103,7 +104,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         *,
         download: bool = True,
         tasktag: Optional[TaskTags] = None,
-        cfg: Union[None, str, Dict] = None
+        cfg: Union[None, str, Dict] = None,
     ) -> None:
         super().__init__()
 
@@ -125,6 +126,9 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
                     f"No such file of {self.path}, or this dir is empty. \n"
                     f"Please use `freerec make` to prepare the dataset with the following setting: \n {self.__class__.__doc__}"
                 )
+
+        self.rng = random.Random()
+        self.set_seed(0)
 
         self.set_config(cfg)
         self.compile()
@@ -203,8 +207,13 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
             fields.append(field)
         return FieldTuple(fields)
 
+    def set_seed(self, seed: int):
+        self.rng.seed(seed)
+
     def read_chunk(
-        self, fields: Iterable[Field]
+        self, 
+        fields: Iterable[Field],
+        streaming: bool = True
     ) -> Iterator[pl.DataFrame]:
         path = os.path.join(
             self.path, 
@@ -212,7 +221,10 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
             self.DEFAULT_CHUNK_FILE
         )
         num_chunks = len(glob.glob(path.format(chunk='*')))
-        for k in range(num_chunks):
+        chunks = list(range(num_chunks))
+        if not streaming:
+            self.rng.shuffle(chunks)
+        for k in chunks:
             chunk_file = path.format(chunk=k)
             data = import_pickle(chunk_file)
             yield {field: data[field.name] for field in fields}
@@ -414,13 +426,16 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
             return None
         else:
             data = {field: [] for field in fields}
-            for chunk in self.read_chunk(fields):
+            for chunk in self.read_chunk(fields, streaming=True):
                 for field in fields:
                     data[field].extend(chunk[field])
             return data
 
     def __iter__(self) -> Iterator[Dict[Field, Any]]:
-        for chunk in self.read_chunk(self.fields):
+        for chunk in self.read_chunk(
+            self.fields, 
+            streaming=self.STREAMING or (self.mode != 'train')
+        ):
             yield from self.to_rows(chunk)
 
 
@@ -899,6 +914,7 @@ class NextItemRecDataSet(RecDataSet):
 
 class PredictionRecDataSet(RecDataSet):
     TASK = TaskTags.PREDICTION
+    STREAMING = False
 
     def summary(self):
         super().summary()
