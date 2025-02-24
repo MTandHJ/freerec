@@ -422,6 +422,7 @@ def set_logger(
     logger.debug("========================================================================")
     logger.debug("========================================================================")
     logger.debug("========================================================================")
+    logger.propagate = False
     LOGGER['info'] = logger.info
     LOGGER['debug'] = logger.debug
     return logger
