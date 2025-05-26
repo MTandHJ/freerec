@@ -443,6 +443,30 @@ class BaseProcessor(dp.iter.IterDataPipe):
         drop_last: bool, default False
         """
 
+    # Functional form of 'Marker'
+    def mark_(self: T, **markers) -> T:
+        r"""
+        Mark a piece of data.
+
+        Parameters:
+        -----------
+        markers: Dict
+
+        Examples:
+        ---------
+        >>> source_dp1 = IterableWrapper([{'i': i} for i in range(3)]).mark_(dataset='A')
+        >>> source_dp2 = IterableWrapper([{'i': i} for i in range(3)]).mark_(dataset='B')
+        >>> d = {source_dp1: 1, source_dp2: 1}
+        >>> sample_mul_dp = SampleMultiplexer(pipes_to_weights_dict=d)
+        >>> list(sample_mul_dp)
+        [{'i': 0, 'dataset': 'B'},
+        {'i': 1, 'dataset': 'B'},
+        {'i': 0, 'dataset': 'A'},
+        {'i': 1, 'dataset': 'A'},
+        {'i': 2, 'dataset': 'B'},
+        {'i': 2, 'dataset': 'A'}]
+        """
+
     # Functional form of 'ToTensor'
     def tensor_(self: T) -> T:
         r"""
@@ -662,3 +686,31 @@ class PostProcessor(BaseProcessor):
     source: BaseProcessor
         The data pipeline to be wrapped.
     """
+
+
+class SampleMultiplexer(dp.iter.IterDataPipe):
+    r"""
+    Takes a `Dict` of (IterDataPipe, Weight), and yields items by sampling from these
+    DataPipes with respect to their weights. When individual DataPipes are exhausted, continues to sample from
+    the remaining DataPipes according to their relative weights.
+    If you wish to maintain the same ratio of weights indefinitely, you need to ensure that the
+    inputs are never exhausted, by, for instance, applying ``cycle`` to them.
+
+    Parameters:
+    -----------
+    pipes_to_weights_dict: a `Dict` of IterDataPipes and Weights. The total weight of
+        unexhausted DataPipes will be normalized to 1 for the purpose of sampling.
+
+    Examples:
+    --------
+    >>> source_dp1 = IterableWrapper([0] * 10)
+    >>> source_dp2 = IterableWrapper([1] * 10)
+    >>> d = {source_dp1: 99999999, source_dp2: 0.0000001}
+    >>> sample_mul_dp = SampleMultiplexer(pipes_to_weights_dict=d)
+    >>> list(sample_mul_dp)
+    [0, 0, 0, 0, 0, 1, 1, 1, 1, 1]
+    """
+    def __init__(
+        self,
+        pipes_to_weights_dict: Dict[dp.iter.IterDataPipe, float]
+    ): ...

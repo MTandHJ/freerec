@@ -1,7 +1,7 @@
 
 
 from .base import (
-    BaseProcessor, Source, PostProcessor
+    BaseProcessor, Source, PostProcessor, SampleMultiplexer
 )
 
 from .source import (
@@ -23,9 +23,13 @@ from .column import (
     Batcher_, ToTensor
 )
 
+from .other import (
+    Marker
+)
+
 
 __all__ = [
-    'BaseProcessor', 'Source', 'PostProcessor',
+    'BaseProcessor', 'Source', 'PostProcessor', 'SampleMultiplexer',
     'OrderedSource', 'RandomChoicedSource', 'RandomShuffledSource',
     'GenTrainPositiveSampler', 'GenTrainNegativeSampler',
     'SeqTrainPositiveYielder', 'SeqTrainNegativeSampler',
