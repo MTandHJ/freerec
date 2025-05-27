@@ -2,7 +2,7 @@
 
 from typing import Any, Literal, Callable, Iterable, List, Dict, Optional, Tuple
 
-import torch, abc, os, time, sys, signal
+import torch, abc, os, time, sys, signal, inspect
 from torch.utils.tensorboard import SummaryWriter
 from functools import partial
 from itertools import product
@@ -147,12 +147,10 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         self.set_model(model)
         self.set_optimizer()
         self.set_lr_scheduler()
+        self.set_monitors(self.cfg.monitors)
 
         # Other setup can be placed here
         self.set_other()
-
-        # Finally set monitors
-        self.reset_monitors(self.cfg.monitors, self.cfg.which4best, self.cfg.early_stop_patience)
 
     def set_device(self, device):
         self.device = torch.device(device)
@@ -305,45 +303,48 @@ class ChiefCoach(metaclass=abc.ABCMeta):
 
     def register_metric(
         self, name: str, func: Callable, 
-        fmt: str = '.4f', best_caster: Callable = max
+        fmt: str = '.4f', best_caster: Callable = max,
+        **kwargs
     ) -> None:
         r"""
         Register a metric.
 
-        Parameters
-        ----------
+        Parameters:
+        -----------
         name : str
-            The complete name of the metric, such as `LOSS2`.
-            The notation `@` should not be included, i.e., 'LOSS@2' is invalid.
+            The complete name of the metric, such as `NDCG@10`.
+            Note that the notation `@` is a special separator indicating 'metric@k'.
+            In this case, the given `func` must inluce a 'k' argument.
         func : Callable
             The function to process the data for the metric.
         fmt : str, optional
             The format to use when printing the metric, defaults to `'.4f'`.
         best_caster : Callable, optional
             A function used to cast the best value of the metric, defaults to `max`.
+        kwargs:
+            Other arguments for `func`.
             
-        Returns
-        -------
+        Returns:
+        --------
         None
-        
-        Raises
-        ------
-        AssertionError
-            When `name` has already been registered or contains the notation `@`.
         """
-
         name = name.upper()
-        assert DEFAULT_METRICS.get(name, None) is None, f"The metric {name} already exists ..."
-        assert '@' not in name, f"The metric name has invalid notation of `@' ..."
-        DEFAULT_METRICS[name] = func
-        DEFAULT_FMTS[name] = fmt
-        DEFAULT_BEST_CASTER[name] = best_caster
+        if '@' in name:
+            lastname, K = name.split('@')
+            kwargs['k'] = int(K)
+        else:
+            lastname = name
+
+        DEFAULT_METRICS[lastname] = func
+        DEFAULT_FMTS[lastname] = fmt
+        DEFAULT_BEST_CASTER[lastname] = best_caster
 
         for mode in ('train', 'valid', 'test'):
             self._set_monitor(
                 name=name,
-                lastname=name,
-                mode=mode
+                lastname=lastname,
+                mode=mode,
+                **kwargs
             )
 
     def _set_monitor(
@@ -358,6 +359,15 @@ class ChiefCoach(metaclass=abc.ABCMeta):
                     best_caster=DEFAULT_BEST_CASTER[lastname]
                 )
             self.__monitors[mode][lastname].append(meter)
+
+            if mode == 'valid' and name == self.cfg.which4best:
+                self.meter4best = meter
+                self._best = -float('inf') if meter.caster is max else float('inf')
+                self._best_epoch: int = 0
+                self._best_step: int = -1
+                self._stopping_steps: int = 0
+                self._early_stop_patience: int = self.cfg.early_stop_patience
+
         except KeyError:
             raise KeyError(
                 f"The metric of {lastname} is not included. "
@@ -370,15 +380,14 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         """Return the monitor dictionary for the different modes ('train', 'valid', 'test')."""
         return self.__monitors
 
-    def reset_monitors(
-        self, monitors: List[str], 
-        which4best: str = 'LOSS', early_stop_patience: int = 5
+    def set_monitors(
+        self, monitors: List[str]
     ):
         r"""
         Set up monitors for training.
 
-        Parameters
-        ----------
+        Parameters:
+        -----------
         monitors : List[str]
             A list of metric names to be monitored during training.
         which4best : str, defaults `LOSS'
@@ -386,14 +395,11 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         early_stop_patience: int
             The steps for early stopping
 
-        Examples
-        --------
+        Examples:
+        ---------
         >>> coach: Coach
-        >>> coach.compile(monitors=['loss', 'recall@10', 'recall@20', 'ndcg@10', 'ndcg@20'])
+        >>> coach.set_monitors(monitors=['loss', 'recall@10', 'recall@20', 'ndcg@10', 'ndcg@20'])
         """
-        assert isinstance(monitors, List), f"'monitors' should be a list but {type(monitors)} received ..."
-        assert isinstance(which4best, str), f"'which4best' should be a str but {type(which4best)} received ..."
-
         # meters for train|valid|test
         self.__monitors = Monitor()
         self.__monitors['train'] = defaultdict(list)
@@ -401,15 +407,14 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         self.__monitors['test'] = defaultdict(list)
 
         # UPPER
-        which4best = which4best.upper()
-        monitors = ['LOSS'] + [name.upper() for name in monitors] + [which4best]
+        monitors = ['LOSS'] + [name.upper() for name in monitors]
         monitors = sorted(set(monitors), key=monitors.index)
 
         for name in monitors:
             for mode in ('train', 'valid', 'test'):
                 if '@' in name:
                     lastname, K = name.split('@')
-                    meter = self._set_monitor(
+                    self._set_monitor(
                         name=name,
                         lastname=lastname,
                         mode=mode,
@@ -417,18 +422,11 @@ class ChiefCoach(metaclass=abc.ABCMeta):
                     )
                 else:
                     lastname = name
-                    meter = self._set_monitor(
+                    self._set_monitor(
                         name=name,
                         lastname=lastname,
                         mode=mode
                     )
-                if mode == 'valid' and name == which4best:
-                    self.meter4best = meter
-                    self._best = -float('inf') if meter.caster is max else float('inf')
-                    self._best_epoch: int = 0
-                    self._best_step: int = -1
-                    self._stopping_steps: int = 0
-                    self._early_stop_patience: int = early_stop_patience
 
 
 class Coach(ChiefCoach):
