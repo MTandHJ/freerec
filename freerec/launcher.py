@@ -147,10 +147,12 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         self.set_model(model)
         self.set_optimizer()
         self.set_lr_scheduler()
-        self.reset_monitors(self.cfg.monitors, self.cfg.which4best, self.cfg.early_stop_patience)
 
         # Other setup can be placed here
         self.set_other()
+
+        # Finally set monitors
+        self.reset_monitors(self.cfg.monitors, self.cfg.which4best, self.cfg.early_stop_patience)
 
     def set_device(self, device):
         self.device = torch.device(device)
