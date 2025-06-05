@@ -351,6 +351,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         self, name: str, lastname: str, mode: str = 'train', **kwargs
     ):
         """Add a monitor for the specified metric."""
+        name, lastname = name.upper(), lastname.upper()
         try:
             meter = AverageMeter(
                     name=name,
@@ -360,7 +361,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
                 )
             self.__monitors[mode][lastname].append(meter)
 
-            if mode == 'valid' and name == self.cfg.which4best:
+            if mode == 'valid' and name == self.cfg.which4best.upper():
                 self.meter4best = meter
                 self._best = -float('inf') if meter.caster is max else float('inf')
                 self._best_epoch: int = 0
