@@ -22,14 +22,17 @@ from .amazon2014 import (
     Amazon2014Electronics_550_MMRec,
 
     # NextItem
-    Amazon2014Beauty_550_LOU, Amazon2014Beauty_500_LOU,
+    Amazon2014Beauty_550_LOU, Amazon2014Beauty_500_LOU, Amazon2014Beauty_1000_LOU,
+    Amazon2014CDs_1000_LOU,
+    Amazon2014Clothing_1000_LOU,
     Amazon2014Games_550_LOU, Amazon2014Games_500_LOU,
     Amazon2014Grocery_550_LOU, Amazon2014Grocery_500_LOU,
-    Amazon2014Home_550_LOU, Amazon2014Home_500_LOU,
-    Amazon2014Movies_550_LOU, Amazon2014Movies_500_LOU,
+    Amazon2014Home_550_LOU, Amazon2014Home_500_LOU, Amazon2014Home_1000_LOU,
+    Amazon2014Movies_550_LOU, Amazon2014Movies_500_LOU, Amazon2014Movies_1000_LOU,
     Amazon2014Tools_550_LOU, Amazon2014Tools_500_LOU,
     Amazon2014Toys_550_LOU, Amazon2014Toys_500_LOU,
     Amazon2014Office_550_LOU, Amazon2014Office_500_LOU,
+    Amazon2014Video_1000_LOU,
 )
 
 from .amazon2018 import (
