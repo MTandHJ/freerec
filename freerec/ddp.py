@@ -103,6 +103,7 @@ def _serialize_to_tensor(data, group):
     storage = torch.ByteStorage.from_buffer(buffer)
     tensor = torch.ByteTensor(storage).to(device=device)
     return tensor
+    # return torch.frombuffer(buffer, dtype=torch.uint8).to(device)
 
 def _pad_to_largest_tensor(tensor, group):
     """
