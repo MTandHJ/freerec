@@ -187,6 +187,7 @@ class MovieLens100K_550_LOU(NextItemRecDataSet):
     +-------+-------+---------------+--------+--------+-------+---------------------+
 
     Notes:
+    ------
     MovieLens is not suitable for next-item recommendation.
     Refer to [this paper](https://ceur-ws.org/Vol-2955/paper8.pdf) for details.
     """
@@ -210,6 +211,7 @@ class MovieLens100K_500_LOU(NextItemRecDataSet):
     +-------+-------+---------------+--------+--------+-------+---------------------+
 
     Notes:
+    ------
     MovieLens is not suitable for next-item recommendation.
     Refer to [this paper](https://ceur-ws.org/Vol-2955/paper8.pdf) for details.
     """
@@ -233,6 +235,7 @@ class MovieLens1M_550_LOU(NextItemRecDataSet):
     +-------+-------+---------------+--------+--------+-------+----------------------+
 
     Notes:
+    ------
     MovieLens is not suitable for next-item recommendation.
     Refer to [this paper](https://ceur-ws.org/Vol-2955/paper8.pdf) for details.
     """
@@ -256,6 +259,7 @@ class MovieLens1M_500_LOU(NextItemRecDataSet):
     +-------+-------+---------------+--------+--------+-------+----------------------+
 
     Notes:
+    ------
     MovieLens is not suitable for next-item recommendation.
     Refer to [this paper](https://ceur-ws.org/Vol-2955/paper8.pdf) for details.
     """
@@ -279,6 +283,7 @@ class MovieLens10M_550_LOU(NextItemRecDataSet):
     +-------+-------+---------------+---------+--------+-------+---------------------+
 
     Notes:
+    ------
     MovieLens is not suitable for next-item recommendation.
     Refer to [this paper](https://ceur-ws.org/Vol-2955/paper8.pdf) for details.
     """
@@ -302,6 +307,7 @@ class MovieLens10M_500_LOU(NextItemRecDataSet):
     +-------+-------+---------------+---------+--------+-------+----------------------+
 
     Notes:
+    ------
     MovieLens is not suitable for next-item recommendation.
     Refer to [this paper](https://ceur-ws.org/Vol-2955/paper8.pdf) for details.
     """
@@ -325,6 +331,7 @@ class MovieLens20M_550_LOU(NextItemRecDataSet):
     +--------+-------+---------------+----------+--------+--------+----------------------+
 
     Notes:
+    ------
     MovieLens is not suitable for next-item recommendation.
     Refer to [this paper](https://ceur-ws.org/Vol-2955/paper8.pdf) for details.
     """
@@ -348,6 +355,7 @@ class MovieLens20M_500_LOU(NextItemRecDataSet):
     +--------+-------+---------------+----------+--------+--------+-----------------------+
 
     Notes:
+    ------
     MovieLens is not suitable for next-item recommendation.
     Refer to [this paper](https://ceur-ws.org/Vol-2955/paper8.pdf) for details.
     """
