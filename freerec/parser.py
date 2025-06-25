@@ -183,6 +183,7 @@ class Parser(Config):
         self.add_argument("-wd", "--weight-decay", type=float, default=None, help="weight for 'l1|l2|...' regularzation")
         self.add_argument("-lr", "--lr", "--LR", "--learning-rate", type=float, default=None)
         self.add_argument("-b", "--batch-size", type=int, default=None)
+        self.add_argument("-gas", "--gradient-accumulation-steps", type=int, default=1)
         self.add_argument("--epochs", type=int, default=None)
 
         # logging
