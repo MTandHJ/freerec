@@ -24,6 +24,11 @@ class FieldTags(Enum):
     # embedding
     EMBED = 'EMBED'
 
+    # reserved Tags
+    X = 'X'
+    XX = 'XX'
+    XXX = 'XXX'
+
 class TaskTags(Enum):
     MATCHING = 'MATCHING'
     NEXTITEM = 'NEXTITEM'
@@ -49,3 +54,7 @@ EMBED = FieldTags('EMBED')
 MATCHING = TaskTags('MATCHING')
 NEXTITEM = TaskTags('NEXTITEM')
 PREDICTION = TaskTags('PREDICTION')
+
+X = TaskTags('X')
+XX = TaskTags('XX')
+XXX = TaskTags('XXX')
