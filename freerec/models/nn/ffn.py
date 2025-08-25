@@ -16,7 +16,7 @@ class FeedForwardNetwork(nn.Module):
     -----------
     embedding_dim : int
         Size of the input tensor (embedding dimension).
-    activation : Callable
+    activation : Callable, defaults to nn.ReLU
         Activation function to use between linear layers.
     hidden_size : Optional[int]
         Hidden dimension of the FFN. 
@@ -32,7 +32,7 @@ class FeedForwardNetwork(nn.Module):
     def __init__(
         self,
         embedding_dim: int,
-        activation: Callable = nn.GELU,
+        activation: Callable = nn.ReLU,
         hidden_size: Optional[int] = None,
         hidden_dropout_rate: float = 0.,
         norm_eps: float = 1.e-12,

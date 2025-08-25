@@ -18,7 +18,7 @@ class ScaledDotProductAttention(nn.Module):
         Size of the input tensor (embedding dimension).
     num_heads : int
         Number of attention heads.
-    activation : Callable
+    activation : Callable, defaults to nn.ReLU
         Activation function to use in the output projection.
     hidden_size : Optional[int]
         Hidden size used for attention score computation. 
