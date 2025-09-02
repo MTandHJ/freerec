@@ -61,7 +61,7 @@ class ScaledDotProductAttention(nn.Module):
         else:
             self.hidden_size = hidden_size
 
-        self.scale_factor = math.sqrt(self.hidden_size)
+        self.scaling_factor = math.sqrt(self.hidden_size)
 
         self.to_q = nn.Linear(embedding_dim, num_heads * self.hidden_size, bias=bias)
         self.to_k = nn.Linear(embedding_dim, num_heads * self.hidden_size, bias=bias)
@@ -111,7 +111,7 @@ class ScaledDotProductAttention(nn.Module):
         k = rearrange(k, "B L (H D) -> B H L D", D=self.hidden_size)
         v = rearrange(v, "B L (H D) -> B H L D", D=self.hidden_size)
 
-        scores = torch.einsum("B H M D, B H N D -> B H M N", q, k) / self.scale_factor
+        scores = torch.einsum("B H M D, B H N D -> B H M N", q, k) / self.scaling_factor
         if attn_mask is not None:
             scores = scores.masked_fill(attn_mask, self.ATTENTION_MASK_VALUE)
         scores = self.attn_dropout(scores.softmax(dim=-1))
