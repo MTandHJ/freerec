@@ -51,10 +51,11 @@ NEGATIVE = FieldTags('NEGATIVE')
 
 EMBED = FieldTags('EMBED')
 
+X = FieldTags('X')
+XX = FieldTags('XX')
+XXX = FieldTags('XXX')
+
+
 MATCHING = TaskTags('MATCHING')
 NEXTITEM = TaskTags('NEXTITEM')
 PREDICTION = TaskTags('PREDICTION')
-
-X = TaskTags('X')
-XX = TaskTags('XX')
-XXX = TaskTags('XXX')
