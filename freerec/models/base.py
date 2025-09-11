@@ -2,7 +2,7 @@
 
 from typing import Literal, Optional, Union, Iterable, Tuple, Dict
 
-import torch
+import torch, math
 import torch.nn as nn
 
 from ..data.datasets.base import RecDataSet
@@ -89,7 +89,10 @@ class RecSysArch(nn.Module):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0.)
             elif isinstance(m, nn.Embedding):
-                nn.init.normal_(m.weight, std=1.e-4)
+                nn.init.trunc_normal_(
+                    m.weight,
+                    std=math.sqrt(1. / m.weight.size(1))
+                )
             elif isinstance(m, nn.GRU):
                 nn.init.xavier_uniform_(m.weight_hh_l0)
                 nn.init.xavier_uniform_(m.weight_ih_l0)
