@@ -207,7 +207,9 @@ class SeqRecArch(RecSysArch):
         self, maxlen: int, ranking: str = 'full', batch_size: int = 512,
     ) -> PostProcessor:
         return self.dataset.test().ordered_user_ids_source(
-        ).test_sampling_(ranking).lprune_(
+        ).test_sampling_(
+            ranking
+        ).lprune_(
             maxlen, modified_fields=(self.ISeq,)
         ).add_(
             offset=self.NUM_PADS, modified_fields=(self.ISeq,)
