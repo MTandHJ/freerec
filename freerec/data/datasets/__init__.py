@@ -92,6 +92,11 @@ from .movielens import (
     MovieLens20M_550_LOU, MovieLens20M_500_LOU,
 )
 
+from .steam import (
+    # NextItem
+    Steam_550_LOU
+)
+
 from .tiktok import (
     # Matching (MMSSL)
     Tiktok_MMSSL, 
