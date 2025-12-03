@@ -251,7 +251,7 @@ def negsamp_vectorized_bsearch(
     ValueError:
         Too much negatives required.
     """
-    positives = np.array(positives, copy=False)
+    positives = np.asarray(positives)
     assert positives.ndim == 1, f"positives should be 1-D array but {positives.ndim}-D received ..."
     try:
         if replacement:
