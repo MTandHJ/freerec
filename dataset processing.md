@@ -47,7 +47,8 @@ Suppose the raw dataset is saved as follows:
     5	Father of the Bride Part II	1995	Comedy
     ```
 
-**Note:** FreeRec is able to process the `atmoic-like` files introduced in [RecBole](https://github.com/RUCAIBox/RecSysDatasets).
+> [!NOTE]
+> FreeRec follows the `atmoic-like` files introduced in [RecBole](https://github.com/RUCAIBox/RecSysDatasets).
 
 Then, in this case, we have
 - `root`: `data`
@@ -57,15 +58,15 @@ Then, in this case, we have
 - `ratingColname`: `RATING`
 - `timestampColname`: `TIMESTAMP`
 
-### Step 2: splitting using `freerec make`
+### Step 2: splitting & filtering via `freerec make`
 
-The following command can be used to split dataset:
+The following command can be used to process dataset:
 
 ```
 freerec make [Dataset Name] --root [root] --filedir [filedir] --splitting [splitting method] --star4pos [filter by >= star/rating] --kcore4user [filter by >= kcore4user] --kcore4user [filter by >= kcore4item] --ratios [ratios] --days [days] --userColname [colname of user id] --itemColname [colname of item id] --ratingColname [colname of rating] --timestampColname [colname of timestamp]
 ```
 
-- `dataset`: the 'output' dataset name
+- `dataset`: the 'output' dataset name (e.g., MovieLens1M)
 - `root`: root path
 - `filedir`: the directory storing `.inter, .user, .item` files. Using `dataset` instead if given `None` (default)
 - `ratios`: ratios for splitting
@@ -189,6 +190,9 @@ And the pre-processed files look like:
     3	Curdled	1996	Crime
     4	Ed's Next Move	1996	Comedy
     ```
+
+> [!NOTE]
+> Here we use `MovieLens1M_550_LOU` as an illustrative example because it is easy to interpret; however, as noted [here](https://arxiv.org/abs/2307.09985v3), MovieLens1M is not an appropriate benchmark for sequential recommendation.
 
 
 
