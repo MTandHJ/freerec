@@ -538,14 +538,7 @@ class Coach(ChiefCoach):
 
     def load_best(self) -> None:
         infoLogger(f"[Coach] >>> Load best model @Epoch: {self._best_epoch} ({self._best_step}) ")
-        self.model.load_state_dict(torch.load(
-            os.path.join(self.cfg.LOG_PATH, self.cfg.BEST_FILENAME),
-            map_location=self.device,
-            weights_only=True
-        ))
-
-        synchronize()
-        return
+        self.load(self.cfg.LOG_PATH, self.cfg.BEST_FILENAME)
 
     def check_best(self, epoch: int, step: int = -1) -> None:
         """Update best value."""
