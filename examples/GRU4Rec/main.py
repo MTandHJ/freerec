@@ -15,6 +15,7 @@ cfg.add_argument("--hidden-size", type=int, default=128)
 cfg.add_argument("--emb-dropout-rate", type=float, default=0.2)
 cfg.add_argument("--hidden-dropout-rate", type=float, default=0.2)
 cfg.add_argument("--num-blocks", type=int, default=1, help="the number of GRU layers")
+cfg.add_argument("--loss", type=str, choices=('BPR', 'BCE', 'CE'), default='BCE')
 
 cfg.set_defaults(
     description="GRU4Rec",
@@ -63,7 +64,12 @@ class GRU4Rec(freerec.models.SeqRecArch):
         )
         self.dense = nn.Linear(hidden_size, embedding_dim)
 
-        self.criterion = freerec.criterions.BCELoss4Logits(reduction='mean')
+        if cfg.loss == 'BCE':
+            self.criterion = freerec.criterions.BCELoss4Logits(reduction='mean')
+        elif cfg.loss == 'BPR':
+            self.criterion = freerec.criterions.BPRLoss(reduction='mean')
+        elif cfg.loss == 'CE':
+            self.criterion = freerec.criterions.CrossEntropy4Logits(reduction='mean')
 
         self.reset_parameters()
 
@@ -115,7 +121,7 @@ class GRU4Rec(freerec.models.SeqRecArch):
         ).batch_(batch_size).tensor_()
 
     def shrink_pads(self, seqs: torch.Tensor):
-        mask = seqs.not_equal(self.PADDING_VALUE)
+        mask = seqs.ne(self.PADDING_VALUE)
         keeped = mask.any(dim=0, keepdim=False)
         return seqs[:, keeped], mask[:, keeped].unsqueeze(-1) # (B, S), (B, S, 1)
     
@@ -129,7 +135,8 @@ class GRU4Rec(freerec.models.SeqRecArch):
 
         userEmbds = gru_out.gather(
             dim=1,
-            index=mask.sum(1, keepdim=True).add(-1).expand((-1, 1, gru_out.size(-1)))
+            index=mask.sum(1, keepdim=True).add(-1).clamp_min(0).expand((-1, 1, gru_out.size(-1)))
+            # clamp_min(0) used for empty sequence
         ).squeeze(1) # (B, D)
 
         return userEmbds, self.Item.embeddings.weight[self.NUM_PADS:]
@@ -137,15 +144,27 @@ class GRU4Rec(freerec.models.SeqRecArch):
     def fit(self, data: Dict[freerec.data.fields.Field, torch.Tensor]):
         userEmbds, itemEmbds = self.encode(data)
         posEmbds = itemEmbds[data[self.IPos]] # (B, 1, D)
-        negEmbds = itemEmbds[data[self.INeg]] # (B, 1, K, D)
+        negEmbds = itemEmbds[data[self.INeg]] # (B, 1, D)
 
-        posLogits = torch.einsum("BD,BSD->BS", userEmbds, posEmbds)
-        negLogits = torch.einsum("BD,BSKD->BK", userEmbds, negEmbds)
-        posLabels = torch.ones_like(posLogits)
-        negLabels = torch.zeros_like(negLogits)
+        if cfg.loss in ('BCE', 'BPR'):
+            posEmbds = itemEmbds[data[self.IPos]] # (B, 1, D)
+            negEmbds = itemEmbds[data[self.INeg]] # (B, 1, D)
+            posLogits = torch.einsum("BD,BSD->BS", userEmbds, posEmbds) # (B, 1)
+            negLogits = torch.einsum("BD,BSD->BS", userEmbds, negEmbds) # (B, 1)
 
-        rec_loss = self.criterion(posLogits, posLabels) + \
-            self.criterion(negLogits, negLabels)
+            if cfg.loss == 'BCE':
+                posLabels = torch.ones_like(posLogits)
+                negLabels = torch.zeros_like(negLogits)
+
+                rec_loss = self.criterion(posLogits, posLabels) + \
+                    self.criterion(negLogits, negLabels)
+            elif cfg.loss == 'BPR':
+                rec_loss = self.criterion(posLogits, negLogits)
+        elif cfg.loss == 'CE':
+            logits = torch.einsum("BD,ND->BN", userEmbds, itemEmbds) # (B, N)
+            labels = data[self.IPos].flatten() # (B, S)
+
+            rec_loss = self.criterion(logits, labels)
 
         return rec_loss
 

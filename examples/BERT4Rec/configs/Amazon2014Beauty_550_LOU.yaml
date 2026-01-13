@@ -4,9 +4,9 @@ dataset: Amazon2014Beauty_550_LOU
 maxlen: 50
 num_heads: 4
 num_blocks: 2
-hidden_size: 64
+embedding_dim: 64
 dropout_rate: 0.2
-mask_prob: 0.2
+mask_ratio: 0.2
 
 epochs: 500
 batch_size: 512

@@ -99,7 +99,7 @@ class BERT4Rec(freerec.models.SeqRecArch):
         ).add_(
             self.NUM_PADS, modified_fields=(self.ISeq,)
         ).lpad_(
-            maxlen, modified_fields=(self.ISeq,)
+            maxlen, modified_fields=(self.ISeq,), padding_value=self.PADDING_VALUE
         ).batch_(batch_size).tensor_()
 
     def sure_validpipe(self, maxlen: int, ranking: str = 'full', batch_size: int = 256):
@@ -177,8 +177,7 @@ class BERT4Rec(freerec.models.SeqRecArch):
         userEmbds = self.encode(data)
         userEmbds = userEmbds[:, -1, :] # (B, D)
         scores = self.fc(userEmbds)[:, self.NUM_PADS:] # (B, N)
-        return scores.gather(data[self.IUnseen]) # (B, 101)
-
+        return scores.gather(1, data[self.IUnseen]) # (B, 101)
 
 class CoachForBERT4Rec(freerec.launcher.Coach):
 

@@ -1,5 +1,5 @@
 root: ../../data
-dataset: Yelp2018_10104811_ROU
+dataset: Amazon2023Beauty_10104811_ROU
 
 embedding_dim: 64
 
