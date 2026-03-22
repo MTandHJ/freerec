@@ -4,6 +4,47 @@ import argparse
 from .data.tags import USER, ITEM, RATING, TIMESTAMP
 
 
+def skill(args):
+    # Get skill information:
+    #
+    #    freerec skill --make
+    #    freerec skill --tune
+    #    freerec skill --log
+    #    freerec skill --workflow
+    #
+    # Import only skills module (no heavy dependencies)
+    import os
+    skills_path = os.path.join(os.path.dirname(__file__), 'skills.py')
+
+    # Read and execute skills.py in isolation
+    with open(skills_path, 'r', encoding='utf-8') as f:
+        skills_code = f.read()
+
+    skills_ns = {}
+    exec(skills_code, skills_ns)
+
+    # Determine which skill to show
+    skill_name = None
+    if args.make:
+        skill_name = 'make'
+    elif args.tune:
+        skill_name = 'tune'
+    elif args.log:
+        skill_name = 'log'
+    elif args.workflow:
+        skill_name = 'workflow'
+
+    if skill_name is None:
+        print("Available skills:")
+        for name in skills_ns['list_skills']():
+            skill_info = skills_ns['get_skill'](name)
+            print(f"  - {name}: {skill_info['description']}")
+        print("\nUse 'freerec skill --<skill_name>' to get detailed information.")
+        return
+
+    skills_ns['print_skill'](skill_name)
+
+
 def tune(args):
     # Grid search for hyper-parameters can be conducted by:
     #
@@ -42,6 +83,21 @@ def make(args):
 def main():
     parser = argparse.ArgumentParser("FreeRec")
     subparsers = parser.add_subparsers()
+
+
+    skill_parser = subparsers.add_parser("skill",
+    help="Get skill-based tutorials and information for AI assistants",
+    description="Freerec Skill System - Provides detailed tutorials and guides for understanding freerec's internal mechanisms.",
+    epilog="Use 'freerec skill --<skill_name>' to get detailed information about a specific skill.")
+    skill_parser.set_defaults(func=skill)
+    skill_parser.add_argument("--make", action="store_true", default=False,
+        help="Dataset processing tutorial: how to convert raw data into freerec format (splitting strategies, k-core filtering, output structure)")
+    skill_parser.add_argument("--tune", action="store_true", default=False,
+        help="Hyperparameter tuning tutorial: grid search with parallel execution, config format, result interpretation")
+    skill_parser.add_argument("--log", action="store_true", default=False,
+        help="Training log analysis guide: log file structure, metrics explanation, how to read best.pkl and monitors.pkl")
+    skill_parser.add_argument("--workflow", action="store_true", default=False,
+        help="Training pipeline overview: complete architecture from data loading to model evaluation, component interactions")
 
 
     tune_parser = subparsers.add_parser("tune")
