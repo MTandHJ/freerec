@@ -9,24 +9,25 @@ __all__ = ['FeedForwardNetwork']
 
 
 class FeedForwardNetwork(nn.Module):
-    r"""
-    Feed Forward Network (FFN).
+    r"""Feed-Forward Network (FFN) with residual connection and layer normalization.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     embedding_dim : int
-        Size of the input tensor (embedding dimension).
-    activation : Callable, defaults to nn.ReLU
-        Activation function to use between linear layers.
-    hidden_size : Optional[int]
-        Hidden dimension of the FFN. 
-        If `None`, it defaults to 4 * embedding_dim.
-    hidden_dropout_rate : float
-        Dropout rate applied to the output.
-    norm_eps : float
-        Epsilon value for LayerNorm.
-    bias : bool
-        Whether to add a bias term in nn.Linear layers.
+        Size of the input embedding dimension.
+    activation : callable, optional
+        Activation function class used between linear layers,
+        by default :class:`torch.nn.ReLU`.
+    hidden_size : int or None, optional
+        Hidden dimension of the FFN. If ``None``, it defaults to
+        ``4 * embedding_dim``.
+    hidden_dropout_rate : float, optional
+        Dropout rate applied to the output, by default ``0.0``.
+    norm_eps : float, optional
+        Epsilon value for :class:`torch.nn.LayerNorm`, by default ``1e-12``.
+    bias : bool, optional
+        Whether to add bias terms in :class:`torch.nn.Linear` layers,
+        by default ``False``.
     """
 
     def __init__(
@@ -38,6 +39,7 @@ class FeedForwardNetwork(nn.Module):
         norm_eps: float = 1.e-12,
         bias: bool = False,
     ):
+        r"""Initialize FeedForwardNetwork."""
         super().__init__()
 
         self.hidden_size = hidden_size if hidden_size is not None else 4 * embedding_dim
@@ -50,18 +52,18 @@ class FeedForwardNetwork(nn.Module):
         self.norm = nn.LayerNorm(embedding_dim, eps=norm_eps)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        r"""
-        Forward pass for Feed Forward Network.
+        r"""Compute the feed-forward transformation with residual connection.
 
-        Parameters:
-        -----------
-        x : torch.Tensor
-            Input tensor of shape (B, L, D), 
-            where B is batch size, L is sequence length, D is embedding dimension.
+        Parameters
+        ----------
+        x : :class:`torch.Tensor`
+            Input tensor of shape ``(B, L, D)``, where ``B`` is the batch
+            size, ``L`` is the sequence length, and ``D`` is the embedding
+            dimension.
 
-        Returns:
-        --------
-        z : torch.Tensor
-            Output tensor of shape (B, L, D).
+        Returns
+        -------
+        :class:`torch.Tensor`
+            Output tensor of shape ``(B, L, D)``.
         """
         return self.norm(self.ffn(x) + x)

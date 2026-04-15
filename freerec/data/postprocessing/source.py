@@ -1,5 +1,6 @@
 
 
+
 from typing import Any, Iterable, Dict
 
 import random
@@ -17,30 +18,40 @@ __all__ = [
 
 @dp.functional_datapipe("choiced_source_")
 class RandomChoicedSource(Source):
-    r"""
-    DataPipe that generates random items from given source.
-    Note that this sampling is with replacement.
+    r"""Datapipe that generates random items from a given source with replacement.
 
-    Parameters:
-    -----------
-    source: Iterable 
-        The source data to start.
-    datasize: int 
-        Datasize.
+    Each iteration samples ``dataset.datasize`` items uniformly at random
+    (with replacement) from the stored source rows.
+
+    Parameters
+    ----------
+    dataset : :class:`~RecDataSet`
+        The recommendation dataset.
+    source : iterable of dict
+        The source data rows to sample from.
     """
 
     def __init__(
         self, dataset: RecDataSet, source: Iterable[Dict[Field, Any]]
     ) -> None:
+        r"""Initialize the RandomChoicedSource."""
         super().__init__(dataset, source, dataset.datasize, shuffle=False)
 
         self._rng = random.Random()
         self.set_seed(0)
 
     def set_seed(self, seed: int):
+        r"""Set the random seed for sampling.
+
+        Parameters
+        ----------
+        seed : int
+            Random seed value.
+        """
         self._rng.seed(seed)
 
     def __iter__(self):
+        r"""Yield randomly chosen rows from the source."""
         self.guard_mode()
         for _ in self.launcher:
             yield self._rng.choice(self.source).copy()
@@ -48,20 +59,22 @@ class RandomChoicedSource(Source):
 
 @dp.functional_datapipe("shuffled_source_")
 class RandomShuffledSource(Source):
-    r"""
-    DataPipe that generates shuffled source.
-    In this vein, every sample will be selected once per epoch.
+    r"""Datapipe that yields every source row exactly once per epoch in shuffled order.
 
-    Parameters:
-    -----------
-    source: Iterable 
-        The source data to start.
+    Parameters
+    ----------
+    dataset : :class:`~RecDataSet`
+        The recommendation dataset.
+    source : iterable of dict
+        The source data rows.
     """
 
     def __init__(self, dataset: RecDataSet, source: Iterable[Dict[Field, Any]]) -> None:
+        r"""Initialize the RandomShuffledSource."""
         super().__init__(dataset, source, shuffle=True)
 
     def __iter__(self):
+        r"""Yield source rows in shuffled order."""
         self.guard_mode()
         for i in self.launcher:
             yield self.source[i].copy()
@@ -69,19 +82,22 @@ class RandomShuffledSource(Source):
 
 @dp.functional_datapipe("ordered_source_")
 class OrderedSource(Source):
-    r"""
-    DataPipe that generates ordered items from given source.
+    r"""Datapipe that yields source rows in their original order.
 
-    Parameters:
-    -----------
-    source: Sequence 
-        The source data to start.
+    Parameters
+    ----------
+    dataset : :class:`~RecDataSet`
+        The recommendation dataset.
+    source : iterable of dict
+        The source data rows.
     """
 
     def __init__(self, dataset: RecDataSet, source: Iterable[Dict[Field, Any]]) -> None:
+        r"""Initialize the OrderedSource."""
         super().__init__(dataset, source, shuffle=False)
 
     def __iter__(self):
+        r"""Yield source rows in sequential order."""
         self.guard_mode()
         for i in self.launcher:
             yield self.source[i].copy()
@@ -89,19 +105,23 @@ class OrderedSource(Source):
 
 @dp.functional_datapipe("piped_source_")
 class PipedSource(Source):
-    r"""
-    DataPipe that yields from the given source.
+    r"""Datapipe that yields rows directly from an upstream :class:`~IterDataPipe`.
 
-    Parameters:
-    -----------
-    source: IterDataPipe
+    Parameters
+    ----------
+    dataset : :class:`~RecDataSet`
+        The recommendation dataset.
+    source : :class:`~IterDataPipe`
+        An upstream iterable datapipe.
     """
 
     def __init__(self, dataset: RecDataSet, source: dp.iter.IterDataPipe) -> None:
+        r"""Initialize the PipedSource."""
         super().__init__(dataset, source)
         assert isinstance(source, dp.iter.IterDataPipe), f"PipedSource needs `IterDataPipe` but {type(source)} received ..."
 
     def __iter__(self):
+        r"""Yield rows from the upstream datapipe."""
         self.guard_mode()
         for row in self.launcher:
             yield row

@@ -7,8 +7,8 @@ class Tiktok_MMSSL(MatchingRecDataSet):
     r"""
     Tiktok dataset used in [MMSSL](https://github.com/HKUDS/MMSSL).
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +--------+--------+------------------+---------------+--------+--------+-------+-----------------------+
     | #Users | #Items |     Avg.Len      | #Interactions | #Train | #Valid | #Test |        Density        |
     +--------+--------+------------------+---------------+--------+--------+-------+-----------------------+
@@ -22,14 +22,15 @@ class Tiktok_000811_RAU(MatchingRecDataSet):
     r"""
     Tiktok dataset used in [MMGCN](https://github.com/weiyinwei/MMGCN).
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +-------+-------+---------------+--------+--------+-------+-----------------------+
     | #User | #Item | #Interactions | #Train | #Valid | #Test |        Density        |
     +-------+-------+---------------+--------+--------+-------+-----------------------+
     | 36656 | 76085 |     726065    | 562209 | 75685  | 88171 | 0.0002604621965738634 |
     +-------+-------+---------------+--------+--------+-------+-----------------------+
 
-    Notes:
+    Notes
+    -----
     Some of users have empty interactions.
     """

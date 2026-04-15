@@ -114,7 +114,43 @@ CORE_CONFIG = Config(
 
 
 class Parser(Config):
-    """ArgumentParser wrapper."""
+    r"""Configuration parser for recommendation system training.
+
+    Wraps :class:`argparse.ArgumentParser` and :class:`~Config` to manage
+    command-line arguments, YAML configuration files, and runtime settings
+    such as device selection, logging, and checkpoint paths.
+
+    Attributes
+    ----------
+    SAVED_FILENAME : str
+        Filename for saved model parameters.
+    BEST_FILENAME : str
+        Filename for saved best model parameters.
+    CHECKPOINT_FREQ : int
+        Frequency of saving checkpoints.
+    CHECKPOINT_MODULES : list
+        Modules to save in a checkpoint.
+    CHECKPOINT_FILENAME : str
+        Filename of the saved checkpoint.
+    SUMMARY_FILENAME : str
+        Filename of the summary.
+    MONITOR_FILENAME : str
+        Filename of the monitor.
+    MONITOR_BEST_FILENAME : str
+        Filename of the best monitor.
+    DATA_DIR : str
+        Directory for saving historical metric information.
+    SUMMARY_DIR : str
+        Directory for saving final summary information.
+    CHECKPOINT_PATH : str
+        Path for saving checkpoints.
+    LOG_PATH : str
+        Path for saving logging information.
+    monitors : list
+        List of metric names to monitor.
+    which4best : str
+        Metric name used for selecting the best model.
+    """
 
     # FILE
     SAVED_FILENAME: str
@@ -136,12 +172,21 @@ class Parser(Config):
     which4best: str
 
     def __init__(self) -> None:
+        r"""Initialize Parser with default CONFIG and parse arguments."""
         super().__init__(**CONFIG)
         self.parse()
 
     @main_process_only
     def readme(self, path: str, mode: str = "w") -> None:
-        """Add README.md to the path."""
+        r"""Write a README.md file containing all configuration key-value pairs.
+
+        Parameters
+        ----------
+        path : str
+            The directory to write the README.md file into.
+        mode : str, optional
+            The file opening mode, by default ``"w"``.
+        """
         time_ = time.strftime("%Y-%m-%d-%H:%M:%S")
         file_ = os.path.join(path, "README.md")
         s = "|  {key}  |   {val}    |\n"
@@ -154,13 +199,18 @@ class Parser(Config):
             fh.write(info)
 
     def reset(self):
+        r"""Reset all configurations to the defaults defined in CONFIG."""
         self.clear()
         for key, val in CONFIG.items():
             self[key] = val
 
     @timemeter
     def parse(self):
-        """Add command-line arguments to the parser."""
+        r"""Register all command-line arguments to the internal :class:`argparse.ArgumentParser`.
+
+        Registers arguments for data paths, model hyperparameters, training
+        schedule, evaluation settings, logging, and reproducibility.
+        """
 
         self.parser = argparse.ArgumentParser()
 
@@ -206,38 +256,50 @@ class Parser(Config):
         self.add_argument("-m", "--description", type=str, default="RecSys")
 
     def add_argument(self, *args: str, **kwargs):
-        r"""
-        Add an argument to the parser.
+        r"""Add an argument to the internal :class:`argparse.ArgumentParser`.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         *args : str
             The name(s) of the argument.
         **kwargs
-            Additional keyword arguments to pass to `parser.add_argument`.
-       
-        Notes:
-        ------
-        Any character `_' will be replaced by `-'.
+            Additional keyword arguments passed to
+            :meth:`argparse.ArgumentParser.add_argument`.
+
+        Notes
+        -----
+        Any underscore (``_``) in argument names will be replaced by a
+        hyphen (``-``).
         """
         args = (arg.replace('_', '-') for arg in args) # user '-' instead of '_'
         action = self.parser.add_argument(*args, **kwargs)
         self[action.dest] = action.default
 
     def set_defaults(self, **kwargs):
-        r"""
-        Set the default values for the arguments.
+        r"""Set default values for registered arguments.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         **kwargs
-            The default values to set.
+            Keyword arguments mapping argument names to their default values.
         """
         self.parser.set_defaults(**kwargs)
         for key, val in kwargs.items():
             self[key] = val
 
     def set_device(self, device: Union[torch.device, str, int]):
+        r"""Set the computation device and configure color output.
+
+        Parameters
+        ----------
+        device : Union[:class:`torch.device`, str, int]
+            The target device identifier.
+
+        Returns
+        -------
+        device
+            The resolved device identifier.
+        """
         try:
             device = int(device)
         except ValueError:
@@ -254,6 +316,7 @@ class Parser(Config):
         return device
 
     def init_ddp(self):
+        r"""Initialize Distributed Data Parallel (DDP) if running in distributed mode."""
         import torch.distributed as dist
         if is_distributed():
             dist.init_process_group(backend=self.ddp_backend, init_method="env://")
@@ -263,24 +326,27 @@ class Parser(Config):
             infoLogger(f"[DDP] >>> DDP is activated ...")
 
     def set_tasktag(self):
+        r"""Convert the ``tasktag`` string to a :class:`~freerec.data.tags.TaskTags` enum."""
         from .data.tags import TaskTags
         if self.tasktag is not None:
             self['tasktag'] = TaskTags(self.tasktag.upper())
     
     @timemeter
     def load(self):
-        r"""
-        Load config.yaml.
+        r"""Load and merge settings from a YAML configuration file.
 
-        Raises:
+        Parses command-line arguments first, then overlays values from the
+        YAML file specified by ``--config`` if provided.
+
+        Returns
         -------
+        :class:`argparse.Namespace`
+            The parsed arguments with defaults overwritten by the config file.
+
+        Raises
+        ------
         KeyError
-            If the parameter key is not recognized.
-        
-        Returns:
-        --------
-        ArgParser:
-            Some of defaults are overwrited by the config file
+            If a parameter key in the config file is not recognized.
         """
         args = self.parser.parse_args()
         keys, _ = zip(*args._get_kwargs())
@@ -299,17 +365,15 @@ class Parser(Config):
 
     @timemeter
     def compile(self):
-        r"""
-        Generate the configuration file according to the specified settings.
+        r"""Compile the full runtime configuration.
 
-        Flows:
-        ------
-        1. If the `--config` flag has been specified, load settings from a .yaml file.
-        2. Generate the paths for saving checkpoints and collecting training information:
-            - CHECKPOINT_PATH: the path where checkpoints will be saved.
-            - LOG_PATH: the path where training information will be collected.
-        3. Configure the logger so that information can be logged by `info|debug|warnLogger`.
-        4. Add a README.md file under CHECKPOINT_PATH and LOG_PATH.
+        Performs the following steps in order:
+
+        1. Load settings from a YAML file if ``--config`` is specified.
+        2. Generate ``CHECKPOINT_PATH`` and ``LOG_PATH`` from templates.
+        3. Initialize DDP if running in distributed mode.
+        4. Configure device, logger, random seed, and benchmark mode.
+        5. Write README.md under both ``CHECKPOINT_PATH`` and ``LOG_PATH``.
         """
         args = self.load()
         self.update(**dict(args._get_kwargs()))
@@ -342,17 +406,47 @@ class Parser(Config):
 
 
 class CoreParser(Config):
-    """CoreParser class to parse command-line arguments and configuration files."""
+    r"""Configuration parser for hyperparameter grid search (tuning).
+
+    Extends :class:`~Config` to manage environment variables, parameter
+    grids, and default values for launching multiple training subprocesses.
+
+    Attributes
+    ----------
+    ALL_ENVS : tuple
+        Names of environment-level arguments that can be overridden from
+        the command line.
+    EXCLUSIVE : bool
+        If ``True``, run grid search entries one by one.
+    COMMAND : str
+        The shell command template for each subprocess.
+    ENVS : :class:`~Config`
+        Environment variables shared across all subprocesses.
+    PARAMS : :class:`~Config`
+        Parameter grid for hyperparameter search.
+    DEFAULTS : :class:`~Config`
+        Default parameter values used when ``EXCLUSIVE`` is ``True``.
+    """
 
     ALL_ENVS = (
         'description', 'root', 'device', 'num_workers'
     )
 
     def __init__(self) -> None:
+        r"""Initialize CoreParser with default CORE_CONFIG."""
         super().__init__(**CORE_CONFIG)
 
     def check(self) -> None:
-        """Check the validity of the given config."""
+        r"""Validate the loaded configuration.
+
+        Raises
+        ------
+        ValueError
+            If ``COMMAND`` is not specified.
+        KeyError
+            If required environment variables (``root``, ``dataset``,
+            ``device``) are missing from ``ENVS``.
+        """
         template = """
         Please make sure the configuration file follows the template below:
 
@@ -361,8 +455,6 @@ class CoreParser(Config):
             root: ../../data
             dataset: Gowalla_m1
             device: 0,1,2,3
-            eval_freq: 5
-            num_workers: 0
         params:
             optimizer: [adam, sgd]
             learning_rate: [1.e-3, 1.e-2, 1.e-1]
@@ -392,17 +484,13 @@ class CoreParser(Config):
 
     @timemeter
     def load(self, args: ArgumentParser) -> None:
-        r"""
-        Load configuration file.
+        r"""Load settings from a YAML configuration file.
 
-        Parameters:
-        -----------
-        args : ArgumentParser
-            The command line arguments.
-
-        Returns:
-        --------
-        None
+        Parameters
+        ----------
+        args : :class:`argparse.ArgumentParser`
+            The parsed command-line arguments containing ``config``,
+            ``exclusive``, ``resume``, and environment overrides.
         """
         config = {key.upper(): vals for key, vals in import_yaml(args.config).items()}
         self.update(**config)
@@ -414,20 +502,22 @@ class CoreParser(Config):
 
     @timemeter
     def compile(self, args) -> None:
-        r"""
-        Generate config file according to settings.
+        r"""Compile the full tuning configuration.
 
-        Flows:
-        ------
-        1. Load settings from xxx.yaml which provides parameters for grid searching.
-        2. Load settings of the execution environment from parsed args (ArgumentParser).
-        3. Generate basic paths:
-            - CHECKPOINT_PATH: subprocess
-            - LOG_PATH: subprocess
-            - CORE_CHECKPOINT_PATH: saving checkpoints of the rest of params
-            - CORE_LOG_PATH: saving best results of each subprocess for comparison
-        4. Set Logger, and then you can log information by info|debug|warnLogger ...
-        5. Finally, READMD.md will be added under CHECKPOINT_PATH and LOG_PATH both.
+        Parameters
+        ----------
+        args : :class:`argparse.Namespace`
+            The parsed command-line arguments.
+
+        Notes
+        -----
+        Performs the following steps:
+
+        1. Load parameter grid from a YAML file.
+        2. Validate the configuration via :meth:`check`.
+        3. Generate ``CORE_CHECKPOINT_PATH`` and ``CORE_LOG_PATH``.
+        4. Configure the logger.
+        5. Write README.md under ``CORE_LOG_PATH``.
         """
         self.load(args)
         self.check()
@@ -444,19 +534,14 @@ class CoreParser(Config):
         self.readme(self.CORE_LOG_PATH)
 
     def readme(self, path: str, mode: str = "w") -> None:
-        r"""
-        Add README.md to the given path.
+        r"""Write a README.md file with environment, parameter, and default settings.
 
-        Parameters:
-        -----------
-        path: str 
-            The path to add the README.md file.
-        mode: str, optional 
-            The file opening mode. Defaults to "w".
-
-        Returns:
-        --------
-        None
+        Parameters
+        ----------
+        path : str
+            The directory to write the README.md file into.
+        mode : str, optional
+            The file opening mode, by default ``"w"``.
         """
         time_ = time.strftime("%Y-%m-%d-%H:%M:%S")
         file_ = os.path.join(path, "README.md")

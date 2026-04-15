@@ -1,5 +1,6 @@
 
 
+
 from typing import Literal, List, Tuple, Optional, Iterable
 
 import random
@@ -23,15 +24,19 @@ NUM_NEGS_FOR_SAMPLE_BASED_RANKING = 100
 
 
 class BaseSampler(PostProcessor):
-    r"""
-    Base Sampler for training.
+    r"""Base sampler for training pipelines.
 
-    Parameters:
-    -----------
-    source: Source datapipe defined in source.py
+    Sets up user/item :class:`~Field` references and delegates to
+    :meth:`prepare` for subclass-specific initialization.
+
+    Parameters
+    ----------
+    source : :class:`~BaseProcessor`
+        Source datapipe defined in ``source.py``.
     """
 
     def __init__(self, source: BaseProcessor) -> None:
+        r"""Initialize the BaseSampler."""
         super().__init__(source)
         self.User: Field = self.fields[USER, ID]
         self.Item: Field = self.fields[ITEM, ID]
@@ -44,23 +49,28 @@ class BaseSampler(PostProcessor):
         self.prepare()
 
     def prepare(self):
+        r"""Prepare subclass-specific data structures (no-op by default)."""
         pass
 
     @property
     def seenItems(self) -> Tuple:
+        r"""Return the tuple of seen-item sequences per user."""
         return self.__seenItems
 
     @seenItems.setter
     def seenItems(self, seenItems: Iterable):
+        r"""Set the seen-item sequences per user."""
         self.__seenItems = tuple(tuple(items) for items in seenItems)
 
     @property
     def unseenItems(self) -> Tuple:
+        r"""Return the tuple of unseen-item sequences per user."""
         return self.__unseenItems
-    
+
     @unseenItems.setter
     def unseenItems(self, unseenItems: Iterable):
-        self.__unseenItems = tuple(tuple(items) for items in unseenItems) 
+        r"""Set the unseen-item sequences per user."""
+        self.__unseenItems = tuple(tuple(items) for items in unseenItems)
 
 
 #===============================For Training ===============================
@@ -68,11 +78,13 @@ class BaseSampler(PostProcessor):
 
 @dp.functional_datapipe("gen_train_sampling_pos_")
 class GenTrainPositiveSampler(BaseSampler):
-    r"""
-    Sampling a positive item for each user.
+    r"""Sample a positive item for each user.
 
-    Examples:
-    ---------
+    For every incoming row, a random positive item from the user's
+    interaction history is sampled and stored under :pycode:`IPos`.
+
+    Examples
+    --------
     >>> dataset: RecDataSet
     >>> datapipe = dataset.train().choiced_user_ids_source().gen_train_sampling_pos_()
     >>> next(iter(datapipe))
@@ -81,6 +93,7 @@ class GenTrainPositiveSampler(BaseSampler):
 
     @timemeter
     def prepare(self):
+        r"""Build per-user sorted lists of seen items from training sequences."""
         seenItems = [set() for _ in range(self.User.count)]
 
         self.listmap(
@@ -92,25 +105,26 @@ class GenTrainPositiveSampler(BaseSampler):
         self.seenItems = [sorted(items) for items in seenItems]
 
     def _sample_pos(self, user: int) -> int:
-        r"""
-        Randomly sample a positive item for a user.
+        r"""Randomly sample a positive item for a user.
 
-        Parameters:
-        -----------
-        user: int 
+        Parameters
+        ----------
+        user : int
             A user index.
 
-        Returns:
-        --------
-        positive: int 
+        Returns
+        -------
+        int
             A positive item that the user has interacted with.
         """
         return random.choice(self.seenItems[user])
 
     def _check(self, user: int) -> bool:
+        r"""Return whether the user has at least one seen item."""
         return len(self.seenItems[user]) > 0
 
     def __iter__(self):
+        r"""Yield rows augmented with a sampled positive item."""
         for row in self.source:
             user = row[self.User]
             if self._check(user):
@@ -120,21 +134,26 @@ class GenTrainPositiveSampler(BaseSampler):
 
 @dp.functional_datapipe("gen_train_sampling_neg_")
 class GenTrainNegativeSampler(GenTrainPositiveSampler):
-    r"""
-    Sampling negatives for each user.
+    r"""Sample negative items for each user.
 
-    Parameters:
-    -----------
-    num_negatives: int, default to 1
-        The number of negatives for each row.
-    unseen_only: bool, default to `True`
-        `True`: sampling negatives from the unseen.
-        `False`: sampling negatives from all items.
-    nums_need_vectorized_bsearch: int, default to 17
-        The number negatives suitable for using vectorized bsearch.
+    Extends :class:`~GenTrainPositiveSampler` by adding negative sampling.
+    Negative items are drawn either from unseen items only or from all items.
 
-    Examples:
-    ---------
+    Parameters
+    ----------
+    source : :class:`~BaseProcessor`
+        Source datapipe.
+    num_negatives : int, optional
+        The number of negatives for each row. Default is ``1``.
+    unseen_only : bool, optional
+        If ``True``, sample negatives from unseen items only.
+        If ``False``, sample negatives from all items. Default is ``True``.
+    nums_need_vectorized_bsearch : int, optional
+        Threshold above which vectorized binary search is used.
+        Default is ``17``.
+
+    Examples
+    --------
     >>> dataset: RecDataSet
     >>> datapipe = dataset.train().choiced_user_ids_source(
     ).gen_train_sampling_pos_(
@@ -148,11 +167,12 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
     """
 
     def __init__(
-        self, 
+        self,
         source: BaseProcessor,
         num_negatives: int = 1, unseen_only: bool = True,
         nums_need_vectorized_bsearch: int = 17
     ) -> None:
+        r"""Initialize the GenTrainNegativeSampler."""
         self.unseen_only = unseen_only
         super().__init__(source)
         self.num_negatives = num_negatives
@@ -160,6 +180,7 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
 
     @timemeter
     def prepare(self):
+        r"""Build per-user sorted lists of seen items for negative filtering."""
         seenItems = [set() for _ in range(self.User.count)]
 
         if self.unseen_only:
@@ -172,6 +193,7 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
         self.seenItems = [sorted(items) for items in seenItems]
 
     def _sample_one(self, seen: Iterable[int]) -> int:
+        r"""Sample a single negative item not in *seen*."""
         neg = random.randint(0, self.Item.count - 1)
         while neg in seen:
             neg = random.randint(0, self.Item.count - 1)
@@ -180,18 +202,17 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
     def _sample_neg(self, user: int) -> List[int]:
         r"""Randomly sample negative items for a user.
 
-        Parameters:
+        Parameters
         ----------
-        user: int 
+        user : int
             A user index.
 
-        Returns:
-        --------
-        negatives: List[int] 
-            `unseen_only == True`:
-                A list of negative items that the user has not interacted with.
-            `unseen_only == False`:
-                A list of negative items from [0, self.Item.count - 1]
+        Returns
+        -------
+        list of int
+            When ``unseen_only`` is ``True``, a list of items the user has
+            not interacted with. Otherwise, a list drawn from
+            ``[0, self.Item.count - 1]``.
         """
         seen = self.seenItems[user]
         if self.need_vectorized_bsearch:
@@ -204,6 +225,7 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
             return self.listmap(self._sample_one, [seen] * self.num_negatives)
 
     def __iter__(self):
+        r"""Yield rows augmented with sampled negative items."""
         for row in self.source:
             row[self.INeg] = self._sample_neg(
                 row[self.User]
@@ -213,20 +235,24 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
 
 @dp.functional_datapipe("seq_train_yielding_pos_")
 class SeqTrainPositiveYielder(BaseSampler):
-    r"""
-    Yielding positive sequence for each user sequence.
+    r"""Yield positive sequences derived from each user's item sequence.
 
-    Parameters:
-    -----------
-    start_idx_for_target: int, optional
-        Target sequence as seq[start_idx_for_target:]
-        `None`: seq
-    end_idx_for_input: int, optional
-        Input sequence as seq[:end_idx_for_input]
-        `None`: seq
+    Splits the item sequence into an input portion and a target portion
+    according to the given indices.
 
-    Examples:
-    ---------
+    Parameters
+    ----------
+    source : :class:`~BaseProcessor`
+        Source datapipe.
+    start_idx_for_target : int or None, optional
+        Target sequence is ``seq[start_idx_for_target:]``.
+        ``None`` keeps the full sequence. Default is ``1``.
+    end_idx_for_input : int or None, optional
+        Input sequence is ``seq[:end_idx_for_input]``.
+        ``None`` keeps the full sequence. Default is ``-1``.
+
+    Examples
+    --------
     >>> dataset: RecDataSet
     >>> datapipe = dataset.train().shuffled_seqs_source(
         maxlen=10
@@ -249,19 +275,22 @@ class SeqTrainPositiveYielder(BaseSampler):
     """
 
     def __init__(
-        self, 
+        self,
         source: BaseProcessor,
-        start_idx_for_target: Optional[int] = 1, 
+        start_idx_for_target: Optional[int] = 1,
         end_idx_for_input: Optional[int] = -1,
     ) -> None:
+        r"""Initialize the SeqTrainPositiveYielder."""
         super().__init__(source)
         self.start_idx_for_target = start_idx_for_target
         self.end_idx_for_input = end_idx_for_input
 
     def _check(self, seq: Iterable) -> bool:
+        r"""Return whether the sequence has more than one element."""
         return len(seq) > 1
 
     def __iter__(self):
+        r"""Yield rows with input and target sequences split from the original."""
         for row in self.source:
             seq = row[self.ISeq]
             if self._check(seq):
@@ -272,21 +301,26 @@ class SeqTrainPositiveYielder(BaseSampler):
 
 @dp.functional_datapipe("seq_train_sampling_neg_")
 class SeqTrainNegativeSampler(BaseSampler):
-    r"""
-    Sampling negatives for each positive.
+    r"""Sample negative items for each positive in the sequence.
 
-    Parameters:
-    -----------
-    num_negatives: int, default to 1
-        The number of negatives for each row.
-    unseen_only: bool, default to `True`
-        `True`: sampling negatives from the unseen.
-        `False`: sampling negatives from all items.
-    nums_need_vectorized_bsearch: int, default to 17
-        The number negatives suitable for using vectorized bsearch.
+    For every positive item in the target sequence, one or more negative
+    items are sampled.
 
-    Examples:
-    ---------
+    Parameters
+    ----------
+    source : :class:`~BaseProcessor`
+        Source datapipe.
+    num_negatives : int, optional
+        The number of negatives for each positive. Default is ``1``.
+    unseen_only : bool, optional
+        If ``True``, sample negatives from unseen items only.
+        If ``False``, sample from all items. Default is ``True``.
+    nums_need_vectorized_bsearch : int, optional
+        Threshold above which vectorized binary search is used.
+        Default is ``17``.
+
+    Examples
+    --------
     >>> dataset: RecDataSet
     >>> datapipe = dataset.train().shuffled_seqs_source(
         maxlen=10
@@ -302,11 +336,12 @@ class SeqTrainNegativeSampler(BaseSampler):
     """
 
     def __init__(
-        self, 
+        self,
         source: BaseProcessor,
         num_negatives: int = 1, unseen_only: bool = True,
         nums_need_vectorized_bsearch: int = 17
     ) -> None:
+        r"""Initialize the SeqTrainNegativeSampler."""
         self.unseen_only = unseen_only
         super().__init__(source)
         self.num_negatives = num_negatives
@@ -314,9 +349,10 @@ class SeqTrainNegativeSampler(BaseSampler):
 
     @timemeter
     def prepare(self):
+        r"""Build per-user sorted lists of seen items for negative filtering."""
         seenItems = [set() for _ in range(self.User.count)]
 
-        if self.unseen_only: 
+        if self.unseen_only:
             self.listmap(
                 lambda row: seenItems[row[self.User]].update(row[self.ISeq]),
                 self.dataset.train().to_seqs()
@@ -326,6 +362,7 @@ class SeqTrainNegativeSampler(BaseSampler):
         self.seenItems = [sorted(items) for items in seenItems]
 
     def _sample_one(self, seen: Iterable[int]) -> int:
+        r"""Sample a single negative item not in *seen*."""
         neg = random.randint(0, self.Item.count - 1)
         while neg in seen:
             neg = random.randint(0, self.Item.count - 1)
@@ -334,19 +371,19 @@ class SeqTrainNegativeSampler(BaseSampler):
     def _sample_neg(self, user: int, positives: Tuple) -> List[int]:
         r"""Randomly sample negative items for a user.
 
-        Parameters:
+        Parameters
         ----------
-        user: int
-        positives: Tuple 
-            A tuple of positives.
+        user : int
+            A user index.
+        positives : tuple
+            A tuple of positive item indices.
 
-        Returns:
-        --------
-        negatives: np.ndarray
-            `unseen_only == True`:
-                A list of negative items that the user has not interacted with.
-            `unseen_only == False`:
-                A list of negative items from [0, self.Item.count - 1]
+        Returns
+        -------
+        list of int or :class:`numpy.ndarray`
+            When ``unseen_only`` is ``True``, items the user has not
+            interacted with. Otherwise, items drawn from
+            ``[0, self.Item.count - 1]``.
         """
         seen = self.seenItems[user]
         if len(positives) > self.nums_need_vectorized_bsearch or self.num_negatives > 1:
@@ -364,6 +401,7 @@ class SeqTrainNegativeSampler(BaseSampler):
             return self.listmap(self._sample_one, [seen] * len(positives))
 
     def __iter__(self):
+        r"""Yield rows augmented with sampled negatives for each positive."""
         for row in self.source:
             row[self.INeg] = self._sample_neg(
                 row[self.User], row[self.IPos]
@@ -375,28 +413,36 @@ class SeqTrainNegativeSampler(BaseSampler):
 
 @dp.functional_datapipe("valid_sampling_")
 class ValidSampler(BaseSampler):
-    r"""
-    Sampler for validation.
+    r"""Sampler for validation.
 
-    Parameters:
-    -----------
-    ranking: 'full' or 'pool', default to 'full'
-        'full': full ranking
-        'pool': sampled-based ranking
-    num_negatives: int, default to 100
-        The number of negatives for 'pool'.
-    
-    Yields:
-    -------
-    Field(USER:ID,USER): user id
-    Field(ITEM:ID,ITEM,SEQUENCE): user sequence
-    Field(ITEM:ID,ITEM,UNSEEN):
-        'full': target items
-        'pool': target items + negatives items
-    Field(ITEM:ID,ITEM,SEEN): seen items
-    
-    Examples:
-    ---------
+    Produces rows containing the user's input sequence, unseen target items,
+    and seen items, optionally with sampled negative items for pool-based
+    ranking.
+
+    Parameters
+    ----------
+    source : :class:`~BaseProcessor`
+        Source datapipe.
+    ranking : ``'full'`` or ``'pool'``, optional
+        ``'full'`` for full ranking; ``'pool'`` for sample-based ranking.
+        Default is ``'full'``.
+    num_negatives : int, optional
+        The number of negatives for ``'pool'`` ranking.
+        Default is ``100``.
+
+    Yields
+    ------
+    dict
+        Row dict containing:
+
+        - ``Field(USER:ID,USER)``: user id
+        - ``Field(ITEM:ID,ITEM,SEQUENCE)``: user sequence
+        - ``Field(ITEM:ID,ITEM,UNSEEN)``: target items (``'full'``) or
+          target items + negative items (``'pool'``)
+        - ``Field(ITEM:ID,ITEM,SEEN)``: seen items
+
+    Examples
+    --------
     >>> dataset: RecDataSet
     >>> datapipe = dataset.valid().ordered_user_ids_source(
     ).valid_sampling_(ranking='full')
@@ -418,6 +464,7 @@ class ValidSampler(BaseSampler):
         self, source: BaseProcessor,
         ranking: Literal['full', 'pool'] = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING
     ) -> None:
+        r"""Initialize the ValidSampler."""
         super().__init__(source)
         assert ranking in ('full', 'pool'), f"`ranking` should be 'full' or 'pool' but {ranking} received ..."
         self.sampling_neg = True if ranking == 'pool' else False
@@ -425,6 +472,7 @@ class ValidSampler(BaseSampler):
 
     @timemeter
     def prepare(self):
+        r"""Build per-user seen and unseen item lists from train/valid splits."""
         seenItems = [[] for _ in range(self.User.count)]
         unseenItems = [[] for _ in range(self.User.count)]
 
@@ -443,7 +491,7 @@ class ValidSampler(BaseSampler):
         self.negItems = dict()
 
     def _sample_neg(self, user: int, k: int, positive: int, seen: Tuple[int]):
-        """Sampling negatives for ranking_from_pool"""
+        r"""Sample negatives for pool-based ranking."""
         idx = (user, k)
         if self.negItems.get(idx, None) is None:
             seen = sorted(set(
@@ -457,9 +505,11 @@ class ValidSampler(BaseSampler):
         return self.negItems[idx]
 
     def _check(self, user: int) -> bool:
+        r"""Return whether the user has at least one unseen item."""
         return len(self.unseenItems[user]) > 0
 
     def _matching_from_pool(self):
+        r"""Yield matching rows with pool-based negative sampling."""
         for row in self.source:
             user = row[self.User]
             seq = seen = self.seenItems[user]
@@ -468,14 +518,16 @@ class ValidSampler(BaseSampler):
                 yield {self.User: user, self.ISeq: seq, self.IUnseen: unseen, self.ISeen: seen}
 
     def _matching_from_full(self):
+        r"""Yield matching rows for full ranking."""
         for row in self.source:
             user = row[self.User]
-            if self._check(user): 
+            if self._check(user):
                 seq = seen = self.seenItems[user]
                 unseen = self.unseenItems[user]
                 yield {self.User: user, self.ISeq: seq, self.IUnseen: unseen, self.ISeen: seen}
 
     def _nextitem_from_pool(self):
+        r"""Yield next-item rows with pool-based negative sampling."""
         for row in self.source:
             user = row[self.User]
             seen = self.seenItems[user]
@@ -485,6 +537,7 @@ class ValidSampler(BaseSampler):
                 yield {self.User: user, self.ISeq: seq, self.IUnseen: unseen, self.ISeen: seen}
 
     def _nextitem_from_full(self):
+        r"""Yield next-item rows for full ranking."""
         for row in self.source:
             user = row[self.User]
             seen = self.seenItems[user]
@@ -494,6 +547,7 @@ class ValidSampler(BaseSampler):
                 yield {self.User: user, self.ISeq: seq, self.IUnseen: unseen, self.ISeen: seen}
 
     def __iter__(self):
+        r"""Yield validation rows according to task type and ranking mode."""
         if self.dataset.TASK is MATCHING:
             if self.sampling_neg:
                 yield from self._matching_from_pool()
@@ -508,28 +562,36 @@ class ValidSampler(BaseSampler):
 
 @dp.functional_datapipe("test_sampling_")
 class TestSampler(ValidSampler):
-    r"""
-    Sampler for test.
+    r"""Sampler for test.
 
-    Parameters:
-    -----------
-    ranking: 'full' or 'pool', default to 'full'
-        'full': full ranking
-        'pool': sampled-based ranking
-    num_negatives: int, default to 100
-        The number of negatives for 'pool'.
-    
-    Yields:
-    -------
-    Field(USER:ID,USER): user id
-    Field(ITEM:ID,ITEM,SEQUENCE): user sequence
-    Field(ITEM:ID,ITEM,UNSEEN):
-        'full': target items
-        'pool': target items + negatives items
-    Field(ITEM:ID,ITEM,SEEN): seen items
-    
-    Examples:
-    ---------
+    Identical to :class:`~ValidSampler` except that seen items include both
+    training and validation interactions, and unseen items come from the
+    test split.
+
+    Parameters
+    ----------
+    source : :class:`~BaseProcessor`
+        Source datapipe.
+    ranking : ``'full'`` or ``'pool'``, optional
+        ``'full'`` for full ranking; ``'pool'`` for sample-based ranking.
+        Default is ``'full'``.
+    num_negatives : int, optional
+        The number of negatives for ``'pool'`` ranking.
+        Default is ``100``.
+
+    Yields
+    ------
+    dict
+        Row dict containing:
+
+        - ``Field(USER:ID,USER)``: user id
+        - ``Field(ITEM:ID,ITEM,SEQUENCE)``: user sequence
+        - ``Field(ITEM:ID,ITEM,UNSEEN)``: target items (``'full'``) or
+          target items + negative items (``'pool'``)
+        - ``Field(ITEM:ID,ITEM,SEEN)``: seen items
+
+    Examples
+    --------
     >>> dataset: RecDataSet
     >>> datapipe = dataset.test().ordered_user_ids_source(
     ).test_sampling_(ranking='full')
@@ -549,6 +611,7 @@ class TestSampler(ValidSampler):
 
     @timemeter
     def prepare(self):
+        r"""Build per-user seen and unseen item lists from train/valid/test splits."""
         seenItems = [[] for _ in range(self.User.count)]
         unseenItems = [[] for _ in range(self.User.count)]
 

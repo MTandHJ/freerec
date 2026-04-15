@@ -11,15 +11,15 @@ from .base import NextItemRecDataSet
 
 class Amazon2018Books_550_LOU(NextItemRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 5
     star4pos: 0
     splitting: LOU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +---------+--------+---------------+----------+---------+---------+-----------------------+
     |  #User  | #Item  | #Interactions |  #Train  |  #Valid |  #Test  |        Density        |
     +---------+--------+---------------+----------+---------+---------+-----------------------+
@@ -30,15 +30,15 @@ class Amazon2018Books_550_LOU(NextItemRecDataSet):
 
 class Amazon2018CDs_550_LOU(NextItemRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 5
     star4pos: 0
     splitting: LOU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +--------+-------+---------------+---------+--------+--------+------------------------+
     | #User  | #Item | #Interactions |  #Train | #Valid | #Test  |        Density         |
     +--------+-------+---------------+---------+--------+--------+------------------------+
@@ -49,15 +49,15 @@ class Amazon2018CDs_550_LOU(NextItemRecDataSet):
 
 class Amazon2018Clothing_550_LOU(NextItemRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 5
     star4pos: 0
     splitting: LOU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +---------+--------+---------------+---------+---------+---------+------------------------+
     |  #User  | #Item  | #Interactions |  #Train |  #Valid |  #Test  |        Density         |
     +---------+--------+---------------+---------+---------+---------+------------------------+
@@ -68,15 +68,15 @@ class Amazon2018Clothing_550_LOU(NextItemRecDataSet):
 
 class Amazon2018Electronics_550_LOU(NextItemRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 5
     star4pos: 0
     splitting: LOU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +--------+--------+---------------+---------+--------+--------+-----------------------+
     | #User  | #Item  | #Interactions |  #Train | #Valid | #Test  |        Density        |
     +--------+--------+---------------+---------+--------+--------+-----------------------+
@@ -87,15 +87,15 @@ class Amazon2018Electronics_550_LOU(NextItemRecDataSet):
 
 class Amazon2018Movies_550_LOU(NextItemRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 5
     star4pos: 0
     splitting: LOU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +--------+-------+---------------+---------+--------+--------+------------------------+
     | #User  | #Item | #Interactions |  #Train | #Valid | #Test  |        Density         |
     +--------+-------+---------------+---------+--------+--------+------------------------+
@@ -106,15 +106,15 @@ class Amazon2018Movies_550_LOU(NextItemRecDataSet):
 
 class Amazon2018Office_550_LOU(NextItemRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 5
     star4pos: 0
     splitting: LOU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +--------+-------+---------------+--------+--------+--------+------------------------+
     | #User  | #Item | #Interactions | #Train | #Valid | #Test  |        Density         |
     +--------+-------+---------------+--------+--------+--------+------------------------+
@@ -125,15 +125,15 @@ class Amazon2018Office_550_LOU(NextItemRecDataSet):
 
 class Amazon2018Sports_550_LOU(NextItemRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 5
     star4pos: 0
     splitting: LOU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +--------+--------+---------------+---------+--------+--------+-----------------------+
     | #User  | #Item  | #Interactions |  #Train | #Valid | #Test  |        Density        |
     +--------+--------+---------------+---------+--------+--------+-----------------------+
@@ -144,15 +144,15 @@ class Amazon2018Sports_550_LOU(NextItemRecDataSet):
 
 class Amazon2018Tools_550_LOU(NextItemRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 5
     star4pos: 0
     splitting: LOU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +--------+-------+---------------+---------+--------+--------+------------------------+
     | #User  | #Item | #Interactions |  #Train | #Valid | #Test  |        Density         |
     +--------+-------+---------------+---------+--------+--------+------------------------+
@@ -163,15 +163,15 @@ class Amazon2018Tools_550_LOU(NextItemRecDataSet):
 
 class Amazon2018Toys_550_LOU(NextItemRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 5
     star4pos: 0
     splitting: LOU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +--------+-------+---------------+---------+--------+--------+------------------------+
     | #User  | #Item | #Interactions |  #Train | #Valid | #Test  |        Density         |
     +--------+-------+---------------+---------+--------+--------+------------------------+

@@ -13,7 +13,7 @@ from torch_geometric.utils.num_nodes import maybe_num_nodes
 
 
 __all__ = [
-    'coalesce', 
+    'coalesce',
     'scatter', 'spmm',
     'to_undirected', 'to_edge_index',
     'add_self_loops', 'remove_self_loops',
@@ -31,25 +31,27 @@ def to_adjacency(
     edge_weight: Optional[torch.Tensor] = None,
     num_nodes: Optional[int] = None,
 ):
-    r"""
-    Get adjacency matrix.
+    r"""Build a CSR sparse adjacency matrix from an edge index.
 
-    Parameters:
-    -----------
-    edge_index: torch.Tensor, (2, N)
-    edge_weight: torch.Tensor, optional
-        `None`: edge_weight will be set to 1
-    num_nodes: int, optional
-        The number of nodes.
-    
-    Returns:
-    --------
-    Adjacency matrix: CSR sparse tensor
+    Parameters
+    ----------
+    edge_index : :class:`torch.Tensor`
+        Edge index of shape ``(2, E)`` where ``E`` is the number of edges.
+    edge_weight : :class:`torch.Tensor`, optional
+        Edge weights of shape ``(E,)``.  When ``None``, all weights are
+        set to 1.
+    num_nodes : int, optional
+        Number of nodes.  Inferred from *edge_index* when ``None``.
+
+    Returns
+    -------
+    :class:`torch.Tensor`
+        Sparse CSR adjacency matrix of shape ``(num_nodes, num_nodes)``.
     """
     num_nodes = maybe_num_nodes(edge_index, num_nodes)
     if edge_weight is None:
         edge_weight = torch.ones_like(edge_index[0], dtype=torch.float)
-    
+
     return torch.sparse_coo_tensor(
         edge_index.clone(),
         edge_weight.clone(),
@@ -61,26 +63,40 @@ def to_normalized(
     edge_weight: Optional[torch.Tensor] = None,
     normalization: str = 'sym',
 ) -> Tuple[torch.Tensor]:
-    r"""
-    Symmetric sqrt | Left-side | Right-side normalization.
+    r"""Normalize edge weights using degree-based normalization.
 
-    Parameters:
-    -----------
-    edge_index: torch.Tensor, (2, N)
-    edge_weight: torch.Tensor, optional
-        `None`: edge_weight will be set to 1
-    normalization: str, optional
-        `sym`: Symmetric sqrt normalization
-            :math: `\mathbf{\tilde{A}} = \mathbf{D}_l^{-1/2} \mathbf{A} \mathbf{D}_r^{-1/2}`
-        'left': Left-side normalization
-            :math: `\mathbf{\tilde{A}} = \mathbf{D}_l^{-1} \mathbf{A}`
-        'right': Right-side normalization
-            :math: `\mathbf{\tilde{A}} = \mathbf{A} \mathbf{D}_r^{-1}`
-    
-    Returns:
-    --------
-    edge_index: torch.Tensor
-    edge_weight: torch.Tensor
+    Supports symmetric square-root, left-side, and right-side normalization:
+
+    .. math::
+
+        \text{sym:}   \quad \tilde{\mathbf{A}} = \mathbf{D}_l^{-1/2}\,\mathbf{A}\,\mathbf{D}_r^{-1/2}
+
+        \text{left:}  \quad \tilde{\mathbf{A}} = \mathbf{D}_l^{-1}\,\mathbf{A}
+
+        \text{right:} \quad \tilde{\mathbf{A}} = \mathbf{A}\,\mathbf{D}_r^{-1}
+
+    Parameters
+    ----------
+    edge_index : :class:`torch.Tensor`
+        Edge index of shape ``(2, E)``.
+    edge_weight : :class:`torch.Tensor`, optional
+        Edge weights of shape ``(E,)``.  When ``None``, all weights are
+        set to 1.
+    normalization : str, optional
+        Normalization type.  One of ``'sym'`` (default), ``'left'``, or
+        ``'right'``.
+
+    Returns
+    -------
+    edge_index : :class:`torch.Tensor`
+        The (unchanged) edge index.
+    edge_weight : :class:`torch.Tensor`
+        Normalized edge weights.
+
+    Raises
+    ------
+    NotImplementedError
+        If *normalization* is not one of the supported values.
     """
     row, col = edge_index[0], edge_index[1]
     if edge_weight is None:
@@ -119,23 +135,31 @@ def get_knn_graph(
     symmetric: bool = True,
     reduce: str = 'max'
 ):
-    r"""
-    Get kNN graph.
+    r"""Construct a k-nearest-neighbor graph from a similarity matrix.
 
-    Parameters:
-    -----------
-    sim_mat: torch.Tensor
-    k: int,
-        top-K for each row
-    symmetric: bool, default to `True`
-        `True`: Return undirected edge weight
-    reduce: str 
-        The reduce operation to use for merging edge
+    For each row of *sim_mat* the top-*k* entries are selected.  Optionally
+    the resulting directed graph is symmetrized into an undirected one.
 
-    Returns:
-    --------
-    edge_index: torch.Tensor
-    edge_weight: torch.Tensor
+    Parameters
+    ----------
+    sim_mat : :class:`torch.Tensor`
+        Similarity matrix of shape ``(M, N)``.  May be dense or sparse
+        COO (converted to dense internally).
+    k : int
+        Number of nearest neighbors per node.
+    symmetric : bool, optional
+        If ``True`` (default), convert to an undirected graph using
+        :func:`torch_geometric.utils.to_undirected`.  Requires ``M == N``.
+    reduce : str, optional
+        Reduce operation passed to :func:`torch_geometric.utils.to_undirected`
+        for merging duplicate edges.  Default is ``'max'``.
+
+    Returns
+    -------
+    edge_index : :class:`torch.Tensor`
+        Edge index of shape ``(2, E)``.
+    edge_weight : :class:`torch.Tensor`
+        Corresponding edge weights of shape ``(E,)``.
     """
     M, N = sim_mat.shape
     device = sim_mat.device
@@ -154,5 +178,5 @@ def get_knn_graph(
     if symmetric:
         assert M == N, "`symmetric == True` but `sim_mat` is not a square matrix ..."
         edge_index, edge_weight = to_undirected(edge_index, edge_attr=edge_weight, reduce=reduce)
-    
+
     return edge_index, edge_weight

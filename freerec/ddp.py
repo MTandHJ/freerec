@@ -1,8 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
-"""
-This file contains primitives for multi-gpu communication.
-This is useful when doing distributed training.
-"""
+r"""Primitives for multi-GPU communication in distributed training."""
 
 from typing import List, TypeVar, Dict
 
@@ -12,29 +9,33 @@ import os, pickle, functools, warnings
 import torch.distributed as dist
 
 
+# A torch process group which only includes processes that on the same machine
+# as the current process. This variable is set when processes are spawned by
+# ``launch()`` in "engine/launch.py".
 _LOCAL_PROCESS_GROUP = None
-"""
-A torch process group which only includes processes that on the same machine as the current process.
-This variable is set when processes are spawned by `launch()` in "engine/launch.py".
-"""
 
 T = TypeVar("T")
 
 
 def get_world_size() -> int:
+    r"""Return the number of processes in the default process group."""
     if dist.is_available() and dist.is_initialized():
         return dist.get_world_size()
     return 1
 
 def get_rank() -> int:
+    r"""Return the rank of the current process in the default process group."""
     if dist.is_available() and dist.is_initialized():
         return dist.get_rank()
     return 0
 
 def get_local_rank() -> int:
-    """
-    Returns:
-        The rank of the current process within the local (per-machine) process group.
+    r"""Return the rank of the current process within the local (per-machine) process group.
+
+    Returns
+    -------
+    int
+        The rank of the current process within its machine.
     """
     if dist.is_available() and dist.is_initialized():
         assert _LOCAL_PROCESS_GROUP is not None
@@ -42,26 +43,42 @@ def get_local_rank() -> int:
     return 0
 
 def get_local_size() -> int:
-    """
-    Returns:
-        The size of the per-machine process group,
-        i.e. the number of processes per machine.
+    r"""Return the number of processes on the current machine.
+
+    Returns
+    -------
+    int
+        The size of the per-machine process group.
     """
     if dist.is_available() and dist.is_initialized():
         return dist.get_world_size(group=_LOCAL_PROCESS_GROUP)
     return 1
 
 def is_distributed() -> bool:
+    r"""Check whether the current environment is configured for distributed training."""
     world_size = os.environ.get('WORLD_SIZE', None)
     # world_size > 1 will be better?
     return world_size is not None
 
 def is_main_process() -> bool:
-    """Checks if the current process is the main process"""
+    r"""Check whether the current process is the main process (rank 0)."""
     return get_rank() == 0
 
 def main_process_only(func):
+    r"""Decorator that restricts execution to the main process only.
+
+    Parameters
+    ----------
+    func : callable
+        The function to wrap.
+
+    Returns
+    -------
+    callable
+        A wrapper that calls *func* only when :func:`is_main_process` is ``True``.
+    """
     def wrapper(*args, **kwargs):
+        r"""Execute the function only on the main process."""
         if is_main_process():
             return func(*args, **kwargs)
     wrapper.__name__ = func.__name__
@@ -69,26 +86,21 @@ def main_process_only(func):
     return wrapper
 
 def synchronize():
-    """
-    Helper function to synchronize (barrier) among all processes when
-    using distributed training
-    """
+    r"""Synchronize (barrier) among all processes in distributed training."""
     if get_world_size() == 1:
         return
     dist.barrier()
 
 @functools.lru_cache()
 def _get_global_gloo_group():
-    """
-    Return a process group based on gloo backend, containing all the ranks
-    The result is cached.
-    """
+    r"""Return a cached gloo-backend process group containing all ranks."""
     if dist.get_backend() == "nccl":
         return dist.new_group(backend="gloo")
     else:
         return dist.group.WORLD
 
 def _serialize_to_tensor(data, group):
+    r"""Serialize an arbitrary picklable object into a byte tensor."""
     backend = dist.get_backend(group)
     assert backend in ["gloo", "nccl"]
     device = torch.device("cpu" if backend == "gloo" else "cuda")
@@ -106,10 +118,21 @@ def _serialize_to_tensor(data, group):
     # return torch.frombuffer(buffer, dtype=torch.uint8).to(device)
 
 def _pad_to_largest_tensor(tensor, group):
-    """
-    Returns:
-        list[int]: size of the tensor, on each rank
-        Tensor: padded tensor that has the max size
+    r"""Pad a tensor so that all ranks have the same tensor size.
+
+    Parameters
+    ----------
+    tensor : :class:`torch.Tensor`
+        The local tensor to pad.
+    group : :class:`torch.distributed.ProcessGroup`
+        The process group to coordinate with.
+
+    Returns
+    -------
+    list[int]
+        Size of the tensor on each rank.
+    :class:`torch.Tensor`
+        Padded tensor that has the max size across all ranks.
     """
     world_size = dist.get_world_size(group=group)
     assert (
@@ -136,18 +159,20 @@ def _pad_to_largest_tensor(tensor, group):
     return size_list, tensor
 
 def all_gather(data: T, group=None) -> List[T]:
-    r"""
-    Run all_gather on arbitrary picklable data (not necessarily tensors).
-    
-    Parameters:
-    -----------
-    data: any picklable object
-    group: a torch process group. By default, will use a group which
-        contains all ranks on gloo backend.
+    r"""Run all-gather on arbitrary picklable data (not necessarily tensors).
 
-    Returns:
-    --------
-        list[data]: list of data gathered from each rank
+    Parameters
+    ----------
+    data : T
+        Any picklable object.
+    group : :class:`torch.distributed.ProcessGroup`, optional
+        A torch process group. By default, uses a group which contains all
+        ranks on the gloo backend.
+
+    Returns
+    -------
+    list[T]
+        List of data gathered from each rank.
     """
     if get_world_size() == 1:
         return [data]
@@ -183,20 +208,23 @@ def all_gather(data: T, group=None) -> List[T]:
     return data_list
 
 def gather(data: T, dst: int = 0, group=None) -> List[T]:
-    r"""
-    Run gather on arbitrary picklable data (not necessarily tensors).
+    r"""Run gather on arbitrary picklable data (not necessarily tensors).
 
-    Parameters:
-    -----------
-    data: any picklable object
-    dst (int): destination rank
-    group: a torch process group. By default, will use a group which
-        contains all ranks on gloo backend.
+    Parameters
+    ----------
+    data : T
+        Any picklable object.
+    dst : int, optional
+        Destination rank. Default is ``0``.
+    group : :class:`torch.distributed.ProcessGroup`, optional
+        A torch process group. By default, uses a group which contains all
+        ranks on the gloo backend.
 
-    Returns:
-    --------
-    list[data]: on dst, a list of data gathered from each rank. Otherwise,
-        an empty list.
+    Returns
+    -------
+    list[T]
+        On *dst*, a list of data gathered from each rank. Otherwise, an
+        empty list.
     """
     if get_world_size() == 1:
         return [data]
@@ -236,15 +264,16 @@ def gather(data: T, dst: int = 0, group=None) -> List[T]:
         return []
 
 def shared_random_seed() -> int:
-    r"""
-    Returns:
-    --------
-    int: a random number that is the same across all workers.
-        If workers need a shared RNG, they can use this shared seed to
-        create one.
+    r"""Generate a random seed that is identical across all workers.
 
-    Notes:
-    ------
+    Returns
+    -------
+    int
+        A random number that is the same across all workers. If workers need
+        a shared RNG, they can use this shared seed to create one.
+
+    Notes
+    -----
     All workers must call this function, otherwise it will deadlock.
     """
     ints = np.random.randint(2 ** 31)
@@ -252,20 +281,20 @@ def shared_random_seed() -> int:
     return all_ints[0]
 
 def reduce_dict(input_dict: Dict, average: bool = True) -> Dict:
-    r"""
-    Reduce the values in the dictionary from all processes so that process with rank
-    0 has the reduced results.
+    r"""Reduce the values in a dictionary from all processes so that rank 0 has the reduced results.
 
-    Parameters:
-    -----------
-    input_dict: dict
-        inputs to be reduced. (values not necessarily tensors).
-    average: bool, default to `True`
-        whether to do average or sum
+    Parameters
+    ----------
+    input_dict : dict
+        Inputs to be reduced. Values are not necessarily tensors.
+    average : bool, optional
+        Whether to average (``True``) or sum (``False``) the values.
+        Default is ``True``.
 
-    Returns:
-    --------
-        a dict with the same keys as input_dict, after reduction.
+    Returns
+    -------
+    dict
+        A dict with the same keys as *input_dict*, after reduction.
     """
 
     world_size = get_world_size()

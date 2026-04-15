@@ -1,5 +1,6 @@
 
 
+
 from typing import List, Dict, Optional
 
 import gzip, json, os
@@ -29,6 +30,20 @@ ITEM_FIELDS = {
 }
 
 def open_and_read_json_gz(root, file) -> List:
+    r"""Read a gzipped JSON-lines file and return all records as a list.
+
+    Parameters
+    ----------
+    root : str
+        Directory containing the file.
+    file : str
+        Filename of the ``.json.gz`` file.
+
+    Returns
+    -------
+    list
+        List of parsed JSON objects (one per line).
+    """
     data = []
     for line in gzip.open(os.path.join(root, file)):
         data.append(json.loads(line.strip()))
@@ -41,30 +56,39 @@ def extract_from_amazon2023(
     inter_fields: Dict = INTER_FIELDS,
     item_fields: Dict = ITEM_FIELDS
 ):
-    r"""
-    Extract interaction and item dataframe from amazon2023.
+    r"""Extract interaction and item dataframes from Amazon Reviews 2023.
 
-    Parameters:
-    -----------
-    root: root path
-    review_file: optional[str]
-        review gzip file
-        - `None`: Find it automatically.
-    meta_file: optional[str]
-        meta gzip file
-        - `None`: Find it automatically.
-    inter_fields: Dict
-        fields to be retained and renamed for interaction.
-        - default: 'user_id', 'asin', 'rating', 'timestamp', 'parent_asin'
-    item_fields:
-        - default: 'parent_asin', 'title', 'features', 'description'
-    
-    Examples:
-    ---------
+    Parameters
+    ----------
+    root : str
+        Root directory containing the gzipped review and meta files.
+    review_file : str or None, optional
+        Filename of the review gzip file. If ``None``, the file is
+        detected automatically.
+    meta_file : str or None, optional
+        Filename of the meta gzip file. If ``None``, the file is
+        detected automatically.
+    inter_fields : dict, optional
+        Mapping from raw field names to canonical names for the
+        interaction dataframe. Defaults to ``INTER_FIELDS``.
+    item_fields : dict, optional
+        Mapping from raw field names to canonical names for the item
+        dataframe. Defaults to ``ITEM_FIELDS``.
+
+    Returns
+    -------
+    inter_df : :class:`pandas.DataFrame`
+        Interaction dataframe with columns defined by *inter_fields*.
+    item_df : :class:`pandas.DataFrame`
+        Item metadata dataframe with columns defined by *item_fields*
+        plus a ``brand`` column.
+
+    Examples
+    --------
     >>> from freerec.data.preprocessing.amazon2023 import extract_from_amazon2023
     >>> inter_df, item_df = extract_from_amazon2023(
-        "../RecSets/Amazon2023/Baby",
-    )
+    ...     "../RecSets/Amazon2023/Baby",
+    ... )
     """
 
     # find review/meta data

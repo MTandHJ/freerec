@@ -1,10 +1,8 @@
+r"""Evaluation metrics for recommendation systems.
 
-
-"""
-Refer to
-    https://zhuanlan.zhihu.com/p/67287992
-for formal definitions.
-The implementations below are fully due to torchmetrics.
+Includes regression metrics (MAE, MSE, RMSE), ranking metrics
+(Precision, Recall, F1, Hit Rate, NDCG, MRR, MAP), and
+classification metrics (LogLoss, AUC, GAUC).
 """
 
 from typing import Optional, Union, List, Iterable, Literal
@@ -25,43 +23,34 @@ __all__ = [
 
 
 def _reduce(reduction: Literal['mean', 'sum', 'none'] ='mean'):
-    r"""
-    A decorator that applies a reduction operation to the output of a given function.
+    r"""Decorator that applies a reduction to the output of a metric function.
 
-    Parameters:
-    -----------
+    The decorated function should accept ``preds`` and ``targets`` as its
+    first two positional arguments and return a :class:`torch.Tensor`.
+    When *preds* is a list the function is mapped element-wise and the
+    results are stacked before the reduction is applied.
+
+    Parameters
+    ----------
     reduction : str, optional
-        The reduction operation to be applied to the output of the function. Should be one of {'none', 'mean', 'sum'}. Default is 'mean'.
+        Reduction operation: ``'none'``, ``'mean'`` (default), or
+        ``'sum'``.
 
-    Returns:
+    Returns
+    -------
+    callable
+        A decorator that wraps the target function.
+
+    Examples
     --------
-    wrapper : function
-        The decorated function.
-
-    Notes:
-    ------
-    This decorator takes a function that takes two inputs: `preds` and `targets`, 
-    both of which are either lists of PyTorch tensors or PyTorch tensors themselves. 
-    The output of the function should also be a PyTorch tensor or a list of PyTorch tensors. 
-    The decorator then applies a reduction operation specified by the `reduction` parameter to the output of the function.
-
-    Examples:
-    ---------
-    Here is an example usage of this decorator:
-
     >>> @_reduce(reduction='mean')
     ... def mean_squared_error(preds, targets):
-    ...     return F.mse_loss(preds, targets)
-
-    Here, we define a function `mean_squared_error` that computes the mean squared error between `preds` and `targets` 
-    using PyTorch's built-in mean squared error loss function (`F.mse_loss`). 
-    The decorator `_reduce` is applied to this function, with `reduction` set to 'mean'. 
-    This means that the output of `mean_squared_error` will be the mean of the mean squared error loss values computed for each element in `preds` and `targets`.
+    ...     return (preds - targets).pow(2).mean(-1)
     """
     def decorator(func):
         def wrapper(
-            preds: Union[List[torch.Tensor], torch.Tensor], 
-            targets: Union[List[torch.Tensor], torch.Tensor], 
+            preds: Union[List[torch.Tensor], torch.Tensor],
+            targets: Union[List[torch.Tensor], torch.Tensor],
             *,
             reduction: str = reduction, **kwargs
         ):
@@ -90,32 +79,28 @@ def _reduce(reduction: Literal['mean', 'sum', 'none'] ='mean'):
 
 @_reduce('mean')
 def mean_abs_error(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-    r"""
-    Computes Mean Absolute Error (MAE).
+    r"""Compute Mean Absolute Error (MAE).
 
     .. math::
 
-        \phi(x_i, y_i) = \frac{1}{d} \|x_i - y_i\|_1.
+        \phi(x_i, y_i) = \frac{1}{d} \|x_i - y_i\|_1
 
-    Parameters:
-    -----------
-    preds: torch.Tensor, shape (N, d) or (d,)
-        Predictions or a single prediction tensor.
-    targets: torch.Tensor, shape (N, d) or (d,)
-        Targets tensor in accordance with preds.
-    reduction: str, optional
-        Specifies the reduction to apply to the output:
-        - 'mean': the mean value of the error is returned. Default.
-        - 'sum': the sum of the error is returned.
-        - 'none': no reduction will be applied and a tensor of shape (n,) will be returned.
+    Parameters
+    ----------
+    preds : :class:`torch.Tensor`
+        Predictions of shape ``(N, d)`` or ``(d,)``.
+    targets : :class:`torch.Tensor`
+        Targets of shape ``(N, d)`` or ``(d,)``.
+    reduction : str, optional
+        ``'mean'`` (default), ``'sum'``, or ``'none'``.
 
+    Returns
+    -------
+    :class:`torch.Tensor`
+        MAE value(s) of shape ``(1,)`` or ``(N,)``.
 
-    Returns:
+    Examples
     --------
-    Computed MAE: torch.Tensor, shape (1,) or (N,)
-
-    Examples:
-    ---------
     >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
     >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
     >>> mean_abs_error(preds, targets, reduction='none')
@@ -128,31 +113,28 @@ def mean_abs_error(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
 
 @_reduce('mean')
 def mean_squared_error(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-    r"""
-    Calculate mean squared error (MSE).
+    r"""Compute Mean Squared Error (MSE).
 
     .. math::
 
-        \phi(x_i, y_i) = \frac{1}{d} \|x_i - y_i\|_2^2.
+        \phi(x_i, y_i) = \frac{1}{d} \|x_i - y_i\|_2^2
 
-    Parameters:
-    -----------
-    preds: torch.Tensor, shape (N, d) or (d,)
-        Predictions or a single prediction tensor.
-    targets: torch.Tensor, shape (N, d) or (d,)
-        Targets tensor in accordance with preds.
-    reduction: str, optional
-        Specifies the reduction to apply to the output:
-        - 'mean': the mean value of the error is returned. Default.
-        - 'sum': the sum of the error is returned.
-        - 'none': no reduction will be applied and a tensor of shape (n,) will be returned.
+    Parameters
+    ----------
+    preds : :class:`torch.Tensor`
+        Predictions of shape ``(N, d)`` or ``(d,)``.
+    targets : :class:`torch.Tensor`
+        Targets of shape ``(N, d)`` or ``(d,)``.
+    reduction : str, optional
+        ``'mean'`` (default), ``'sum'``, or ``'none'``.
 
-    Returns:
+    Returns
+    -------
+    :class:`torch.Tensor`
+        MSE value(s) of shape ``(1,)`` or ``(N,)``.
+
+    Examples
     --------
-    Computed MSE: torch.Tensor, shape (1,) or (N,)
-
-    Examples:
-    ---------
     >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
     >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
     >>> mean_squared_error(preds, targets, reduction='none')
@@ -165,35 +147,33 @@ def mean_squared_error(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tens
 
 @_reduce('mean')
 def root_mse(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-    r"""Root mean squared error (RMSE).
+    r"""Compute Root Mean Squared Error (RMSE).
 
     .. math::
 
-        \phi(x_i, y_i) = \sqrt{\frac{1}{d} \|x_i - y_i\|_2^2}.
+        \phi(x_i, y_i) = \sqrt{\frac{1}{d} \|x_i - y_i\|_2^2}
 
-    Parameters:
-    -----------
-    preds: torch.Tensor, shape (N, d) or (d,)
-        Predictions or a single prediction tensor.
-    targets: torch.Tensor, shape (N, d) or (d,)
-        Targets tensor in accordance with preds.
-    reduction: str, optional
-        Specifies the reduction to apply to the output:
-        - 'mean': the mean value of the error is returned. Default.
-        - 'sum': the sum of the error is returned.
-        - 'none': no reduction will be applied and a tensor of shape (n,) will be returned.
+    Parameters
+    ----------
+    preds : :class:`torch.Tensor`
+        Predictions of shape ``(N, d)`` or ``(d,)``.
+    targets : :class:`torch.Tensor`
+        Targets of shape ``(N, d)`` or ``(d,)``.
+    reduction : str, optional
+        ``'mean'`` (default), ``'sum'``, or ``'none'``.
 
-    Returns:
+    Returns
+    -------
+    :class:`torch.Tensor`
+        RMSE value(s) of shape ``(1,)`` or ``(N,)``.
+
+    Examples
     --------
-    Computed RMSE: torch.Tensor, shape (1,) or (N,)
-
-    Examples:
-    ---------
     >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
     >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
-    >>> root_mean_squared_error(preds, targets, reduction='none')
+    >>> root_mse(preds, targets, reduction='none')
     tensor([0.5874, 0.5895])
-    >>> root_mean_squared_error(preds, targets)
+    >>> root_mse(preds, targets)
     tensor(0.5884)
     """
     preds, targets = preds.float(), targets.float()
@@ -204,40 +184,36 @@ def root_mse(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
 
 @_reduce('mean')
 def precision(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
-    r"""
-    Compute the precision of the top-K predicted items for a given query.
-
-    The precision is defined as the intersection between the top-K predicted items and the target items divided by
-    the size of the top-K set.
+    r"""Compute Precision at K.
 
     .. math::
 
-        \phi(x_i, y_i) = (|Topk(x_i) \cap Topk(y_i)|) / |Topk(x_i)|,
-    
-    where :math: `Topk(\cdot)` returns the Top-K (predicted or ideal) items of the query :math: `i`,
-    and :math: `|\cdot|` measures the cardinality of the set.
+        \text{Precision@K}(x_i, y_i)
+        = \frac{|\operatorname{TopK}(x_i) \cap \operatorname{TopK}(y_i)|}
+               {|\operatorname{TopK}(x_i)|}
 
-    Parameters:
-    -----------
-    preds: torch.Tensor, shape (N, d) or (d,)
-        Predictions or a single prediction tensor.
-    targets: torch.Tensor, shape (N, d) or (d,)
-        Targets tensor in accordance with preds.
-    reduction: str, optional
-        Specifies the reduction to apply to the output:
-        - 'mean': the mean value of the error is returned. Default.
-        - 'sum': the sum of the error is returned.
-        - 'none': no reduction will be applied and a tensor of shape (n,) will be returned.
-    k: int, optional
-        - `int': Top-(K=k).
-        - `None': Top-(K=d)
+    where :math:`\operatorname{TopK}(\cdot)` returns the top-K items
+    and :math:`|\cdot|` denotes set cardinality.
 
-    Returns:
+    Parameters
+    ----------
+    preds : :class:`torch.Tensor`
+        Prediction scores of shape ``(N, d)`` or ``(d,)``.
+    targets : :class:`torch.Tensor`
+        Binary relevance labels of shape ``(N, d)`` or ``(d,)``.
+    k : int, optional
+        Number of top predictions to consider.  When ``None``, all
+        ``d`` items are used.
+    reduction : str, optional
+        ``'mean'`` (default), ``'sum'``, or ``'none'``.
+
+    Returns
+    -------
+    :class:`torch.Tensor`
+        Precision value(s) of shape ``(1,)`` or ``(N,)``.
+
+    Examples
     --------
-    Computed Precision: torch.Tensor, shape (1,) or (N,)
-
-    Examples:
-    ---------
     >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
     >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
     >>> precision(preds, targets, k=3, reduction='none')
@@ -257,39 +233,36 @@ def precision(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = 
 
 @_reduce('mean')
 def recall(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
-    r"""
-    Recall is a measure of how well a ranking algorithm retrieves relevant items for a given query. 
-    It is defined as the intersection of the top-K predicted items with the top-K relevant items, 
-    divided by the total number of relevant items.
+    r"""Compute Recall at K.
 
     .. math::
 
-        \phi(x_i, y_i) = (|Topk(x_i) \cap Topk(y_i)|) / |y_i|,
+        \text{Recall@K}(x_i, y_i)
+        = \frac{|\operatorname{TopK}(x_i) \cap \operatorname{TopK}(y_i)|}
+               {|y_i|}
 
-    where :math:`Topk(\cdot)` returns the Top-K (predicted or ideal) items of the query :math:`i`,
-    and :math:`|\cdot|` measures the cardinality of the set.
+    where :math:`|y_i|` is the total number of relevant items for
+    query :math:`i`.
 
-    Parameters:
-    -----------
-    preds: torch.Tensor, shape (N, d) or (d,)
-        Predictions or a single prediction tensor.
-    targets: torch.Tensor, shape (N, d) or (d,)
-        Targets tensor in accordance with preds.
-    reduction: str, optional
-        Specifies the reduction to apply to the output:
-        - 'mean': the mean value of the error is returned. Default.
-        - 'sum': the sum of the error is returned.
-        - 'none': no reduction will be applied and a tensor of shape (n,) will be returned.
-    k: int, optional
-        - `int': Top-(K=k).
-        - `None': Top-(K=d)
+    Parameters
+    ----------
+    preds : :class:`torch.Tensor`
+        Prediction scores of shape ``(N, d)`` or ``(d,)``.
+    targets : :class:`torch.Tensor`
+        Binary relevance labels of shape ``(N, d)`` or ``(d,)``.
+    k : int, optional
+        Number of top predictions to consider.  When ``None``, all
+        ``d`` items are used.
+    reduction : str, optional
+        ``'mean'`` (default), ``'sum'``, or ``'none'``.
 
-    Returns:
+    Returns
+    -------
+    :class:`torch.Tensor`
+        Recall value(s) of shape ``(1,)`` or ``(N,)``.
+
+    Examples
     --------
-    Computed Recall: torch.Tensor, shape (1,) or (N,)
-
-    Examples:
-    ---------
     >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
     >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
     >>> recall(preds, targets, k=3, reduction='none')
@@ -302,7 +275,7 @@ def recall(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = Non
         k = preds.size(-1)
     else:
         k = min(k, preds.size(-1))
-    
+
     indices = preds.topk(k)[1]
     relevant = targets.gather(-1, indices).sum(-1)
     total = targets.sum(-1)
@@ -313,41 +286,34 @@ def recall(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = Non
 
 @_reduce('mean')
 def f1_score(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
-    r"""
-    The F1 score is the harmonic mean of precision and recall, where precision is the number of true positive predictions
-    divided by the total number of positive predictions, and recall is the number of true positive predictions divided by
-    the total number of positive ground truth labels.
+    r"""Compute the F1 score at K.
 
-    The F1 score is computed as follows:
+    The F1 score is the harmonic mean of precision and recall:
 
     .. math::
 
-        \phi(x_i, y_i) = (2 * Precision@k(x_i, y_i) * Recall@k(x_i, y_i)) / (Precision@k(x_i, y_i) + Recall@k(x_i, y_i))
+        \text{F1@K} = \frac{2 \cdot \text{Precision@K} \cdot \text{Recall@K}}
+                           {\text{Precision@K} + \text{Recall@K}}
 
-    where :math: `Topk(\cdot)` returns the Top-K (predicted or ideal) items of the query :math: `i`,
-    and :math: `|\cdot|` measures the cardinality of the set.
+    Parameters
+    ----------
+    preds : :class:`torch.Tensor`
+        Prediction scores of shape ``(N, d)`` or ``(d,)``.
+    targets : :class:`torch.Tensor`
+        Binary relevance labels of shape ``(N, d)`` or ``(d,)``.
+    k : int, optional
+        Number of top predictions to consider.  When ``None``, all
+        ``d`` items are used.
+    reduction : str, optional
+        ``'mean'`` (default), ``'sum'``, or ``'none'``.
 
-    Parameters:
-    -----------
-    preds: torch.Tensor, shape (N, d) or (d,)
-        Predictions or a single prediction tensor.
-    targets: torch.Tensor, shape (N, d) or (d,)
-        Targets tensor in accordance with preds.
-    reduction: str, optional
-        Specifies the reduction to apply to the output:
-        - 'mean': the mean value of the error is returned. Default.
-        - 'sum': the sum of the error is returned.
-        - 'none': no reduction will be applied and a tensor of shape (n,) will be returned.
-    k: int, optional
-        - `int': Top-(K=k).
-        - `None': Top-(K=d)
+    Returns
+    -------
+    :class:`torch.Tensor`
+        F1 value(s) of shape ``(1,)`` or ``(N,)``.
 
-    Returns:
+    Examples
     --------
-    Computed F1-score: torch.Tensor, shape (1,) or (N,)
-
-    Examples:
-    ---------
     >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
     >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
     >>> f1_score(preds, targets, k=3, reduction='none')
@@ -371,37 +337,35 @@ def f1_score(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = N
 
 @_reduce('mean')
 def hit_rate(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
-    r"""
-    Compute the Hit Rate score between predictions and targets.
+    r"""Compute Hit Rate at K.
+
+    Returns 1 if at least one relevant item appears in the top-K
+    predictions, and 0 otherwise:
 
     .. math::
 
-        \phi(x_i, y_i) = \mathbb{I}(|Topk(x_i) \cap Topk(y_i)| \not = 0).
-    
-    where :math: `Topk(\cdot)` returns the Top-K (predicted or ideal) items of the query :math: `i`,
-    and :math: `|\cdot|` measures the cardinality of the set.
+        \text{HR@K}(x_i, y_i)
+        = \mathbb{1}\!\bigl(|\operatorname{TopK}(x_i) \cap y_i| \neq 0\bigr)
 
-    Parameters:
-    -----------
-    preds: torch.Tensor, shape (N, d) or (d,)
-        Predictions or a single prediction tensor.
-    targets: torch.Tensor, shape (N, d) or (d,)
-        Targets tensor in accordance with preds.
-    reduction: str, optional
-        Specifies the reduction to apply to the output:
-        - 'mean': the mean value of the error is returned. Default.
-        - 'sum': the sum of the error is returned.
-        - 'none': no reduction will be applied and a tensor of shape (n,) will be returned.
-    k: int, optional
-        - `int': Top-(K=k).
-        - `None': Top-(K=d)
+    Parameters
+    ----------
+    preds : :class:`torch.Tensor`
+        Prediction scores of shape ``(N, d)`` or ``(d,)``.
+    targets : :class:`torch.Tensor`
+        Binary relevance labels of shape ``(N, d)`` or ``(d,)``.
+    k : int, optional
+        Number of top predictions to consider.  When ``None``, all
+        ``d`` items are used.
+    reduction : str, optional
+        ``'mean'`` (default), ``'sum'``, or ``'none'``.
 
-    Returns:
+    Returns
+    -------
+    :class:`torch.Tensor`
+        Hit rate value(s) of shape ``(1,)`` or ``(N,)``.
+
+    Examples
     --------
-    Computed HitRate: torch.Tensor, shape (1,) or (N,)
-
-    Examples:
-    ---------
     >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
     >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
     >>> hit_rate(preds, targets, k=3, reduction='none')
@@ -422,42 +386,55 @@ def hit_rate(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = N
 # quality of the list of recommendations
 
 def _dcg(target: torch.Tensor) -> torch.Tensor:
-    """Computes Discounted Cumulative Gain for input tensor."""
+    r"""Compute Discounted Cumulative Gain for a relevance vector.
+
+    .. math::
+
+        \mathrm{DCG} = \sum_{i=1}^{K} \frac{\mathrm{rel}_i}{\log_2(i + 1)}
+
+    Parameters
+    ----------
+    target : :class:`torch.Tensor`
+        Relevance scores ordered by predicted rank.
+
+    Returns
+    -------
+    :class:`torch.Tensor`
+        Scalar or batch DCG values.
+    """
     denom = torch.log2(torch.arange(target.shape[-1], device=target.device) + 2.0)
     return (target / denom).sum(dim=-1)
 
 @_reduce('mean')
 def normalized_dcg(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
-    r"""
-    NDCG (Normalized Discounted Cumulative Gain).
+    r"""Compute Normalized Discounted Cumulative Gain (NDCG) at K.
 
     .. math::
 
-        \phi(x_i, y_i) = \frac{_dcg(x_i)}{_dcg(y_i)}
+        \text{NDCG@K} = \frac{\mathrm{DCG@K}}{\mathrm{IDCG@K}}
 
-    where :math: `_dcg(\cdot)` computes the Discounted Cumulative Gain of the input.
-        
-    Parameters:
-    -----------
-    preds: torch.Tensor, shape (N, d) or (d,)
-        Predictions or a single prediction tensor.
-    targets: torch.Tensor, shape (N, d) or (d,)
-        Targets tensor in accordance with preds.
-    reduction: str, optional
-        Specifies the reduction to apply to the output:
-        - 'mean': the mean value of the error is returned. Default.
-        - 'sum': the sum of the error is returned.
-        - 'none': no reduction will be applied and a tensor of shape (n,) will be returned.
-    k: int, optional
-        - `int': Top-(K=k).
-        - `None': Top-(K=d)
+    where :math:`\mathrm{IDCG@K}` is the ideal (maximum possible) DCG
+    obtained by sorting items by true relevance.
 
-    Returns:
+    Parameters
+    ----------
+    preds : :class:`torch.Tensor`
+        Prediction scores of shape ``(N, d)`` or ``(d,)``.
+    targets : :class:`torch.Tensor`
+        Relevance labels of shape ``(N, d)`` or ``(d,)``.
+    k : int, optional
+        Number of top predictions to consider.  When ``None``, all
+        ``d`` items are used.
+    reduction : str, optional
+        ``'mean'`` (default), ``'sum'``, or ``'none'``.
+
+    Returns
+    -------
+    :class:`torch.Tensor`
+        NDCG value(s) of shape ``(1,)`` or ``(N,)``.
+
+    Examples
     --------
-    Computed NDCG: torch.Tensor, shape (1,) or (N,)
-        
-    Examples:
-    ---------
     >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
     >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
     >>> normalized_dcg(preds, targets, k=3, reduction='none')
@@ -485,6 +462,20 @@ def normalized_dcg(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[in
     return dcg
 
 def _single_reciprocal_rank(preds: torch.Tensor, targets: torch.Tensor):
+    r"""Compute the reciprocal rank for a single query.
+
+    Parameters
+    ----------
+    preds : :class:`torch.Tensor`
+        Prediction scores (unused, ordering is assumed pre-sorted).
+    targets : :class:`torch.Tensor`
+        Binary relevance labels sorted by predicted rank.
+
+    Returns
+    -------
+    float
+        Reciprocal rank, or 0 if no relevant item exists.
+    """
     if not targets.sum():
         return 0.
     positions = torch.nonzero(targets).view(-1)
@@ -493,32 +484,35 @@ def _single_reciprocal_rank(preds: torch.Tensor, targets: torch.Tensor):
 
 @_reduce('mean')
 def mean_reciprocal_rank(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
-    r"""
-    The mean reciprocal rank (MRR) is defined as the average of 
-    the reciprocal rank of the first correct item in the predicted ranking of items for each query.
+    r"""Compute Mean Reciprocal Rank (MRR) at K.
 
-    Parameters:
-    -----------
-    preds: torch.Tensor, shape (N, d) or (d,)
-        Predictions or a single prediction tensor.
-    targets: torch.Tensor, shape (N, d) or (d,)
-        Targets tensor in accordance with preds.
-    reduction: str, optional
-        Specifies the reduction to apply to the output:
-        - 'mean': the mean value of the error is returned. Default.
-        - 'sum': the sum of the error is returned.
-        - 'none': no reduction will be applied and a tensor of shape (n,) will be returned.
-    k: int, optional
-        - `int': Top-(K=k).
-        - `None': Top-(K=d)
+    .. math::
 
-    Returns:
+        \text{MRR@K} = \frac{1}{N} \sum_{i=1}^{N}
+        \frac{1}{\operatorname{rank}_i}
+
+    where :math:`\operatorname{rank}_i` is the position of the first
+    relevant item in the top-K list for query :math:`i`.
+
+    Parameters
+    ----------
+    preds : :class:`torch.Tensor`
+        Prediction scores of shape ``(N, d)`` or ``(d,)``.
+    targets : :class:`torch.Tensor`
+        Binary relevance labels of shape ``(N, d)`` or ``(d,)``.
+    k : int, optional
+        Number of top predictions to consider.  When ``None``, all
+        ``d`` items are used.
+    reduction : str, optional
+        ``'mean'`` (default), ``'sum'``, or ``'none'``.
+
+    Returns
+    -------
+    :class:`torch.Tensor`
+        MRR value(s) of shape ``(1,)`` or ``(N,)``.
+
+    Examples
     --------
-    Computed MRR: torch.Tensor, shape (1,) or (N,)
-
-    Examples:
-    ---------
-
     >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
     >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
     >>> mean_reciprocal_rank(preds, targets, reduction='none')
@@ -531,7 +525,7 @@ def mean_reciprocal_rank(preds: torch.Tensor, targets: torch.Tensor, *, k: Optio
         k = preds.size(-1)
     else:
         k = min(k, preds.size(-1))
-    
+
     preds, indices = preds.topk(k=k, dim=-1)
     targets = targets.gather(-1, indices)
 
@@ -541,6 +535,20 @@ def mean_reciprocal_rank(preds: torch.Tensor, targets: torch.Tensor, *, k: Optio
         return _single_reciprocal_rank(preds, targets)
 
 def _single_adverage_precision(preds: torch.Tensor, targets: torch.Tensor):
+    r"""Compute Average Precision for a single query.
+
+    Parameters
+    ----------
+    preds : :class:`torch.Tensor`
+        Prediction scores (unused, ordering is assumed pre-sorted).
+    targets : :class:`torch.Tensor`
+        Binary relevance labels sorted by predicted rank.
+
+    Returns
+    -------
+    float
+        Average precision, or 0 if no relevant item exists.
+    """
     if not targets.sum():
         return 0.
     positions = torch.arange(1, len(targets) + 1, device=targets.device, dtype=torch.float32)[targets > 0]
@@ -549,30 +557,37 @@ def _single_adverage_precision(preds: torch.Tensor, targets: torch.Tensor):
 
 @_reduce('mean')
 def mean_average_precision(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
-    r"""
-    MAP calculates the mean average precision for a set of predictions and targets.
+    r"""Compute Mean Average Precision (MAP) at K.
 
-    Parameters:
-    -----------
-    preds: torch.Tensor, shape (N, d) or (d,)
-        Predictions or a single prediction tensor.
-    targets: torch.Tensor, shape (N, d) or (d,)
-        Targets tensor in accordance with preds.
-    reduction: str, optional
-        Specifies the reduction to apply to the output:
-        - 'mean': the mean value of the error is returned. Default.
-        - 'sum': the sum of the error is returned.
-        - 'none': no reduction will be applied and a tensor of shape (n,) will be returned.
-    k: int, optional
-        - `int': Top-(K=k).
-        - `None': Top-(K=d)
+    .. math::
 
-    Returns:
+        \text{AP@K}(x_i, y_i)
+        = \frac{1}{|\{j : y_{i,j}=1\}|}
+          \sum_{j=1}^{K} y_{i,\pi(j)}
+          \cdot \text{Precision@}j
+
+    where :math:`\pi` is the ranking permutation induced by the
+    predicted scores.  MAP is the mean of AP over all queries.
+
+    Parameters
+    ----------
+    preds : :class:`torch.Tensor`
+        Prediction scores of shape ``(N, d)`` or ``(d,)``.
+    targets : :class:`torch.Tensor`
+        Binary relevance labels of shape ``(N, d)`` or ``(d,)``.
+    k : int, optional
+        Number of top predictions to consider.  When ``None``, all
+        ``d`` items are used.
+    reduction : str, optional
+        ``'mean'`` (default), ``'sum'``, or ``'none'``.
+
+    Returns
+    -------
+    :class:`torch.Tensor`
+        MAP value(s) of shape ``(1,)`` or ``(N,)``.
+
+    Examples
     --------
-    Computed MAP: torch.Tensor, shape (1,) or (N,)
-
-    Examples:
-    ---------
     >>> preds = torch.tensor([[0.2, 0.3, 0.5, 0.], [0.1, 0.3, 0.5, 0.2]])
     >>> targets = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1]])
     >>> mean_average_precision(preds, targets, reduction='none')
@@ -585,7 +600,7 @@ def mean_average_precision(preds: torch.Tensor, targets: torch.Tensor, *, k: Opt
         k = preds.size(-1)
     else:
         k = min(k, preds.size(-1))
-    
+
     preds, indices = preds.topk(k=k, dim=-1)
     targets = targets.gather(-1, indices)
 
@@ -599,27 +614,37 @@ def mean_average_precision(preds: torch.Tensor, targets: torch.Tensor, *, k: Opt
 # quality of CTR
 
 def log_loss(
-    preds: Iterable, targets: Iterable, *, 
+    preds: Iterable, targets: Iterable, *,
     reduction: Literal['mean', 'sum', 'none'] = 'mean',
     eps: float = 1.e-8
 ) -> np.ndarray:
-    r"""
-    LogLoss.
+    r"""Compute binary logarithmic loss (log-loss).
 
-    Parameters:
-    -----------
-    preds: Iterable, shape (N,)
-        A sequence of predictions.
-    targets: Iterable, shape (N,)
-        A sequence of labels (0/1).
-    reduction: str, optional
-        Specifies the reduction to apply to the output:
-        - 'mean': the mean value of the error is returned. Default.
-        - 'sum': the sum of the error is returned.
-        - 'none': no reduction will be applied and a tensor of shape (N,) will be returned.
+    .. math::
 
-    Examples:
-    ---------
+        \ell(p, y) = -\bigl[y \ln p + (1 - y) \ln(1 - p)\bigr]
+
+    Predictions are clipped to :math:`[\varepsilon,\; 1 - \varepsilon]`
+    for numerical stability.
+
+    Parameters
+    ----------
+    preds : iterable
+        Predicted probabilities of shape ``(N,)``.
+    targets : iterable
+        Binary labels (0 or 1) of shape ``(N,)``.
+    reduction : str, optional
+        ``'mean'`` (default), ``'sum'``, or ``'none'``.
+    eps : float, optional
+        Clipping epsilon.  Default is ``1e-8``.
+
+    Returns
+    -------
+    :class:`numpy.ndarray`
+        Scalar or array of log-loss values.
+
+    Examples
+    --------
     >>> preds = [0.1, 0.3, 0.4, 0.5, 0.6, 0.2, 0.75, 0.33]
     >>> targets = [0, 1, 0, 1, 1, 0, 1, 1]
     >>> log_loss(preds, targets)
@@ -632,7 +657,7 @@ def log_loss(
     preds = np.clip(preds, eps, 1 - eps)
     targets = np.array(targets)
     loss = -(
-        targets * np.log(preds) 
+        targets * np.log(preds)
         + (1 - targets) * np.log(1 - preds)
     )
     if reduction == 'none':
@@ -646,16 +671,28 @@ def log_loss(
 
 
 def auroc(preds: Iterable, targets: Iterable) -> np.ndarray:
-    r"""
-    AUC.
+    r"""Compute the Area Under the ROC Curve (AUC).
 
-    Parameters:
-    -----------
-    preds: Iterable, shape (N,)
-        A sequence of predictions.
-    targets: Iterable, shape (N,)
-        A sequence of labels (0/1).
+    .. math::
 
+        \text{AUC} = \int_0^1 \text{TPR}(t)\,d\text{FPR}(t)
+
+    Falls back to 1.0 when only a single class is present in *targets*.
+
+    Parameters
+    ----------
+    preds : iterable
+        Predicted scores of shape ``(N,)``.
+    targets : iterable
+        Binary labels (0 or 1) of shape ``(N,)``.
+
+    Returns
+    -------
+    float
+        AUC score.
+
+    Examples
+    --------
     >>> preds = [0.1, 0.3, 0.4, 0.5, 0.6, 0.2, 0.75, 0.33]
     >>> targets = [0, 1, 0, 1, 1, 0, 1, 1]
     >>> auroc(preds, targets)
@@ -671,20 +708,30 @@ def group_auroc(
     preds: Iterable, targets: Iterable, groups: Iterable,
     *, reduction: Literal['mean', 'none'] = 'mean'
 ) -> np.ndarray:
-    r"""
-    Group AUC. Each user plays as a group.
+    r"""Compute Group AUC (GAUC).
 
-    Parameters:
-    -----------
-    preds: Iterable, shape (N,)
-        A sequence of predictions.
-    targets: Iterable, shape (N,)
-        A sequence of labels (0/1).
-    reduction: str, optional
-        Specifies the reduction to apply to the output:
-        - 'mean': the mean value of the error is returned. Default.
-        - 'none': no reduct
+    The AUC is computed independently within each group (e.g., per user)
+    and the results are aggregated by a weighted mean where weights are
+    group sizes (excluding single-class groups).
 
+    Parameters
+    ----------
+    preds : iterable
+        Predicted scores of shape ``(N,)``.
+    targets : iterable
+        Binary labels (0 or 1) of shape ``(N,)``.
+    groups : iterable
+        Group identifiers of shape ``(N,)``.
+    reduction : str, optional
+        ``'mean'`` (default) or ``'none'``.
+
+    Returns
+    -------
+    :class:`numpy.ndarray`
+        Scalar or per-group AUC values.
+
+    Examples
+    --------
     >>> preds = [0.1, 0.3, 0.4, 0.5, 0.6, 0.2, 0.75, 0.33]
     >>> targets = [0, 1, 0, 1, 1, 0, 1, 1]
     >>> groups = [0, 0, 0, 0, 0, 1, 1, 1]
@@ -703,7 +750,7 @@ def group_auroc(
         for targets in group_targets.values()
     ])
     aurocs = np.fromiter(map(
-        auroc, 
+        auroc,
         group_preds.values(), group_targets.values()
     ), dtype=float)
     if reduction == 'none':

@@ -8,16 +8,16 @@ from .base import MatchingRecDataSet, NextItemRecDataSet
 
 class Amazon2023Baby_554811_ROU(MatchingRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 5
     star4pos: 4
     ratios: 8,1,1
     splitting: ROU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +-------+-------+---------------+--------+--------+--------+------------------------+
     | #User | #Item | #Interactions | #Train | #Valid | #Test  |        Density         |
     +-------+-------+---------------+--------+--------+--------+------------------------+
@@ -28,16 +28,16 @@ class Amazon2023Baby_554811_ROU(MatchingRecDataSet):
 
 class Amazon2023Beauty_554811_ROU(MatchingRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 5
     star4pos: 4
     ratios: 8,1,1
     splitting: ROU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +--------+--------+---------------+---------+--------+--------+-----------------------+
     | #User  | #Item  | #Interactions |  #Train | #Valid | #Test  |        Density        |
     +--------+--------+---------------+---------+--------+--------+-----------------------+
@@ -48,16 +48,16 @@ class Amazon2023Beauty_554811_ROU(MatchingRecDataSet):
 
 class Amazon2023Beauty_10104811_ROU(MatchingRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 10
     kcore4item: 10
     star4pos: 4
     ratios: 8,1,1
     splitting: ROU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +-------+-------+---------------+--------+--------+-------+-----------------------+
     | #User | #Item | #Interactions | #Train | #Valid | #Test |        Density        |
     +-------+-------+---------------+--------+--------+-------+-----------------------+
@@ -68,16 +68,16 @@ class Amazon2023Beauty_10104811_ROU(MatchingRecDataSet):
 
 class Amazon2023Books_10104811_ROU(MatchingRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 10
     kcore4item: 10
     star4pos: 4
     ratios: 8,1,1
     splitting: ROU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +-------+-------+---------------+---------+--------+--------+------------------------+
     | #User | #Item | #Interactions |  #Train | #Valid | #Test  |        Density         |
     +-------+-------+---------------+---------+--------+--------+------------------------+
@@ -88,16 +88,16 @@ class Amazon2023Books_10104811_ROU(MatchingRecDataSet):
 
 class Amazon2023Fashion_554811_ROU(MatchingRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 5
     star4pos: 4
     ratios: 8,1,1
     splitting: ROU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +-------+-------+---------------+--------+--------+-------+--------------------+
     | #User | #Item | #Interactions | #Train | #Valid | #Test |      Density       |
     +-------+-------+---------------+--------+--------+-------+--------------------+
@@ -108,16 +108,16 @@ class Amazon2023Fashion_554811_ROU(MatchingRecDataSet):
 
 class Amazon2023Games_554811_ROU(MatchingRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 5
     star4pos: 4
     ratios: 8,1,1
     splitting: ROU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +-------+-------+---------------+--------+--------+-------+-----------------------+
     | #User | #Item | #Interactions | #Train | #Valid | #Test |        Density        |
     +-------+-------+---------------+--------+--------+-------+-----------------------+
@@ -128,16 +128,16 @@ class Amazon2023Games_554811_ROU(MatchingRecDataSet):
 
 class Amazon2023Office_554811_ROU(MatchingRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 5
     star4pos: 4
     ratios: 8,1,1
     splitting: ROU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +--------+-------+---------------+--------+--------+--------+------------------------+
     | #User  | #Item | #Interactions | #Train | #Valid | #Test  |        Density         |
     +--------+-------+---------------+--------+--------+--------+------------------------+
@@ -148,16 +148,16 @@ class Amazon2023Office_554811_ROU(MatchingRecDataSet):
 
 class Amazon2023Toys_554811_ROU(MatchingRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 5
     star4pos: 4
     ratios: 8,1,1
     splitting: ROU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +--------+--------+---------------+---------+--------+--------+-----------------------+
     | #User  | #Item  | #Interactions |  #Train | #Valid | #Test  |        Density        |
     +--------+--------+---------------+---------+--------+--------+-----------------------+
@@ -168,16 +168,16 @@ class Amazon2023Toys_554811_ROU(MatchingRecDataSet):
 
 class Amazon2023Toys_10104811_ROU(MatchingRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 10
     kcore4item: 10
     star4pos: 4
     ratios: 8,1,1
     splitting: ROU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +-------+-------+---------------+--------+--------+-------+-----------------------+
     | #User | #Item | #Interactions | #Train | #Valid | #Test |        Density        |
     +-------+-------+---------------+--------+--------+-------+-----------------------+

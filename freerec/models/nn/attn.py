@@ -9,33 +9,43 @@ __all__ = ['ScaledDotProductAttention']
 
 
 class ScaledDotProductAttention(nn.Module):
-    r"""
-    Scaled Dot Product Attention (SDPA).
+    r"""Scaled Dot-Product Attention (SDPA).
 
-    Parameters:
-    -----------
+    Implements multi-head scaled dot-product attention with residual
+    connection and layer normalization.
+
+    Parameters
+    ----------
     embedding_dim : int
-        Size of the input tensor (embedding dimension).
-    num_heads : int
-        Number of attention heads.
-    activation : Callable, defaults to nn.ReLU
-        Activation function to use in the output projection.
-    hidden_size : Optional[int]
-        Hidden size used for attention score computation. 
-        If `None`, it is inferred as embedding_dim // num_heads.
-    hidden_dropout_rate : float
-        Dropout rate applied to the output projection.
-    attn_dropout_rate : float
-        Dropout rate applied to the attention scores.
-    norm_eps : float
-        Epsilon value for LayerNorm.
-    bias : bool
-        Whether to add a bias term in nn.Linear layers.
+        Size of the input embedding dimension.
+    num_heads : int, optional
+        Number of attention heads, by default ``1``.
+    activation : callable, optional
+        Activation function class for the output projection,
+        by default :class:`torch.nn.ReLU`.
+    hidden_size : int or None, optional
+        Hidden size per attention head. If ``None``, it is inferred as
+        ``embedding_dim // num_heads``.
+    hidden_dropout_rate : float, optional
+        Dropout rate applied to the output projection, by default ``0.0``.
+    attn_dropout_rate : float, optional
+        Dropout rate applied to the attention scores, by default ``0.0``.
+    norm_eps : float, optional
+        Epsilon value for :class:`torch.nn.LayerNorm`, by default ``1e-12``.
+    bias : bool, optional
+        Whether to add bias terms in :class:`torch.nn.Linear` layers,
+        by default ``False``.
 
-    Raises:
-    -------
+    Raises
+    ------
     AssertionError
-        If `hidden_size` is `None` and `embedding_dim` is not divisible by `num_heads`.
+        If ``hidden_size`` is ``None`` and ``embedding_dim`` is not
+        divisible by ``num_heads``.
+
+    Attributes
+    ----------
+    ATTENTION_MASK_VALUE : float
+        Value used for masking attention scores (``-1e6``).
     """
 
     # value used for masking attention scores
@@ -52,6 +62,7 @@ class ScaledDotProductAttention(nn.Module):
         norm_eps: float = 1.e-12,
         bias: bool = False,
     ):
+        r"""Initialize ScaledDotProductAttention."""
         super().__init__()
 
         if hidden_size is None:
@@ -82,25 +93,25 @@ class ScaledDotProductAttention(nn.Module):
         key: Optional[torch.Tensor] = None,
         attn_mask: Optional[torch.BoolTensor] = None
     ):
-        r"""
-        Forward pass for Scaled Dot-Product Attention.
+        r"""Compute scaled dot-product attention.
 
-        Parameters:
-        -----------
-        x : torch.Tensor
-            Input tensor of shape (B, M, D), 
-            where B is batch size, M is sequence length, D is embedding dimension.
-        key : Optional[torch.Tensor]
-            Optional key/value tensor of shape (B, N, D). 
-            If not provided, uses x as key/value (self-attention).
-        attn_mask : Optional[torch.BoolTensor]
-            Optional attention mask of shape (M, N). 
-            Positions with `True` will be masked by ATTENTION_MASK_VALUE.
+        Parameters
+        ----------
+        x : :class:`torch.Tensor`
+            Input tensor of shape ``(B, M, D)``, where ``B`` is the batch
+            size, ``M`` is the query sequence length, and ``D`` is the
+            embedding dimension.
+        key : :class:`torch.Tensor` or None, optional
+            Key/value tensor of shape ``(B, N, D)``. If ``None``, ``x``
+            is used as both key and value (self-attention).
+        attn_mask : :class:`torch.BoolTensor` or None, optional
+            Attention mask of shape ``(M, N)``. Positions set to ``True``
+            are filled with ``ATTENTION_MASK_VALUE``.
 
-        Returns:
-        --------
-        z : torch.Tensor
-            Output tensor of shape (B, M, D).
+        Returns
+        -------
+        :class:`torch.Tensor`
+            Output tensor of shape ``(B, M, D)``.
         """
 
         key = x if key is None else key

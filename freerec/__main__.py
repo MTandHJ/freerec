@@ -1,10 +1,22 @@
+r"""Command-line entry point for the FreeRec package.
 
+Provides the ``freerec`` CLI with subcommands ``skill``, ``tune``, and
+``make``.
+"""
 
 import argparse
 from .data.tags import USER, ITEM, RATING, TIMESTAMP
 
 
 def skill(args):
+    r"""Display skill-based tutorials and information for AI assistants.
+
+    Parameters
+    ----------
+    args : :class:`argparse.Namespace`
+        Parsed command-line arguments containing boolean flags ``make``,
+        ``tune``, ``log``, and ``workflow``.
+    """
     # Get skill information:
     #
     #    freerec skill --make
@@ -46,6 +58,14 @@ def skill(args):
 
 
 def tune(args):
+    r"""Run grid-search hyperparameter tuning.
+
+    Parameters
+    ----------
+    args : :class:`argparse.Namespace`
+        Parsed command-line arguments including ``description`` and
+        ``config`` path.
+    """
     # Grid search for hyper-parameters can be conducted by:
     #
     #    freerec tune NAME_OF_EXPERIMENT CONFIG.yaml
@@ -61,6 +81,14 @@ def tune(args):
 
 
 def make(args):
+    r"""Convert raw interaction data into a FreeRec-compatible dataset.
+
+    Parameters
+    ----------
+    args : :class:`argparse.Namespace`
+        Parsed command-line arguments including ``dataset``, ``root``,
+        splitting strategy, and filtering options.
+    """
     # Make dataset:
     #
     #    freerec make DATASET --root=../data
@@ -75,12 +103,13 @@ def make(args):
 
     converter.make_dataset(
         args.kcore4user, args.kcore4item, args.star4pos,
-        splitting=args.splitting, 
+        splitting=args.splitting,
         ratios=tuple(map(int, args.ratios.split(','))),
         days=args.days
     )
 
 def main():
+    r"""Parse CLI arguments and dispatch to the appropriate subcommand."""
     parser = argparse.ArgumentParser("FreeRec")
     subparsers = parser.add_subparsers()
 
@@ -120,11 +149,11 @@ def main():
 
     make_parser.add_argument("dataset", type=str, help="output dataset name")
     make_parser.add_argument(
-        "--root", type=str, default=".", 
+        "--root", type=str, default=".",
         help="data, default to '.'"
     )
     make_parser.add_argument(
-        "--filedir", type=str, default=None, 
+        "--filedir", type=str, default=None,
         help="filedir saving data. Using `dataset` instead if None (default)"
     )
 

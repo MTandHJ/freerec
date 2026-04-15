@@ -8,15 +8,15 @@ from .base import MatchingRecDataSet, NextItemRecDataSet
 
 class Steam_550_LOU(NextItemRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 5
     star4pos: 0
     splitting: LOU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +-------+-------+---------------+--------+--------+-------+----------------------+
     | #User | #Item | #Interactions | #Train | #Valid | #Test |       Density        |
     +-------+-------+---------------+--------+--------+-------+----------------------+

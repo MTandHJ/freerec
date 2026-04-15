@@ -1,20 +1,22 @@
 
 
+
 import torchdata.datapipes as dp
 
 
 @dp.functional_datapipe('mark_')
 class Marker(dp.iter.IterDataPipe):
-    r"""
-    Mark a piece of data.
+    r"""Attach constant key-value markers to every row yielded by a datapipe.
 
-    Parameters:
-    -----------
-    source: dp.iter.IterDataPipe
-    markers: Dict
+    Parameters
+    ----------
+    source : :class:`~IterDataPipe`
+        The upstream datapipe.
+    **markers
+        Arbitrary keyword arguments that will be merged into each row dict.
 
-    Examples:
-    ---------
+    Examples
+    --------
     >>> source_dp1 = IterableWrapper([{'i': i} for i in range(3)]).mark_(dataset='A')
     >>> source_dp2 = IterableWrapper([{'i': i} for i in range(3)]).mark_(dataset='B')
     >>> d = {source_dp1: 1, source_dp2: 1}
@@ -32,12 +34,13 @@ class Marker(dp.iter.IterDataPipe):
         self, source: dp.iter.IterDataPipe,
         **markers
     ):
+        r"""Initialize the Marker."""
         super().__init__()
 
         self.source = source
         self.markers = markers
 
     def __iter__(self):
+        r"""Yield rows with markers merged in."""
         for d in self.source:
             yield d | self.markers
-

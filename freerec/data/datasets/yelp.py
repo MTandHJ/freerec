@@ -8,16 +8,16 @@ from .base import MatchingRecDataSet, NextItemRecDataSet
 
 class Yelp2018_10104811_ROU(MatchingRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 10
     kcore4item: 10
     star4pos: 4
     ratios: 8,1,1
     splitting: ROU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +-------+-------+---------------+--------+--------+--------+-----------------------+
     | #User | #Item | #Interactions | #Train | #Valid | #Test  |        Density        |
     +-------+-------+---------------+--------+--------+--------+-----------------------+
@@ -28,16 +28,16 @@ class Yelp2018_10104811_ROU(MatchingRecDataSet):
 
 class Yelp2018_10104712_ROU(MatchingRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 10
     kcore4item: 10
     star4pos: 4
     ratios: 7,1,2
     splitting: ROU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +-------+-------+---------------+--------+--------+--------+-----------------------+
     | #User | #Item | #Interactions | #Train | #Valid | #Test  |        Density        |
     +-------+-------+---------------+--------+--------+--------+-----------------------+
@@ -48,16 +48,16 @@ class Yelp2018_10104712_ROU(MatchingRecDataSet):
 
 class Yelp2018_554311_ROU(MatchingRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 5
     star4pos: 4
     ratios: 3,1,1
     splitting: ROU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +--------+-------+---------------+---------+--------+--------+------------------------+
     | #User  | #Item | #Interactions |  #Train | #Valid | #Test  |        Density         |
     +--------+-------+---------------+---------+--------+--------+------------------------+
@@ -68,16 +68,16 @@ class Yelp2018_554311_ROU(MatchingRecDataSet):
 
 class Yelp2021_10104811_ROU(MatchingRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 10
     kcore4item: 10
     star4pos: 4
     ratios: 8,1,1
     splitting: ROU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +-------+-------+---------------+---------+--------+--------+-----------------------+
     | #User | #Item | #Interactions |  #Train | #Valid | #Test  |        Density        |
     +-------+-------+---------------+---------+--------+--------+-----------------------+
@@ -88,16 +88,16 @@ class Yelp2021_10104811_ROU(MatchingRecDataSet):
 
 class Yelp2021_10104712_ROU(MatchingRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 10
     kcore4item: 10
     star4pos: 4
     ratios: 7,1,2
     splitting: ROU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +-------+-------+---------------+---------+--------+--------+-----------------------+
     | #User | #Item | #Interactions |  #Train | #Valid | #Test  |        Density        |
     +-------+-------+---------------+---------+--------+--------+-----------------------+
@@ -111,15 +111,15 @@ class Yelp2021_10104712_ROU(MatchingRecDataSet):
 
 class Yelp2018_550_LOU(NextItemRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 5
     star4pos: 0
     splitting: LOU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +--------+-------+---------------+---------+--------+--------+------------------------+
     | #User  | #Item | #Interactions |  #Train | #Valid | #Test  |        Density         |
     +--------+-------+---------------+---------+--------+--------+------------------------+
@@ -130,15 +130,15 @@ class Yelp2018_550_LOU(NextItemRecDataSet):
 
 class Yelp2018_500_LOU(NextItemRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 0
     star4pos: 0
     splitting: LOU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +--------+--------+---------------+---------+--------+--------+-----------------------+
     | #User  | #Item  | #Interactions |  #Train | #Valid | #Test  |        Density        |
     +--------+--------+---------------+---------+--------+--------+-----------------------+
@@ -149,15 +149,15 @@ class Yelp2018_500_LOU(NextItemRecDataSet):
 
 class Yelp2021_550_LOU(NextItemRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 5
     star4pos: 0
     splitting: LOU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +--------+--------+---------------+---------+--------+--------+------------------------+
     | #User  | #Item  | #Interactions |  #Train | #Valid | #Test  |        Density         |
     +--------+--------+---------------+---------+--------+--------+------------------------+
@@ -168,15 +168,15 @@ class Yelp2021_550_LOU(NextItemRecDataSet):
 
 class Yelp2021_500_LOU(NextItemRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 5
     kcore4item: 0
     star4pos: 0
     splitting: LOU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +--------+--------+---------------+---------+--------+--------+----------------------+
     | #User  | #Item  | #Interactions |  #Train | #Valid | #Test  |       Density        |
     +--------+--------+---------------+---------+--------+--------+----------------------+
@@ -191,8 +191,8 @@ class Yelp2019_550_S3Rec(NextItemRecDataSet):
     Timestamp: 2019-01-01 00:00:00 - 2019-12-31 00:00:00
     Note that Yelp dataset is not deduplicated.
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +--------+--------+--------------------+---------------+--------+--------+-------+-----------------------+
     | #Users | #Items |      Avg.Len       | #Interactions | #Train | #Valid | #Test |        Density        |
     +--------+--------+--------------------+---------------+--------+--------+-------+-----------------------+

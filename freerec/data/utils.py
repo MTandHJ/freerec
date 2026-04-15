@@ -1,5 +1,6 @@
 
 
+
 from typing import TypeVar, Callable, Optional, Union, List, Tuple
 
 import numpy as np
@@ -9,36 +10,40 @@ from ..utils import infoLogger
 
 
 T = TypeVar('T')
-class DataSetLoadingError(Exception): ...
+class DataSetLoadingError(Exception):
+    r"""Exception raised when a dataset fails to load."""
+    ...
 
 def safe_cast(val: T, dest_type: Callable[[T], T], default: T) -> T:
-    r"""
-    Cast the value to the specified type.
+    r"""Cast a value to the specified type with a fallback default.
 
-    Parameters:
-    -----------
+    If ``val`` is ``None`` or an empty string, ``default`` is used instead.
+    Both ``val`` and ``default`` are cast through ``dest_type``.
+
+    Parameters
+    ----------
     val : T
-        The value to be casted to the specified type.
-    dest_type : Callable[[T], T]
-        A function to cast `val` to the specified type.
+        The value to cast.
+    dest_type : callable
+        A callable that performs the type conversion.
     default : T
-        The default value to use if `val` is None or an empty string.
+        The fallback value when ``val`` is ``None`` or ``''``.
 
-    Returns:
-    --------
-    value: T
-        The value of `val` casted to the specified type.
-
-    Raises:
+    Returns
     -------
-    ValueError
-        If `val` or `default` cannot be casted to the specified type `dest_type`.
+    T
+        The value cast to the specified type.
 
-    Notes:
+    Raises
     ------
-    This function casts `val` to the specified type using the `dest_type` function.
-    If `val` is None or an empty string, the function will use the `default` value.
-    If the `default` value is None, a ValueError will be raised.
+    ValueError
+        If neither ``val`` nor ``default`` can be cast by ``dest_type``.
+
+    Notes
+    -----
+    This function casts ``val`` to the specified type using ``dest_type``.
+    If ``val`` is ``None`` or an empty string, the function uses ``default``.
+    If ``default`` is also ``None``, a ``ValueError`` is raised.
     """
     try:
         if val not in (None, ''):
@@ -55,41 +60,49 @@ def safe_cast(val: T, dest_type: Callable[[T], T], default: T) -> T:
 
 
 def download_from_url(
-    url: str, root: str = '.', filename: Optional[str] = None, 
+    url: str, root: str = '.', filename: Optional[str] = None,
     overwrite: bool = False, retries=5, chunk_size: int = 1024 * 1024,
-    sha1_hash: Optional[str] = None, verify_ssl: bool = True, 
+    sha1_hash: Optional[str] = None, verify_ssl: bool = True,
     log: bool = True
 ):
-    r"""
-    Download a file from a given URL.
+    r"""Download a file from a URL to a local directory.
 
-    Codes borrowed from dgl.data.utils
+    Codes borrowed from dgl.data.utils.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     url : str
         The URL to download the file from.
     root : str, optional
-        The root directory where the downloaded file will be saved. Default is current directory ('.').
-    filename: str, optional
-        The filename of the downloaded file. If None, the filename will be inferred from the URL.
+        The directory where the file will be saved. Default is ``'.'``.
+    filename : str, optional
+        The name for the downloaded file. If ``None``, the filename is
+        inferred from the URL.
     overwrite : bool, optional
-        Whether to overwrite the destination file if it already exists.
-    sha1_hash : str, optional
-        Expected sha1 hash in hexadecimal digits. Will ignore existing file when hash is specified
-        but doesn't match.
+        Whether to overwrite an existing file. Default is ``False``.
     retries : int, optional
-        The number of times to attempt downloading in case of failure or non 200 return codes. Default is 5.
-    chunk_size: int, default to 1024 * 1024 (=1MB)
+        Number of retry attempts on failure. Default is ``5``.
+    chunk_size : int, optional
+        Download chunk size in bytes. Default is ``1048576`` (1 MB).
+    sha1_hash : str, optional
+        Expected SHA-1 hash in hexadecimal. If specified and the existing
+        file does not match, the file is re-downloaded.
     verify_ssl : bool, optional
-        Verify SSL certificates. Default is True.
+        Whether to verify SSL certificates. Default is ``True``.
     log : bool, optional
-        Whether to print the progress of download. Default is True.
+        Whether to log download progress. Default is ``True``.
 
-    Returns:
-    --------
+    Returns
+    -------
     str
         The file path of the downloaded file.
+
+    Raises
+    ------
+    RuntimeError
+        If the server returns a non-200 status code.
+    :class:`DataSetLoadingError`
+        If the downloaded file's SHA-1 hash does not match ``sha1_hash``.
     """
     if filename is None:
         filename = url.split('/')[-1]
@@ -152,24 +165,24 @@ def download_from_url(
 
 
 def extract_archive(file_, target_dir, overwrite=False):
-    r"""
-    Extract files from an archive.
+    r"""Extract an archive file to a target directory.
 
-    Codes borrowed from dgl/data/utils.py
+    Supports ``.tar.gz``, ``.tar``, ``.tgz``, ``.gz``, and ``.zip``
+    formats. Codes borrowed from dgl/data/utils.py.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     file_ : str
-        The path to the archive file to extract.
+        The path to the archive file.
     target_dir : str
-        The directory to extract the archive contents to.
+        The directory to extract the archive contents into.
     overwrite : bool, optional
-        Whether to overwrite existing files in the target directory. Defaults to False.
+        Whether to overwrite existing files. Default is ``False``.
 
-    Raises:
-    -------
-    DataSetLoadingError
-        If an unsupported archive file type is encountered.
+    Raises
+    ------
+    :class:`DataSetLoadingError`
+        If the archive format is not recognized.
     """
 
     if os.path.exists(target_dir) and not overwrite:
@@ -194,19 +207,18 @@ def extract_archive(file_, target_dir, overwrite=False):
         raise DataSetLoadingError('Unrecognized file type: ' + file_)
 
 def check_sha1(data: Union[str, bytes]) -> str:
-    r"""
-    Check the SHA1 hash of the data.
+    r"""Compute the SHA-1 hash of a file or raw bytes.
 
-    Parameters:
+    Parameters
     ----------
-    data : 
-        - `str`: The path to the file to check the hash of.
-        - `bytes`: The bytes data to be checked.
+    data : str or bytes
+        If str, treated as a file path whose contents are hashed.
+        If bytes, the raw data is hashed directly.
 
-    Returns:
-    --------
+    Returns
+    -------
     str
-    SHA1 hash value
+        The hexadecimal SHA-1 digest.
     """
     sha1 = hashlib.sha1()
     if isinstance(data, str):
@@ -221,35 +233,54 @@ def check_sha1(data: Union[str, bytes]) -> str:
     return sha1.hexdigest()
 
 def is_empty_dir(path: str) -> bool:
+    r"""Check whether a directory is empty or does not exist.
+
+    Parameters
+    ----------
+    path : str
+        The directory path to check.
+
+    Returns
+    -------
+    bool
+        ``True`` if the directory does not exist or contains no entries.
+    """
     return not os.path.exists(path) or not any(True for _ in os.scandir(path))
 
 def negsamp_vectorized_bsearch(
-    positives: Union[Tuple, List], n_items: int, 
+    positives: Union[Tuple, List], n_items: int,
     size: Union[int, List[int], Tuple[int]] = 1,
     replacement: bool = True
 ) -> List:
-    r"""
-    Uniformly sampling negatives according to a list of ordered positives
-    See [here](https://tech.hbc.com/2018-03-23-negative-sampling-in-numpy.html) for more details.
+    r"""Sample negative indices uniformly, excluding given positives.
 
-    Parameters:
-    -----------
-    positives: Union[Tuple, List], 1-D
-        The positive indices should be in ordered.
-    n_items: int
-        The number of all items.
-    size: int or List[int] or Tuple[int]
-        The size of required negatives.
-    replacement: bool, default to `True`
-        - True: sampling with replacement
-        - False: sampling without replacement
-    
-    Raises:
+    Uses a binary-search-based algorithm for efficient negative sampling.
+    See `here <https://tech.hbc.com/2018-03-23-negative-sampling-in-numpy.html>`_
+    for more details.
+
+    Parameters
+    ----------
+    positives : list or tuple
+        Sorted 1-D sequence of positive indices to exclude.
+    n_items : int
+        Total number of items (index range is ``[0, n_items)``).
+    size : int or list of int or tuple of int, optional
+        Shape of the output sample. Default is ``1``.
+    replacement : bool, optional
+        If ``True``, sample with replacement. Default is ``True``.
+
+    Returns
     -------
-    AssertionError:
-        Given `positives` is not 1-D.
-    ValueError:
-        Too much negatives required.
+    list
+        The sampled negative indices.
+
+    Raises
+    ------
+    AssertionError
+        If ``positives`` is not 1-D.
+    ValueError
+        If ``replacement`` is ``False`` and the requested sample size
+        exceeds the number of available negatives.
     """
     positives = np.asarray(positives)
     assert positives.ndim == 1, f"positives should be 1-D array but {positives.ndim}-D received ..."

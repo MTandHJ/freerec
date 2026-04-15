@@ -1,5 +1,6 @@
 
 
+
 from typing import Literal, Tuple, Iterable, Optional, Union, Mapping
 
 import os, random
@@ -17,36 +18,38 @@ __all__ = ['AtomicConverter']
 
 
 class AtomicConverter:
-    r"""
-    How to convert Atomic files into train|valid|test.txt ?
+    r"""Convert Atomic files into train/valid/test splits.
 
-    Flows:
-    ------
-    1. Download corresponding files from [[RecBole](https://drive.google.com/drive/folders/1so0lckI6N6_niVEYaBu-LIcpOdZf99kj)].
-    2. Import corresponding dataset.
-    3. Call `make_xxx_dataset'.
+    This converter downloads RecBole-format Atomic files, applies filtering
+    and tokenization, then splits and saves the processed dataset.
 
-    Parameters:
-    -----------
-    root: str
-        The root of data.
-    filedir: str
-        The file with Atomic files.
-        - `None': Use cls.filename instead.
-    dataset: str, optional
-        The filename saving dataset.
-        - `None': Use classname instead.
+    Parameters
+    ----------
+    root : str
+        Root directory for data storage.
+    dataset : str
+        Name of the dataset. Used for naming the output directory.
+    filedir : str or None
+        Directory containing the Atomic files. If ``None``, *dataset* is
+        used instead.
+    userColname : str, optional
+        Column name for the user field in the raw data.
+    itemColname : str, optional
+        Column name for the item field in the raw data.
+    ratingColname : str, optional
+        Column name for the rating field in the raw data.
+    timestampColname : str, optional
+        Column name for the timestamp field in the raw data.
 
-    Notes:
-    ------
-    1. Most of datasets in RecBole have two versions: 
-        merged: remove duplicate interactions.
-        not_merged: not remove duplicate interactions.
+    Notes
+    -----
+    Most datasets from RecBole have two versions: *merged* (duplicate
+    interactions removed) and *not_merged* (duplicates retained).
     """
     filename: str
 
     def __init__(
-        self, root: str, 
+        self, root: str,
         dataset: str,
         filedir: Optional[str],
         userColname: str = USER.name,
@@ -54,6 +57,7 @@ class AtomicConverter:
         ratingColname: str = RATING.name,
         timestampColname: str = TIMESTAMP.name
     ) -> None:
+        r"""Initialize the converter and prepare the data directory."""
         super().__init__()
 
         self.root = root
@@ -68,15 +72,15 @@ class AtomicConverter:
             if os.path.exists(zippath):
                 infoLogger(f"[Converter] >>> Find a compressed file: {zipfile} ...")
                 extract_archive(
-                    zippath, 
+                    zippath,
                     self.path
                 )
             else:
                 try:
                     extract_archive(
                         download_from_url(
-                            URLS[self.dataset], 
-                            root=self.root, filename=zipfile, 
+                            URLS[self.dataset],
+                            root=self.root, filename=zipfile,
                             overwrite=False
                         ),
                         self.path
@@ -94,6 +98,18 @@ class AtomicConverter:
         }
 
     def convert_by_column(self, df: pd.DataFrame):
+        r"""Rename and cast columns according to the name converter.
+
+        Parameters
+        ----------
+        df : :class:`pandas.DataFrame`
+            Raw dataframe whose columns will be renamed.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            The dataframe with renamed and type-cast columns.
+        """
         old_columns = df.columns
         new_columns = []
 
@@ -109,6 +125,14 @@ class AtomicConverter:
         return df
 
     def load_inter_file(self):
+        r"""Load and return the interaction file (``*.inter``).
+
+        Returns
+        -------
+        :class:`pandas.DataFrame` or None
+            The interaction dataframe, or ``None`` if no ``.inter`` file
+            is found.
+        """
         for file_ in os.scandir(self.path):
             filename = file_.name
             if not filename.endswith('.inter'):
@@ -120,6 +144,14 @@ class AtomicConverter:
         infoLogger(f"[Converter] >>> No file ends with `.inter' ...")
 
     def load_user_file(self):
+        r"""Load and return the user feature file (``*.user``).
+
+        Returns
+        -------
+        :class:`pandas.DataFrame` or None
+            The user feature dataframe, or ``None`` if no ``.user`` file
+            is found.
+        """
         for file_ in os.scandir(self.path):
             filename = file_.name
             if not filename.endswith('.user'):
@@ -131,6 +163,14 @@ class AtomicConverter:
         infoLogger(f"[Converter] >>> No file ends with `.user' ...")
 
     def load_item_file(self):
+        r"""Load and return the item feature file (``*.item``).
+
+        Returns
+        -------
+        :class:`pandas.DataFrame` or None
+            The item feature dataframe, or ``None`` if no ``.item`` file
+            is found.
+        """
         for file_ in os.scandir(self.path):
             filename = file_.name
             if not filename.endswith('.item'):
@@ -142,12 +182,20 @@ class AtomicConverter:
         infoLogger(f"[Converter] >>> No file ends with `.item' ...")
 
     def load(self):
+        r"""Load interaction, user feature, and item feature files."""
         self.interactions = self.load_inter_file()
         self.userFeats = self.load_user_file()
         self.itemFeats = self.load_item_file()
         self.pools = (self.interactions, self.userFeats, self.itemFeats)
 
     def reserve(self, columns: Iterable[str]):
+        r"""Keep only the specified columns in the interaction dataframe.
+
+        Parameters
+        ----------
+        columns : iterable of str
+            Column names to retain.
+        """
         all_columns = self.interactions.columns
         columns_ = set(columns) & set(all_columns)
         columns = sorted(columns_, key=columns.index)
@@ -155,6 +203,13 @@ class AtomicConverter:
         self.interactions = self.interactions[columns]
 
     def exclude(self, columns: Iterable[str]):
+        r"""Remove the specified columns from the interaction dataframe.
+
+        Parameters
+        ----------
+        columns : iterable of str
+            Column names to exclude.
+        """
         all_columns = self.interactions.columns
         columns = set(all_columns) - set(columns)
         columns = sorted(columns, key=all_columns.index)
@@ -162,6 +217,13 @@ class AtomicConverter:
         self.interactions = self.interactions[columns]
 
     def reorder(self, columns: Iterable[str] = (USER.name, ITEM.name)):
+        r"""Reorder the interaction dataframe so that *columns* come first.
+
+        Parameters
+        ----------
+        columns : iterable of str, optional
+            Column names to place at the front of the dataframe.
+        """
         all_columns = self.interactions.columns
         columns = columns + all_columns
         columns_ = set(columns) & set(all_columns)
@@ -170,19 +232,39 @@ class AtomicConverter:
         self.interactions = self.interactions[columns]
 
     def map_col(
-        self, col: str, mapper: Mapping, 
+        self, col: str, mapper: Mapping,
         pools: Optional[Iterable[pd.DataFrame]] = None
     ):
+        r"""Apply a mapping to a column across multiple dataframes.
+
+        Parameters
+        ----------
+        col : str
+            Column name to transform.
+        mapper : :class:`~collections.abc.Mapping`
+            Mapping from old values to new values.
+        pools : iterable of :class:`pandas.DataFrame` or None, optional
+            Dataframes to transform. Defaults to all loaded dataframes.
+        """
         pools = self.pools if pools is None else pools
         for df in pools:
             if df is not None:
                 df[col] = df[col].map(mapper)
 
     def filter_by_rating(
-        self, 
-        low: Union[None, int, float] = None, 
+        self,
+        low: Union[None, int, float] = None,
         high: Union[None, int, float] = None
     ):
+        r"""Filter interactions by rating range.
+
+        Parameters
+        ----------
+        low : int, float, or None, optional
+            Minimum rating (inclusive). ``None`` means no lower bound.
+        high : int, float, or None, optional
+            Maximum rating (inclusive). ``None`` means no upper bound.
+        """
         try:
             df = self.interactions
             ratings = df[RATING.name]
@@ -194,36 +276,37 @@ class AtomicConverter:
             infoLogger(
                 f"[Converter] >>> Skip `filter_by_rating` because of `inter` has no field of `{RATING.name}' ..."
             )
-    
+
     def filter_by_core(
         self,
-        low4user: Union[None, int, float] = None, 
+        low4user: Union[None, int, float] = None,
         high4user: Union[None, int, float] = None,
-        low4item: Union[None, int, float] = None, 
+        low4item: Union[None, int, float] = None,
         high4item: Union[None, int, float] = None,
         master: str = USER.name,
         strict: bool = True
     ):
-        r"""
-        Filter (user, item) by k-core settings.
+        r"""Filter interactions by k-core settings for users and items.
 
-        Parameters:
-        -----------
-        low4user: int, float, optional
-            Minimum core for user.
-            - `None`: float('-inf')
-        max4user: int, float, optional
-            Maximum core for user.
-            - `None`: float('inf')
-        low4item: int, float, optional
-            Minimum core for item.
-            - `None`: float('-inf')
-        max4item: int, float, optional
-            Maximum core for item.
-            - `None`: float('inf')
-        strict: bool, default to `True`
-            `True`: strictly filter by core
-            `False`: filter by core only once
+        Parameters
+        ----------
+        low4user : int, float, or None, optional
+            Minimum interaction count for a user. ``None`` means negative
+            infinity.
+        high4user : int, float, or None, optional
+            Maximum interaction count for a user. ``None`` means positive
+            infinity.
+        low4item : int, float, or None, optional
+            Minimum interaction count for an item. ``None`` means negative
+            infinity.
+        high4item : int, float, or None, optional
+            Maximum interaction count for an item. ``None`` means positive
+            infinity.
+        master : str, optional
+            The column name used as the user identifier.
+        strict : bool, optional
+            If ``True``, iteratively filter until convergence. If ``False``,
+            apply the filter only once.
         """
         low4user = low4user if low4user else float('-inf')
         high4user = high4user if high4user else float('inf')
@@ -264,6 +347,13 @@ class AtomicConverter:
         self.interactions = df
 
     def user2token(self, master: str = USER.name):
+        r"""Map raw user IDs to contiguous integer tokens.
+
+        Parameters
+        ----------
+        master : str, optional
+            The column name used as the user identifier.
+        """
         infoLogger(f"[Converter] >>> Map user ID to Token ...")
         user_ids = sorted(self.interactions[master].unique().tolist())
         self.userCount = len(user_ids)
@@ -278,11 +368,12 @@ class AtomicConverter:
             self.userFeats = self.userFeats.sort_values([master])
 
         self.map_col(
-            master, self.userMaps, 
+            master, self.userMaps,
             pools=(self.interactions, self.userFeats)
         )
 
     def item2token(self):
+        r"""Map raw item IDs to contiguous integer tokens."""
         infoLogger(f"[Converter] >>> Map item ID to Token ...")
         item_ids = sorted(self.interactions[ITEM.name].unique().tolist())
         self.itemCount = len(item_ids)
@@ -297,11 +388,32 @@ class AtomicConverter:
             self.itemFeats = self.itemFeats.sort_values([ITEM.name])
 
         self.map_col(
-            ITEM.name, self.itemMaps, 
+            ITEM.name, self.itemMaps,
             pools=(self.interactions, self.itemFeats)
         )
 
     def sort_by_timestamp(self, df: pd.DataFrame, master: Optional[str] = USER.name):
+        r"""Sort a dataframe by timestamp, optionally grouped by a master column.
+
+        Parameters
+        ----------
+        df : :class:`pandas.DataFrame`
+            The dataframe to sort.
+        master : str or None, optional
+            If not ``None``, sort by ``[master, TIMESTAMP]``. Otherwise
+            sort by ``TIMESTAMP`` alone.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            The sorted dataframe.
+
+        Raises
+        ------
+        KeyError
+            If *master* or the timestamp column is missing from the
+            dataframe.
+        """
         try:
             if master is not None:
                 df = df.sort_values(by=[master, TIMESTAMP.name])
@@ -315,6 +427,18 @@ class AtomicConverter:
             return df
 
     def split_by_ROU(self, ratios: Iterable = (8, 1, 1)):
+        r"""Split interactions by ratio on a per-user basis.
+
+        Parameters
+        ----------
+        ratios : iterable of int, optional
+            Train/valid/test ratio. Defaults to ``(8, 1, 1)``.
+
+        Returns
+        -------
+        str
+            A code string encoding the split configuration.
+        """
         infoLogger(f"[Converter] >>> Split by ROU (Ratio On User): {ratios} ...")
         traingroups = []
         validgroups = []
@@ -338,6 +462,18 @@ class AtomicConverter:
         return ''.join(map(str, ratios)) + '_ROU'
 
     def split_by_RAU(self, ratios: Iterable = (8, 1, 1)):
+        r"""Split interactions by ratio, ensuring at least one item per user per split.
+
+        Parameters
+        ----------
+        ratios : iterable of int, optional
+            Train/valid/test ratio. Defaults to ``(8, 1, 1)``.
+
+        Returns
+        -------
+        str
+            A code string encoding the split configuration.
+        """
         infoLogger(f"[Converter] >>> Split by RAU (Ratio and At least one on User): {ratios} ...")
         traingroups = []
         validgroups = []
@@ -363,6 +499,18 @@ class AtomicConverter:
         return ''.join(map(str, ratios)) + '_RAU'
 
     def split_by_ROD(self, ratios: Iterable = (8, 1, 1)):
+        r"""Split interactions by ratio over the whole dataset (global split).
+
+        Parameters
+        ----------
+        ratios : iterable of int, optional
+            Train/valid/test ratio. Defaults to ``(8, 1, 1)``.
+
+        Returns
+        -------
+        str
+            A code string encoding the split configuration.
+        """
         infoLogger(f"[Converter] >>> Split data by ROT (Ratio On Dataset): {ratios} ...")
         self.interactions = self.sort_by_timestamp(
             self.interactions, master=None
@@ -378,6 +526,13 @@ class AtomicConverter:
         return ''.join(map(str, ratios)) + '_ROD'
 
     def split_by_LOU(self):
+        r"""Split interactions using a leave-one-out strategy per user.
+
+        Returns
+        -------
+        str
+            A code string encoding the split configuration.
+        """
         infoLogger(f"[Converter] >>> Split by LOU (Leave-one-out On User) ...")
         traingroups = []
         validgroups = []
@@ -401,6 +556,19 @@ class AtomicConverter:
         return '_LOU'
 
     def split_by_DOU(self, days: int = 1):
+        r"""Split interactions by day boundary on a per-user basis.
+
+        Parameters
+        ----------
+        days : int, optional
+            Number of days reserved for each of the validation and test
+            sets. Defaults to ``1``.
+
+        Returns
+        -------
+        str
+            A code string encoding the split configuration.
+        """
         infoLogger(f"[Converter] >>> Split by DOU (Day On User): {days} ...")
 
         seconds_per_day = 86400
@@ -426,6 +594,19 @@ class AtomicConverter:
         return f"{days}_DOU"
 
     def split_by_DOD(self, days: int = 1):
+        r"""Split interactions by day boundary over the whole dataset.
+
+        Parameters
+        ----------
+        days : int, optional
+            Number of days reserved for each of the validation and test
+            sets. Defaults to ``1``.
+
+        Returns
+        -------
+        str
+            A code string encoding the split configuration.
+        """
         infoLogger(f"[Converter] >>> Split by DOD (Day On Dataset): {days} ...")
 
         seconds_per_day = 86400
@@ -434,7 +615,7 @@ class AtomicConverter:
         last_date = self.interactions[TIMESTAMP.name].max().item()
 
         # Split interactions into train, validation, and test sets based on user timestamps
-        traintimes  = timestamps < (last_date - 2 * seconds) 
+        traintimes  = timestamps < (last_date - 2 * seconds)
         validtimes = (timestamps >= (last_date - 2 * seconds)) & (timestamps < (last_date - seconds))
         testtimes = timestamps >= (last_date - seconds)
 
@@ -449,6 +630,7 @@ class AtomicConverter:
         return f"{days}_DOD"
 
     def resort_iters(self):
+        r"""Re-sort train, valid, and test splits by user and timestamp."""
         infoLogger(f"[Converter] >>> Resort for train|valid|test iters ...")
         self.trainiter = self.sort_by_timestamp(
             self.trainiter.reset_index(drop=True),
@@ -464,6 +646,13 @@ class AtomicConverter:
         )
 
     def save(self, path: str):
+        r"""Save train/valid/test splits and optional feature files to disk.
+
+        Parameters
+        ----------
+        path : str
+            Output directory path.
+        """
         mkdirs(path)
 
         infoLogger(f"[Converter] >>> Save `train.txt' to {path} ...")
@@ -497,35 +686,43 @@ class AtomicConverter:
     def make_dataset(
         self,
         kcore4user: int = 10, kcore4item: int = 10, star4pos: int = 0,
-        splitting: Literal['ROU', 'ROD', 'LOU', 'DOU', 'DOD'] = 'ROU', 
+        splitting: Literal['ROU', 'ROD', 'LOU', 'DOU', 'DOD'] = 'ROU',
         ratios: Tuple[int, int, int] = (8, 1, 1), days: int = 1,
         strict: bool = True,
     ):
-        r"""
-        Make dataset.
+        r"""Run the full pipeline: load, filter, tokenize, split, and save.
 
-        Parameters:
-        -----------
-        kcore4user: int, default to 10
-            Select kcore interactions according to User.
-        kcore4item: int, default to 10
-            Select kcore interactions according to Item.
-        star4pos: int, default to 0
-            Select interactions with `Rating >= star4pos'.
-        splitting: str ('ROU', 'ROD', 'LOU', 'DOU', 'DOD')
-            `ROU`: Ratio on User
-            `RAU`: Ratio and At least one on User
-            `ROD`: Ratio on Dataset
-            `LOU`: Leave-one-out on User
-            `DOU`: Day on User
-            `DOD`: Day on Dataset
-        ratios: Tuple[int, int, int], default to (8, 1, 1)
-            ROU|ROD: The ratios of training|validation|test set.
-        days: int
-            DOU|DOD: The days remained for validation|test set
-        strict: bool, default to `True`
-            `True`: strictly filter by core
-            `False`: filter by core only once
+        Parameters
+        ----------
+        kcore4user : int, optional
+            Minimum interaction count per user for k-core filtering.
+        kcore4item : int, optional
+            Minimum interaction count per item for k-core filtering.
+        star4pos : int, optional
+            Minimum rating to keep an interaction.
+        splitting : {'ROU', 'RAU', 'ROD', 'LOU', 'DOU', 'DOD'}
+            Splitting strategy:
+
+            - ``'ROU'`` -- Ratio on User
+            - ``'RAU'`` -- Ratio and At least one on User
+            - ``'ROD'`` -- Ratio on Dataset
+            - ``'LOU'`` -- Leave-one-out on User
+            - ``'DOU'`` -- Day on User
+            - ``'DOD'`` -- Day on Dataset
+        ratios : tuple of int, optional
+            Train/valid/test ratio for ``'ROU'``/``'RAU'``/``'ROD'``
+            strategies.
+        days : int, optional
+            Number of days reserved for valid/test in ``'DOU'``/``'DOD'``
+            strategies.
+        strict : bool, optional
+            If ``True``, iteratively apply k-core filtering until
+            convergence. If ``False``, apply only once.
+
+        Raises
+        ------
+        NotImplementedError
+            If *splitting* is not one of the supported strategies.
         """
         assert len(ratios) == 3, f"'ratios' should in length of 3 but a length of {len(ratios)} is received ..."
         self.load()
@@ -559,6 +756,7 @@ class AtomicConverter:
         self.save(path)
 
     def summary(self):
+        r"""Print a summary table of dataset statistics."""
         from prettytable import PrettyTable
         table = PrettyTable(['#User', '#Item', '#Interactions', '#Train', '#Valid', '#Test', 'Density'])
         trainsize = len(self.trainiter)

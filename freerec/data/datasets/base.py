@@ -1,5 +1,6 @@
 
 
+
 from typing import Any, TypeVar, Literal, Union, Optional, Callable, Iterator, Iterable, Dict, Tuple, List
 
 import torch, os, abc, glob, yaml, random
@@ -10,19 +11,19 @@ from copy import copy
 from functools import lru_cache
 
 from ..tags import (
-    FieldTags, TaskTags, 
+    FieldTags, TaskTags,
     USER, ITEM, LABEL, ID, RATING, TIMESTAMP, FEATURE, SEQUENCE
 )
 from ..fields import Field, FieldTuple
 from ..utils import download_from_url, extract_archive, is_empty_dir, check_sha1
 from ...utils import (
-    timemeter, infoLogger, warnLogger, 
+    timemeter, infoLogger, warnLogger,
     mkdirs, import_pickle, export_pickle, import_yaml
 )
 
 
 __all__ = [
-    'BaseSet', 'RecDataSet', 
+    'BaseSet', 'RecDataSet',
     'MatchingRecDataSet', 'NextItemRecDataSet', 'PredictionRecDataSet'
 ]
 
@@ -31,8 +32,23 @@ T = TypeVar('T')
 
 
 def safe_mode(*modes):
+    r"""Decorator that warns when a method runs outside the expected mode(s).
+
+    Parameters
+    ----------
+    *modes : str
+        Allowed dataset modes (e.g., ``'train'``, ``'valid'``, ``'test'``).
+
+    Returns
+    -------
+    callable
+        Decorated function that emits a warning when invoked in an
+        unexpected mode.
+    """
     def decorator(func):
+        r"""Wrap *func* with a mode check."""
         def wrapper(self, *args, **kwargs):
+            r"""Call the wrapped function after an optional mode warning."""
             if self.mode not in modes:
                 fname = f"\033[0m\033[0;31;47m{func.__name__}\033[0m\033[1;31m"
                 mode = f"\033[0m\033[0;31;47m{self.mode}\033[0m\033[1;31m"
@@ -46,28 +62,34 @@ def safe_mode(*modes):
 
 #===============================Basic Class===============================
 
-class RecSetBuildingError(Exception): ...
+class RecSetBuildingError(Exception):
+    r"""Raised when a :class:`~BaseSet` schema cannot be loaded or built."""
+    ...
 
 
 class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
-    r"""
-    Base class for data pipes. Defines basic functionality and methods for 
-    pre-processing the data for the learning models.
+    r"""Base class for recommendation dataset pipes.
 
-    Parameters:
-    -----------
-    root: str
-        The root path storing datasets.
-    filefir: str, optional 
-        The dirname of the dataset. If `None`, set the classname as the filedir.
-    download: bool 
-        Download the dataset from a URL.
-    tasktag: Tasktag
-        Tasktag for subsequent sampling.
-    cfg: config
-        - `None`: search the config file in default path
-        - `str`: the path to config file
-        - `Dict`: config
+    Provides common functionality for loading, splitting, normalizing,
+    and iterating over recommendation datasets stored in CSV/chunk
+    format on disk.
+
+    Parameters
+    ----------
+    root : str
+        Root directory for dataset storage.
+    filedir : str or None, optional
+        Directory name of the dataset under ``root/Processed/``. If
+        ``None``, the class name is used.
+    download : bool, optional
+        Whether to download the dataset from :pyattr:`URL` when the
+        local path is missing.
+    tasktag : :class:`~TaskTags` or None, optional
+        Task tag that determines downstream sampling behavior.
+    cfg : None, str, or dict, optional
+        Field configuration. ``None`` searches for a default config
+        file; a str is interpreted as a YAML path; a dict is used
+        directly.
     """
 
     DEFAULT_FIELD_BUILDER = {
@@ -98,14 +120,15 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     URL: Optional[str] = None
 
     def __init__(
-        self, 
-        root: str, 
-        filedir: Optional[str] = None, 
+        self,
+        root: str,
+        filedir: Optional[str] = None,
         *,
         download: bool = True,
         tasktag: Optional[TaskTags] = None,
         cfg: Union[None, str, Dict] = None,
     ) -> None:
+        r"""Initialize the dataset, download if needed, and compile."""
         super().__init__()
 
         self.fields = []
@@ -135,7 +158,14 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         self.check()
 
     def set_config(self, cfg: Union[None, str, Dict] = None):
-        """Set config for fields."""
+        r"""Load and apply field configuration.
+
+        Parameters
+        ----------
+        cfg : None, str, or dict, optional
+            ``None`` looks for a default config file; a str is a YAML
+            path; a dict is used directly.
+        """
         if cfg is None:
             cfg = os.path.join(self.path, self.DEFAULT_CONFIG_FILE)
             if os.path.exists(cfg):
@@ -144,39 +174,39 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
                 cfg = dict()
         elif isinstance(cfg, str):
             cfg = import_yaml(cfg)
-        
+
         self.cfg: Dict[str, Dict] = {
             field_name.upper(): self.DEFAULT_FIELD_CONFIG | field_cfg
             for field_name, field_cfg in cfg.items()
         }
 
     def check(self):
-        """Self-check program should be placed here."""
+        r"""Run self-check logic. Override in subclasses if needed."""
         ...
-        
+
     @property
     def mode(self) -> Literal['train', 'test', 'valid']:
-        """Return the current mode."""
+        r"""Return the current dataset mode."""
         return self.__mode
 
     def train(self: T) -> T:
-        """Switch the dataset mode to 'train'."""
+        r"""Switch the dataset mode to ``'train'``."""
         self.__mode = 'train'
         return self
 
     def valid(self: T) -> T:
-        """Switch the dataset mode to 'valid'."""
+        r"""Switch the dataset mode to ``'valid'``."""
         self.__mode = 'valid'
         return self
 
     def test(self: T) -> T:
-        """Switch the dataset mode to 'test'."""
+        r"""Switch the dataset mode to ``'test'``."""
         self.__mode = 'test'
         return self
 
     @property
     def datasize(self):
-        """Return the size of dataset according to the current mode."""
+        r"""Return the number of interactions for the current mode."""
         if self.mode == 'train':
             return self.trainsize
         elif self.mode == 'valid':
@@ -186,15 +216,29 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
 
     @property
     def fields(self) -> FieldTuple[Field]:
-        """Return a tuple of Field."""
+        r"""Return the fields as a :class:`~FieldTuple`."""
         return self.__fields
 
     @fields.setter
     def fields(self, fields: Iterable[Field]):
-        """Set fields."""
+        r"""Set the dataset fields."""
         self.__fields = FieldTuple(fields)
 
     def build_fields(self, columns: Iterable[str], *tags: FieldTags) -> FieldTuple[Field]:
+        r"""Build :class:`~Field` objects from column names and optional tags.
+
+        Parameters
+        ----------
+        columns : iterable of str
+            Column names from the CSV header.
+        *tags : :class:`~FieldTags`
+            Additional tags to attach to every field.
+
+        Returns
+        -------
+        :class:`~FieldTuple`
+            Constructed field tuple.
+        """
         fields = []
         for colname in columns:
             field_cfg = self.cfg.get(colname, self.DEFAULT_FIELD_CONFIG).copy()
@@ -208,15 +252,37 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         return FieldTuple(fields)
 
     def set_seed(self, seed: int):
+        r"""Set the random seed for chunk shuffling.
+
+        Parameters
+        ----------
+        seed : int
+            Random seed value.
+        """
         self.rng.seed(seed)
 
     def read_chunk(
-        self, 
+        self,
         fields: Iterable[Field],
         streaming: bool = True
     ) -> Iterator[pl.DataFrame]:
+        r"""Yield chunks of data for the current mode.
+
+        Parameters
+        ----------
+        fields : iterable of :class:`~Field`
+            Fields to include in each yielded chunk.
+        streaming : bool, optional
+            If ``True``, chunks are yielded in order. If ``False``,
+            chunks are shuffled before yielding.
+
+        Yields
+        ------
+        dict
+            Mapping from :class:`~Field` to column data for one chunk.
+        """
         path = os.path.join(
-            self.path, 
+            self.path,
             self.DEFAULT_CHUNK_DIR.format(mode=self.mode),
             self.DEFAULT_CHUNK_FILE
         )
@@ -230,13 +296,11 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
             yield {field: data[field.name] for field in fields}
 
     def load_inter(self):
-        r"""
-        Load interaction data.
+        r"""Load interaction data, fitting fields and creating chunks.
 
-        Flows:
-        ------
-        1. Traversing and fitting train|valid|test sets.
-        2. Normalizing and splitting train|valid|test sets into chunks.
+        On first call (or when the config hash changes), this method
+        traverses and fits fields over train/valid/test CSV files, then
+        normalizes and persists them as chunked pickle files.
         """
         schema_file = os.path.join(self.path, self.DEFAULT_SCHEMA_FILE)
         sha1_hash = check_sha1(
@@ -320,61 +384,77 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         self.testsize = schema['testsize']
 
     def summary(self):
-        """Print a summary of the dataset."""
+        r"""Print a summary of the dataset."""
         infoLogger(str(self))
 
     @timemeter
     def compile(self):
+        r"""Load interactions, print summary, and switch to train mode."""
         self.load_inter()
         self.summary()
         self.train()
 
     def match_all(self: T, *tags: FieldTags) -> T:
-        r"""
-        Return a copy of dataset with fields matching all given tags.
+        r"""Return a shallow copy keeping only fields that match all *tags*.
 
-        Examples:
-        ---------
-        >>> dataset: BaseSet
-        RecDataSet(USER:ID,USER|ITEM:ID,ITEM|RATING:RATING|TIMESTAMP:TIMESTAMP)
+        Parameters
+        ----------
+        *tags : :class:`~FieldTags`
+            Tags that every retained field must possess.
+
+        Returns
+        -------
+        :class:`~BaseSet`
+            Copied dataset with filtered fields.
+
+        Examples
+        --------
         >>> dataset.match_all(ID)
         RecDataSet(USER:ID,USER|ITEM:ID,ITEM)
-        >>> dataset.match_all()
-        RecDataSet(USER:ID,USER|ITEM:ID,ITEM|RATING:RATING|TIMESTAMP:TIMESTAMP)
         """
         dataset = copy(self)
         dataset.fields = self.fields.match_all(*tags)
         return dataset
 
     def match_any(self: T, *tags: FieldTags) -> T:
-        r"""
-        Return a copy of dataset with fields matching any given tags.
+        r"""Return a shallow copy keeping fields that match any of *tags*.
 
-        Examples:
-        ---------
-        >>> dataset: BaseSet
-        RecDataSet(USER:ID,USER|ITEM:ID,ITEM|RATING:RATING|TIMESTAMP:TIMESTAMP)
+        Parameters
+        ----------
+        *tags : :class:`~FieldTags`
+            Tags; a field is retained if it has at least one.
+
+        Returns
+        -------
+        :class:`~BaseSet`
+            Copied dataset with filtered fields.
+
+        Examples
+        --------
         >>> dataset.match_any(ID, TIMESTAMP)
         RecDataSet(USER:ID,USER|ITEM:ID,ITEM|TIMESTAMP:TIMESTAMP)
-        >>> dataset.match_any()
-        RecDataSet()
         """
         dataset = copy(self)
         dataset.fields = self.fields.match_any(*tags)
         return dataset
 
     def match_not(self: T, *tags: FieldTags) -> T:
-        r"""
-        Return a copy of dataset with fields matching any given tags.
+        r"""Return a shallow copy excluding fields that have any of *tags*.
 
-        Examples:
-        ---------
-        >>> dataset: BaseSet
-        RecDataSet(USER:ID,USER|ITEM:ID,ITEM|RATING:RATING|TIMESTAMP:TIMESTAMP)
+        Parameters
+        ----------
+        *tags : :class:`~FieldTags`
+            Tags to exclude.
+
+        Returns
+        -------
+        :class:`~BaseSet`
+            Copied dataset with filtered fields.
+
+        Examples
+        --------
         >>> dataset.match_not(TIMESTAMP)
         RecDataSet(USER:ID,USER|ITEM:ID,ITEM)
-        >>> dataset.match_not()
-        RecDataSet()
         """
         dataset = copy(self)
         dataset.fields = self.fields.match_not(*tags)
@@ -382,22 +462,36 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
 
     @staticmethod
     def listmap(func: Callable, *iterables) -> List:
-        r"""
-        Apply a function to multiple iterables and return a list.
+        r"""Apply *func* to *iterables* and collect results into a list.
 
-        Parameters:
-        -----------
-        func (Callable): The function to be applied.
-        *iterables: Multiple iterables to be processed.
+        Parameters
+        ----------
+        func : callable
+            Function to apply element-wise.
+        *iterables
+            One or more iterables whose elements are passed to *func*.
 
-        Returns:
-        --------
-        List: The results after applying the function to the iterables.
+        Returns
+        -------
+        list
+            Collected results.
         """
         return list(map(func, *iterables))
 
     @classmethod
     def to_rows(cls, coldata: Dict[Field, Iterable[T]]) -> List[Dict[Field, T]]:
+        r"""Transpose column-oriented data into row-oriented dicts.
+
+        Parameters
+        ----------
+        coldata : dict
+            Mapping from :class:`~Field` to iterable of values.
+
+        Returns
+        -------
+        list of dict
+            Each dict maps the same fields to a single value per row.
+        """
         fields = coldata.keys()
         return cls.listmap(
             lambda values: dict(zip(fields, values)),
@@ -405,20 +499,33 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         )
 
     def __repr__(self) -> str:
+        r"""Return a compact string representation."""
         cfg = '|'.join(map(str, self.fields))
         return f"{self.__class__.__name__}({cfg})"
 
     def __str__(self) -> str:
+        r"""Return a human-readable string representation."""
         cfg = ' | '.join(map(str, self.fields))
         return f"[{self.__class__.__name__}] >>> " + cfg
 
     def __getitem__(self, fields: Union[Field, Iterable[Field]]) -> Optional[Dict[Field, List]]:
-        r"""
-        Obtain column data according to `fields`.
+        r"""Retrieve full column data for the given fields.
 
-        Notes:
-        ------
-        It is expensive if the dataset is very large.
+        Parameters
+        ----------
+        fields : :class:`~Field` or iterable of :class:`~Field`
+            Field(s) to retrieve.
+
+        Returns
+        -------
+        dict or None
+            Mapping from each field to its full column data, or ``None``
+            if *fields* is empty.
+
+        Notes
+        -----
+        This is expensive for large datasets because all chunks are
+        loaded into memory.
         """
         if isinstance(fields, Field):
             fields = (fields,)
@@ -432,32 +539,43 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
             return data
 
     def __iter__(self) -> Iterator[Dict[Field, Any]]:
+        r"""Iterate over the dataset row by row for the current mode."""
         for chunk in self.read_chunk(
-            self.fields, 
+            self.fields,
             streaming=self.STREAMING or (self.mode != 'train')
         ):
             yield from self.to_rows(chunk)
 
 
 class RecDataSet(BaseSet):
-    """RecDataSet provides a template for specific datasets."""
+    r"""Recommendation dataset that adds sequence and graph utilities."""
 
     def to_pairs(self) -> List[Dict[Field, int]]:
-        """Return (User, Item) in pairs."""
+        r"""Return all (User, Item) interactions as row dicts.
+
+        Returns
+        -------
+        list of dict
+            Each dict maps the User and Item fields to integer IDs.
+        """
         User = self.fields[USER, ID]
         Item = self.fields[ITEM, ID]
         return self.to_rows(self[User, Item])
 
     def to_seqs(self, maxlen: Optional[int] = None) -> List[Dict[Field, Union[int, Tuple[int]]]]:
-        r"""
-        Return dataset in sequence.
+        r"""Group interactions into per-user item sequences.
 
-        Parameters:
-        -----------
-        maxlen: int, optional
-            Maximum length
-            `None`: return the whole sequence
-            `int`: return the recent `maxlen` items
+        Parameters
+        ----------
+        maxlen : int or None, optional
+            If not ``None``, truncate each sequence to the most recent
+            *maxlen* items.
+
+        Returns
+        -------
+        list of dict
+            Each dict maps the User field to a user ID and the Item
+            (sequence) field to a tuple of item IDs.
         """
         User = self.fields[USER, ID]
         Item = self.fields[ITEM, ID]
@@ -479,18 +597,22 @@ class RecDataSet(BaseSet):
         self, minlen: int = 2, maxlen: Optional[int] = None,
         keep_at_least_itself: bool = True
     ) -> List[Dict[Field, Union[int, Tuple[int]]]]:
-        r"""
-        Rolling dataset in sequence.
+        r"""Generate rolling (expanding) sub-sequences per user.
 
-        Parameters:
-        -----------
-        minlen: int
-            Shorest sequence
-        maxlen: int, optional
-            Maximum length
-            `None`: Roll throughout the whole sequence
-        keep_at_least_itself: bool, default to `True`
-            `True`: Keep the sequence with items less than `minlen`
+        Parameters
+        ----------
+        minlen : int, optional
+            Minimum sub-sequence length to emit.
+        maxlen : int or None, optional
+            Maximum length of the base sequence before rolling. If
+            ``None``, use the full sequence.
+        keep_at_least_itself : bool, optional
+            If ``True``, keep sequences shorter than *minlen* as-is.
+
+        Returns
+        -------
+        list of dict
+            Row dicts with User and Item (sequence) fields.
         """
         User = self.fields[USER, ID]
         ISeq = self.fields[ITEM, ID].fork(SEQUENCE)
@@ -512,31 +634,46 @@ class RecDataSet(BaseSet):
         return roll_seqs
 
     def seqlens(self) -> List[int]:
+        r"""Return the sequence length for every user.
+
+        Returns
+        -------
+        list of int
+            Per-user sequence lengths.
+        """
         ISeq = self.fields[ITEM, ID].fork(SEQUENCE)
         seqlens = [len(row[ISeq]) for row in self.to_seqs()]
         return seqlens
 
     @property
     def maxlen(self) -> int:
+        r"""Return the maximum sequence length across all users."""
         return np.max(self.seqlens()).item()
 
     @property
     def minlen(self) -> int:
+        r"""Return the minimum sequence length across all users."""
         return np.min(self.seqlens()).item()
 
     @property
     def meanlen(self) -> int:
+        r"""Return the mean sequence length across all users."""
         return np.mean(self.seqlens()).item()
 
     @lru_cache()
     def has_duplicates(self) -> bool:
-        r"""
-        Check whether the dataset has repeated interactions.
-        This will be used in evaluation if `seen` items should be removed.
+        r"""Check whether any user has duplicate items across splits.
 
-        Notes:
-        ------
-        Return `False` for some CTR datasets lacking of (User, Item) fields.
+        Returns
+        -------
+        bool
+            ``True`` if at least one user has a repeated item across
+            the train, valid, and test sequences.
+
+        Notes
+        -----
+        Returns ``False`` for CTR datasets that lack User or Item
+        fields.
         """
         User = self.fields[USER, ID]
         Item = self.fields[ITEM, ID]
@@ -555,41 +692,31 @@ class RecDataSet(BaseSet):
     @safe_mode('train')
     @timemeter
     def to_heterograph(self, *edge_types: Tuple[Tuple[FieldTags], Optional[str], Tuple[FieldTags]]):
-        r"""
-        Convert datapipe to a heterograph.
+        r"""Convert the dataset to a heterogeneous graph.
 
-        Parameters:
-        -----------
-        *edge_types: Tuple[Tuple[str, str], Optional[str], Tuple[str, str]]
-            The desired edges in the returned heterograph. Each edge is defined by a tuple (source, edge, destination):
-            - source: Tuple of field tags for filtering the source node data.
-            - edge: Optional[str], default None
-                The name of the edge. If not provided, the name 'src.field2dst.field' will be used.
-            - destination: Tuple of field tags for filtering the destination node data.
+        Parameters
+        ----------
+        *edge_types : tuple
+            Each element is ``(source_tags, edge_name, dest_tags)`` where
+            *source_tags* and *dest_tags* are tuples of
+            :class:`~FieldTags` and *edge_name* is an optional str
+            (``None`` auto-generates the name).
 
-        Returns:
+        Returns
+        -------
+        :class:`torch_geometric.data.HeteroData`
+            The constructed heterogeneous graph.
+
+        Notes
+        -----
+        A warning is raised if the current mode is not ``'train'``.
+
+        Examples
         --------
-        HeteroData:
-            The resulting heterograph, with the requested edges and nodes.
-
-        Notes:
-        ------
-        A warning will be raised if the current mode is not 'train'!
-
-        Examples:
-        ---------
-        >>> dataset: RecDataSet
         >>> graph = dataset.to_heterograph(
-        ...    ((USER, ID), None, (ITEM, ID)),
-        ...    ((ITEM, ID), None, (USER, ID))
+        ...     ((USER, ID), None, (ITEM, ID)),
+        ...     ((ITEM, ID), None, (USER, ID)),
         ... )
-        >>> graph
-        HeteroData(
-            USER={ x=[22363, 0] },
-            ITEM={ x=[12101, 0] },
-            (USER, USER2ITEM, ITEM)={ edge_index=[2, 153776] },
-            (ITEM, ITEM2USER, USER)={ edge_index=[2, 153776] }
-        )
         """
         from torch_geometric.data import HeteroData
 
@@ -622,74 +749,58 @@ class RecDataSet(BaseSet):
         dst: Tuple[FieldTags] = (ITEM, ID),
         edge_type: Optional[str] = None
     ):
-        r"""
-        Convert datapipe to a bipartite graph.
+        r"""Convert the dataset to a bipartite graph.
 
-        Parameters:
+        Parameters
         ----------
-        src: Tuple[FieldTags] 
-            Source node.
-        dst: Tuple[FieldTags] 
-            Destination node.
-        edge_type: str, optional 
-            The name of the edge. `src.name2dst.name` will be specified if `edge_type` is `None`.
+        src : tuple of :class:`~FieldTags`, optional
+            Source node tags.
+        dst : tuple of :class:`~FieldTags`, optional
+            Destination node tags.
+        edge_type : str or None, optional
+            Edge name. If ``None``, derived from field names.
 
-        Returns:
+        Returns
+        -------
+        :class:`torch_geometric.data.HeteroData`
+            The bipartite graph.
+
+        Notes
+        -----
+        A warning is raised if the current mode is not ``'train'``.
+
+        Examples
         --------
-        HeteroData:
-            The resulting heterograph, with the requested edges and nodes.
-
-        Notes:
-        ------
-        A warning will be raised if the current mode is not 'train'!
-
-        Examples:
-        ---------
-        >>> dataset: RecDataSet
-        >>> graph = dataset.to_bigraph(
-        ...    (USER, ID), (ITEM, ID)
-        ... )
-        >>> graph
-        HeteroData(
-            USER={ x=[22363, 0] },
-            ITEM={ x=[12101, 0] },
-            (USER, USER2ITEM, ITEM)={ edge_index=[2, 153776] }
-        )
+        >>> graph = dataset.to_bigraph((USER, ID), (ITEM, ID))
         """
         return self.to_heterograph((src, edge_type, dst))
-   
+
     def to_graph(
-        self, 
-        src: Tuple[FieldTags] = (USER, ID), 
+        self,
+        src: Tuple[FieldTags] = (USER, ID),
         dst: Tuple[FieldTags] = (ITEM, ID)
     ):
-        r"""
-        Convert datapipe to a homogeneous graph.
+        r"""Convert the dataset to an undirected homogeneous graph.
 
-        Parameters:
+        Parameters
         ----------
-        src: Tuple[FieldTags]
-            Source node.
-        dst: Tuple[FieldTags]
-            Destination node.
+        src : tuple of :class:`~FieldTags`, optional
+            Source node tags.
+        dst : tuple of :class:`~FieldTags`, optional
+            Destination node tags.
 
-        Returns:
+        Returns
+        -------
+        :class:`torch_geometric.data.Data`
+            The homogeneous graph with undirected edges.
+
+        Notes
+        -----
+        A warning is raised if the current mode is not ``'train'``.
+
+        Examples
         --------
-        Data:
-            The resulting graph, with the requested edges and nodes.
-
-        Notes:
-        ------
-        A warning will be raised if current mode is not 'train' !
-
-        Examples:
-        --------
-        >>> dataset: RecDataSet
-        >>> graph = basepipe.to_graph(
-        ...    fields[USER, ID], fields[ITEM, ID],
-        ... )
-        >>> graph
-        Data(edge_index=[2, 307552], x=[34464, 0], node_type=[34464], edge_type=[153776])
+        >>> graph = dataset.to_graph((USER, ID), (ITEM, ID))
         """
         from torch_geometric.utils import to_undirected
         graph = self.to_heterograph((src, None, dst)).to_homogeneous()
@@ -698,30 +809,29 @@ class RecDataSet(BaseSet):
 
     def to_normalized_adj(
         self,
-        src: Tuple[FieldTags] = (USER, ID), 
+        src: Tuple[FieldTags] = (USER, ID),
         dst: Tuple[FieldTags] = (ITEM, ID),
         normalization: str = 'sym'
     ):
-        r"""
-        Convert datapipe to a normalized adjacency matrix.
+        r"""Convert the dataset to a normalized adjacency matrix.
 
-        Parameters:
+        Parameters
         ----------
-        src: Tuple[FieldTags]
-            Source node.
-        dst: Tuple[FieldTags]
-            Destination node.
-        normalization: str
-            `sym`: Symmetric sqrt normalization
-                :math: `\mathbf{\tilde{A}} = \mathbf{D}_l^{-1/2} \mathbf{A} \mathbf{D}_r^{-1/2}`
-            'left': Left-side normalization
-                :math: `\mathbf{\tilde{A}} = \mathbf{D}_l^{-1} \mathbf{A}`
-            'right': Right-side normalization
-                :math: `\mathbf{\tilde{A}} = \mathbf{A} \mathbf{D}_r^{-1}`
-    
-        Returns:
-        --------
-        Adj: CSR Tensor
+        src : tuple of :class:`~FieldTags`, optional
+            Source node tags.
+        dst : tuple of :class:`~FieldTags`, optional
+            Destination node tags.
+        normalization : str, optional
+            Normalization type:
+
+            - ``'sym'`` -- Symmetric: :math:`D_l^{-1/2} A D_r^{-1/2}`
+            - ``'left'`` -- Left: :math:`D_l^{-1} A`
+            - ``'right'`` -- Right: :math:`A D_r^{-1}`
+
+        Returns
+        -------
+        :class:`torch.Tensor`
+            Normalized adjacency matrix in CSR format.
         """
         from ...graph import to_normalized, to_adjacency
         User = self.fields[src]
@@ -736,15 +846,16 @@ class RecDataSet(BaseSet):
 
     @safe_mode('valid', 'test')
     def ordered_user_ids_source(self):
-        r"""
-        To ordered User ID source.
+        r"""Create an ordered source over all user IDs.
 
-        Examples:
-        ---------
-        >>> dataset: RecDataSet
-        >>> datapipe = dataset.valid().to_ordered_user_ids()
-        >>> len(datapipe) == dataset.fields[USER, ID].count
-        True
+        Returns
+        -------
+        :class:`~OrderedSource`
+            Data source yielding user IDs in order.
+
+        Examples
+        --------
+        >>> source = dataset.valid().ordered_user_ids_source()
         """
         from ..postprocessing.source import OrderedSource
         User = self.fields[USER, ID]
@@ -753,16 +864,17 @@ class RecDataSet(BaseSet):
 
     @safe_mode('train')
     def choiced_user_ids_source(self):
-        r"""
-        To random choiced User ID source.
-        The datasize equals the current dataset's datasize.
+        r"""Create a randomly sampled source of user IDs.
 
-        Examples:
-        ---------
-        >>> dataset: RecDataSet
-        >>> datapipe = dataset.train().to_choiced_user_ids()
-        >>> len(datapipe) == dataset.trainsize
-        True
+        Returns
+        -------
+        :class:`~RandomChoicedSource`
+            Data source yielding randomly chosen user IDs with size
+            equal to the current dataset's interaction count.
+
+        Examples
+        --------
+        >>> source = dataset.train().choiced_user_ids_source()
         """
         from ..postprocessing.source import RandomChoicedSource
         User = self.fields[USER, ID]
@@ -771,17 +883,17 @@ class RecDataSet(BaseSet):
 
     @safe_mode('train')
     def shuffled_pairs_source(self):
-        r"""
-        To random shuffled (User, Item) pairs source.
-        The datasize equals the current dataset's datasize.
+        r"""Create a shuffled source of (User, Item) pairs.
 
-        Examples:
-        ---------
-        >>> dataset: RecDataSet
-        >>> datapipe = dataset.train().to_shuffled_pairs()
-        >>> len(datapipe) == dataset.trainsize
-        True
-        >>> list(datapipe)[0].keys()
+        Returns
+        -------
+        :class:`~RandomShuffledSource`
+            Data source yielding shuffled interaction pairs.
+
+        Examples
+        --------
+        >>> source = dataset.train().shuffled_pairs_source()
+        >>> list(source)[0].keys()
         dict_keys([Field(USER:ID,USER), Field(ITEM:ID,ITEM)])
         """
         from ..postprocessing.source import RandomShuffledSource
@@ -789,23 +901,22 @@ class RecDataSet(BaseSet):
 
     @safe_mode('train')
     def shuffled_seqs_source(self, maxlen: Optional[int] = None):
-        r"""
-        To random shuffled (User, ISeq) source.
+        r"""Create a shuffled source of (User, ItemSequence) data.
 
-        Parameters:
-        -----------
-        maxlen: int, optional
-            Maximum length
-            `None`: return the whole sequence
-            `int`: return the recent `maxlen` items
+        Parameters
+        ----------
+        maxlen : int or None, optional
+            Maximum sequence length. ``None`` keeps the full sequence.
 
-        Examples:
-        ---------
-        >>> dataset: RecDataSet
-        >>> datapipe = dataset.train().to_shuffled_seqs()
-        >>> len(datapipe) == dataset[USER, ID].count
-        True
-        >>> list(datapipe)[0].keys()
+        Returns
+        -------
+        :class:`~RandomShuffledSource`
+            Data source yielding shuffled user sequences.
+
+        Examples
+        --------
+        >>> source = dataset.train().shuffled_seqs_source()
+        >>> list(source)[0].keys()
         dict_keys([Field(USER:ID,USER), Field(ITEM:ID,ITEM,SEQUENCE)])
         """
         from ..postprocessing.source import RandomShuffledSource
@@ -816,14 +927,26 @@ class RecDataSet(BaseSet):
         self, minlen: int = 2, maxlen: Optional[int] = None,
         keep_at_least_itself: bool = True
     ):
-        r"""
-        To random shuffled (User, ISeq) rolling source.
+        r"""Create a shuffled source of rolling (User, ItemSequence) data.
 
-        Examples:
-        ---------
-        >>> dataset: RecDataSet
-        >>> datapipe = dataset.train().to_shuffled_roll_seqs()
-        >>> list(datapipe)[0].keys()
+        Parameters
+        ----------
+        minlen : int, optional
+            Minimum sub-sequence length.
+        maxlen : int or None, optional
+            Maximum base sequence length before rolling.
+        keep_at_least_itself : bool, optional
+            If ``True``, keep sequences shorter than *minlen*.
+
+        Returns
+        -------
+        :class:`~RandomShuffledSource`
+            Data source yielding shuffled rolling sequences.
+
+        Examples
+        --------
+        >>> source = dataset.train().shuffled_roll_seqs_source()
+        >>> list(source)[0].keys()
         dict_keys([Field(USER:ID,USER), Field(ITEM:ID,ITEM,SEQUENCE)])
         """
         from ..postprocessing.source import RandomShuffledSource
@@ -833,15 +956,16 @@ class RecDataSet(BaseSet):
 
     @safe_mode('valid', 'test')
     def ordered_inter_source(self):
-        r"""
-        To ordered [Label, Feature1, Feature2, ...] source.
+        r"""Create an ordered source over all interactions.
 
-        Examples:
-        ---------
-        >>> dataset: RecDataSet
-        >>> datapipe = dataset.valid().ordered_inter_source()
-        >>> list(datapipe)[0].keys()
-        dict_keys([Field(LABEL:LABEL), Field(USER:ID,USER), Field(ITEM:ID,ITEM), ...])
+        Returns
+        -------
+        :class:`~PipedSource`
+            Data source yielding interactions in original order.
+
+        Examples
+        --------
+        >>> source = dataset.valid().ordered_inter_source()
         """
         from ..postprocessing.source import PipedSource
         return PipedSource(
@@ -852,20 +976,22 @@ class RecDataSet(BaseSet):
     def shuffled_inter_source(
         self, buffer_size: Optional[int] = None
     ):
-        r"""
-        To shuffled [Label, Feature1, Feature2, ...] source.
+        r"""Create a shuffled source over all interactions.
 
-        Parameters:
-        -----------
-        buffer_size: int, optional
-            - `None`: use the default chunk size instead
+        Parameters
+        ----------
+        buffer_size : int or None, optional
+            Shuffle buffer size. If ``None``, the default chunk size is
+            used.
 
-        Examples:
-        ---------
-        >>> dataset: RecDataSet
-        >>> datapipe = dataset.train().shuffled_inter_source()
-        >>> list(datapipe)[0].keys()
-        dict_keys([Field(LABEL:LABEL), Field(USER:ID,USER), Field(ITEM:ID,ITEM), ...])
+        Returns
+        -------
+        :class:`~PipedSource`
+            Data source yielding shuffled interactions.
+
+        Examples
+        --------
+        >>> source = dataset.train().shuffled_inter_source()
         """
         buffer_size = self.DEFAULT_CHUNK_SIZE if buffer_size is None else buffer_size
         from ..postprocessing.source import PipedSource
@@ -875,9 +1001,11 @@ class RecDataSet(BaseSet):
 
 
 class MatchingRecDataSet(RecDataSet):
+    r"""Recommendation dataset for item matching (retrieval) tasks."""
     TASK = TaskTags.MATCHING
 
     def summary(self):
+        r"""Print a summary table with user/item/interaction statistics."""
         super().summary()
         from prettytable import PrettyTable
         User, Item = self.fields[USER, ID], self.fields[ITEM, ID]
@@ -894,9 +1022,11 @@ class MatchingRecDataSet(RecDataSet):
 
 
 class NextItemRecDataSet(RecDataSet):
+    r"""Recommendation dataset for next-item prediction tasks."""
     TASK = TaskTags.NEXTITEM
 
     def summary(self):
+        r"""Print a summary table including average sequence length."""
         super().summary()
         from prettytable import PrettyTable
         User, Item = self.fields[USER, ID], self.fields[ITEM, ID]
@@ -913,10 +1043,12 @@ class NextItemRecDataSet(RecDataSet):
 
 
 class PredictionRecDataSet(RecDataSet):
+    r"""Recommendation dataset for rating/click prediction tasks."""
     TASK = TaskTags.PREDICTION
     STREAMING = False
 
     def summary(self):
+        r"""Print a summary table of interaction counts per split."""
         super().summary()
         from prettytable import PrettyTable
 

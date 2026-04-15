@@ -18,64 +18,96 @@ T_co = TypeVar('T_co', covariant=True)
 
 
 class Launcher(dp.iter.IterDataPipe):
+    r"""An internal datapipe that yields indices in ``[0, datasize)`` each epoch.
+
+    Parameters
+    ----------
+    datasize : int
+        Number of indices to generate.
+    shuffle : bool, optional
+        Whether to shuffle the indices before each iteration.
+        Default is ``True``.
+    """
 
     def __init__(self, datasize: int, shuffle: bool = True): ...
 
-    def set_seed(self, seed: int) -> None: ...
+    def set_seed(self, seed: int) -> None:
+        r"""Set the random seed for shuffling.
+
+        Parameters
+        ----------
+        seed : int
+            Random seed value.
+        """
+        ...
 
 
 class BaseProcessor(dp.iter.IterDataPipe):
-    r"""
-    A base processor that defines the property of fields.
+    r"""A base processor that defines the property of fields.
 
-    Parameters:
-    -----------
-    fields: Field or Iterable, optional
-        - `None': Pass.
-        - `Field`: FieldTuple with one Field.
-        - `Iterable`: FieldTuple with multi Fields
-    
-    Raises:
-    -------
-    AttributeError: 
-        If `fields' are not given or `None` before using.
+    Parameters
+    ----------
+    dataset : :class:`~RecDataSet`
+        The recommendation dataset providing fields and metadata.
+
+    Raises
+    ------
+    AttributeError
+        If ``fields`` are not given or ``None`` before using.
     """
 
     def __init__(self, dataset: RecDataSet) -> None: ...
 
     @property
-    def dataset(self) -> RecDataSet: ...
+    def dataset(self) -> RecDataSet:
+        r"""Return the underlying :class:`~RecDataSet`."""
+        ...
 
     @property
-    def fields(self) -> FieldTuple[Field]: ...
- 
+    def fields(self) -> FieldTuple[Field]:
+        r"""Return the :class:`~FieldTuple` of fields."""
+        ...
+
     @staticmethod
     def listmap(func: Callable, *iterables) -> List[Any]:
-        r"""
-        Apply a function to multiple iterables and return a list.
+        r"""Apply a function to multiple iterables and return a list.
 
-        Parameters:
-        -----------
-        func (Callable): The function to be applied.
-        *iterables: Multiple iterables to be processed.
+        Parameters
+        ----------
+        func : callable
+            The function to be applied.
+        *iterables
+            Multiple iterables to be processed.
 
-        Returns:
-        --------
-        List: The results after applying the function to the iterables.
+        Returns
+        -------
+        list
+            The results after applying the function to the iterables.
         """
         ...
 
     @classmethod
     def to_rows(cls, field_dict: Dict[Field, Iterable[T]]) -> List[Dict[Field, T]]:
+        r"""Convert a column-oriented dict to a list of row dicts.
+
+        Parameters
+        ----------
+        field_dict : dict
+            Mapping from :class:`~Field` to an iterable of values.
+
+        Returns
+        -------
+        list of dict
+            Each dict maps :class:`~Field` to a single value.
+        """
         ...
 
     # Functional form of 'GenTrainPositiveSampler'
     def gen_train_sampling_pos_(self: T) -> T:
-        r"""
-        Sampling a positive item for each user.
+        r"""Sampling a positive item for each user.
 
-        Examples:
-        ---------
+        Examples
+        --------
         >>> dataset: RecDataSet
         >>> datapipe = dataset.train().choiced_user_ids_source().gen_train_sampling_pos_()
         >>> next(iter(datapipe))
@@ -84,21 +116,18 @@ class BaseProcessor(dp.iter.IterDataPipe):
 
     # Functional form of 'GenTrainNegativeSampler'
     def gen_train_sampling_neg_(self: T, num_negatives: int = 1, unseen_only: bool = True) -> T:
-        r"""
-        Sampling negatives for each user.
+        r"""Sampling negatives for each user.
 
-        Parameters:
-        -----------
-        num_negatives: int, default to 1
-            The number of negatives for each row.
-        unseen_only: bool, default to `True`
-            `True`: sampling negatives from the unseen.
-            `False`: sampling negatives from all items.
-        nums_need_vectorized_bsearch: int, default to 10
-            The number negatives suitable for using vectorized bsearch.
+        Parameters
+        ----------
+        num_negatives : int, optional
+            The number of negatives for each row. Default is ``1``.
+        unseen_only : bool, optional
+            If ``True``, sample negatives from unseen items only.
+            If ``False``, sample from all items. Default is ``True``.
 
-        Examples:
-        ---------
+        Examples
+        --------
         >>> dataset: RecDataSet
         >>> datapipe = dataset.train().choiced_user_ids_source(
         ).gen_train_sampling_pos_(
@@ -113,20 +142,19 @@ class BaseProcessor(dp.iter.IterDataPipe):
 
     # Functional form of 'SeqTrainPositiveSampler'
     def seq_train_yielding_pos_(self: T, start_idx_for_target: Optional[int] = 1, end_idx_for_input: Optional[int] = -1) -> T:
-        r"""
-        Yielding positive sequence for each user sequence.
+        r"""Yielding positive sequence for each user sequence.
 
-        Parameters:
-        -----------
-        start_idx_for_target: int, optional
-            Target sequence as seq[start_idx_for_target:]
-            `None`: seq
-        end_idx_for_input: int, optional
-            Input sequence as seq[:end_idx_for_input]
-            `None`: seq
+        Parameters
+        ----------
+        start_idx_for_target : int or None, optional
+            Target sequence as ``seq[start_idx_for_target:]``.
+            ``None`` means the full sequence. Default is ``1``.
+        end_idx_for_input : int or None, optional
+            Input sequence as ``seq[:end_idx_for_input]``.
+            ``None`` means the full sequence. Default is ``-1``.
 
-        Examples:
-        ---------
+        Examples
+        --------
         >>> dataset: RecDataSet
         >>> datapipe = dataset.train().shuffled_seqs_source(
             maxlen=10
@@ -150,21 +178,18 @@ class BaseProcessor(dp.iter.IterDataPipe):
         
     # Functional form of 'SeqTrainNegativeSampler'
     def seq_train_sampling_neg_(self: T, num_negatives: int = 1, unseen_only: bool = True) -> T:
-        r"""
-        Sampling negatives for each positive.
+        r"""Sampling negatives for each positive.
 
-        Parameters:
-        -----------
-        num_negatives: int, default to 1
-            The number of negatives for each row.
-        unseen_only: bool, default to `True`
-            `True`: sampling negatives from the unseen.
-            `False`: sampling negatives from all items.
-        nums_need_vectorized_bsearch: int, default to 10
-            The number negatives suitable for using vectorized bsearch.
+        Parameters
+        ----------
+        num_negatives : int, optional
+            The number of negatives for each row. Default is ``1``.
+        unseen_only : bool, optional
+            If ``True``, sample negatives from unseen items only.
+            If ``False``, sample from all items. Default is ``True``.
 
-        Examples:
-        ---------
+        Examples
+        --------
         >>> dataset: RecDataSet
         >>> datapipe = dataset.train().shuffled_seqs_source(
             maxlen=10
@@ -181,28 +206,30 @@ class BaseProcessor(dp.iter.IterDataPipe):
 
     # Functional form of 'ValidSampler'
     def valid_sampling_(self: T, ranking: Literal['full', 'pool'] = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING) -> T:
-        r"""
-        Sampler for validation.
+        r"""Sampler for validation.
 
-        Parameters:
-        -----------
-        ranking: 'full' or 'pool', default to 'full'
-            'full': full ranking
-            'pool': sampled-based ranking
-        num_negatives: int, default to 100
-            The number of negatives for 'pool'.
-        
-        Yields:
-        -------
-        Field(USER:ID,USER): user id
-        Field(ITEM:ID,ITEM,SEQUENCE): user sequence
-        Field(ITEM:ID,ITEM,UNSEEN):
-            'full': target items
-            'pool': target items + negatives items
-        Field(ITEM:ID,ITEM,SEEN): seen items
-        
-        Examples:
-        ---------
+        Parameters
+        ----------
+        ranking : ``'full'`` or ``'pool'``, optional
+            ``'full'`` for full ranking, ``'pool'`` for sample-based ranking.
+            Default is ``'full'``.
+        num_negatives : int, optional
+            The number of negatives for ``'pool'`` ranking.
+            Default is ``100``.
+
+        Yields
+        ------
+        dict
+            A dict containing the following :class:`~Field` keys:
+
+            - ``Field(USER:ID,USER)``: user id
+            - ``Field(ITEM:ID,ITEM,SEQUENCE)``: user sequence
+            - ``Field(ITEM:ID,ITEM,UNSEEN)``: target items (``'full'``) or
+              target items + negative items (``'pool'``)
+            - ``Field(ITEM:ID,ITEM,SEEN)``: seen items
+
+        Examples
+        --------
         >>> dataset: RecDataSet
         >>> datapipe = dataset.valid().ordered_user_ids_source(
         ).valid_sampling_(ranking='full')
@@ -222,28 +249,30 @@ class BaseProcessor(dp.iter.IterDataPipe):
 
     # Functional form of 'TestSampler'
     def test_sampling_(self: T, ranking: Literal['full', 'pool'] = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING) -> T:
-        r"""
-        Sampler for test.
+        r"""Sampler for test.
 
-        Parameters:
-        -----------
-        ranking: 'full' or 'pool', default to 'full'
-            'full': full ranking
-            'pool': sampled-based ranking
-        num_negatives: int, default to 100
-            The number of negatives for 'pool'.
-        
-        Yields:
-        -------
-        Field(USER:ID,USER): user id
-        Field(ITEM:ID,ITEM,SEQUENCE): user sequence
-        Field(ITEM:ID,ITEM,UNSEEN):
-            'full': target items
-            'pool': target items + negatives items
-        Field(ITEM:ID,ITEM,SEEN): seen items
-        
-        Examples:
-        ---------
+        Parameters
+        ----------
+        ranking : ``'full'`` or ``'pool'``, optional
+            ``'full'`` for full ranking, ``'pool'`` for sample-based ranking.
+            Default is ``'full'``.
+        num_negatives : int, optional
+            The number of negatives for ``'pool'`` ranking.
+            Default is ``100``.
+
+        Yields
+        ------
+        dict
+            A dict containing the following :class:`~Field` keys:
+
+            - ``Field(USER:ID,USER)``: user id
+            - ``Field(ITEM:ID,ITEM,SEQUENCE)``: user sequence
+            - ``Field(ITEM:ID,ITEM,UNSEEN)``: target items (``'full'``) or
+              target items + negative items (``'pool'``)
+            - ``Field(ITEM:ID,ITEM,SEEN)``: seen items
+
+        Examples
+        --------
         >>> dataset: RecDataSet
         >>> datapipe = dataset.test().ordered_user_ids_source(
         ).valid_sampling_(ranking='full')
@@ -263,23 +292,23 @@ class BaseProcessor(dp.iter.IterDataPipe):
 
     # Functional form of 'LeftPruningRow'
     def lprune_(self: T, maxlen: int, modified_fields: Iterable[Field]) -> T:
-        r"""
-        A functional datapipe that prunes the left side of a given datapipe to a specified maximum length.
+        r"""Prune the left side of sequences to a specified maximum length.
 
-        Parameters:
-        -----------
-        maxlen: int 
+        Parameters
+        ----------
+        maxlen : int
             The maximum length to prune the input data to.
-        modifields_fields: Iterable[Field]
+        modified_fields : Iterable[:class:`~Field`]
             The fields to be modified.
 
-        Flows:
-        ------
-        [1, 2, 3, 4] --(maxlen=3)--> [2, 3, 4]
-        [3, 4] --(maxlen=3)--> [3, 4]
-        
-        Examples:
-        ---------
+        Notes
+        -----
+        ``[1, 2, 3, 4] --(maxlen=3)--> [2, 3, 4]``
+
+        ``[3, 4] --(maxlen=3)--> [3, 4]``
+
+        Examples
+        --------
         >>> dataset: RecDataSet
         >>> ISeq = dataset[ITEM, ID].fork(SEQUENCE)
         >>> datapipe = dataset.valid().ordered_user_ids_source(
@@ -295,23 +324,23 @@ class BaseProcessor(dp.iter.IterDataPipe):
 
     # Functional form of 'RightPruningRow'
     def rprune_(self: T, maxlen: int, modified_fields: Iterable[Field]) -> T:
-        r"""
-        A functional datapipe that prunes the right side of a given datapipe to a specified maximum length.
+        r"""Prune the right side of sequences to a specified maximum length.
 
-        Parameters:
-        -----------
-        maxlen: int 
+        Parameters
+        ----------
+        maxlen : int
             The maximum length to prune the input data to.
-        modifields_fields: Iterable[Field]
+        modified_fields : Iterable[:class:`~Field`]
             The fields to be modified.
 
-        Flows:
-        ------
-        [1, 2, 3, 4] --(maxlen=3)--> [1, 2, 3]
-        [3, 4] --(maxlen=3)--> [3, 4]
+        Notes
+        -----
+        ``[1, 2, 3, 4] --(maxlen=3)--> [1, 2, 3]``
 
-        Examples:
-        ---------
+        ``[3, 4] --(maxlen=3)--> [3, 4]``
+
+        Examples
+        --------
         >>> dataset: RecDataSet
         >>> ISeq = dataset[ITEM, ID].fork(SEQUENCE)
         >>> datapipe = dataset.valid().ordered_user_ids_source(
@@ -327,22 +356,21 @@ class BaseProcessor(dp.iter.IterDataPipe):
 
     # Functional form of 'AddingRow'
     def add_(self: T, offset: int, modified_fields: Iterable[Field]) -> T:
-        r"""
-        Mapper that adds the input data by a specified offset.
+        r"""Add a specified offset to sequence elements.
 
-        Parameters:
-        -----------
-        offset: int
-            Amount to add the input data by.   
-        modifields_fields: Iterable[Field]
+        Parameters
+        ----------
+        offset : int
+            Amount to add to each element.
+        modified_fields : Iterable[:class:`~Field`]
             The fields to be modified.
 
-        Flows:
-        ------
-        [1, 2, 3, 4] --(offset=1)--> [2, 3, 4, 5]
+        Notes
+        -----
+        ``[1, 2, 3, 4] --(offset=1)--> [2, 3, 4, 5]``
 
-        Examples:
-        ---------
+        Examples
+        --------
         >>> dataset: RecDataSet
         >>> ISeq = dataset[ITEM, ID].fork(SEQUENCE)
         >>> datapipe = dataset.valid().ordered_user_ids_source(
@@ -355,25 +383,25 @@ class BaseProcessor(dp.iter.IterDataPipe):
 
     # Functional form of 'LeftPaddingRow'
     def lpad_(self: T, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0) -> T:
-        r"""
-        A functional data pipeline component that left pads sequences to a maximum length.
+        r"""Left-pad sequences to a maximum length.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         maxlen : int
             The maximum length to pad the sequences to.
-        modifields_fields: Iterable[Field]
+        modified_fields : Iterable[:class:`~Field`]
             The fields to be modified.
-        padding_value : int, optional (default=0)
-            The value to use for padding.
+        padding_value : int, optional
+            The value to use for padding. Default is ``0``.
 
-        Flows:
-        ------
-        [1, 2, 3, 4] --(maxlen=7, padding_value=0)--> [0, 0, 0, 1, 2, 3, 4]
-        [1, 2, 3, 4] --(maxlen=4, padding_value=0)--> [1, 2, 3, 4]
+        Notes
+        -----
+        ``[1, 2, 3, 4] --(maxlen=7, padding_value=0)--> [0, 0, 0, 1, 2, 3, 4]``
 
-        Examples:
-        ---------
+        ``[1, 2, 3, 4] --(maxlen=4, padding_value=0)--> [1, 2, 3, 4]``
+
+        Examples
+        --------
         >>> dataset: RecDataSet
         >>> ISeq = dataset[ITEM, ID].fork(SEQUENCE)
         >>> datapipe = dataset.valid().ordered_user_ids_source(
@@ -393,25 +421,25 @@ class BaseProcessor(dp.iter.IterDataPipe):
 
     # Functional form of 'RightPaddingRow'
     def rpad_(self: T, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0) -> T:
-        r"""
-        A functional data pipeline component that right pads sequences to a maximum length.
+        r"""Right-pad sequences to a maximum length.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         maxlen : int
             The maximum length to pad the sequences to.
-        modifields_fields: Iterable[Field]
+        modified_fields : Iterable[:class:`~Field`]
             The fields to be modified.
-        padding_value : int, optional (default=0)
-            The value to use for padding.
+        padding_value : int, optional
+            The value to use for padding. Default is ``0``.
 
-        Flows:
-        ------
-        [1, 2, 3, 4] --(maxlen=7, padding_value=0)--> [1, 2, 3, 4, 0, 0, 0]
-        [1, 2, 3, 4] --(maxlen=4, padding_value=0)--> [1, 2, 3, 4]
+        Notes
+        -----
+        ``[1, 2, 3, 4] --(maxlen=7, padding_value=0)--> [1, 2, 3, 4, 0, 0, 0]``
 
-        Examples:
-        ---------
+        ``[1, 2, 3, 4] --(maxlen=4, padding_value=0)--> [1, 2, 3, 4]``
+
+        Examples
+        --------
         >>> dataset: RecDataSet
         >>> ISeq = dataset[ITEM, ID].fork(SEQUENCE)
         >>> datapipe = dataset.valid().ordered_user_ids_source(
@@ -431,29 +459,27 @@ class BaseProcessor(dp.iter.IterDataPipe):
 
     # Functional form of 'Batcher_'
     def batch_(self: T, batch_size: int, drop_last: bool = False) -> T:
-        r"""
-        A postprocessor that converts a batch of rows into:
-            Dict[Field, List[Any]]
+        r"""Batch rows and convert to ``Dict[Field, List[Any]]``.
 
-        Parameters:
-        -----------
-        source: dp.IterDataPipe 
-            A datapipe that yields a batch samples.
-        batch_size: int
-        drop_last: bool, default False
+        Parameters
+        ----------
+        batch_size : int
+            The size of each batch.
+        drop_last : bool, optional
+            Whether to drop the last incomplete batch. Default is ``False``.
         """
 
     # Functional form of 'Marker'
     def mark_(self: T, **markers) -> T:
-        r"""
-        Mark a piece of data.
+        r"""Mark each yielded dict with additional key-value pairs.
 
-        Parameters:
-        -----------
-        markers: Dict
+        Parameters
+        ----------
+        **markers
+            Arbitrary keyword arguments to insert into each row dict.
 
-        Examples:
-        ---------
+        Examples
+        --------
         >>> source_dp1 = IterableWrapper([{'i': i} for i in range(3)]).mark_(dataset='A')
         >>> source_dp2 = IterableWrapper([{'i': i} for i in range(3)]).mark_(dataset='B')
         >>> d = {source_dp1: 1, source_dp2: 1}
@@ -469,13 +495,11 @@ class BaseProcessor(dp.iter.IterDataPipe):
 
     # Functional form of 'ToTensor'
     def tensor_(self: T) -> T:
-        r"""
-        A datapipe that converts lists into torch Tensors.
-        This class converts a List into a torch.Tensor.
+        r"""Convert lists into :class:`torch.Tensor` objects.
 
-        Notes:
-        ------
-        The returned tensor is at least 2d. 
+        Notes
+        -----
+        The returned tensor is at least 2-d.
         """
 
     #========================================Functional forms from IterDataPipe========================================
@@ -659,10 +683,22 @@ class BaseProcessor(dp.iter.IterDataPipe):
 
    
 class Source(BaseProcessor):
-    """Source datapipe. The start point of Train/valid/test datapipe"""
+    r"""Source datapipe that serves as the starting point of train/valid/test pipelines.
+
+    Parameters
+    ----------
+    dataset : :class:`~RecDataSet`
+        The recommendation dataset.
+    source : iterable
+        Source data, either an :class:`~IterDataPipe` or a finite iterable of row dicts.
+    datasize : int, optional
+        Override for the source length. If ``None``, inferred from ``source``.
+    shuffle : bool, optional
+        Whether to shuffle indices each epoch. Default is ``True``.
+    """
 
     def __init__(
-        self, 
+        self,
         dataset: RecDataSet, source: Iterable[Dict[Field, Any]],
         datasize: Optional[int] = None,
         shuffle: bool = True
@@ -672,36 +708,45 @@ class Source(BaseProcessor):
         self.launcher: Union[Launcher, Iterable[Dict[Field, Any]]]
 
     def guard_mode(self):
-        r"""
-        Make sure the dataset is at a required mode.
-        This is especially necessary for datapipe source.
+        r"""Ensure the dataset is set to the required mode.
+
+        This is especially necessary for datapipe sources where the mode
+        may have been changed externally.
         """
 
 class PostProcessor(BaseProcessor):
-    r"""
-    A post-processor that wraps another IterDataPipe object.
+    r"""A post-processor that wraps another :class:`~IterDataPipe` object.
 
-    Parameters:
-    -----------
-    source: BaseProcessor
+    Parameters
+    ----------
+    source : :class:`~BaseProcessor`
         The data pipeline to be wrapped.
     """
 
 
 class SampleMultiplexer(dp.iter.IterDataPipe):
-    r"""
-    Takes a `Dict` of (IterDataPipe, Weight), and yields items by sampling from these
-    DataPipes with respect to their weights. When individual DataPipes are exhausted, continues to sample from
-    the remaining DataPipes according to their relative weights.
-    If you wish to maintain the same ratio of weights indefinitely, you need to ensure that the
-    inputs are never exhausted, by, for instance, applying ``cycle`` to them.
+    r"""Yield items by sampling from weighted :class:`~IterDataPipe` instances.
 
-    Parameters:
-    -----------
-    pipes_to_weights_dict: a `Dict` of IterDataPipes and Weights. The total weight of
-        unexhausted DataPipes will be normalized to 1 for the purpose of sampling.
+    Takes a dict of ``(IterDataPipe, weight)`` pairs and yields items by
+    sampling from these datapipes with respect to their weights. When
+    individual datapipes are exhausted, sampling continues from the remaining
+    datapipes according to their relative weights.
 
-    Examples:
+    If you wish to maintain the same ratio of weights indefinitely, ensure
+    that the inputs are never exhausted, e.g. by applying ``cycle``.
+
+    Parameters
+    ----------
+    pipes_to_weights_dict : dict
+        Mapping from :class:`~IterDataPipe` to a positive float weight.
+        The total weight of unexhausted datapipes is normalized to 1.
+
+    Raises
+    ------
+    ValueError
+        If ``pipes_to_weights_dict`` is empty or contains non-positive weights.
+
+    Examples
     --------
     >>> source_dp1 = IterableWrapper([0] * 10)
     >>> source_dp2 = IterableWrapper([1] * 10)

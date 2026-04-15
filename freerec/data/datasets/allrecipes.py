@@ -7,8 +7,8 @@ class Allrecipes_MMSSL(MatchingRecDataSet):
     r"""
     Allrecipes dataset used in [MMSSL](https://github.com/HKUDS/MMSSL).
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +--------+--------+-------------------+---------------+--------+--------+-------+-----------------------+
     | #Users | #Items |      Avg.Len      | #Interactions | #Train | #Valid | #Test |        Density        |
     +--------+--------+-------------------+---------------+--------+--------+-------+-----------------------+

@@ -5,16 +5,16 @@ from .base import MatchingRecDataSet
 
 class Gowalla2010_10100811_ROU(MatchingRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 10
     kcore4item: 10
     star4pos: 0
     ratios: 8,1,1
     splitting: ROU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +-------+--------+---------------+---------+--------+--------+-----------------------+
     | #User | #Item  | #Interactions |  #Train | #Valid | #Test  |        Density        |
     +-------+--------+---------------+---------+--------+--------+-----------------------+
@@ -25,16 +25,16 @@ class Gowalla2010_10100811_ROU(MatchingRecDataSet):
 
 class Gowalla2010_10100712_ROU(MatchingRecDataSet):
     r"""
-    Settings:
-    ---------
+    Settings
+    --------
     kcore4user: 10
     kcore4item: 10
     star4pos: 0
     ratios: 7,1,2
     splitting: ROU
 
-    Statistics:
-    -----------
+    Statistics
+    ----------
     +-------+--------+---------------+---------+--------+--------+-----------------------+
     | #User | #Item  | #Interactions |  #Train | #Valid | #Test  |        Density        |
     +-------+--------+---------------+---------+--------+--------+-----------------------+

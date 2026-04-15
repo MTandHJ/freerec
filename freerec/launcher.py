@@ -89,50 +89,52 @@ DEFAULT_BEST_CASTER = {
 }
 
 
-class EarlyStopError(Exception): ...
+class EarlyStopError(Exception):
+    r"""Raised when early stopping criteria are met."""
 
 class _DummyModule(torch.nn.Module):
-    """This is a dummy module that serves as a placeholder for a real model."""
+    r"""Placeholder module used before a real model is assigned."""
+
     def forward(self, *args, **kwargs):
-        """Dummy forward method that raises a `NotImplementedError`."""
+        r"""Raise :class:`NotImplementedError`."""
         raise NotImplementedError("No model available for Coach ...")
 
     def step(self, *args, **kwargs):
-        """Dummy step method that raises a `NotImplementedError`."""
+        r"""Raise :class:`NotImplementedError`."""
         raise NotImplementedError("No optimizer or lr scheduler available for Coach ...")
 
     def backward(self, *args, **kwargs):
-        """Dummy backward method that raises a `NotImplementedError`."""
+        r"""Raise :class:`NotImplementedError`."""
         raise NotImplementedError("No optimizer available for Coach ...")
 
 
 class ChiefCoach(metaclass=abc.ABCMeta):
-    r""" 
-    The `ChiefCoach` class is the top-level class for running the training and evaluation loops.
+    r"""Top-level class for running training and evaluation loops.
 
-    Parameters:
-    -----------
-    dataset: RecDataSet,
+    Parameters
+    ----------
+    dataset : :class:`~freerec.data.datasets.RecDataSet`
         The original dataset.
-    trainpipe : IterDataPipe
-        Iterable data pipeline for training data.
-    validpipe : IterDataPipe, optional
-        Iterable data pipeline for validation data.
-    testpipe : IterDataPipe, optional
-        Iterable data pipeline for testing data.
-        If `None`, use `validpipe` instead.
-    model : RecSysArch
-        Model for training and evaluating. 
-    cfg: Parser
-        Configuration file.
+    trainpipe : :class:`~freerec.data.postprocessing.PostProcessor`
+        Data pipeline for training data.
+    validpipe : :class:`~freerec.data.postprocessing.PostProcessor`
+        Data pipeline for validation data.
+    testpipe : :class:`~freerec.data.postprocessing.PostProcessor`, optional
+        Data pipeline for testing data.
+        If ``None``, ``validpipe`` is used instead.
+    model : :class:`~freerec.models.RecSysArch`
+        Model for training and evaluation.
+    cfg : :class:`~freerec.parser.Parser`
+        Runtime configuration.
     """
 
     def __init__(
         self, *,
         dataset: RecDataSet,
-        trainpipe: PostProcessor, validpipe: PostProcessor, testpipe: Optional[PostProcessor], 
+        trainpipe: PostProcessor, validpipe: PostProcessor, testpipe: Optional[PostProcessor],
         model: RecSysArch, cfg: Parser
     ):
+        r"""Initialize ChiefCoach."""
 
         self.cfg = cfg
         self.__mode = 'train'
@@ -153,9 +155,17 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         self.set_other()
 
     def set_device(self, device):
+        r"""Set the computation device."""
         self.device = torch.device(device)
 
     def set_dataset(self, dataset: RecDataSet):
+        r"""Set the dataset and extract common field references.
+
+        Parameters
+        ----------
+        dataset : :class:`~freerec.data.datasets.RecDataSet`
+            The recommendation dataset.
+        """
         self.dataset = dataset
         self.fields: FieldTuple[Field] = FieldTuple(dataset.fields)
         self.User = self.fields[USER, ID]
@@ -172,6 +182,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         validpipe,
         testpipe=None,
     ):
+        r"""Set the train, validation, and test data pipelines."""
         self.trainpipe = trainpipe
         self.validpipe = validpipe
         self.testpipe = self.validpipe if testpipe is None else testpipe
@@ -179,11 +190,20 @@ class ChiefCoach(metaclass=abc.ABCMeta):
     def set_model(
         self, model: RecSysArch
     ):
+        r"""Move the model to the target device and wrap with DDP if distributed."""
         self.model = model.to(self.device)
         if is_distributed():
             self.model = torch.nn.parallel.DistributedDataParallel(model)
     
     def set_optimizer(self):
+        r"""Create the optimizer based on ``cfg.optimizer``.
+
+        Raises
+        ------
+        NotImplementedError
+            If the optimizer name is not one of ``'sgd'``, ``'adam'``,
+            or ``'adamw'``.
+        """
         if self.cfg.optimizer.lower() == 'sgd':
             self.optimizer = torch.optim.SGD(
                 self.model.parameters(), lr=self.cfg.lr, 
@@ -209,9 +229,11 @@ class ChiefCoach(metaclass=abc.ABCMeta):
             )
 
     def set_lr_scheduler(self):
+        r"""Set the learning rate scheduler. Override to use a real scheduler."""
         self.lr_scheduler = _DummyModule()
 
     def set_dataloader(self) -> None:
+        r"""Create :class:`torchdata.dataloader2.DataLoader2` instances for train, valid, and test."""
         from torchdata.dataloader2 import (
             DataLoader2, 
             MultiProcessingReadingService, DistributedReadingService, 
@@ -242,9 +264,17 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         )
 
     def set_other(self):
+        r"""Hook for additional setup. Override in subclasses."""
         ...
-    
+
     def get_res_sys_arch(self) -> RecSysArch:
+        r"""Unwrap the underlying :class:`~freerec.models.RecSysArch` from DDP or DataParallel.
+
+        Returns
+        -------
+        :class:`~freerec.models.RecSysArch`
+            The unwrapped model.
+        """
         model = self.model
         if isinstance(self.model, torch.nn.parallel.DataParallel):
             model = self.model.module
@@ -255,20 +285,22 @@ class ChiefCoach(metaclass=abc.ABCMeta):
 
     @property
     def fields(self) -> FieldTuple[Field]:
+        r"""The dataset fields."""
         return self.__fields
 
     @fields.setter
     def fields(self, fields):
+        r"""Set the dataset fields."""
         self.__fields = FieldTuple(fields)
 
     @property
     def mode(self):
-        """Get the current mode of the chief coach."""
+        r"""The current mode (``'train'``, ``'valid'``, or ``'test'``)."""
         return self.__mode
 
     @mode.setter
     def mode(self, mode: str):
-        """Get the current mode of the chief coach."""
+        r"""Set the current mode and toggle model train/eval accordingly."""
         if mode == 'train':
             self.model.train()
         else:
@@ -277,6 +309,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
 
     @property
     def dataloader(self):
+        r"""The dataloader for the current mode."""
         if self.mode == 'train':
             return self.trainloader
         elif self.mode == 'valid':
@@ -285,48 +318,63 @@ class ChiefCoach(metaclass=abc.ABCMeta):
             return self.testloader
 
     def shutdown(self):
+        r"""Shutdown all dataloaders."""
         self.trainloader.shutdown()
         self.validloader.shutdown()
         self.testloader.shutdown()
 
     @abc.abstractmethod
     def train_per_epoch(self, epoch: int):
+        r"""Run one training epoch. Must be implemented by subclasses.
+
+        Parameters
+        ----------
+        epoch : int
+            The current epoch number.
+        """
         raise NotImplementedError(
             f"{self.__class__.__name__}.train_per_epoch() should be implemented ..."
         )
 
     @abc.abstractmethod
     def evaluate(self, epoch: int, step: int = -1, mode: str = 'valid'):
+        r"""Run evaluation. Must be implemented by subclasses.
+
+        Parameters
+        ----------
+        epoch : int
+            The current epoch number.
+        step : int, optional
+            The step number within the epoch, by default -1.
+        mode : str, optional
+            One of ``'valid'`` or ``'test'``, by default ``'valid'``.
+        """
         raise NotImplementedError(
             f"{self.__class__.__name__}.evaluate() should be implemented ..."
         )
 
     def register_metric(
-        self, name: str, func: Callable, 
+        self, name: str, func: Callable,
         fmt: str = '.4f', best_caster: Callable = max,
         **kwargs
     ) -> None:
-        r"""
-        Register a metric.
+        r"""Register a custom metric.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         name : str
-            The complete name of the metric, such as `NDCG@10`.
-            Note that the notation `@` is a special separator indicating 'metric@k'.
-            In this case, the given `func` must inluce a 'k' argument.
-        func : Callable
-            The function to process the data for the metric.
+            The full metric name, e.g. ``'NDCG@10'``.
+            The ``@`` separator indicates ``metric@k``; in this case
+            ``func`` must accept a ``k`` argument.
+        func : callable
+            The metric function.
         fmt : str, optional
-            The format to use when printing the metric, defaults to `'.4f'`.
-        best_caster : Callable, optional
-            A function used to cast the best value of the metric, defaults to `max`.
-        kwargs:
-            Other arguments for `func`.
-            
-        Returns:
-        --------
-        None
+            The display format string, by default ``'.4f'``.
+        best_caster : callable, optional
+            Either ``max`` or ``min``, indicating whether higher or lower
+            values are better, by default ``max``.
+        **kwargs
+            Additional keyword arguments forwarded to ``func``.
         """
         name = name.upper()
         if '@' in name:
@@ -350,7 +398,29 @@ class ChiefCoach(metaclass=abc.ABCMeta):
     def _set_monitor(
         self, name: str, lastname: str, mode: str = 'train', **kwargs
     ):
-        """Add a monitor for the specified metric."""
+        r"""Create and register an :class:`~freerec.utils.AverageMeter` for a metric.
+
+        Parameters
+        ----------
+        name : str
+            The full metric name (e.g. ``'NDCG@10'``).
+        lastname : str
+            The base metric name without ``@k`` suffix.
+        mode : str, optional
+            One of ``'train'``, ``'valid'``, or ``'test'``, by default ``'train'``.
+        **kwargs
+            Additional keyword arguments forwarded to the metric function.
+
+        Returns
+        -------
+        :class:`~freerec.utils.AverageMeter`
+            The created meter.
+
+        Raises
+        ------
+        KeyError
+            If ``lastname`` is not found in ``DEFAULT_METRICS``.
+        """
         name, lastname = name.upper(), lastname.upper()
         try:
             meter = AverageMeter(
@@ -378,28 +448,23 @@ class ChiefCoach(metaclass=abc.ABCMeta):
 
     @property
     def monitors(self) -> Monitor:
-        """Return the monitor dictionary for the different modes ('train', 'valid', 'test')."""
+        r"""The :class:`~freerec.utils.Monitor` dictionary keyed by mode."""
         return self.__monitors
 
     def set_monitors(
         self, monitors: List[str]
     ):
-        r"""
-        Set up monitors for training.
+        r"""Initialize monitors for all modes.
 
-        Parameters:
-        -----------
-        monitors : List[str]
-            A list of metric names to be monitored during training.
-        which4best : str, defaults `LOSS'
-            The metric used for selecting the best checkpoint.
-        early_stop_patience: int
-            The steps for early stopping
+        Parameters
+        ----------
+        monitors : list of str
+            Metric names to monitor (e.g. ``['RECALL@10', 'NDCG@20']``).
+            ``'LOSS'`` is always included automatically.
 
-        Examples:
-        ---------
-        >>> coach: Coach
-        >>> coach.set_monitors(monitors=['loss', 'recall@10', 'recall@20', 'ndcg@10', 'ndcg@20'])
+        Examples
+        --------
+        >>> coach.set_monitors(monitors=['recall@10', 'recall@20', 'ndcg@10', 'ndcg@20'])
         """
         # meters for train|valid|test
         self.__monitors = Monitor()
@@ -431,31 +496,36 @@ class ChiefCoach(metaclass=abc.ABCMeta):
 
 
 class Coach(ChiefCoach):
+    r"""Concrete training coach with checkpointing, early stopping, and evaluation.
+
+    Inherits from :class:`ChiefCoach` and implements the full training loop
+    including model saving/loading, checkpoint management, early stopping,
+    and summary generation.
+    """
 
     @property
     def meter4best(self):
+        r"""The :class:`~freerec.utils.AverageMeter` used for best-model selection."""
         return self.__best_meter
 
     @meter4best.setter
     def meter4best(self, meter: AverageMeter):
+        r"""Set the meter used for best-model selection."""
         self.__best_meter = meter
         infoLogger(f"[Coach] >>> Set best meter: {meter.name} ")
 
     @property
     def remove_seen(self):
-        # remove seen if
-        # 1) retain_seen is not activated and
-        # 2) dataset has no duplicates
+        r"""Whether to remove seen items during full-ranking evaluation."""
         return not (self.cfg.retain_seen or self.dataset.has_duplicates())
 
     def save(self, filename: Optional[str] = None) -> None:
-        r"""
-        Save the model to `LOG_PATH` with a given filename.
+        r"""Save the model state dict to ``LOG_PATH``.
 
-        Parameters:
-        -----------
-        filename: str, optional
-            `None`: Use `SAVED_FILENAME`
+        Parameters
+        ----------
+        filename : str, optional
+            Target filename. If ``None``, uses ``cfg.SAVED_FILENAME``.
         """
         if is_main_process():
             filename = self.cfg.SAVED_FILENAME if filename is None else filename
@@ -465,6 +535,15 @@ class Coach(ChiefCoach):
         return 
 
     def load(self, path: str, filename: Optional[str] = None) -> None:
+        r"""Load model state dict from disk.
+
+        Parameters
+        ----------
+        path : str
+            Directory containing the model file.
+        filename : str, optional
+            Model filename. If ``None``, uses ``cfg.SAVED_FILENAME``.
+        """
         filename = self.cfg.SAVED_FILENAME if filename is None else filename
         self.model.load_state_dict(
             torch.load(
@@ -478,16 +557,12 @@ class Coach(ChiefCoach):
         return
 
     def save_checkpoint(self, epoch: int) -> None:
-        r"""
-        Save current checkpoint at epoch.
+        r"""Save a training checkpoint at the given epoch.
 
-        Parameters:
-        -----------
-            epoch :int Current epoch number.
-
-        Returns:
-        --------
-            None
+        Parameters
+        ----------
+        epoch : int
+            The current epoch number.
         """
         path = os.path.join(self.cfg.CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
         checkpoint = dict()
@@ -501,13 +576,12 @@ class Coach(ChiefCoach):
         return
 
     def load_checkpoint(self) -> int:
-        r"""
-        Load last saved checkpoint.
+        r"""Load the last saved checkpoint.
 
-        Returns:
-        --------
-        epoch: int 
-            The epoch number loaded from the checkpoint.
+        Returns
+        -------
+        int
+            The epoch number stored in the checkpoint.
         """
         path = os.path.join(self.cfg.CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
         checkpoint = torch.load(path, weights_only=False)
@@ -519,13 +593,12 @@ class Coach(ChiefCoach):
         return checkpoint['epoch']
 
     def resume(self) -> int:
-        r"""
-        Resume training from the last checkpoint.
+        r"""Resume training from the last checkpoint if ``cfg.resume`` is set.
 
-        Returns:
-        --------
-        start_epoch: int
-            The epoch number to resume training from.
+        Returns
+        -------
+        int
+            The epoch number to resume from (0 if not resuming).
         """
         start_epoch: int = 0
         if self.cfg.resume:
@@ -534,14 +607,29 @@ class Coach(ChiefCoach):
         return start_epoch
 
     def save_best(self) -> None:
+        r"""Save the current model as the best model."""
         self.save(self.cfg.BEST_FILENAME)
 
     def load_best(self) -> None:
+        r"""Load the best saved model."""
         infoLogger(f"[Coach] >>> Load best model @Epoch: {self._best_epoch} ({self._best_step}) ")
         self.load(self.cfg.LOG_PATH, self.cfg.BEST_FILENAME)
 
     def check_best(self, epoch: int, step: int = -1) -> None:
-        """Update best value."""
+        r"""Check if the current metric is the best and update accordingly.
+
+        Parameters
+        ----------
+        epoch : int
+            The current epoch number.
+        step : int, optional
+            The current step number, by default -1.
+
+        Raises
+        ------
+        :class:`EarlyStopError`
+            If the early stopping patience is exceeded.
+        """
         if self.meter4best.active:
             best_ = self.meter4best.which_is_better(self._best)
             if best_ != self._best:
@@ -559,6 +647,7 @@ class Coach(ChiefCoach):
                     self._stopping_steps += 1
 
     def eval_at_best(self):
+        r"""Load the best model and run validation and test evaluation."""
         try:
             self.load_best()
             self.valid(self._best_epoch, self._best_step)
@@ -569,9 +658,12 @@ class Coach(ChiefCoach):
 
     @main_process_only
     def easy_record_best(self, best: defaultdict):
-        r"""
-        Record the best results on test set.
-        It make easy to watch on tensorboard.
+        r"""Record the best test-set results to a pickle file for TensorBoard.
+
+        Parameters
+        ----------
+        best : :class:`~collections.defaultdict`
+            Dictionary collecting the best metric values by mode.
         """
 
         for lastname, meters in self.monitors['test'].items():
@@ -588,28 +680,28 @@ class Coach(ChiefCoach):
     @torch.no_grad()
     def monitor(
         self, *values,
-        n: int = 1, reduction: str = 'mean', 
-        mode: Literal['train', 'valid', 'test'] = 'train', 
+        n: int = 1, reduction: str = 'mean',
+        mode: Literal['train', 'valid', 'test'] = 'train',
         pool: Optional[Iterable] = None,
         refresh: bool = False
     ):
-        r"""
-        Log data values to specific monitors.
+        r"""Feed data values into the metric monitors.
 
-        Parameters:
-        -----------
-        *values : data
-            The data values to be logged.
-        n : int
-            The batch size in general.
+        Parameters
+        ----------
+        *values
+            Data values passed to each metric function.
+        n : int, optional
+            The batch size, by default 1.
         reduction : str, optional
-            The reduction to compute the metric. Can be 'sum' or 'mean' (default).
+            Reduction method: ``'sum'`` or ``'mean'``, by default ``'mean'``.
         mode : str, optional
-            The mode string indicating which mode the values belong to. Can be 'train', 'test' or 'valid'.
-        pool : List[str], optional
-            A list of metric names to log. If None, all metrics in the pool of `mode` will be logged.
-        refresh: bool, default to `False`
-            `True`: refresh the monitor immediately (the metrics will be not be printed).
+            One of ``'train'``, ``'valid'``, or ``'test'``, by default ``'train'``.
+        pool : iterable of str, optional
+            Metric names to update. If ``None``, all metrics in ``mode`` are updated.
+        refresh : bool, optional
+            If ``True``, immediately step the meter (results will not be
+            printed), by default ``False``.
         """
 
         metrics: Dict[List] = self.monitors[mode]
@@ -621,20 +713,14 @@ class Coach(ChiefCoach):
                     meter.step()
 
     def step(self, epoch: int, step: int = -1):
-        r"""
-        Prints training status and evaluation results for each epoch (or few steps),
-        and resets the corresponding `AverageMeter` instances.
+        r"""Print metrics and reset all active meters.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         epoch : int
-            The epoch number.
-        step: int
-            The step number.
-
-        Returns:
-        --------
-        None
+            The current epoch number.
+        step : int, optional
+            The step number within the epoch, by default -1.
         """
         metrics: Dict[str, List[AverageMeter]]
         for mode, metrics in self.monitors.items():
@@ -651,14 +737,16 @@ class Coach(ChiefCoach):
     @main_process_only
     @timemeter
     def summary(self):
-        r"""
-        Summary the whole training process.
+        r"""Generate a summary of the entire training process.
 
-        Generate a summary of the entire training process, including the historical evaluation results, the best
-        historical results, and the curves of historical results. The resulting summary is saved to a Markdown file named
-        "Summary.md" in the `self.cfg.LOG_PATH` directory.
+        Produces a Markdown summary table, metric curve plots, and saves
+        the best results to a pickle file. All outputs are written under
+        ``cfg.LOG_PATH/SUMMARY_DIR``.
 
-        Additionally, the best historical results are saved to a binary file named `self.cfg.MONITOR_BEST_FILENAME`.
+        Returns
+        -------
+        :class:`~collections.defaultdict`
+            Nested dict mapping ``mode -> metric_name -> best_value``.
         """
         import pandas as pd
 
@@ -702,9 +790,21 @@ class Coach(ChiefCoach):
         return best
 
     def dict_to_device(self, data: Dict[Field, Any]) -> Dict[Field, Any]:
+        r"""Move all :class:`torch.Tensor` values in a dict to the target device."""
         return {field: value.to(self.device) if isinstance(value, torch.Tensor) else value for field, value in data.items()}
 
     def evaluate(self, epoch: int, step: int = -1, mode: str = 'valid'):
+        r"""Run evaluation over the current dataloader and update monitors.
+
+        Parameters
+        ----------
+        epoch : int
+            The current epoch number.
+        step : int, optional
+            The step number, by default -1.
+        mode : str, optional
+            One of ``'valid'`` or ``'test'``, by default ``'valid'``.
+        """
         self.get_res_sys_arch().reset_ranking_buffers()
         y_pred = []
         y_true = []
@@ -760,7 +860,13 @@ class Coach(ChiefCoach):
 
     @timemeter
     def train(self, epoch: int):
-        """Start training"""
+        r"""Run one training epoch and print metrics.
+
+        Parameters
+        ----------
+        epoch : int
+            The current epoch number.
+        """
         self.mode = 'train'
         # self.dataloader.seed(epoch)
         self.train_per_epoch(epoch)
@@ -769,7 +875,7 @@ class Coach(ChiefCoach):
     @timemeter
     @torch.no_grad()
     def valid(self, epoch: int, step: int = -1):
-        """Start validation and checking the best"""
+        r"""Run validation, check for best model, and print metrics."""
         mode_ = self.mode
 
         self.mode = 'valid'
@@ -782,7 +888,7 @@ class Coach(ChiefCoach):
     @timemeter
     @torch.no_grad()
     def test(self, epoch: int, step: int = -1):
-        """Start testing"""
+        r"""Run test evaluation and print metrics."""
         mode_ = self.mode
 
         self.mode = 'test'
@@ -793,7 +899,7 @@ class Coach(ChiefCoach):
             
     @timemeter
     def fit(self):
-
+        r"""Run the full training loop with evaluation, early stopping, and summary."""
         start_epoch = self.resume()
         epoch = 0
         try:
@@ -823,37 +929,42 @@ class Coach(ChiefCoach):
 
 
 class Adapter:
-    r"""
-    Params tuner.
+    r"""Hyperparameter grid-search tuner.
 
-    Flows:
-    ------
-    1. compile: configure the command, environments, and parameters for training.
-    2. allocate devices for various parameters:
-        - register the ID, log path, and device first
-        - execute the command
-        - collect information from the log path and output to TensorBoard
-        - save the checkpoint
-        - release the corresponding device
+    Manages multi-device subprocess-based grid search over hyperparameters,
+    writing results to TensorBoard for comparison.
 
-    Examples:
-    ---------
-    >>> cfg = {'command': 'python xxx.py', 'params': {'optimizer': ['sgd', 'adam']}}
+    Examples
+    --------
     >>> tuner = Adapter()
     >>> tuner.compile(cfg)
     >>> tuner.fit()
     """
 
     def __init__(self) -> None:
+        r"""Initialize Adapter."""
         self.params = []
         self.values = []
         self.devices = tuple()
 
     @property
     def COMMAND(self):
+        r"""The base shell command template."""
         return self.cfg.COMMAND
 
     def register(self, device: str) -> Tuple[str, str]:
+        r"""Register a new experiment run on the given device.
+
+        Parameters
+        ----------
+        device : str
+            The device identifier for this run.
+
+        Returns
+        -------
+        tuple of (str, str, str)
+            ``(command, id, log_path)`` for the registered run.
+        """
         self.cfg.ENVS['id'] = time.strftime(TIME)
         self.cfg.ENVS['device'] = device
         command = self.COMMAND + self.get_option('id', self.cfg.ENVS.id)
@@ -862,24 +973,13 @@ class Adapter:
 
     @timemeter
     def compile(self, cfg: Config) -> None:
-        r"""
-        Configure the command, environments, and parameters for training.
+        r"""Configure the command, environments, and parameter grid.
 
-        Parameters:
-        -----------
-        cfg : Config
-            An object that contains the command, environments, parameters, and defaults.
-
-        Flows:
-        ------
-        1. Add environmental parameters to the basic `command`.
-        2. Register all available devices.
-        3. Convert all parameters from `cfg.PARAMS`.
-        4. Convert all defaults from `cfg.DEFAULTS`.
-
-        Returns:
-        --------
-        None
+        Parameters
+        ----------
+        cfg : :class:`~freerec.dict2obj.Config`
+            Configuration containing ``COMMAND``, ``ENVS``, ``PARAMS``,
+            and ``DEFAULTS``.
         """
         self.cfg = cfg
         piece = "\t{key}: {vals} \n"
@@ -903,67 +1003,56 @@ class Adapter:
         infoLogger(f"\033[0;31;47m{cfg_infos}\033[0m")
 
     def deploy_params(self, key: str, vals: Iterable):
+        r"""Register a parameter and its candidate values for grid search."""
         self.params.append(key)
         self.values.append(vals)
 
     @staticmethod
     def get_option(key: str, val: Any):
-        r"""
-        Convert (key, val) to '--key=val'.
+        r"""Convert a key-value pair to a CLI option string.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         key : str
-            The key of the parameter.
-        val : Any
-            The value of the parameter.
+            The parameter name. Underscores are replaced by hyphens.
+        val
+            The parameter value.
 
-        Notes:
-        ------
-        All '_' in `key` will be replaced by '-'.
-
-        Returns:
-        --------
+        Returns
+        -------
         str
-            The parameter with format '--key=val'.
+            A string in the form ``' --key=val'``.
 
-        Examples:
-        ---------
+        Examples
+        --------
         >>> Adapter.get_option('lr', '1e-3')
-        '--lr=1e-3'
+        ' --lr=1e-3'
         >>> Adapter.get_option('learning_rate', '1e-3')
-        '--learning-rate=1e-3'
+        ' --learning-rate=1e-3'
         """
         return f" --{key.replace('_', '-')}={val}"
 
     def load_best(self, logPath: str):
-        """Load best.pkl from logPath of corresponding."""
+        r"""Load the best results pickle from a subprocess log directory."""
         file_ = os.path.join(logPath, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME)
         return import_pickle(file_)
 
     def write(self, id_: str, logPath: str, params: Dict):
-        r"""
-        Write experiment results to tensorboard.
+        r"""Write experiment results to TensorBoard.
 
-        Parameters:
-        -----------
-        id_: str
+        Parameters
+        ----------
+        id_ : str
             Experiment ID.
-        logPath: str
+        logPath : str
             Path to the experiment logs.
-        params: Dict
-            Configuration parameters of the experiment.
+        params : dict
+            Hyperparameter configuration of the experiment.
 
-        Flows:
-        ------
-        1. Load the best data from `logPath`.
-        2. Write the best data to tensorboard with `params`.
-
-        Notes:
-        ------
-        If you find `-1` appearing in the tensorboard,
-        it could mean that the data is of `str` type,
-        which will cause an error if it is sent to tensorboard directly!
+        Notes
+        -----
+        A value of ``-1`` in TensorBoard indicates a non-numeric metric
+        value that could not be recorded.
         """
         try:
             data = self.load_best(logPath)
@@ -983,18 +1072,18 @@ class Adapter:
             )
 
     def each_grid(self):
-        """Grid search for each kind of param."""
+        r"""Yield parameter dicts for exclusive (one-at-a-time) grid search."""
         for key, vals in zip(self.params, self.values):
             for val in vals:
                 yield self.cfg.DEFAULTS | {key: val}
 
     def product_grid(self):
-        """Grid search across all combination of params"""
+        r"""Yield parameter dicts for full Cartesian-product grid search."""
         for vals in product(*self.values):
             yield self.cfg.DEFAULTS | {option:val for option, val in zip(self.params, vals)}
 
     def save_checkpoint(self, source: List) -> None:
-        """Save the rest of params."""
+        r"""Save remaining parameter combinations to a checkpoint."""
         path = os.path.join(self.cfg.CORE_CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
         checkpoint = dict()
         checkpoint['source'] = source
@@ -1002,21 +1091,21 @@ class Adapter:
 
     @timemeter
     def load_checkpoint(self) -> int:
-        """Load the rest of params."""
+        r"""Load remaining parameter combinations from a checkpoint."""
         infoLogger(f"[Coach] >>> Load the recent checkpoint ...")
         path = os.path.join(self.cfg.CORE_CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
         checkpoint = torch.load(path, weights_only=True)
         return checkpoint['source']
 
     def resume(self):
-        """Resume from the recent checkpoint."""
+        r"""Resume grid search from the last checkpoint or start fresh."""
         source = self.each_grid() if self.cfg.EXCLUSIVE else self.product_grid()
         source = list(source)[::-1]
         source = self.load_checkpoint() if self.cfg.resume else source
         return source
 
     def run(self, command: str, params: Dict):
-        """Start a new subprocess"""
+        r"""Launch a training subprocess with the given parameters."""
         import subprocess, shlex
         for option, val in params.items():
             command += self.get_option(option, val)
@@ -1024,14 +1113,14 @@ class Adapter:
         return subprocess.Popen(shlex.split(command))
 
     def wait(self, tasks: List):
-        """Wait util all processes terminate."""
+        r"""Block until all running subprocesses terminate."""
         tasks = [task for task in tasks if task is not None]
         for process_, id_, logPath, params in tasks:
             process_.wait()
             self.write(id_, logPath, params)
 
     def poll(self, tasks: List):
-        """Wait util any process terminates."""
+        r"""Poll until any subprocess terminates, then return its slot index."""
         def is_null(task):
             return task is None
         buffer_source = [task[-1] for task in tasks if task is not None]
@@ -1049,6 +1138,7 @@ class Adapter:
         return tasks.index(None)
 
     def terminate(self, tasks: List):
+        r"""Terminate all running subprocesses and exit."""
         tasks = [task for task in tasks if task is not None]
         for process_, _, _, _ in tasks:
             if process_.poll() is None:
@@ -1061,7 +1151,7 @@ class Adapter:
 
     @timemeter
     def fit(self):
-        """Grid search."""
+        r"""Run the full grid search loop across all devices."""
         self.source = self.resume()
         tasks = [None for _ in range(len(self.devices))]
 

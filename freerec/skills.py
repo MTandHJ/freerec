@@ -1,7 +1,6 @@
-"""
-Freerec Skills Module
+r"""Freerec Skills Module.
 
-This module provides skill-based tutorials and information for AI assistants
+Provides skill-based tutorials and information for AI assistants
 to understand freerec's internal mechanisms.
 """
 
@@ -816,17 +815,41 @@ CORE_LOG_PATH = "./logs/{description}/core"
 
 
 def get_skill(skill_name: str) -> dict:
-    """Get a skill by name."""
+    r"""Retrieve a skill dictionary by name.
+
+    Parameters
+    ----------
+    skill_name : str
+        Name of the skill to retrieve.
+
+    Returns
+    -------
+    dict or None
+        The skill dictionary containing ``name``, ``description``, and
+        ``content`` keys, or ``None`` if not found.
+    """
     return SKILLS.get(skill_name)
 
 
 def list_skills() -> list:
-    """List all available skills."""
+    r"""Return the names of all registered skills.
+
+    Returns
+    -------
+    list of str
+        Skill names.
+    """
     return list(SKILLS.keys())
 
 
 def print_skill(skill_name: str):
-    """Print a skill's content."""
+    r"""Print a skill's tutorial content to stdout.
+
+    Parameters
+    ----------
+    skill_name : str
+        Name of the skill to print.
+    """
     skill = get_skill(skill_name)
     if skill:
         print(skill["content"])

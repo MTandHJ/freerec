@@ -1,5 +1,6 @@
 
 
+
 from typing import Iterable, Any, Callable, List, Dict
 
 import numpy as np
@@ -19,36 +20,38 @@ __all__ = [
 
 #==================================Filter==================================
 class RowFilter(PostProcessor):
-    r"""
-    Apply a function to specific indices of each row in an IterableDataset.
+    r"""Filter rows by applying a predicate to specified fields.
 
-    Parameters:
-    -----------
-    source_dp : tud.IterableDataset
-        The source IterableDataset.
-    fn : Callable
-        The function to apply to the specified indices of each row.
-    checked_fields : Iterable[Field]
+    Parameters
+    ----------
+    source : :class:`~PostProcessor`
+        The source datapipe.
+    fn : callable
+        A function ``fn(field, value) -> bool`` applied to each checked field.
+    checked_fields : iterable of :class:`~Field`
         The fields to be checked.
 
-    Raises:
-    -------
+    Raises
+    ------
     TypeError
-        If `indices` is not an iterable.
+        If ``checked_fields`` is not an iterable.
     """
 
     def __init__(
         self, source: dp.iter.IterableWrapper,
         fn: Callable, checked_fields: Iterable[Field]
     ):
+        r"""Initialize the RowFilter."""
         super().__init__(source)
         self.fn = fn
         self.checked_fields = set(checked_fields)
 
     def _check(self, row: Dict[Field, Any]) -> bool:
+        r"""Return whether all checked fields pass the predicate."""
         return all(self.fn(field, row.get(field, None)) for field in self.checked_fields)
 
     def __iter__(self):
+        r"""Yield rows that pass the filter."""
         for row in self.source:
             if self._check(row):
                 yield row
@@ -56,33 +59,34 @@ class RowFilter(PostProcessor):
 
 #==================================Mapper==================================
 class RowMapper(PostProcessor):
-    r"""
-    Apply a function to specific indices of each row in an IterableDataset.
+    r"""Apply a mapping function to specified fields of each row.
 
-    Parameters:
-    -----------
-    source_dp : tud.IterableDataset
-        The source IterableDataset.
-    fn : Callable
-        The function to apply to the specified indices of each row.
-    modified_fields : Iterable[Field]
+    Parameters
+    ----------
+    source : :class:`~PostProcessor`
+        The source datapipe.
+    fn : callable
+        A function ``fn(field, value) -> new_value`` applied to each modified field.
+    modified_fields : iterable of :class:`~Field`
         The fields to be modified.
 
-    Raises:
-    -------
+    Raises
+    ------
     TypeError
-        If `indices` is not an iterable.
+        If ``modified_fields`` is not an iterable.
     """
 
     def __init__(
         self, source: dp.iter.IterableWrapper,
         fn: Callable, modified_fields: Iterable[Field]
     ):
+        r"""Initialize the RowMapper."""
         super().__init__(source)
         self.fn = fn
         self.modified_fields = set(modified_fields)
 
     def __iter__(self):
+        r"""Yield rows with the specified fields transformed."""
         for row in self.source:
             for field in self.modified_fields:
                 row[field] = self.fn(field, row[field])
@@ -91,23 +95,26 @@ class RowMapper(PostProcessor):
 
 @dp.functional_datapipe("lprune_")
 class LeftPruningRow(RowMapper):
-    r"""
-    A functional datapipe that prunes the left side of a given datapipe to a specified maximum length.
+    r"""Prune sequences from the left to a maximum length.
 
-    Parameters:
-    -----------
-    maxlen: int 
+    Parameters
+    ----------
+    source : :class:`~IterDataPipe`
+        The source datapipe.
+    maxlen : int
         The maximum length to prune the input data to.
-    modifields_fields: Iterable[Field]
+    modified_fields : iterable of :class:`~Field`
         The fields to be modified.
 
-    Flows:
-    ------
-    [1, 2, 3, 4] --(maxlen=3)--> [2, 3, 4]
-    [3, 4] --(maxlen=3)--> [3, 4]
+    Notes
+    -----
+    ::
 
-    Examples:
-    ---------
+        [1, 2, 3, 4] --(maxlen=3)--> [2, 3, 4]
+        [3, 4]       --(maxlen=3)--> [3, 4]
+
+    Examples
+    --------
     >>> dataset: RecDataSet
     >>> ISeq = dataset[ITEM, ID].fork(SEQUENCE)
     >>> datapipe = dataset.valid().ordered_user_ids_source(
@@ -124,6 +131,7 @@ class LeftPruningRow(RowMapper):
     def __init__(
         self, source: dp.iter.IterDataPipe, maxlen: int, modified_fields: Iterable[Field]
     ) -> None:
+        r"""Initialize the LeftPruningRow."""
 
         self.maxlen = maxlen
 
@@ -133,28 +141,32 @@ class LeftPruningRow(RowMapper):
         )
 
     def _prune(self, field: Field, x: Iterable) -> Iterable:
+        r"""Return the last ``maxlen`` elements of *x*."""
         return x[-self.maxlen:]
 
 
 @dp.functional_datapipe("rprune_")
 class RightPruningRow(LeftPruningRow):
-    r"""
-    A functional datapipe that prunes the right side of a given datapipe to a specified maximum length.
+    r"""Prune sequences from the right to a maximum length.
 
-    Parameters:
-    -----------
-    maxlen: int 
+    Parameters
+    ----------
+    source : :class:`~IterDataPipe`
+        The source datapipe.
+    maxlen : int
         The maximum length to prune the input data to.
-    modifields_fields: Iterable[Field]
+    modified_fields : iterable of :class:`~Field`
         The fields to be modified.
 
-    Flows:
-    ------
-    [1, 2, 3, 4] --(maxlen=3)--> [1, 2, 3]
-    [3, 4] --(maxlen=3)--> [3, 4]
+    Notes
+    -----
+    ::
 
-    Examples:
-    ---------
+        [1, 2, 3, 4] --(maxlen=3)--> [1, 2, 3]
+        [3, 4]       --(maxlen=3)--> [3, 4]
+
+    Examples
+    --------
     >>> dataset: RecDataSet
     >>> ISeq = dataset[ITEM, ID].fork(SEQUENCE)
     >>> datapipe = dataset.valid().ordered_user_ids_source(
@@ -169,27 +181,31 @@ class RightPruningRow(LeftPruningRow):
     """
 
     def _prune(self, field: Field, x: Iterable) -> Iterable:
+        r"""Return the first ``maxlen`` elements of *x*."""
         return x[:self.maxlen]
 
 
 @dp.functional_datapipe("add_")
 class AddingRow(RowMapper):
-    r"""
-    Mapper that adds the input data by a specified offset.
+    r"""Add a constant offset to specified fields.
 
-    Parameters:
-    -----------
-    offset: int
-        Amount to add the input data by.   
-    modifields_fields: Iterable[Field]
+    Parameters
+    ----------
+    source : :class:`~IterDataPipe`
+        The source datapipe.
+    offset : int
+        Amount to add to the input data.
+    modified_fields : iterable of :class:`~Field`
         The fields to be modified.
 
-    Flows:
-    ------
-    [1, 2, 3, 4] --(offset=1)--> [2, 3, 4, 5]
+    Notes
+    -----
+    ::
 
-    Examples:
-    ---------
+        [1, 2, 3, 4] --(offset=1)--> [2, 3, 4, 5]
+
+    Examples
+    --------
     >>> dataset: RecDataSet
     >>> ISeq = dataset[ITEM, ID].fork(SEQUENCE)
     >>> datapipe = dataset.valid().ordered_user_ids_source(
@@ -203,6 +219,7 @@ class AddingRow(RowMapper):
     def __init__(
         self, source: dp.iter.IterDataPipe, offset: int, modified_fields: Iterable[Field]
     ) -> None:
+        r"""Initialize the AddingRow."""
 
         self.offset = offset
 
@@ -212,13 +229,14 @@ class AddingRow(RowMapper):
         )
 
     def _add(self, field: Field, x: Iterable) -> List:
-        r"""
-        Examples:
-        ---------
-        >>> x = [1, 2, 3] 
-        >>> _add(x) # self.offset = 1
+        r"""Add ``self.offset`` element-wise to *x*.
+
+        Examples
+        --------
+        >>> x = [1, 2, 3]
+        >>> _add(x)  # self.offset = 1
         [2, 3, 4]
-        >>> _add(x) # self.offset = -1
+        >>> _add(x)  # self.offset = -1
         [0, 1, 2]
         """
         return np.add(x, self.offset).tolist()
@@ -226,25 +244,28 @@ class AddingRow(RowMapper):
 
 @dp.functional_datapipe("lpad_")
 class LeftPaddingRow(RowMapper):
-    r"""
-    A functional data pipeline component that left pads sequences to a maximum length.
+    r"""Left-pad sequences to a maximum length.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
+    source : :class:`~IterDataPipe`
+        The source datapipe.
     maxlen : int
         The maximum length to pad the sequences to.
-    modifields_fields: Iterable[Field]
+    modified_fields : iterable of :class:`~Field`
         The fields to be modified.
-    padding_value : int, optional (default=0)
-        The value to use for padding.
+    padding_value : int, optional
+        The value to use for padding. Default is ``0``.
 
-    Flows:
-    ------
-    [1, 2, 3, 4] --(maxlen=7, padding_value=0)--> [0, 0, 0, 1, 2, 3, 4]
-    [1, 2, 3, 4] --(maxlen=4, padding_value=0)--> [1, 2, 3, 4]
+    Notes
+    -----
+    ::
 
-    Examples:
-    ---------
+        [1, 2, 3, 4] --(maxlen=7, padding_value=0)--> [0, 0, 0, 1, 2, 3, 4]
+        [1, 2, 3, 4] --(maxlen=4, padding_value=0)--> [1, 2, 3, 4]
+
+    Examples
+    --------
     >>> dataset: RecDataSet
     >>> ISeq = dataset[ITEM, ID].fork(SEQUENCE)
     >>> datapipe = dataset.valid().ordered_user_ids_source(
@@ -265,6 +286,7 @@ class LeftPaddingRow(RowMapper):
     def __init__(
         self, source: dp.iter.IterDataPipe, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0
     ) -> None:
+        r"""Initialize the LeftPaddingRow."""
 
         self.maxlen = maxlen
         self.padding_value = int(padding_value)
@@ -277,6 +299,7 @@ class LeftPaddingRow(RowMapper):
         self.sure_zero_elems()
 
     def sure_zero_elems(self):
+        r"""Infer the padding element shape from the first row."""
         def guess_zero(field: Field, value: Iterable):
             if isinstance(value, Iterable):
                 if len(value) == 0:
@@ -294,30 +317,34 @@ class LeftPaddingRow(RowMapper):
             self.zeros[field] = guess_zero(field, row[field])
 
     def _pad(self, field: Field, x: Iterable) -> List:
+        r"""Left-pad *x* to ``self.maxlen`` with the appropriate zero element."""
         return list(chain(repeat(self.zeros[field], self.maxlen - len(x)), x))
 
 
 @dp.functional_datapipe("rpad_")
 class RightPaddingRow(LeftPaddingRow):
-    r"""
-    A functional data pipeline component that right pads sequences to a maximum length.
+    r"""Right-pad sequences to a maximum length.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
+    source : :class:`~IterDataPipe`
+        The source datapipe.
     maxlen : int
         The maximum length to pad the sequences to.
-    modifields_fields: Iterable[Field]
+    modified_fields : iterable of :class:`~Field`
         The fields to be modified.
-    padding_value : int, optional (default=0)
-        The value to use for padding.
+    padding_value : int, optional
+        The value to use for padding. Default is ``0``.
 
-    Flows:
-    ------
-    [1, 2, 3, 4] --(maxlen=7, padding_value=0)--> [1, 2, 3, 4, 0, 0, 0]
-    [1, 2, 3, 4] --(maxlen=4, padding_value=0)--> [1, 2, 3, 4]
+    Notes
+    -----
+    ::
 
-    Examples:
-    ---------
+        [1, 2, 3, 4] --(maxlen=7, padding_value=0)--> [1, 2, 3, 4, 0, 0, 0]
+        [1, 2, 3, 4] --(maxlen=4, padding_value=0)--> [1, 2, 3, 4]
+
+    Examples
+    --------
     >>> dataset: RecDataSet
     >>> ISeq = dataset[ITEM, ID].fork(SEQUENCE)
     >>> datapipe = dataset.valid().ordered_user_ids_source(
@@ -336,4 +363,5 @@ class RightPaddingRow(LeftPaddingRow):
     """
 
     def _pad(self, field: Field, x: Iterable) -> List:
+        r"""Right-pad *x* to ``self.maxlen`` with the appropriate zero element."""
         return list(chain(x, repeat(self.zeros[field], self.maxlen - len(x))))

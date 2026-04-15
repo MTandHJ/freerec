@@ -1,5 +1,6 @@
 
 
+
 from typing import TypeVar, Any, Iterator, Iterable, Callable, Dict, List, Optional, Sized
 
 import torch, random
@@ -18,8 +19,19 @@ T = TypeVar('T')
 
 
 class Launcher(dp.iter.IterDataPipe):
+    r"""An internal datapipe that yields indices in ``[0, datasize)`` each epoch.
+
+    Parameters
+    ----------
+    datasize : int
+        Number of indices to generate.
+    shuffle : bool, optional
+        Whether to shuffle the indices before each iteration.
+        Default is ``True``.
+    """
 
     def __init__(self, datasize: int, shuffle: bool = True):
+        r"""Initialize the Launcher."""
         super().__init__()
 
         self.source = list(range(datasize))
@@ -29,82 +41,118 @@ class Launcher(dp.iter.IterDataPipe):
         self.set_seed(0)
 
     def set_seed(self, seed: int):
+        r"""Set the random seed for shuffling.
+
+        Parameters
+        ----------
+        seed : int
+            Random seed value.
+        """
         self._rng.seed(seed)
 
     def __iter__(self):
+        r"""Yield indices, optionally shuffled."""
         if self.shuffle:
             self._rng.shuffle(self.source)
         yield from iter(self.source)
 
 
 class BaseProcessor(dp.iter.IterDataPipe):
-    r"""
-    A base processor that defines the property of fields.
+    r"""A base processor that defines the property of fields.
 
-    Parameters:
-    -----------
-    fields: Field or Iterable, optional
-        - `None': Pass.
-        - `Field`: FieldTuple with one Field.
-        - `Iterable`: FieldTuple with multi Fields
-    
-    Raises:
-    -------
-    AttributeError: 
-        If `fields' are not given or `None` before using.
+    Parameters
+    ----------
+    dataset : :class:`~RecDataSet`
+        The recommendation dataset providing fields and metadata.
+
+    Raises
+    ------
+    AttributeError
+        If ``fields`` are not given or ``None`` before using.
     """
 
     def __init__(self, dataset: RecDataSet) -> None:
+        r"""Initialize the BaseProcessor."""
         super().__init__()
         self.__dataset = dataset
         self.fields = dataset.fields
 
     @property
     def dataset(self):
+        r"""Return the underlying :class:`~RecDataSet`."""
         return self.__dataset
 
     @property
     def fields(self) -> FieldTuple:
+        r"""Return the :class:`~FieldTuple` of fields."""
         return self.__fields
 
     @fields.setter
     def fields(self, fields: Iterable[Field]):
+        r"""Set the fields from an iterable of :class:`~Field`."""
         self.__fields = FieldTuple(fields)
- 
+
     @staticmethod
     def listmap(func: Callable, *iterables):
-        r"""
-        Apply a function to multiple iterables and return a list.
+        r"""Apply a function to multiple iterables and return a list.
 
-        Parameters:
-        -----------
-        func (Callable): The function to be applied.
-        *iterables: Multiple iterables to be processed.
+        Parameters
+        ----------
+        func : callable
+            The function to be applied.
+        *iterables
+            Multiple iterables to be processed.
 
-        Returns:
-        --------
-        List: The results after applying the function to the iterables.
+        Returns
+        -------
+        list
+            The results after applying the function to the iterables.
         """
         return list(map(func, *iterables))
 
     @classmethod
     def to_rows(cls, field_dict: Dict[Field, Iterable[T]]) -> List[Dict[Field, T]]:
+        r"""Convert a column-oriented dict to a list of row dicts.
+
+        Parameters
+        ----------
+        field_dict : dict
+            Mapping from :class:`~Field` to an iterable of values.
+
+        Returns
+        -------
+        list of dict
+            Each dict maps :class:`~Field` to a single value.
+        """
         fields = field_dict.keys()
         return cls.listmap(
             lambda values: dict(zip(fields, values)),
             zip(*field_dict.values())
         )
-    
+
 
 class Source(BaseProcessor):
-    """Source datapipe. The start point of Train/valid/test datapipe"""
+    r"""Source datapipe that serves as the starting point of train/valid/test pipelines.
+
+    Parameters
+    ----------
+    dataset : :class:`~RecDataSet`
+        The recommendation dataset.
+    source : iterable
+        Source data, either an :class:`~IterDataPipe` or a finite iterable of row dicts.
+    datasize : int, optional
+        Override for the source length. If ``None``, inferred from ``source``.
+    shuffle : bool, optional
+        Whether to shuffle indices each epoch. Default is ``True``.
+    """
 
     def __init__(
-        self, 
+        self,
         dataset: RecDataSet, source: Iterable[Dict[Field, Any]],
         datasize: Optional[int] = None,
         shuffle: bool = True
     ) -> None:
+        r"""Initialize the Source."""
         super().__init__(dataset)
         self.mode = dataset.mode
         if isinstance(source, dp.iter.IterDataPipe):
@@ -114,15 +162,17 @@ class Source(BaseProcessor):
             self.source = tuple(source)
             self.datasize = len(self.source) if datasize is None else datasize
             self.launcher = Launcher(self.datasize, shuffle=shuffle).sharding_filter()
-    
+
     def guard_mode(self):
-        r"""
-        Make sure the dataset is at a required mode.
-        This is especially necessary for datapipe source.
+        r"""Ensure the dataset is set to the required mode.
+
+        This is especially necessary for datapipe sources where the mode
+        may have been changed externally.
         """
         getattr(self.dataset, self.mode)()
 
     def __getstate__(self):
+        r"""Return serialization state, avoiding expensive traversal."""
         # `traverse_dps' will be particularly time-consuming
         # if a lot of data is buffered.
         # Hence, we directly return the connected datapipes.
@@ -133,16 +183,16 @@ class Source(BaseProcessor):
 
 
 class PostProcessor(BaseProcessor):
-    r"""
-    A post-processor that wraps another IterDataPipe object.
+    r"""A post-processor that wraps another :class:`~IterDataPipe` object.
 
-    Parameters:
-    -----------
-    source: BaseProcessor
+    Parameters
+    ----------
+    source : :class:`~BaseProcessor`
         The data pipeline to be wrapped.
     """
 
     def __init__(self, source: BaseProcessor) -> None:
+        r"""Initialize the PostProcessor."""
         graph = torch.utils.data.graph.traverse_dps(source)
         dataset = None
         for pipe in get_all_graph_pipes(graph):
@@ -154,6 +204,7 @@ class PostProcessor(BaseProcessor):
         self.source: Iterator[Dict[Field, Any]] = source
 
     def __getstate__(self):
+        r"""Return serialization state, avoiding expensive traversal."""
         # `traverse_dps' will be particularly time-consuming
         # if a lot of data is buffered.
         # Hence, we directly return the connected datapipes.
@@ -164,20 +215,29 @@ class PostProcessor(BaseProcessor):
 
 
 class SampleMultiplexer(IterDataPipe):
-    r"""
-    Takes a `Dict` of (IterDataPipe, Weight), and yields items by sampling from these
-    DataPipes with respect to their weights. When individual DataPipes are exhausted, continues to sample from
-    the remaining DataPipes according to their relative weights.
-    If you wish to maintain the same ratio of weights indefinitely, you need to ensure that the
-    inputs are never exhausted, by, for instance, applying ``cycle`` to them.
+    r"""Yield items by sampling from weighted :class:`~IterDataPipe` instances.
 
-    Parameters:
-    -----------
-    pipes_to_weights_dict: a `Dict` of IterDataPipes and Weights. The total weight of
-        unexhausted DataPipes will be normalized to 1 for the purpose of sampling.
+    Takes a dict of ``(IterDataPipe, weight)`` pairs and yields items by
+    sampling from these datapipes with respect to their weights. When
+    individual datapipes are exhausted, sampling continues from the remaining
+    datapipes according to their relative weights.
 
-    Examples:
-    ---------
+    If you wish to maintain the same ratio of weights indefinitely, ensure
+    that the inputs are never exhausted, e.g. by applying ``cycle``.
+
+    Parameters
+    ----------
+    pipes_to_weights_dict : dict
+        Mapping from :class:`~IterDataPipe` to a positive float weight.
+        The total weight of unexhausted datapipes is normalized to 1.
+
+    Raises
+    ------
+    ValueError
+        If ``pipes_to_weights_dict`` is empty or contains non-positive weights.
+
+    Examples
+    --------
     >>> source_dp1 = IterableWrapper([0] * 10)
     >>> source_dp2 = IterableWrapper([1] * 10)
     >>> d = {source_dp1: 99999999, source_dp2: 0.0000001}
@@ -190,6 +250,7 @@ class SampleMultiplexer(IterDataPipe):
         self,
         pipes_to_weights_dict: Dict[IterDataPipe, float]
     ):
+        r"""Initialize the SampleMultiplexer."""
         if not pipes_to_weights_dict:
             raise ValueError("Empty dictionary passed to SampleMultiplexerDataPipe")
         total_weight: float = 0
@@ -204,9 +265,17 @@ class SampleMultiplexer(IterDataPipe):
         self.set_seed(0)
 
     def set_seed(self, seed: int):
+        r"""Set the random seed for sampling.
+
+        Parameters
+        ----------
+        seed : int
+            Random seed value.
+        """
         self._rng.seed(seed)
 
     def __iter__(self) -> Iterator:
+        r"""Yield items sampled from the weighted datapipes."""
         pipes_and_weights = [(iter(k), v) for k, v in self.pipes_and_weights]
         while len(pipes_and_weights) > 1:
             r = self._rng.random()
@@ -229,6 +298,13 @@ class SampleMultiplexer(IterDataPipe):
             yield item
 
     def __len__(self) -> int:
+        r"""Return the total length across all datapipes.
+
+        Raises
+        ------
+        TypeError
+            If any of the datapipes does not have a valid length.
+        """
         if all(isinstance(dp, Sized) for dp, _ in self.pipes_and_weights):
             return sum(len(dp) for dp, _ in self.pipes_and_weights)
         else:

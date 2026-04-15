@@ -35,25 +35,26 @@ COLOR = {
 
 
 class AverageMeter:
-    r"""
-    Computes and stores the average and current value of a metric.
+    r"""Compute and store the average and current value of a metric.
 
-    Parameters:
-    -----------
-    name: str
+    Parameters
+    ----------
+    name : str
         The name of the meter.
-    metric: Callable
+    metric : Callable
         Metric function.
-    fmt: str, optional (default: '.5f')
-        Output format.
-    best_caster: Callable, optional (default: max)
-        The best caster between `min` or `max` based on the metric.
+    fmt : str, optional
+        Output format, by default ``'.5f'``.
+    best_caster : Callable, optional
+        The best caster between ``min`` or ``max`` based on the metric,
+        by default ``max``.
     """
 
     def __init__(
-        self, name: str, metric: Callable, 
+        self, name: str, metric: Callable,
         fmt: str = ".5f", best_caster: Callable = max
     ):
+        r"""Initialize the meter."""
         assert isinstance(metric, Callable), f"metric should be Callable but {type(metric)} received ..."
         self.name = name
         self.fmt = fmt
@@ -64,16 +65,16 @@ class AverageMeter:
 
     @property
     def history(self):
-        """Get the historical results."""
+        r"""Get the historical results."""
         return self.__history
 
     @history.setter
     def history(self, val: List):
-        """Set the historical results."""
+        r"""Set the historical results."""
         self.__history = val.copy()
 
     def reset(self) -> None:
-        """Reset the meter values"""
+        r"""Reset the meter values."""
         self.val = 0.
         self.avg = 0.
         self.sum = 0.
@@ -81,7 +82,7 @@ class AverageMeter:
         self.active = False
 
     def gather(self, val: float, n: int, reduction: str):
-        """Gather metrics from other processes (DDP)."""
+        r"""Gather metrics from other processes (DDP)."""
         vals = all_gather(val)
         ns = all_gather(n)
         if reduction == "mean":
@@ -93,17 +94,16 @@ class AverageMeter:
         return val, int(sum(ns))
 
     def update(self, val: float, n: int = 1, reduction: str = "mean") -> None:
-        r"""
-        Updates the meter.
+        r"""Update the meter with a new value.
 
-        Parameters:
+        Parameters
         ----------
-        val: float
-            Value.
-        n: int, optional (default: 1)
-            Batch size.
-        reduction: str, optional (default: "mean")
-            Reduction: 'sum'|'mean'.
+        val : float
+            The metric value.
+        n : int, optional
+            Batch size, by default 1.
+        reduction : str, optional
+            Reduction mode: ``'sum'`` or ``'mean'``, by default ``'mean'``.
         """
         val, n = self.gather(val, n, reduction)
         self.val = val
@@ -112,12 +112,11 @@ class AverageMeter:
         self.avg = self.sum / self.count
 
     def step(self) -> str:
-        r"""
-        Saves the average value and resets the meter.
+        r"""Save the average value to history and reset the meter.
 
-        Returns:
-        --------
-        info: str
+        Returns
+        -------
+        str
             Average value in a formatted string.
         """
         self.history.append(self.avg)
@@ -126,17 +125,22 @@ class AverageMeter:
         return info
 
     def check(self, *values):
-        r"""
-        Check the metric value.
+        r"""Compute and validate the metric value.
 
-        Parameters:
-        -----------
-        values: variable-length argument list
-            Metric function arguments.
+        Parameters
+        ----------
+        *values
+            Arguments forwarded to the metric function.
 
-        Returns:
-        --------
-        The metric value.
+        Returns
+        -------
+        float
+            The computed metric value.
+
+        Raises
+        ------
+        ValueError
+            If the metric value is NaN or Inf.
         """
         val = self.__metric(*values)
         if isinstance(val, torch.Tensor):
@@ -150,13 +154,12 @@ class AverageMeter:
         return val.item()
 
     def plot(self, freq: int = 1) -> None:
-        r"""
-        Plots the meter values.
-        
-        Parameters:
-        -----------
-        freq: int, optional (default: 1)
-            Plot frequency.
+        r"""Plot the meter history as a line chart.
+
+        Parameters
+        ----------
+        freq : int, optional
+            Evaluation frequency used to scale the x-axis, by default 1.
         """
         timeline = np.arange(len(self.history)) * freq
         self.fig = plt.figure(dpi=300)
@@ -167,19 +170,18 @@ class AverageMeter:
         ax.set_title(self.name)
 
     def save(self, path: str, mode: str = '') -> None:
-        r"""
-        Save the curves as a PNG file.
+        r"""Save the plotted curve as a PNG file.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         path : str
-            The path to save the file to.
+            Directory path to save the file to.
         mode : str, optional
-            The mode to add to the filename.
+            Prefix to add to the filename, by default ``''``.
 
-        Returns:
-        --------
-        filename : str
+        Returns
+        -------
+        str
             The filename of the saved file.
         """
         filename = f"{mode}{self.name}.png"
@@ -188,25 +190,29 @@ class AverageMeter:
         return filename
 
     def which_is_better(self, other: float) -> bool:
+        r"""Return the better value between the current average and *other*."""
         return self.caster(self.avg, other)
 
     def argbest(self, freq: int = 1) -> float:
-        r"""
-        Return the index and value of the best result in history.
+        r"""Return the index and value of the best result in history.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         freq : int, optional
-            The evaluation frequency, defaults to 1.
+            Evaluation frequency used to scale the returned index,
+            by default 1.
 
-        Returns:
-        --------
-        index : float
-            The index of the best result.
-            If no available data, returns -1.
+        Returns
+        -------
+        index : int
+            The scaled index of the best result, or -1 if history is empty.
         value : float
-            The value of the best result.
-            If no available data, returns -1.
+            The best metric value, or -1 if history is empty.
+
+        Raises
+        ------
+        ValueError
+            If ``caster`` is neither ``min`` nor ``max``.
         """
         if len(self.history) == 0:
             return -1, -1
@@ -219,29 +225,21 @@ class AverageMeter:
             raise ValueError("caster should be `min' or `max' ...")
 
     def __str__(self):
-        r"""
-        Return the string representation of this object.
-
-        Returns:
-        --------
-        str
-            The string representation of this object.
-        """
+        r"""Return a formatted string of the current average."""
         fmtstr = "{name} Avg: {avg:{fmt}}"
         return fmtstr.format(**self.__dict__)
 
-    def __call__(self, *values, n: int = 1, reduction: str = "mean")  -> None:
-        r"""
-        Add a new data point to the history.
+    def __call__(self, *values, n: int = 1, reduction: str = "mean") -> None:
+        r"""Compute the metric and update the meter.
 
-        Parameters:
-        -----------
-        values : list or tuple
-            The value(s) to add to the history.
+        Parameters
+        ----------
+        *values
+            Arguments forwarded to the metric function.
         n : int, optional
-            The number of times to add each value, defaults to 1.
+            Batch size, by default 1.
         reduction : str, optional
-            The reduction of adding values: 'mean' or 'sum', defaults to 'mean'.
+            Reduction mode: ``'mean'`` or ``'sum'``, by default ``'mean'``.
         """
         self.active = True
         self.update(
@@ -251,15 +249,19 @@ class AverageMeter:
 
 
 class Monitor(Config):
+    r"""A collection of :class:`AverageMeter` instances organized by prefix and metric.
+
+    Inherits from :class:`~freerec.dict2obj.Config` and provides
+    serialization, state management, and TensorBoard integration.
+    """
 
     def state_dict(self) -> Dict:
-        r"""
-        Return the state dictionary of monitors.
+        r"""Return the state dictionary of all monitors.
 
-        Returns:
-        --------
-        state_dict : Dict
-            The state dictionary that contains the history of all monitors.
+        Returns
+        -------
+        dict
+            Nested dictionary mapping ``prefix -> metric -> meter.name -> history``.
         """
         state_dict = defaultdict(dict)
         monitors: Dict[str, List[AverageMeter]]
@@ -271,15 +273,15 @@ class Monitor(Config):
         return state_dict
 
     def load_state_dict(self, state_dict: Dict, strict: bool = False):
-        r"""
-        Load the history of monitors from the given state dictionary.
+        r"""Load the history of monitors from a state dictionary.
 
-        Parameters:
-        -----------
-        state_dict : Dict
+        Parameters
+        ----------
+        state_dict : dict
             The state dictionary that contains the history of monitors.
-        strict : bool, optional (default=False)
-            Whether to strictly enforce that the keys in the state dictionary match the keys in the monitor.
+        strict : bool, optional
+            Whether to strictly enforce that the keys in *state_dict*
+            match the keys in the monitor, by default ``False``.
         """
         monitors: Dict[str, List[AverageMeter]]
         for prefix, monitors in self.items():
@@ -288,27 +290,25 @@ class Monitor(Config):
                     meter.history = state_dict[prefix][metric].get(meter.name, meter.history)
 
     def save(self, path: str, filename: str = 'monitors.pickle'):
-        r"""
-        Save the current state of the monitors to disk.
+        r"""Save the current state of the monitors to disk via :func:`export_pickle`.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         path : str
-            The path to the directory to save the state.
-        filename : str, optional (default='monitors.pickle')
-            The name of the file to save the state.
+            Directory path to save the state file.
+        filename : str, optional
+            Name of the output file, by default ``'monitors.pickle'``.
         """
         file_ = os.path.join(path, filename)
         export_pickle(self.state_dict(), file_)
 
     def write(self, path: str):
-        r"""
-        Write the history of monitors to Tensorboard.
+        r"""Write the history of all monitors to TensorBoard.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         path : str
-            The path to the directory to write the history to.
+            Directory path for the :class:`~torch.utils.tensorboard.SummaryWriter` log.
         """
         with SummaryWriter(path) as writer:
             monitors: Dict[str, List[AverageMeter]]
@@ -324,12 +324,19 @@ class Monitor(Config):
 
 
 def export_pickle(data: Any, file: str) -> NoReturn:
-    r"""
-    Export data into pickle format.
+    r"""Export data into pickle format.
 
-    data: Any
-    file: str
-        The file (path/filename) to be saved
+    Parameters
+    ----------
+    data : Any
+        The object to serialize.
+    file : str
+        Destination file path.
+
+    Raises
+    ------
+    ExportError
+        If pickling or writing to disk fails.
     """
     fh = None
     try:
@@ -343,12 +350,23 @@ def export_pickle(data: Any, file: str) -> NoReturn:
             fh.close()
 
 def import_pickle(file: str) -> Any:
-    r"""
-    Import data from given file.
-    file: str
-        The file (path/filename).
-    """
+    r"""Import data from a pickle file.
 
+    Parameters
+    ----------
+    file : str
+        Source file path.
+
+    Returns
+    -------
+    Any
+        The deserialized object.
+
+    Raises
+    ------
+    ImportError
+        If unpickling or reading from disk fails.
+    """
     fh = None
     try:
         fh = open(file, "rb")
@@ -360,12 +378,14 @@ def import_pickle(file: str) -> Any:
             fh.close()
 
 def export_yaml(data: Any, file: str) -> NoReturn:
-    r"""
-    Export data into yaml format.
+    r"""Export data into YAML format.
 
-    data: Any
-    file: str
-        The file (path/filename) to be saved
+    Parameters
+    ----------
+    data : Any
+        The object to serialize.
+    file : str
+        Destination file path.
     """
     with open(file, encoding="UTF-8", mode="w") as fh:
         fh.write(
@@ -373,10 +393,17 @@ def export_yaml(data: Any, file: str) -> NoReturn:
         )
 
 def import_yaml(file: str) -> Any:
-    r"""
-    Import data from given file.
-    file: str
-        The file (path/filename).
+    r"""Import data from a YAML file.
+
+    Parameters
+    ----------
+    file : str
+        Source file path.
+
+    Returns
+    -------
+    Any
+        The deserialized object.
     """
     with open(file, encoding="UTF-8", mode='r') as f:
         data = yaml.full_load(f)
@@ -386,21 +413,20 @@ def set_logger(
     path: str,
     log2file: bool = True, log2console: bool = True
 ) -> None:
-    r"""
-    Set up a logger instance.
+    r"""Set up a logger instance.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     path : str
-        The path of the log file.
+        Directory path where the log file will be created.
     log2file : bool, optional
-        Whether to log messages to a file. Default is True.
+        Whether to log messages to a file, by default ``True``.
     log2console : bool, optional
-        Whether to log messages to console. Default is True.
+        Whether to log messages to the console, by default ``True``.
 
-    Returns:
-    --------
-    logger : logging.Logger
+    Returns
+    -------
+    :class:`logging.Logger`
         A configured logger instance.
     """
     logger = logging.getLogger(LOGGER.name)
@@ -428,11 +454,10 @@ def set_logger(
     return logger
 
 def set_color(device: Union[int, str]):
-    r"""
-    Set a color for the output of the specified device.
+    r"""Set the ANSI color code for terminal output of the specified device.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     device : Union[int, str]
         The device identifier, which can be an integer or string.
     """
@@ -444,20 +469,19 @@ def set_color(device: Union[int, str]):
         pass
 
 def infoLogger(words: str, main_process_only: bool = True):
-    r"""
-    Log an info-level message.
+    r"""Log an info-level message.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     words : str
         The message to log.
-    main_process_only: bool, default to `True`
-        `True`: print for main process only
+    main_process_only : bool, optional
+        If ``True``, only the main process logs the message, by default ``True``.
 
-    Returns:
-    --------
-    words : str
-        The message that was logged.
+    Returns
+    -------
+    str
+        The colorized message that was logged, or ``None`` if skipped.
     """
     if main_process_only and not is_main_process():
         return
@@ -466,55 +490,53 @@ def infoLogger(words: str, main_process_only: bool = True):
     return words
 
 def debugLogger(words: str):
-    r"""
-    Log a debug-level message.
+    r"""Log a debug-level message.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     words : str
         The message to log.
 
-    Returns:
-    --------
-    words : str
+    Returns
+    -------
+    str
         The message that was logged.
     """
     LOGGER.debug(words)
     return words
 
 def warnLogger(warn: str):
-    r"""
-    Log a warning-level message.
+    r"""Log a warning-level message.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     warn : str
         The warning message to log.
 
-    Returns:
-    --------
-    words : str
-        The warning message that was logged.
+    Returns
+    -------
+    str
+        The formatted warning message that was logged.
     """
     words = f"\033[1;31m[Warning] >>> {warn} \033[0m"
     LOGGER.info(words)
     return words
 
 def timemeter(func):
-    r"""
-    A decorator to measure the running time of a function.
+    r"""Decorator that measures and logs the wall-clock time of a function.
 
-    Parameters:
-    -----------
-    prefix : str, optional
-        A prefix to be displayed in the logging message, by default "".
+    Parameters
+    ----------
+    func : Callable
+        The function to wrap.
 
-    Returns:
-    --------
-    wrapper : function
-        The decorated function.
+    Returns
+    -------
+    Callable
+        The wrapped function that logs elapsed time after each call.
     """
     def wrapper(*args, **kwargs):
+        r"""Wrap the function with timing."""
         start = time.time()
         results = func(*args, **kwargs)
         end = time.time()
@@ -525,13 +547,12 @@ def timemeter(func):
     return wrapper
 
 def mkdirs(*paths: str) -> None:
-    r"""
-    Create directories.
+    r"""Create directories, ignoring those that already exist.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     *paths : str
-        Paths of directories to create.
+        One or more directory paths to create.
     """
     for path in paths:
         try:
@@ -540,13 +561,13 @@ def mkdirs(*paths: str) -> None:
             pass
 
 def activate_benchmark(benchmark: bool) -> None:
-    r"""
-    Activate or deactivate the cudnn benchmark mode.
+    r"""Activate or deactivate the cuDNN benchmark mode.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     benchmark : bool
-        Whether to activate the benchmark mode.
+        If ``True``, enable ``cudnn.benchmark`` and disable deterministic mode;
+        if ``False``, do the opposite.
     """
     from torch.backends import cudnn
     if benchmark:
@@ -557,17 +578,18 @@ def activate_benchmark(benchmark: bool) -> None:
         cudnn.benchmark, cudnn.deterministic = False, True
 
 def set_seed(seed: int) -> int:
-    r"""
-    Set the seed for the random number generators.
+    r"""Set the seed for all random number generators.
 
-    Parameters:
-    -----------
-    seed : int
-        The seed to set. If seed is -1, a random seed between 0 and 2048 will be generated.
+    Configures ``random``, :mod:`numpy`, and :mod:`torch` (CPU and CUDA).
 
-    Returns:
-    --------
+    Parameters
+    ----------
     seed : int
+        The seed to set. If -1, a random seed between 0 and 2048 is generated.
+
+    Returns
+    -------
+    int
         The actual seed used.
     """
     if seed == -1:
