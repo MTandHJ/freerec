@@ -13,32 +13,35 @@
 FreeRec is a repository designed for easy (recommendation) data pre-processing and model training. You are free to specify your own framework based on FreeRec.
 
 
-## Requirements: 
+## Requirements
 
-3.9 <= Python <= 3.11 | [PyTorch >=2.0](https://pytorch.org/) | [PyG >=2.3](https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html#)
+Python >= 3.9 | [PyTorch >= 2.0](https://pytorch.org/)
 
 
-```
-conda create --name=FreeRec python=3.9
-conda activate FreeRec
-```
+```bash
+# 1. Install PyTorch (choose the CUDA version that matches your environment)
+#    See https://pytorch.org/get-started/locally/
+pip install torch
 
-```
-pip install --no-deps torchdata==0.7.0
+# 2. Install FreeRec
+pip install freerec
+
+# 3. Install torchdata (handled automatically with --no-deps)
+freerec setup
 ```
 
 > [!NOTE]
-> FreeRec must rely on torchdata version 0.7.0/0.7.1, as later releases no longer support the datapipe functionality.
+> FreeRec relies on torchdata 0.7.0, as later releases no longer support the datapipe functionality.
+> `freerec setup` installs it with `--no-deps` to avoid overriding your existing PyTorch installation.
 
+### Optional dependencies
 
-
-## Installation
-
-    pip install freerec
-
-or (for latest)
-
-    pip install git+https://github.com/MTandHJ/freerec.git
+```bash
+pip install freerec[graph]    # torch-geometric for graph-based models
+pip install freerec[metrics]  # scikit-learn for additional metrics (e.g., ROC-AUC)
+pip install freerec[nn]       # einops for attention modules
+pip install freerec[all]      # all of the above
+```
 
 
 

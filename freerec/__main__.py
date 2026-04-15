@@ -5,7 +5,6 @@ Provides the ``freerec`` CLI with subcommands ``skill``, ``tune``, and
 """
 
 import argparse
-from .data.tags import USER, ITEM, RATING, TIMESTAMP
 
 
 def skill(args):
@@ -108,6 +107,40 @@ def make(args):
         days=args.days
     )
 
+def setup(args):
+    r"""Install torchdata==0.7.0 without overriding the existing torch installation."""
+    import subprocess, sys
+
+    # 1. Check torch
+    try:
+        import torch
+        print(f"torch {torch.__version__} detected.")
+    except ImportError:
+        print("Error: torch is not installed.")
+        print("Please install torch first: https://pytorch.org/get-started/locally/")
+        sys.exit(1)
+
+    # 2. Check torchdata
+    try:
+        import torchdata
+        if torchdata.__version__ == "0.7.0":
+            print("torchdata 0.7.0 already installed, skipping.")
+            return
+        else:
+            print(f"torchdata {torchdata.__version__} found, replacing with 0.7.0...")
+    except ImportError:
+        print("Installing torchdata==0.7.0 (--no-deps)...")
+
+    # 3. Install
+    subprocess.check_call([
+        sys.executable, "-m", "pip", "install",
+        "torchdata==0.7.0", "--no-deps"
+    ])
+
+    # 4. Verify
+    print("torchdata==0.7.0 installed successfully.")
+
+
 def main():
     r"""Parse CLI arguments and dispatch to the appropriate subcommand."""
     parser = argparse.ArgumentParser("FreeRec")
@@ -168,10 +201,14 @@ def main():
     make_parser.add_argument("-rs", "--ratios", type=str, default="8,1,1", help="the ratios (default: 8,1,1) of training|validation|test set")
     make_parser.add_argument("--days", type=int, default=7, help="the second last days (default: 7) for validation and last days (default: 7) for test")
 
-    make_parser.add_argument("-uc", "--userColname", type=str, default=USER.name, help=f"the column name (default: {USER.name}) of User ID")
-    make_parser.add_argument("-ic", "--itemColname", type=str, default=ITEM.name, help=f"the column name (default: {ITEM.name}) of Item ID")
-    make_parser.add_argument("-rc", "--ratingColname", type=str, default=RATING.name, help=f"the column name (default: {RATING.name}) of Rating")
-    make_parser.add_argument("-tc", "--timestampColname", type=str, default=TIMESTAMP.name, help=f"the column name (default: {TIMESTAMP.name}) of Timestamp")
+    make_parser.add_argument("-uc", "--userColname", type=str, default="USER", help="the column name (default: USER) of User ID")
+    make_parser.add_argument("-ic", "--itemColname", type=str, default="ITEM", help="the column name (default: ITEM) of Item ID")
+    make_parser.add_argument("-rc", "--ratingColname", type=str, default="RATING", help="the column name (default: RATING) of Rating")
+    make_parser.add_argument("-tc", "--timestampColname", type=str, default="TIMESTAMP", help="the column name (default: TIMESTAMP) of Timestamp")
+
+    setup_parser = subparsers.add_parser("setup",
+        help="Install torchdata==0.7.0 without overriding existing torch")
+    setup_parser.set_defaults(func=setup)
 
     args = parser.parse_args()
     args.func(args)

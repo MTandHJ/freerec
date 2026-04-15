@@ -1,0 +1,56 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "freerec"
+version = "0.9.7"
+description = "PyTorch library for recommender systems"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+authors = [
+    { name = "MTandHJ", email = "congxueric@gmail.com" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "numpy>=1.24",
+    "polars>=1.9.0",
+    "PyYAML>=6.0",
+    "tensorboard>=2.10.0",
+    "prettytable>=3.4.1",
+    "matplotlib>=3.5.0",
+    "requests>=2.28.0",
+    "tqdm>=4.64.0",
+    "pandas>=1.5.0",
+]
+
+[project.optional-dependencies]
+graph = ["torch-geometric>=2.4.0"]
+metrics = ["scikit-learn>=1.0.0"]
+nn = ["einops>=0.6.0"]
+all = [
+    "freerec[graph]",
+    "freerec[metrics]",
+    "freerec[nn]",
+]
+
+[project.scripts]
+freerec = "freerec.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/MTandHJ/freerec"
+
+[tool.hatch.build.targets.wheel]
+packages = ["freerec"]
+
+[tool.hatch.build]
+include = [
+    "freerec/**/*.py",
+    "freerec/**/*.pyi",
+]

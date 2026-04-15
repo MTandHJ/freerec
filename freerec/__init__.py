@@ -4,11 +4,16 @@ This package provides modular components for building, training,
 and evaluating recommendation systems.
 """
 
-__version__ = '0.9.7'
+from importlib.metadata import version
+__version__ = version("freerec")
 
-from . import data, models, criterions, ddp, graph, launcher, metrics, parser, utils
-from .utils import infoLogger
-from freerec.dict2obj import Config
+try:
+    from . import data, models, criterions, ddp, graph, launcher, metrics, parser, utils
+    from .utils import infoLogger
+    from freerec.dict2obj import Config
+except ModuleNotFoundError:
+    # torch/torchdata not yet installed; CLI (e.g., freerec setup) still works.
+    pass
 
 
 def declare(*, version: str):
