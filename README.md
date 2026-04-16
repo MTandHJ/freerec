@@ -2,20 +2,31 @@
 
 ![](docs/src/logo.png)
 
-<h4 align="center">
-    <p>
-        <a href="https://mtandhj.github.io/freerec/">Documentation</a> |
-        <a href="https://github.com/MTandHJ/RecBoard">RecBoard</a>
-    </p>
-</h4>
+<p align="center">
+    <a href="https://pypi.org/project/freerec/"><img src="https://img.shields.io/pypi/v/freerec?color=blue" alt="PyPI"></a>
+    <a href="https://pypi.org/project/freerec/"><img src="https://img.shields.io/pypi/pyversions/freerec" alt="Python"></a>
+    <a href="https://github.com/MTandHJ/freerec/blob/master/LICENSE"><img src="https://img.shields.io/github/license/MTandHJ/freerec" alt="License"></a>
+</p>
 
-FreeRec is a repository designed for easy (recommendation) data pre-processing and model training. You are free to specify your own framework based on FreeRec.
+<p align="center">
+    <a href="https://mtandhj.github.io/freerec/">Documentation</a> &bull;
+    <a href="https://github.com/MTandHJ/RecBoard">RecBoard</a>
+</p>
 
+---
 
-## Requirements
+**FreeRec** is a PyTorch-based library for building, training, and evaluating recommendation systems. It provides modular components — data pipelines, model architectures, training loops, and evaluation metrics — so you can focus on your research instead of boilerplate.
 
-Python >= 3.9 | [PyTorch >= 2.0](https://pytorch.org/)
+## Key Features
 
+- **Flexible data pipeline** built on `torchdata`, supporting field-level processing, k-core filtering, and multiple splitting strategies
+- **Modular model architecture** with base classes for collaborative filtering, sequential recommendation, and CTR prediction
+- **Built-in training loop** with distributed training (DDP), TensorBoard logging, and grid-search hyperparameter tuning
+- **Standard evaluation metrics** including NDCG, Hit Rate, MRR, Recall, Precision, and AUC
+
+## Installation
+
+**Requirements:** Python >= 3.9 | [PyTorch >= 2.0](https://pytorch.org/)
 
 ```bash
 # 1. Install PyTorch (choose the CUDA version that matches your environment)
@@ -42,31 +53,26 @@ pip install freerec[nn]       # einops for attention modules
 pip install freerec[all]      # all of the above
 ```
 
+## Overview
 
-
-## Data Pipeline
-
-> Refer to the [documentation](https://mtandhj.github.io/freerec/) for dataset processing and splitting.
+### Data Pipeline
 
 ![](docs/src/pipeline.png)
 
-
-## Training Flow
-
+### Training Flow
 
 ![](docs/src/flow.png)
 
+For detailed usage, please refer to the [documentation](https://mtandhj.github.io/freerec/).
 
-## Reference Code
+## References
 
-- TorchRec: https://github.com/pytorch/torchrec 
-- DeepCTR-Torch: https://github.com/shenweichen/DeepCTR-Torch
-- FuxiCTR: https://github.com/xue-pai/FuxiCTR
-- BARS: https://github.com/openbenchmark/BARS
-- RecBole: https://github.com/RUCAIBox/RecBole
-
-
+- [TorchRec](https://github.com/pytorch/torchrec)
+- [DeepCTR-Torch](https://github.com/shenweichen/DeepCTR-Torch)
+- [FuxiCTR](https://github.com/xue-pai/FuxiCTR)
+- [BARS](https://github.com/openbenchmark/BARS)
+- [RecBole](https://github.com/RUCAIBox/RecBole)
 
 ## Acknowledgements
 
-Thanks to ChatGPT for the annotation of some code. For this reason, some of the comments may be illogical.
+- Code annotation and documentation were written with the assistance of [Claude Code (Opus 4.6)](https://claude.ai/claude-code) by Anthropic.

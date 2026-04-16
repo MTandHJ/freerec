@@ -30,11 +30,21 @@ jobs:
 
       - name: Install dependencies
         run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install torchdata==0.7.0 --no-deps
           pip install -r docs/requirements.txt
+          pip install sphinx-intl
           pip install -e .
 
-      - name: Build documentation
-        run: sphinx-build docs docs/_build/html -b html --keep-going
+      - name: Build Chinese docs
+        run: sphinx-build docs docs/_build/html/zh -b html --keep-going
+
+      - name: Build English docs
+        run: sphinx-build -D language=en docs docs/_build/html/en -b html --keep-going
+
+      - name: Create root redirect
+        run: |
+          echo '<html><head><meta http-equiv="refresh" content="0;url=zh/"></head></html>' > docs/_build/html/index.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

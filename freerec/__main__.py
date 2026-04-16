@@ -107,8 +107,11 @@ def make(args):
         days=args.days
     )
 
+TORCHDATA_VERSION = "0.7.0"
+
+
 def setup(args):
-    r"""Install torchdata==0.7.0 without overriding the existing torch installation."""
+    r"""Install torchdata without overriding the existing torch installation."""
     import subprocess, sys
 
     # 1. Check torch
@@ -123,22 +126,25 @@ def setup(args):
     # 2. Check torchdata
     try:
         import torchdata
-        if torchdata.__version__ == "0.7.0":
-            print("torchdata 0.7.0 already installed, skipping.")
+        if torchdata.__version__ == TORCHDATA_VERSION:
+            print(f"torchdata {TORCHDATA_VERSION} already installed, skipping.")
             return
         else:
-            print(f"torchdata {torchdata.__version__} found, replacing with 0.7.0...")
+            print(f"torchdata {torchdata.__version__} found, replacing with {TORCHDATA_VERSION}...")
     except ImportError:
-        print("Installing torchdata==0.7.0 (--no-deps)...")
+        print(f"Installing torchdata=={TORCHDATA_VERSION} (--no-deps)...")
 
     # 3. Install
-    subprocess.check_call([
-        sys.executable, "-m", "pip", "install",
-        "torchdata==0.7.0", "--no-deps"
-    ])
+    try:
+        subprocess.check_call([
+            sys.executable, "-m", "pip", "install",
+            f"torchdata=={TORCHDATA_VERSION}", "--no-deps"
+        ])
+    except subprocess.CalledProcessError:
+        print(f"Error: failed to install torchdata=={TORCHDATA_VERSION}.")
+        sys.exit(1)
 
-    # 4. Verify
-    print("torchdata==0.7.0 installed successfully.")
+    print(f"torchdata=={TORCHDATA_VERSION} installed successfully.")
 
 
 def main():
@@ -207,7 +213,7 @@ def main():
     make_parser.add_argument("-tc", "--timestampColname", type=str, default="TIMESTAMP", help="the column name (default: TIMESTAMP) of Timestamp")
 
     setup_parser = subparsers.add_parser("setup",
-        help="Install torchdata==0.7.0 without overriding existing torch")
+        help=f"Install torchdata=={TORCHDATA_VERSION} without overriding existing torch")
     setup_parser.set_defaults(func=setup)
 
     args = parser.parse_args()
