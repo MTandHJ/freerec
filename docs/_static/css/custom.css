@@ -1,0 +1,115 @@
+/* ============================================================
+   FreeRec — Pixel Orange Theme
+   ============================================================ */
+
+/* --- Primary color override -------------------------------- */
+
+html[data-theme="light"],
+html:not([data-theme]) {
+    --pst-color-primary: #e07020;
+    --pst-color-primary-highlight: #c55a10;
+    --pst-color-link: #e07020;
+    --pst-color-link-hover: #c55a10;
+}
+
+html[data-theme="dark"] {
+    --pst-color-primary: #f08030;
+    --pst-color-primary-highlight: #e07020;
+    --pst-color-link: #f08030;
+    --pst-color-link-hover: #e07020;
+}
+
+/* --- Layout: fit sidebars to content, maximize main area --- */
+
+.bd-page-width {
+    max-width: 100%;
+}
+
+.bd-main .bd-content .bd-article-container {
+    max-width: 100%;
+}
+
+/* Sidebars: fit to content, consistent min-width */
+.bd-sidebar-primary,
+.bd-sidebar-secondary {
+    width: fit-content;
+    min-width: 22em;
+    max-width: 34em;
+    flex-shrink: 0;
+}
+
+/* --- Pixel-art decorative elements ------------------------- */
+
+/* Pixelated logo rendering */
+.navbar-brand img {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+/* Pixel-style admonition borders */
+.admonition {
+    border-left: 4px solid #e07020;
+    border-radius: 0;
+}
+
+html[data-theme="dark"] .admonition {
+    border-left-color: #f08030;
+}
+
+/* Pixel-style code block accent */
+div.highlight {
+    border-left: 3px solid #e07020;
+    border-radius: 0;
+}
+
+html[data-theme="dark"] div.highlight {
+    border-left-color: #f08030;
+}
+
+/* Pixel-style horizontal rules */
+hr {
+    border: none;
+    height: 3px;
+    background: repeating-linear-gradient(
+        to right,
+        #e07020 0px,
+        #e07020 6px,
+        transparent 6px,
+        transparent 9px
+    );
+}
+
+html[data-theme="dark"] hr {
+    background: repeating-linear-gradient(
+        to right,
+        #f08030 0px,
+        #f08030 6px,
+        transparent 6px,
+        transparent 9px
+    );
+}
+
+/* Square buttons (remove rounded corners for pixel feel) */
+.bd-search .search-button,
+.btn {
+    border-radius: 0 !important;
+}
+
+/* Pixel-style active sidebar link */
+.bd-sidebar-primary .nav-link.active {
+    border-left: 3px solid #e07020;
+    border-radius: 0;
+}
+
+html[data-theme="dark"] .bd-sidebar-primary .nav-link.active {
+    border-left-color: #f08030;
+}
+
+/* Pixel-style table headers */
+table thead th {
+    border-bottom: 3px solid #e07020;
+}
+
+html[data-theme="dark"] table thead th {
+    border-bottom-color: #f08030;
+}

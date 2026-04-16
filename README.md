@@ -4,8 +4,7 @@
 
 <h4 align="center">
     <p>
-        <a href="https://github.com/MTandHJ/freerec/blob/master/dataset%20processing.md">Dataset processing</a> |
-        <a href="https://github.com/MTandHJ/freerec/blob/master/training%20and%20tuning.md">Training and Tuning</a> |
+        <a href="https://mtandhj.github.io/freerec/">Documentation</a> |
         <a href="https://github.com/MTandHJ/RecBoard">RecBoard</a>
     </p>
 </h4>
@@ -47,7 +46,7 @@ pip install freerec[all]      # all of the above
 
 ## Data Pipeline
 
-> Refer to [here](./dataset%20processing.md) for dataset processing and splitting.
+> Refer to the [documentation](https://mtandhj.github.io/freerec/) for dataset processing and splitting.
 
 ![](docs/src/pipeline.png)
 

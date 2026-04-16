@@ -34,6 +34,12 @@ dependencies = [
 graph = ["torch-geometric>=2.4.0"]
 metrics = ["scikit-learn>=1.0.0"]
 nn = ["einops>=0.6.0"]
+docs = [
+    "sphinx>=7.2",
+    "pydata-sphinx-theme>=0.15",
+    "sphinx-copybutton>=0.5",
+    "sphinxcontrib-mermaid>=0.9",
+]
 all = [
     "freerec[graph]",
     "freerec[metrics]",
