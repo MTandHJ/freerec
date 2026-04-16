@@ -1,0 +1,89 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 18:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../quickstart.rst:2
+msgid "快速上手"
+msgstr "Quick Start"
+
+#: ../../quickstart.rst:4
+msgid "本节演示一个完整的推荐模型训练流程：准备数据、运行模型、查看结果。"
+msgstr ""
+"This section demonstrates a complete recommendation model training "
+"workflow: preparing data, running a model, and viewing results."
+
+#: ../../quickstart.rst:7
+msgid "第一步：准备数据集"
+msgstr "Step 1: Prepare the Dataset"
+
+#: ../../quickstart.rst:9
+msgid ""
+"使用 ``freerec make`` 对原始数据进行拆分与过滤。以 MovieLens1M 为例，采用 Leave-one-out (LOU) "
+"拆分："
+msgstr ""
+"Use ``freerec make`` to split and filter the raw data. Taking MovieLens1M"
+" as an example with Leave-one-out (LOU) splitting:"
+
+#: ../../quickstart.rst:15
+msgid "处理完成后，数据集保存在 ``data/Processed/MovieLens1M_550_LOU/``。"
+msgstr ""
+"After processing, the dataset is saved in "
+"``data/Processed/MovieLens1M_550_LOU/``."
+
+#: ../../quickstart.rst:18
+msgid "第二步：运行模型"
+msgstr "Step 2: Run the Model"
+
+#: ../../quickstart.rst:20
+msgid "以 SASRec 为例，创建配置文件 ``config.yaml``："
+msgstr "Taking SASRec as an example, create a configuration file ``config.yaml``:"
+
+#: ../../quickstart.rst:42
+msgid "然后运行训练："
+msgstr "Then run the training:"
+
+#: ../../quickstart.rst:49
+msgid "第三步：分布式训练（可选）"
+msgstr "Step 3: Distributed Training (Optional)"
+
+#: ../../quickstart.rst:51
+msgid "使用 ``torchrun`` 进行多卡训练："
+msgstr "Use ``torchrun`` for multi-GPU training:"
+
+#: ../../quickstart.rst:58
+msgid "第四步：超参搜索（可选）"
+msgstr "Step 4: Hyperparameter Search (Optional)"
+
+#: ../../quickstart.rst:60
+msgid "使用 ``freerec tune`` 自动搜索超参数："
+msgstr "Use ``freerec tune`` to automatically search for hyperparameters:"
+
+#: ../../quickstart.rst:66
+msgid "其中 ``tune_config.yaml`` 定义搜索空间："
+msgstr "Where ``tune_config.yaml`` defines the search space:"
+
+#: ../../quickstart.rst:81
+msgid "训练流程总览"
+msgstr "Training Pipeline Overview"
+
+#: ../../quickstart.rst:83
+msgid "Training Flow"
+msgstr ""
+

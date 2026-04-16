@@ -1,0 +1,36 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 11:32+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../examples/mf_bpr.rst:2
+msgid "MF-BPR"
+msgstr ""
+
+#: ../../examples/mf_bpr.rst:4
+msgid "**Matrix Factorization with Bayesian Personalized Ranking**"
+msgstr ""
+
+#: ../../examples/mf_bpr.rst:6
+msgid "经典的矩阵分解协同过滤模型，使用 BPR 损失函数进行隐式反馈推荐。"
+msgstr "A classic matrix factorization collaborative filtering model that uses the BPR loss function for implicit feedback recommendation."
+
+#: ../../examples/mf_bpr.rst:9
+msgid "用法"
+msgstr "Usage"

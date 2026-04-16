@@ -1,0 +1,383 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 11:32+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../api/freerec.metrics.rst:2
+msgid "freerec.metrics"
+msgstr ""
+
+#: freerec.metrics:1 of
+msgid "Evaluation metrics for recommendation systems."
+msgstr ""
+
+#: freerec.metrics:3 of
+msgid ""
+"Includes regression metrics (MAE, MSE, RMSE), ranking metrics (Precision,"
+" Recall, F1, Hit Rate, NDCG, MRR, MAP), and classification metrics "
+"(LogLoss, AUC, GAUC)."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:1 of
+msgid "Compute Mean Absolute Error (MAE)."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:3 of
+#, python-brace-format
+msgid "\\phi(x_i, y_i) = \\frac{1}{d} \\|x_i - y_i\\|_1"
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper
+#: freerec.metrics.auroc freerec.metrics.group_auroc freerec.metrics.log_loss
+#: of
+msgid "参数"
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:7 of
+msgid "Predictions of shape ``(N, d)`` or ``(d,)``."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:9 of
+msgid "Targets of shape ``(N, d)`` or ``(d,)``."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:11
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:17
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:18
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:19
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:20
+#: freerec.metrics.log_loss:14 of
+msgid "``'mean'`` (default), ``'sum'``, or ``'none'``."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper
+#: freerec.metrics.auroc freerec.metrics.group_auroc freerec.metrics.log_loss
+#: of
+msgid "返回"
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:14 of
+msgid "MAE value(s) of shape ``(1,)`` or ``(N,)``."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper
+#: freerec.metrics.auroc freerec.metrics.group_auroc freerec.metrics.log_loss
+#: of
+msgid "返回类型"
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:15
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:21
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:22
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:23
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:24 of
+msgid ":class:`torch.Tensor`"
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:18
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:24
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:25
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:26
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:27
+#: freerec.metrics.auroc:18 freerec.metrics.group_auroc:20
+#: freerec.metrics.log_loss:23 of
+msgid "示例"
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:1 of
+msgid "Compute Mean Squared Error (MSE)."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:3 of
+#, python-brace-format
+msgid "\\phi(x_i, y_i) = \\frac{1}{d} \\|x_i - y_i\\|_2^2"
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:14 of
+msgid "MSE value(s) of shape ``(1,)`` or ``(N,)``."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:1 of
+msgid "Compute Root Mean Squared Error (RMSE)."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:3 of
+msgid "\\phi(x_i, y_i) = \\sqrt{\\frac{1}{d} \\|x_i - y_i\\|_2^2}"
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:14 of
+msgid "RMSE value(s) of shape ``(1,)`` or ``(N,)``."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:1 of
+msgid "Compute Precision at K."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:3 of
+msgid ""
+"\\text{Precision@K}(x_i, y_i)\n"
+"= \\frac{|\\operatorname{TopK}(x_i) \\cap \\operatorname{TopK}(y_i)|}\n"
+"       {|\\operatorname{TopK}(x_i)|}"
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:9 of
+#, python-brace-format
+msgid ""
+"where :math:`\\operatorname{TopK}(\\cdot)` returns the top-K items and "
+":math:`|\\cdot|` denotes set cardinality."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:10
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:11
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:12
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:13 of
+msgid "Prediction scores of shape ``(N, d)`` or ``(d,)``."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:12
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:13
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:14
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:15 of
+msgid "Binary relevance labels of shape ``(N, d)`` or ``(d,)``."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:14
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:15
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:16
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:17 of
+msgid ""
+"Number of top predictions to consider.  When ``None``, all ``d`` items "
+"are used."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:22 of
+msgid "Precision value(s) of shape ``(1,)`` or ``(N,)``."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:1 of
+msgid "Compute Recall at K."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:3 of
+msgid ""
+"\\text{Recall@K}(x_i, y_i)\n"
+"= \\frac{|\\operatorname{TopK}(x_i) \\cap \\operatorname{TopK}(y_i)|}\n"
+"       {|y_i|}"
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:9 of
+msgid ""
+"where :math:`|y_i|` is the total number of relevant items for query "
+":math:`i`."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:22 of
+msgid "Recall value(s) of shape ``(1,)`` or ``(N,)``."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:1 of
+msgid "Compute the F1 score at K."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:3 of
+msgid "The F1 score is the harmonic mean of precision and recall:"
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:5 of
+msgid ""
+"\\text{F1@K} = \\frac{2 \\cdot \\text{Precision@K} \\cdot "
+"\\text{Recall@K}}\n"
+"                   {\\text{Precision@K} + \\text{Recall@K}}"
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:20 of
+msgid "F1 value(s) of shape ``(1,)`` or ``(N,)``."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:1 of
+msgid "Compute Hit Rate at K."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:3 of
+msgid ""
+"Returns 1 if at least one relevant item appears in the top-K predictions,"
+" and 0 otherwise:"
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:6 of
+#, python-brace-format
+msgid ""
+"\\text{HR@K}(x_i, y_i)\n"
+"= \\mathbb{1}\\!\\bigl(|\\operatorname{TopK}(x_i) \\cap y_i| \\neq "
+"0\\bigr)"
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:21 of
+msgid "Hit rate value(s) of shape ``(1,)`` or ``(N,)``."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:1 of
+msgid "Compute Normalized Discounted Cumulative Gain (NDCG) at K."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:3 of
+msgid "\\text{NDCG@K} = \\frac{\\mathrm{DCG@K}}{\\mathrm{IDCG@K}}"
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:7 of
+#, python-brace-format
+msgid ""
+"where :math:`\\mathrm{IDCG@K}` is the ideal (maximum possible) DCG "
+"obtained by sorting items by true relevance."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:12 of
+msgid "Relevance labels of shape ``(N, d)`` or ``(d,)``."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:20 of
+msgid "NDCG value(s) of shape ``(1,)`` or ``(N,)``."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:1 of
+msgid "Compute Mean Reciprocal Rank (MRR) at K."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:3 of
+msgid ""
+"\\text{MRR@K} = \\frac{1}{N} \\sum_{i=1}^{N}\n"
+"\\frac{1}{\\operatorname{rank}_i}"
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:8 of
+#, python-brace-format
+msgid ""
+"where :math:`\\operatorname{rank}_i` is the position of the first "
+"relevant item in the top-K list for query :math:`i`."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:21 of
+msgid "MRR value(s) of shape ``(1,)`` or ``(N,)``."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:1 of
+msgid "Compute Mean Average Precision (MAP) at K."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:3 of
+msgid ""
+"\\text{AP@K}(x_i, y_i)\n"
+"= \\frac{1}{|\\{j : y_{i,j}=1\\}|}\n"
+"  \\sum_{j=1}^{K} y_{i,\\pi(j)}\n"
+"  \\cdot \\text{Precision@}j"
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:10 of
+msgid ""
+"where :math:`\\pi` is the ranking permutation induced by the predicted "
+"scores.  MAP is the mean of AP over all queries."
+msgstr ""
+
+#: freerec.metrics._reduce.<locals>.decorator.<locals>.wrapper:23 of
+msgid "MAP value(s) of shape ``(1,)`` or ``(N,)``."
+msgstr ""
+
+#: freerec.metrics.log_loss:1 of
+msgid "Compute binary logarithmic loss (log-loss)."
+msgstr ""
+
+#: freerec.metrics.log_loss:3 of
+msgid "\\ell(p, y) = -\\bigl[y \\ln p + (1 - y) \\ln(1 - p)\\bigr]"
+msgstr ""
+
+#: freerec.metrics.log_loss:7 of
+msgid ""
+"Predictions are clipped to :math:`[\\varepsilon,\\; 1 - \\varepsilon]` "
+"for numerical stability."
+msgstr ""
+
+#: freerec.metrics.log_loss:10 of
+msgid "Predicted probabilities of shape ``(N,)``."
+msgstr ""
+
+#: freerec.metrics.auroc:11 freerec.metrics.group_auroc:9
+#: freerec.metrics.log_loss:12 of
+msgid "Binary labels (0 or 1) of shape ``(N,)``."
+msgstr ""
+
+#: freerec.metrics.log_loss:16 of
+msgid "Clipping epsilon.  Default is ``1e-8``."
+msgstr ""
+
+#: freerec.metrics.log_loss:19 of
+msgid "Scalar or array of log-loss values."
+msgstr ""
+
+#: freerec.metrics.group_auroc:17 freerec.metrics.log_loss:20 of
+msgid ":class:`numpy.ndarray`"
+msgstr ""
+
+#: freerec.metrics.auroc:1 of
+msgid "Compute the Area Under the ROC Curve (AUC)."
+msgstr ""
+
+#: freerec.metrics.auroc:3 of
+#, python-brace-format
+msgid "\\text{AUC} = \\int_0^1 \\text{TPR}(t)\\,d\\text{FPR}(t)"
+msgstr ""
+
+#: freerec.metrics.auroc:7 of
+msgid "Falls back to 1.0 when only a single class is present in *targets*."
+msgstr ""
+
+#: freerec.metrics.auroc:9 freerec.metrics.group_auroc:7 of
+msgid "Predicted scores of shape ``(N,)``."
+msgstr ""
+
+#: freerec.metrics.auroc:14 of
+msgid "AUC score."
+msgstr ""
+
+#: freerec.metrics.auroc:15 of
+msgid ":py:class:`float`"
+msgstr ""
+
+#: freerec.metrics.group_auroc:1 of
+msgid "Compute Group AUC (GAUC)."
+msgstr ""
+
+#: freerec.metrics.group_auroc:3 of
+msgid ""
+"The AUC is computed independently within each group (e.g., per user) and "
+"the results are aggregated by a weighted mean where weights are group "
+"sizes (excluding single-class groups)."
+msgstr ""
+
+#: freerec.metrics.group_auroc:11 of
+msgid "Group identifiers of shape ``(N,)``."
+msgstr ""
+
+#: freerec.metrics.group_auroc:13 of
+msgid "``'mean'`` (default) or ``'none'``."
+msgstr ""
+
+#: freerec.metrics.group_auroc:16 of
+msgid "Scalar or per-group AUC values."
+msgstr ""
+

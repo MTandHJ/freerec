@@ -22,6 +22,7 @@ Datasets
 
 .. automodule:: freerec.data.datasets
    :members:
+   :imported-members:
    :show-inheritance:
 
 Preprocessing
@@ -29,6 +30,7 @@ Preprocessing
 
 .. automodule:: freerec.data.preprocessing
    :members:
+   :imported-members:
    :show-inheritance:
 
 Postprocessing

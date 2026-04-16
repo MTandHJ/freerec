@@ -1,0 +1,258 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 18:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../tutorials/datapipe.rst:2
+msgid "数据管道 (DataPipe)"
+msgstr "Data Pipeline (DataPipe)"
+
+#: ../../tutorials/datapipe.rst:4
+msgid "FreeRec 基于 torchdata 的 DataPipe 机制构建了链式数据处理管道， 通过方法链将数据从原始格式转换为模型可用的张量批次。"
+msgstr "FreeRec builds chained data processing pipelines based on torchdata's DataPipe mechanism, transforming data from raw format to model-ready tensor batches through method chaining."
+
+#: ../../tutorials/datapipe.rst:8
+msgid "核心理念"
+msgstr "Core Concept"
+
+#: ../../tutorials/datapipe.rst:10
+msgid "数据管道由一系列 **Processor** 组成，每个 Processor 消费上游数据并产出处理后的数据， 形成一条从数据源到最终张量的流水线："
+msgstr "The data pipeline consists of a series of **Processors**, where each Processor consumes upstream data and produces processed data, forming a pipeline from data source to final tensors:"
+
+#: ../../tutorials/datapipe.rst:19
+msgid "所有 Processor 通过 **方法链** (method chaining) 串联："
+msgstr "All Processors are chained together via **method chaining**:"
+
+#: ../../tutorials/datapipe.rst:35
+msgid "类层次结构"
+msgstr "Class Hierarchy"
+
+#: ../../tutorials/datapipe.rst:45
+msgid "**Source** ：管道的起点，从 RecDataSet 中读取数据并封装为可迭代对象"
+msgstr "**Source**: The starting point of the pipeline; reads data from RecDataSet and wraps it as an iterable"
+
+#: ../../tutorials/datapipe.rst:46
+msgid "**PostProcessor** ：所有中间处理节点的基类，包装上游管道并逐条处理"
+msgstr "**PostProcessor**: Base class for all intermediate processing nodes; wraps the upstream pipeline and processes items one by one"
+
+#: ../../tutorials/datapipe.rst:47
+msgid "**SampleMultiplexer** ：按权重从多个数据源交替采样"
+msgstr "**SampleMultiplexer**: Alternately samples from multiple data sources according to weights"
+
+#: ../../tutorials/datapipe.rst:50
+msgid "内置 Processor 一览"
+msgstr "Built-in Processors Overview"
+
+#: ../../tutorials/datapipe.rst:52
+msgid "**数据源 (Source)**"
+msgstr "**Data Source**"
+
+#: ../../tutorials/datapipe.rst:58 ../../tutorials/datapipe.rst:73
+#: ../../tutorials/datapipe.rst:94 ../../tutorials/datapipe.rst:113
+msgid "方法"
+msgstr "Method"
+
+#: ../../tutorials/datapipe.rst:59 ../../tutorials/datapipe.rst:74
+#: ../../tutorials/datapipe.rst:95 ../../tutorials/datapipe.rst:114
+msgid "说明"
+msgstr "Description"
+
+#: ../../tutorials/datapipe.rst:60
+msgid "``.ordered_source_()``"
+msgstr ""
+
+#: ../../tutorials/datapipe.rst:61
+msgid "按原始顺序输出（用于验证/测试）"
+msgstr "Output in original order (for validation/testing)"
+
+#: ../../tutorials/datapipe.rst:62
+msgid "``.shuffled_source_()``"
+msgstr ""
+
+#: ../../tutorials/datapipe.rst:63
+msgid "每个 epoch 随机打乱"
+msgstr "Randomly shuffle each epoch"
+
+#: ../../tutorials/datapipe.rst:64
+msgid "``.choiced_source_()``"
+msgstr ""
+
+#: ../../tutorials/datapipe.rst:65
+msgid "有放回随机采样"
+msgstr "Random sampling with replacement"
+
+#: ../../tutorials/datapipe.rst:67
+msgid "**采样器 (Sampler)**"
+msgstr "**Sampler**"
+
+#: ../../tutorials/datapipe.rst:75
+msgid "``.gen_train_sampling_pos_()``"
+msgstr ""
+
+#: ../../tutorials/datapipe.rst:76
+msgid "为每个用户采样一个正样本（协同过滤）"
+msgstr "Sample one positive item for each user (collaborative filtering)"
+
+#: ../../tutorials/datapipe.rst:77
+msgid "``.gen_train_sampling_neg_(num_negatives)``"
+msgstr ""
+
+#: ../../tutorials/datapipe.rst:78
+msgid "采样负样本（协同过滤）"
+msgstr "Sample negative items (collaborative filtering)"
+
+#: ../../tutorials/datapipe.rst:79
+msgid "``.seq_train_yielding_pos_()``"
+msgstr ""
+
+#: ../../tutorials/datapipe.rst:80
+msgid "从序列中生成正样本目标（序列推荐）"
+msgstr "Generate positive target from sequence (sequential recommendation)"
+
+#: ../../tutorials/datapipe.rst:81
+msgid "``.seq_train_sampling_neg_(num_negatives)``"
+msgstr ""
+
+#: ../../tutorials/datapipe.rst:82
+msgid "为序列采样负样本"
+msgstr "Sample negative items for sequences"
+
+#: ../../tutorials/datapipe.rst:83
+msgid "``.valid_sampling_(ranking)``"
+msgstr ""
+
+#: ../../tutorials/datapipe.rst:84
+msgid "验证集采样（full 或 pool 模式）"
+msgstr "Validation set sampling (full or pool mode)"
+
+#: ../../tutorials/datapipe.rst:85
+msgid "``.test_sampling_(ranking)``"
+msgstr ""
+
+#: ../../tutorials/datapipe.rst:86
+msgid "测试集采样"
+msgstr "Test set sampling"
+
+#: ../../tutorials/datapipe.rst:88
+msgid "**行操作 (Row Ops)**"
+msgstr "**Row Operations**"
+
+#: ../../tutorials/datapipe.rst:96
+msgid "``.lpad_(maxlen, ...)``"
+msgstr ""
+
+#: ../../tutorials/datapipe.rst:97
+msgid "左填充到指定长度"
+msgstr "Left-pad to specified length"
+
+#: ../../tutorials/datapipe.rst:98
+msgid "``.rpad_(maxlen, ...)``"
+msgstr ""
+
+#: ../../tutorials/datapipe.rst:99
+msgid "右填充到指定长度"
+msgstr "Right-pad to specified length"
+
+#: ../../tutorials/datapipe.rst:100
+msgid "``.lprune_(maxlen, ...)``"
+msgstr ""
+
+#: ../../tutorials/datapipe.rst:101
+msgid "从左截断到指定长度"
+msgstr "Left-truncate to specified length"
+
+#: ../../tutorials/datapipe.rst:102
+msgid "``.rprune_(maxlen, ...)``"
+msgstr ""
+
+#: ../../tutorials/datapipe.rst:103
+msgid "从右截断到指定长度"
+msgstr "Right-truncate to specified length"
+
+#: ../../tutorials/datapipe.rst:104
+msgid "``.add_(offset, ...)``"
+msgstr ""
+
+#: ../../tutorials/datapipe.rst:105
+msgid "对指定字段加偏移量"
+msgstr "Add an offset to specified fields"
+
+#: ../../tutorials/datapipe.rst:107
+msgid "**批处理与张量化**"
+msgstr "**Batching and Tensorization**"
+
+#: ../../tutorials/datapipe.rst:115
+msgid "``.batch_(batch_size)``"
+msgstr ""
+
+#: ../../tutorials/datapipe.rst:116
+msgid "将数据分批"
+msgstr "Batch the data"
+
+#: ../../tutorials/datapipe.rst:117
+msgid "``.tensor_()``"
+msgstr ""
+
+#: ../../tutorials/datapipe.rst:118
+msgid "将批次转换为 PyTorch 张量"
+msgstr "Convert batches to PyTorch tensors"
+
+#: ../../tutorials/datapipe.rst:121
+msgid "典型管道示例"
+msgstr "Typical Pipeline Examples"
+
+#: ../../tutorials/datapipe.rst:123
+msgid "**序列推荐（SASRec 风格）：**"
+msgstr "**Sequential Recommendation (SASRec-style):**"
+
+#: ../../tutorials/datapipe.rst:142
+msgid "**协同过滤（MF-BPR 风格）：**"
+msgstr "**Collaborative Filtering (MF-BPR-style):**"
+
+#: ../../tutorials/datapipe.rst:158
+msgid "自定义 DataPipe"
+msgstr "Custom DataPipe"
+
+#: ../../tutorials/datapipe.rst:160
+msgid ""
+"通过 ``@dp.functional_datapipe`` 装饰器注册自定义管道， 继承 ``PostProcessor`` 并实现 "
+"``__iter__`` 方法："
+msgstr ""
+"Register a custom pipeline via the ``@dp.functional_datapipe`` decorator; "
+"inherit from ``PostProcessor`` and implement the ``__iter__`` method:"
+
+#: ../../tutorials/datapipe.rst:191
+msgid "**关键点：**"
+msgstr "**Key Points:**"
+
+#: ../../tutorials/datapipe.rst:193
+msgid "装饰器名称（如 ``\"my_transform_\"``）就是链式调用的方法名"
+msgstr "The decorator name (e.g., ``\"my_transform_\"``) becomes the method name for chaining"
+
+#: ../../tutorials/datapipe.rst:194
+msgid "``__init__`` 第一个参数必须是 ``source``（上游管道）"
+msgstr "The first parameter of ``__init__`` must be ``source`` (the upstream pipeline)"
+
+#: ../../tutorials/datapipe.rst:195
+msgid "``__iter__`` 逐条处理并 ``yield`` 修改后的行"
+msgstr "``__iter__`` processes items one by one and ``yield`` s the modified rows"
+
+#: ../../tutorials/datapipe.rst:196
+msgid "``row`` 是 ``Dict[Field, Any]``，通过 Field 对象访问和修改数据"
+msgstr "``row`` is a ``Dict[Field, Any]``; data is accessed and modified through Field objects"

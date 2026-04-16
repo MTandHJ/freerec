@@ -1,0 +1,339 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 18:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../tutorials/parser.rst:2
+msgid "配置系统 (Parser)"
+msgstr "Configuration System (Parser)"
+
+#: ../../tutorials/parser.rst:4
+msgid "FreeRec 使用 :class:`~freerec.parser.Parser` 统一管理命令行参数和 YAML 配置文件。"
+msgstr "FreeRec uses :class:`~freerec.parser.Parser` to uniformly manage command-line arguments and YAML configuration files."
+
+#: ../../tutorials/parser.rst:7
+msgid "基本用法"
+msgstr "Basic Usage"
+
+#: ../../tutorials/parser.rst:34
+msgid "YAML 配置文件"
+msgstr "YAML Configuration File"
+
+#: ../../tutorials/parser.rst:36
+msgid "通过 ``--config`` 指定 YAML 文件，文件中的值会作为默认值加载："
+msgstr "Specify a YAML file via ``--config``; values in the file are loaded as defaults:"
+
+#: ../../tutorials/parser.rst:56
+msgid "**优先级规则：** 命令行参数 > YAML 文件 > ``set_defaults``"
+msgstr "**Priority rules:** command-line arguments > YAML file > ``set_defaults``"
+
+#: ../../tutorials/parser.rst:64
+msgid "内置参数一览"
+msgstr "Built-in Parameters Overview"
+
+#: ../../tutorials/parser.rst:70
+msgid "参数"
+msgstr "Parameter"
+
+#: ../../tutorials/parser.rst:71
+msgid "默认值"
+msgstr "Default"
+
+#: ../../tutorials/parser.rst:72
+msgid "说明"
+msgstr "Description"
+
+#: ../../tutorials/parser.rst:73
+msgid "``--root``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:74
+msgid "``\".\"``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:75
+msgid "数据根目录"
+msgstr "Data root directory"
+
+#: ../../tutorials/parser.rst:76
+msgid "``--dataset``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:77
+msgid "``\"RecDataSet\"``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:78
+msgid "数据集名称"
+msgstr "Dataset name"
+
+#: ../../tutorials/parser.rst:79
+msgid "``--config``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:80 ../../tutorials/parser.rst:83
+#: ../../tutorials/parser.rst:89 ../../tutorials/parser.rst:92
+#: ../../tutorials/parser.rst:98 ../../tutorials/parser.rst:101
+msgid "``None``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:81
+msgid "YAML 配置文件路径"
+msgstr "Path to YAML configuration file"
+
+#: ../../tutorials/parser.rst:82
+msgid "``--tasktag``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:84
+msgid "任务类型：``MATCHING`` / ``NEXTITEM`` / ``PREDICTION``"
+msgstr "Task type: ``MATCHING`` / ``NEXTITEM`` / ``PREDICTION``"
+
+#: ../../tutorials/parser.rst:85
+msgid "``--ranking``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:86
+msgid "``\"full\"``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:87
+msgid "评估方式：``full``（全量排序）/ ``pool``（候选池排序）"
+msgstr "Evaluation mode: ``full`` (full ranking) / ``pool`` (candidate pool ranking)"
+
+#: ../../tutorials/parser.rst:88
+msgid "``--epochs``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:90
+msgid "训练轮数"
+msgstr "Number of training epochs"
+
+#: ../../tutorials/parser.rst:91
+msgid "``--batch-size`` (``-b``)"
+msgstr ""
+
+#: ../../tutorials/parser.rst:93
+msgid "批大小"
+msgstr "Batch size"
+
+#: ../../tutorials/parser.rst:94
+msgid "``--optimizer``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:95
+msgid "``\"adam\"``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:96
+msgid "优化器：``adam`` / ``sgd`` / ``adamw``"
+msgstr "Optimizer: ``adam`` / ``sgd`` / ``adamw``"
+
+#: ../../tutorials/parser.rst:97
+msgid "``--lr`` (``-lr``)"
+msgstr ""
+
+#: ../../tutorials/parser.rst:99
+msgid "学习率"
+msgstr "Learning rate"
+
+#: ../../tutorials/parser.rst:100
+msgid "``--weight-decay`` (``-wd``)"
+msgstr ""
+
+#: ../../tutorials/parser.rst:102
+msgid "权重衰减"
+msgstr "Weight decay"
+
+#: ../../tutorials/parser.rst:103
+msgid "``--momentum`` (``-mom``)"
+msgstr ""
+
+#: ../../tutorials/parser.rst:104 ../../tutorials/parser.rst:107
+msgid "``0.9``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:105
+msgid "SGD 动量"
+msgstr "SGD momentum"
+
+#: ../../tutorials/parser.rst:106
+msgid "``--beta1``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:108
+msgid "Adam beta1"
+msgstr ""
+
+#: ../../tutorials/parser.rst:109
+msgid "``--beta2``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:110
+msgid "``0.999``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:111
+msgid "Adam beta2"
+msgstr ""
+
+#: ../../tutorials/parser.rst:112
+msgid "``--device``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:113
+msgid "自动检测"
+msgstr "Auto-detect"
+
+#: ../../tutorials/parser.rst:114
+msgid "计算设备"
+msgstr "Computing device"
+
+#: ../../tutorials/parser.rst:115
+msgid "``--num-workers``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:116
+msgid "``4``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:117
+msgid "DataLoader 工作进程数"
+msgstr "Number of DataLoader workers"
+
+#: ../../tutorials/parser.rst:118
+msgid "``--seed``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:119
+msgid "``1``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:120
+msgid "随机种子"
+msgstr "Random seed"
+
+#: ../../tutorials/parser.rst:121
+msgid "``--eval-freq``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:122
+msgid "``5``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:123
+msgid "每隔多少 epoch 评估一次"
+msgstr "Evaluate every N epochs"
+
+#: ../../tutorials/parser.rst:124
+msgid "``--eval-valid``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:125
+msgid "``True``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:126
+msgid "是否评估验证集"
+msgstr "Whether to evaluate on validation set"
+
+#: ../../tutorials/parser.rst:127
+msgid "``--eval-test``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:128 ../../tutorials/parser.rst:134
+#: ../../tutorials/parser.rst:140
+msgid "``False``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:129
+msgid "是否评估测试集（默认仅在最后评估）"
+msgstr "Whether to evaluate on test set (only at the end by default)"
+
+#: ../../tutorials/parser.rst:130
+msgid "``--early-stop-patience`` (``-esp``)"
+msgstr ""
+
+#: ../../tutorials/parser.rst:131
+msgid "很大"
+msgstr "Very large"
+
+#: ../../tutorials/parser.rst:132
+msgid "早停耐心值"
+msgstr "Early stopping patience"
+
+#: ../../tutorials/parser.rst:133
+msgid "``--resume``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:135
+msgid "是否从 checkpoint 恢复"
+msgstr "Whether to resume from checkpoint"
+
+#: ../../tutorials/parser.rst:136
+msgid "``--description`` (``-m``)"
+msgstr ""
+
+#: ../../tutorials/parser.rst:137
+msgid "``\"RecSys\"``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:138
+msgid "实验描述（用于日志路径）"
+msgstr "Experiment description (used in log path)"
+
+#: ../../tutorials/parser.rst:139
+msgid "``--benchmark``"
+msgstr ""
+
+#: ../../tutorials/parser.rst:141
+msgid "启用 cuDNN benchmark 模式"
+msgstr "Enable cuDNN benchmark mode"
+
+#: ../../tutorials/parser.rst:144
+msgid "compile() 做了什么"
+msgstr "What compile() Does"
+
+#: ../../tutorials/parser.rst:146
+msgid "调用 ``cfg.compile()`` 会依次执行："
+msgstr "Calling ``cfg.compile()`` performs the following steps in order:"
+
+#: ../../tutorials/parser.rst:148
+msgid "加载 YAML 配置文件（如指定了 ``--config``）"
+msgstr "Load the YAML configuration file (if ``--config`` is specified)"
+
+#: ../../tutorials/parser.rst:149
+msgid "生成日志和 checkpoint 路径"
+msgstr "Generate log and checkpoint paths"
+
+#: ../../tutorials/parser.rst:150
+msgid "初始化分布式训练（如有多卡）"
+msgstr "Initialize distributed training (if multiple GPUs are available)"
+
+#: ../../tutorials/parser.rst:151
+msgid "配置设备、日志、随机种子"
+msgstr "Configure device, logging, and random seed"
+
+#: ../../tutorials/parser.rst:152
+msgid "在日志目录写入 ``README.md``（保存当前配置快照）"
+msgstr "Write ``README.md`` in the log directory (saving the current configuration snapshot)"
+
+#: ../../tutorials/parser.rst:154
+msgid "生成的目录结构："
+msgstr "Generated directory structure:"

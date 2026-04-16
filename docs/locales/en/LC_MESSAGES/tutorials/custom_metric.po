@@ -1,0 +1,311 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 18:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../tutorials/custom_metric.rst:2
+msgid "自定义指标"
+msgstr "Custom Metrics"
+
+#: ../../tutorials/custom_metric.rst:4
+msgid "FreeRec 内置了 16 种评估指标，同时支持通过 ``register_metric`` 注册自定义指标。"
+msgstr "FreeRec includes 16 built-in evaluation metrics and supports registering custom metrics via ``register_metric``."
+
+#: ../../tutorials/custom_metric.rst:7
+msgid "内置指标"
+msgstr "Built-in Metrics"
+
+#: ../../tutorials/custom_metric.rst:9
+msgid "**排序指标** （支持 ``@K`` 截断）："
+msgstr "**Ranking Metrics** (support ``@K`` cutoff):"
+
+#: ../../tutorials/custom_metric.rst:15 ../../tutorials/custom_metric.rst:46
+#: ../../tutorials/custom_metric.rst:65
+msgid "名称"
+msgstr "Name"
+
+#: ../../tutorials/custom_metric.rst:16 ../../tutorials/custom_metric.rst:47
+#: ../../tutorials/custom_metric.rst:66
+msgid "配置写法"
+msgstr "Configuration Syntax"
+
+#: ../../tutorials/custom_metric.rst:17 ../../tutorials/custom_metric.rst:48
+#: ../../tutorials/custom_metric.rst:67 ../../tutorials/custom_metric.rst:148
+msgid "说明"
+msgstr "Description"
+
+#: ../../tutorials/custom_metric.rst:18
+msgid "Precision"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:19
+msgid "``Precision@10``"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:20
+msgid "Top-K 精确率"
+msgstr "Top-K precision"
+
+#: ../../tutorials/custom_metric.rst:21
+msgid "Recall"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:22
+msgid "``Recall@20``"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:23
+msgid "Top-K 召回率"
+msgstr "Top-K recall"
+
+#: ../../tutorials/custom_metric.rst:24
+msgid "F1"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:25
+msgid "``F1@10``"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:26
+msgid "Precision 和 Recall 的调和平均"
+msgstr "Harmonic mean of Precision and Recall"
+
+#: ../../tutorials/custom_metric.rst:27
+msgid "HitRate"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:28
+msgid "``HitRate@10``"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:29
+msgid "Top-K 命中率（至少命中一个为 1）"
+msgstr "Top-K hit rate (1 if at least one hit)"
+
+#: ../../tutorials/custom_metric.rst:30
+msgid "NDCG"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:31
+msgid "``NDCG@10``"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:32
+msgid "归一化折损累计增益"
+msgstr "Normalized Discounted Cumulative Gain"
+
+#: ../../tutorials/custom_metric.rst:33
+msgid "MRR"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:34
+msgid "``MRR@10``"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:35
+msgid "平均倒数排名"
+msgstr "Mean Reciprocal Rank"
+
+#: ../../tutorials/custom_metric.rst:36
+msgid "MAP"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:37
+msgid "``MAP@10``"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:38
+msgid "平均精度均值"
+msgstr "Mean Average Precision"
+
+#: ../../tutorials/custom_metric.rst:40
+msgid "**回归指标：**"
+msgstr "**Regression Metrics:**"
+
+#: ../../tutorials/custom_metric.rst:49
+msgid "MSE"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:50
+msgid "``MSE``"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:51
+msgid "均方误差"
+msgstr "Mean Squared Error"
+
+#: ../../tutorials/custom_metric.rst:52
+msgid "MAE"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:53
+msgid "``MAE``"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:54
+msgid "平均绝对误差"
+msgstr "Mean Absolute Error"
+
+#: ../../tutorials/custom_metric.rst:55
+msgid "RMSE"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:56
+msgid "``RMSE``"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:57
+msgid "均方根误差"
+msgstr "Root Mean Squared Error"
+
+#: ../../tutorials/custom_metric.rst:59
+msgid "**分类指标：**"
+msgstr "**Classification Metrics:**"
+
+#: ../../tutorials/custom_metric.rst:68
+msgid "AUC"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:69
+msgid "``AUC``"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:70
+msgid "ROC 曲线下面积"
+msgstr "Area Under the ROC Curve"
+
+#: ../../tutorials/custom_metric.rst:71
+msgid "GAUC"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:72
+msgid "``GAUC``"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:73
+msgid "分组 AUC（按用户加权）"
+msgstr "Grouped AUC (weighted by user)"
+
+#: ../../tutorials/custom_metric.rst:74
+msgid "LogLoss"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:75
+msgid "``LOGLOSS``"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:76
+msgid "二元对数损失"
+msgstr "Binary log loss"
+
+#: ../../tutorials/custom_metric.rst:78
+msgid "**特殊指标：**"
+msgstr "**Special Metrics:**"
+
+#: ../../tutorials/custom_metric.rst:80
+msgid "``LOSS`` — 训练损失，自动跟踪，无需手动注册"
+msgstr "``LOSS`` -- Training loss, automatically tracked, no manual registration needed"
+
+#: ../../tutorials/custom_metric.rst:83
+msgid "配置方式"
+msgstr "Configuration"
+
+#: ../../tutorials/custom_metric.rst:85
+msgid "在 YAML 中指定要监控的指标和用于早停的指标："
+msgstr "Specify the metrics to monitor and the metric for early stopping in YAML:"
+
+#: ../../tutorials/custom_metric.rst:92
+msgid "``monitors`` — 训练过程中跟踪的指标列表"
+msgstr "``monitors`` -- List of metrics tracked during training"
+
+#: ../../tutorials/custom_metric.rst:93
+msgid "``which4best`` — 用于选择最佳模型和早停判断的指标"
+msgstr "``which4best`` -- Metric used for best model selection and early stopping"
+
+#: ../../tutorials/custom_metric.rst:96
+msgid "注册自定义指标"
+msgstr "Registering Custom Metrics"
+
+#: ../../tutorials/custom_metric.rst:98
+msgid "使用 ``coach.register_metric()`` 在训练前注册："
+msgstr "Register before training using ``coach.register_metric()``:"
+
+#: ../../tutorials/custom_metric.rst:141
+msgid "**register_metric 参数说明：**"
+msgstr "**register_metric Parameter Description:**"
+
+#: ../../tutorials/custom_metric.rst:147
+msgid "参数"
+msgstr "Parameter"
+
+#: ../../tutorials/custom_metric.rst:149
+msgid "``name``"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:150
+msgid "指标全名，如 ``'TopKAcc@10'``。含 ``@`` 时自动提取 K 值传给函数"
+msgstr "Full metric name, e.g., ``'TopKAcc@10'``. When ``@`` is present, the K value is automatically extracted and passed to the function"
+
+#: ../../tutorials/custom_metric.rst:151
+msgid "``func``"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:152
+msgid "指标函数，签名为 ``func(preds, targets, *, k=...) -> Tensor``"
+msgstr "Metric function with signature ``func(preds, targets, *, k=...) -> Tensor``"
+
+#: ../../tutorials/custom_metric.rst:153
+msgid "``fmt``"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:154
+msgid "数值显示格式，默认 ``'.4f'``"
+msgstr "Numeric display format, default ``'.4f'``"
+
+#: ../../tutorials/custom_metric.rst:155
+msgid "``best_caster``"
+msgstr ""
+
+#: ../../tutorials/custom_metric.rst:156
+msgid "``max`` 或 ``min``，表示指标是越大越好还是越小越好"
+msgstr "``max`` or ``min``, indicating whether a higher or lower value is better"
+
+#: ../../tutorials/custom_metric.rst:159
+msgid "指标函数规范"
+msgstr "Metric Function Specification"
+
+#: ../../tutorials/custom_metric.rst:161
+msgid "自定义指标函数需满足："
+msgstr "Custom metric functions must satisfy:"
+
+#: ../../tutorials/custom_metric.rst:163
+msgid "接受 ``preds`` 和 ``targets`` 两个位置参数"
+msgstr "Accept two positional arguments: ``preds`` and ``targets``"
+
+#: ../../tutorials/custom_metric.rst:164
+msgid "如果支持 ``@K`` 截断，需接受 ``k`` 关键字参数"
+msgstr "If supporting ``@K`` cutoff, accept a ``k`` keyword argument"
+
+#: ../../tutorials/custom_metric.rst:165
+msgid "返回一个标量或一维张量（会被自动 reduce）"
+msgstr "Return a scalar or 1-D tensor (will be automatically reduced)"
+
+#: ../../tutorials/custom_metric.rst:167
+msgid "可以使用 ``freerec.metrics._reduce`` 装饰器自动添加 reduction 支持："
+msgstr "You can use the ``freerec.metrics._reduce`` decorator to automatically add reduction support:"

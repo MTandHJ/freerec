@@ -1,0 +1,234 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 11:32+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../api/freerec.criterions.rst:2
+msgid "freerec.criterions"
+msgstr ""
+
+#: freerec.criterions.BaseCriterion:1 of
+msgid "Base class for all FreeRec loss criteria."
+msgstr ""
+
+#: freerec.criterions.BaseCriterion:3 of
+msgid ""
+"Provides a common ``reduction`` attribute and a static helper for "
+"parameter regularization."
+msgstr ""
+
+#: ../../api/freerec.criterions.rst freerec.criterions.BaseCriterion.__init__
+#: freerec.criterions.KLDivLoss4Logits.__init__ of
+msgid "参数"
+msgstr ""
+
+#: freerec.criterions.BaseCriterion:6 of
+msgid ""
+"Reduction applied to the loss output.  One of ``'none'``, ``'sum'``, or "
+"``'mean'`` (default)."
+msgstr ""
+
+#: freerec.criterions.BaseCriterion.__init__:1 of
+msgid "Initialize BaseCriterion with the given reduction mode."
+msgstr ""
+
+#: ../../api/freerec.criterions.rst freerec.criterions.BaseCriterion.__init__
+#: freerec.criterions.KLDivLoss4Logits.__init__ of
+msgid "返回类型"
+msgstr ""
+
+#: freerec.criterions.BaseCriterion.regularize:1 of
+msgid "Compute a regularization penalty over the given parameters."
+msgstr ""
+
+#: freerec.criterions.BaseCriterion.regularize:3 of
+msgid "Parameters to regularize."
+msgstr ""
+
+#: freerec.criterions.BaseCriterion.regularize:5 of
+msgid ""
+"Regularization type.  ``'l1'`` for L1 norm, ``'l2'`` (default) for "
+"squared L2 norm divided by 2."
+msgstr ""
+
+#: ../../api/freerec.criterions.rst
+msgid "返回"
+msgstr ""
+
+#: freerec.criterions.BaseCriterion.regularize:9 of
+msgid "Scalar regularization loss."
+msgstr ""
+
+#: freerec.criterions.BCELoss4Logits.forward:11
+#: freerec.criterions.BPRLoss.forward:11
+#: freerec.criterions.BaseCriterion.regularize:10
+#: freerec.criterions.CrossEntropy4Logits.forward:13
+#: freerec.criterions.KLDivLoss4Logits.forward:11
+#: freerec.criterions.L1Loss.forward:11 freerec.criterions.MSELoss.forward:11
+#: of
+msgid ":class:`torch.Tensor`"
+msgstr ""
+
+#: ../../api/freerec.criterions.rst
+msgid "抛出"
+msgstr ""
+
+#: freerec.criterions.BaseCriterion.regularize:12 of
+msgid "If *rtype* is not ``'l1'`` or ``'l2'``."
+msgstr ""
+
+#: freerec.criterions.CrossEntropy4Logits:1 of
+msgid "Cross-entropy loss operating on raw logits."
+msgstr ""
+
+#: freerec.criterions.CrossEntropy4Logits:3 of
+msgid "Wraps :func:`torch.nn.functional.cross_entropy`."
+msgstr ""
+
+#: freerec.criterions.CrossEntropy4Logits.forward:1 of
+msgid "Compute the cross-entropy loss."
+msgstr ""
+
+#: freerec.criterions.CrossEntropy4Logits.forward:3 of
+msgid "Unnormalized logits of shape ``(C,)``, ``(B, C)``, or ``(B, C, ...)``."
+msgstr ""
+
+#: freerec.criterions.CrossEntropy4Logits.forward:6 of
+msgid "Ground-truth class indices of shape ``(,)``, ``(B,)``, or ``(B, ...)``."
+msgstr ""
+
+#: freerec.criterions.BCELoss4Logits.forward:7
+#: freerec.criterions.BPRLoss.forward:7
+#: freerec.criterions.CrossEntropy4Logits.forward:9
+#: freerec.criterions.KLDivLoss4Logits.forward:7
+#: freerec.criterions.L1Loss.forward:7 freerec.criterions.MSELoss.forward:7 of
+msgid "Override the instance-level reduction if provided."
+msgstr ""
+
+#: freerec.criterions.BCELoss4Logits.forward:10
+#: freerec.criterions.BPRLoss.forward:10
+#: freerec.criterions.CrossEntropy4Logits.forward:12
+#: freerec.criterions.KLDivLoss4Logits.forward:10
+#: freerec.criterions.L1Loss.forward:10 freerec.criterions.MSELoss.forward:10
+#: of
+msgid "Computed loss."
+msgstr ""
+
+#: freerec.criterions.KLDivLoss4Logits:1 of
+msgid "KL divergence loss operating on raw logits."
+msgstr ""
+
+#: freerec.criterions.KLDivLoss4Logits:3 of
+msgid ""
+"Both *logits* and *targets* are expected to be unnormalized; softmax / "
+"log-softmax is applied internally."
+msgstr ""
+
+#: freerec.criterions.KLDivLoss4Logits:6 of
+msgid "Reduction mode.  Default is ``'batchmean'``."
+msgstr ""
+
+#: freerec.criterions.KLDivLoss4Logits.__init__:1 of
+msgid "Initialize KLDivLoss4Logits with the given reduction mode."
+msgstr ""
+
+#: freerec.criterions.KLDivLoss4Logits.forward:1 of
+msgid "Compute the KL divergence loss."
+msgstr ""
+
+#: freerec.criterions.BCELoss4Logits.forward:3
+#: freerec.criterions.KLDivLoss4Logits.forward:3 of
+msgid "Unnormalized logits."
+msgstr ""
+
+#: freerec.criterions.KLDivLoss4Logits.forward:5 of
+msgid "Unnormalized target logits with the same shape as *logits*."
+msgstr ""
+
+#: freerec.criterions.BPRLoss:1 of
+msgid "Bayesian Personalized Ranking (BPR) pairwise loss."
+msgstr ""
+
+#: freerec.criterions.BPRLoss:3 of
+#, python-brace-format
+msgid ""
+"Computes :math:`\\log\\sigma(\\text{neg\\_scores} - "
+"\\text{pos\\_scores})` via :func:`torch.nn.functional.softplus`."
+msgstr ""
+
+#: freerec.criterions.BPRLoss.forward:1 of
+msgid "Compute the BPR loss."
+msgstr ""
+
+#: freerec.criterions.BPRLoss.forward:3 of
+msgid "Scores for positive (observed) items."
+msgstr ""
+
+#: freerec.criterions.BPRLoss.forward:5 of
+msgid "Scores for negative (unobserved) items."
+msgstr ""
+
+#: freerec.criterions.BCELoss4Logits:1 of
+msgid "Binary cross-entropy loss operating on raw logits."
+msgstr ""
+
+#: freerec.criterions.BCELoss4Logits:3 of
+msgid "Wraps :func:`torch.nn.functional.binary_cross_entropy_with_logits`."
+msgstr ""
+
+#: freerec.criterions.BCELoss4Logits.forward:1 of
+msgid "Compute the binary cross-entropy loss."
+msgstr ""
+
+#: freerec.criterions.BCELoss4Logits.forward:5 of
+msgid "Binary targets with the same shape as *logits*."
+msgstr ""
+
+#: freerec.criterions.MSELoss:1 of
+msgid "Mean squared error loss."
+msgstr ""
+
+#: freerec.criterions.MSELoss:3 of
+msgid "Wraps :func:`torch.nn.functional.mse_loss`."
+msgstr ""
+
+#: freerec.criterions.MSELoss.forward:1 of
+msgid "Compute the MSE loss."
+msgstr ""
+
+#: freerec.criterions.L1Loss.forward:3 freerec.criterions.MSELoss.forward:3 of
+msgid "Predicted values."
+msgstr ""
+
+#: freerec.criterions.L1Loss.forward:5 freerec.criterions.MSELoss.forward:5 of
+msgid "Ground-truth values with the same shape as *inputs*."
+msgstr ""
+
+#: freerec.criterions.L1Loss:1 of
+msgid "L1 (mean absolute error) loss."
+msgstr ""
+
+#: freerec.criterions.L1Loss:3 of
+msgid "Wraps :func:`torch.nn.functional.l1_loss`."
+msgstr ""
+
+#: freerec.criterions.L1Loss.forward:1 of
+msgid "Compute the L1 loss."
+msgstr ""
+

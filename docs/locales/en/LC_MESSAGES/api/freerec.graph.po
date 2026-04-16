@@ -1,0 +1,168 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 18:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../api/freerec.graph.rst:2
+msgid "freerec.graph"
+msgstr ""
+
+#: ../../api/freerec.graph.rst:6
+msgid ""
+"This module requires ``torch-geometric``. Install with ``pip install "
+"freerec[graph]``."
+msgstr ""
+
+#: freerec.graph.to_adjacency:1 of
+msgid "Build a CSR sparse adjacency matrix from an edge index."
+msgstr ""
+
+#: ../../api/freerec.graph.rst
+msgid "参数"
+msgstr ""
+
+#: freerec.graph.to_adjacency:3 of
+msgid "Edge index of shape ``(2, E)`` where ``E`` is the number of edges."
+msgstr ""
+
+#: freerec.graph.to_adjacency:5 freerec.graph.to_normalized:15 of
+msgid "Edge weights of shape ``(E,)``.  When ``None``, all weights are set to 1."
+msgstr ""
+
+#: freerec.graph.to_adjacency:8 of
+msgid "Number of nodes.  Inferred from *edge_index* when ``None``."
+msgstr ""
+
+#: ../../api/freerec.graph.rst
+msgid "返回"
+msgstr ""
+
+#: freerec.graph.to_adjacency:11 of
+msgid "Sparse CSR adjacency matrix of shape ``(num_nodes, num_nodes)``."
+msgstr ""
+
+#: ../../api/freerec.graph.rst
+msgid "返回类型"
+msgstr ""
+
+#: freerec.graph.to_adjacency:12 of
+msgid ":class:`torch.Tensor`"
+msgstr ""
+
+#: freerec.graph.to_normalized:1 of
+msgid "Normalize edge weights using degree-based normalization."
+msgstr ""
+
+#: freerec.graph.to_normalized:3 of
+msgid "Supports symmetric square-root, left-side, and right-side normalization:"
+msgstr ""
+
+#: freerec.graph.to_normalized:5 of
+msgid ""
+"\\text{sym:}   \\quad \\tilde{\\mathbf{A}} = "
+"\\mathbf{D}_l^{-1/2}\\,\\mathbf{A}\\,\\mathbf{D}_r^{-1/2}\n"
+"\n"
+"\\text{left:}  \\quad \\tilde{\\mathbf{A}} = "
+"\\mathbf{D}_l^{-1}\\,\\mathbf{A}\n"
+"\n"
+"\\text{right:} \\quad \\tilde{\\mathbf{A}} = "
+"\\mathbf{A}\\,\\mathbf{D}_r^{-1}"
+msgstr ""
+
+#: freerec.graph.to_normalized:13 of
+msgid "Edge index of shape ``(2, E)``."
+msgstr ""
+
+#: freerec.graph.to_normalized:18 of
+msgid ""
+"Normalization type.  One of ``'sym'`` (default), ``'left'``, or "
+"``'right'``."
+msgstr ""
+
+#: freerec.graph.to_normalized:22 of
+msgid ""
+"* **edge_index** (:class:`torch.Tensor`) -- The (unchanged) edge index. *"
+" **edge_weight** (:class:`torch.Tensor`) -- Normalized edge weights."
+msgstr ""
+
+#: freerec.graph.to_normalized:22 of
+msgid "**edge_index** (:class:`torch.Tensor`) -- The (unchanged) edge index."
+msgstr ""
+
+#: freerec.graph.to_normalized:23 of
+msgid "**edge_weight** (:class:`torch.Tensor`) -- Normalized edge weights."
+msgstr ""
+
+#: ../../api/freerec.graph.rst
+msgid "抛出"
+msgstr ""
+
+#: freerec.graph.to_normalized:25 of
+msgid "If *normalization* is not one of the supported values."
+msgstr ""
+
+#: freerec.graph.get_knn_graph:1 of
+msgid "Construct a k-nearest-neighbor graph from a similarity matrix."
+msgstr ""
+
+#: freerec.graph.get_knn_graph:3 of
+msgid ""
+"For each row of *sim_mat* the top-*k* entries are selected.  Optionally "
+"the resulting directed graph is symmetrized into an undirected one."
+msgstr ""
+
+#: freerec.graph.get_knn_graph:6 of
+msgid ""
+"Similarity matrix of shape ``(M, N)``.  May be dense or sparse COO "
+"(converted to dense internally)."
+msgstr ""
+
+#: freerec.graph.get_knn_graph:9 of
+msgid "Number of nearest neighbors per node."
+msgstr ""
+
+#: freerec.graph.get_knn_graph:11 of
+msgid ""
+"If ``True`` (default), convert to an undirected graph using "
+":func:`torch_geometric.utils.to_undirected`.  Requires ``M == N``."
+msgstr ""
+
+#: freerec.graph.get_knn_graph:14 of
+msgid ""
+"Reduce operation passed to :func:`torch_geometric.utils.to_undirected` "
+"for merging duplicate edges.  Default is ``'max'``."
+msgstr ""
+
+#: freerec.graph.get_knn_graph:18 of
+msgid ""
+"* **edge_index** (:class:`torch.Tensor`) -- Edge index of shape ``(2, "
+"E)``. * **edge_weight** (:class:`torch.Tensor`) -- Corresponding edge "
+"weights of shape ``(E,)``."
+msgstr ""
+
+#: freerec.graph.get_knn_graph:18 of
+msgid "**edge_index** (:class:`torch.Tensor`) -- Edge index of shape ``(2, E)``."
+msgstr ""
+
+#: freerec.graph.get_knn_graph:19 of
+msgid ""
+"**edge_weight** (:class:`torch.Tensor`) -- Corresponding edge weights of "
+"shape ``(E,)``."
+msgstr ""
+

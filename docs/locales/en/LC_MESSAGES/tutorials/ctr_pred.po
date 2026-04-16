@@ -1,0 +1,85 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 18:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../tutorials/ctr_pred.rst:2
+msgid "点击率预测"
+msgstr "Click-Through Rate Prediction"
+
+#: ../../tutorials/ctr_pred.rst:4
+msgid ""
+"点击率预测 (CTR Prediction) 模型根据用户和物品的多维特征预测点击概率。 FreeRec 中的 CTR 模型继承自 "
+":class:`~freerec.models.base.PredRecArch`。"
+msgstr ""
+"Click-Through Rate (CTR) Prediction models predict click probability based on multi-dimensional features of users and items. "
+"CTR models in FreeRec inherit from :class:`~freerec.models.base.PredRecArch`."
+
+#: ../../tutorials/ctr_pred.rst:8
+msgid "DCN"
+msgstr ""
+
+#: ../../tutorials/ctr_pred.rst:10
+msgid ""
+"**Deep & Cross Network** — 通过交叉网络 (Cross Network) 显式建模特征间的高阶交互， 结合深度网络 "
+"(DNN) 捕捉隐式交互。"
+msgstr ""
+"**Deep & Cross Network** -- Explicitly models high-order feature interactions through the Cross Network, "
+"combined with a Deep Neural Network (DNN) to capture implicit interactions."
+
+#: ../../tutorials/ctr_pred.rst:17
+msgid "examples/DCN/main.py"
+msgstr ""
+
+#: ../../tutorials/ctr_pred.rst:22
+msgid "**代码要点：**"
+msgstr "**Code Highlights:**"
+
+#: ../../tutorials/ctr_pred.rst:24
+msgid ""
+"**多特征嵌入** ：对离散特征使用 ``nn.Embedding``，对连续特征使用 ``nn.Linear`` + "
+"``Unsqueeze``，拼接为统一输入"
+msgstr ""
+"**Multi-feature Embedding**: Uses ``nn.Embedding`` for categorical features and ``nn.Linear`` + "
+"``Unsqueeze`` for continuous features, concatenated into a unified input"
+
+#: ../../tutorials/ctr_pred.rst:25
+#, python-brace-format
+msgid ""
+"**交叉网络** ：``CrossInteraction`` 层实现 :math:`x_{i+1} = x_0 \\cdot w^T x_i + "
+"b + x_i`，逐层叠加特征交叉"
+msgstr ""
+"**Cross Network**: The ``CrossInteraction`` layer implements :math:`x_{i+1} = x_0 \\cdot w^T x_i + "
+"b + x_i`, stacking feature crosses layer by layer"
+
+#: ../../tutorials/ctr_pred.rst:26
+msgid "**并行结构** ：Cross Network 和 DNN 并行处理同一输入，最终拼接后通过全连接层输出"
+msgstr "**Parallel Structure**: The Cross Network and DNN process the same input in parallel; the outputs are concatenated and passed through a fully connected layer"
+
+#: ../../tutorials/ctr_pred.rst:27
+msgid "**差异化正则** ：``marked_params`` 对嵌入层和其他参数使用不同的 weight_decay"
+msgstr "**Differentiated Regularization**: ``marked_params`` applies different weight_decay values to embedding layers and other parameters"
+
+#: ../../tutorials/ctr_pred.rst:28
+msgid "**学习率调度** ：使用 ``ReduceLROnPlateau``，根据验证集最佳指标自动降低学习率"
+msgstr "**Learning Rate Scheduling**: Uses ``ReduceLROnPlateau`` to automatically reduce the learning rate based on the best validation metric"
+
+#: ../../tutorials/ctr_pred.rst:29
+msgid "**训练管道** ：``shuffled_inter_source`` 直接打乱交互记录（非序列），每条记录包含所有特征字段"
+msgstr "**Training Pipeline**: ``shuffled_inter_source`` directly shuffles interaction records (non-sequential); each record contains all feature fields"

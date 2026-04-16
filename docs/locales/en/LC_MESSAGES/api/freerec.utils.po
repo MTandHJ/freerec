@@ -1,0 +1,920 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 18:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../api/freerec.utils.rst:2
+msgid "freerec.utils"
+msgstr ""
+
+#: freerec.utils.AverageMeter:1 of
+msgid "Compute and store the average and current value of a metric."
+msgstr ""
+
+#: ../../api/freerec.utils.rst freerec.utils.AverageMeter.__init__
+#: freerec.utils.AverageMeter.gather freerec.utils.AverageMeter.which_is_better
+#: of
+msgid "参数"
+msgstr ""
+
+#: freerec.utils.AverageMeter:3 of
+msgid "The name of the meter."
+msgstr ""
+
+#: freerec.utils.AverageMeter:5 of
+msgid "Metric function."
+msgstr ""
+
+#: freerec.utils.AverageMeter:7 of
+msgid "Output format, by default ``'.5f'``."
+msgstr ""
+
+#: freerec.utils.AverageMeter:9 of
+msgid ""
+"The best caster between ``min`` or ``max`` based on the metric, by "
+"default ``max``."
+msgstr ""
+
+#: freerec.utils.AverageMeter.__init__:1 of
+msgid "Initialize the meter."
+msgstr ""
+
+#: freerec.utils.AverageMeter.history:1 of
+msgid "Get the historical results."
+msgstr ""
+
+#: freerec.utils.AverageMeter.reset:1 of
+msgid "Reset the meter values."
+msgstr ""
+
+#: ../../api/freerec.utils.rst freerec.utils.AverageMeter.reset
+#: freerec.utils.AverageMeter.which_is_better of
+msgid "返回类型"
+msgstr ""
+
+#: freerec.utils.AverageMeter.gather:1 of
+msgid "Gather metrics from other processes (DDP)."
+msgstr ""
+
+#: freerec.utils.AverageMeter.update:1 of
+msgid "Update the meter with a new value."
+msgstr ""
+
+#: freerec.utils.AverageMeter.update:3 of
+msgid "The metric value."
+msgstr ""
+
+#: freerec.utils.AverageMeter.update:5 of
+msgid "Batch size, by default 1."
+msgstr ""
+
+#: freerec.utils.AverageMeter.update:7 of
+msgid "Reduction mode: ``'sum'`` or ``'mean'``, by default ``'mean'``."
+msgstr ""
+
+#: freerec.utils.AverageMeter.step:1 of
+msgid "Save the average value to history and reset the meter."
+msgstr ""
+
+#: ../../api/freerec.utils.rst
+msgid "返回"
+msgstr ""
+
+#: freerec.utils.AverageMeter.step:3 of
+msgid "Average value in a formatted string."
+msgstr ""
+
+#: freerec.utils.AverageMeter.save:9 freerec.utils.AverageMeter.step:4
+#: freerec.utils.debugLogger:7 freerec.utils.infoLogger:9
+#: freerec.utils.warnLogger:7 of
+msgid ":py:class:`str`"
+msgstr ""
+
+#: freerec.utils.AverageMeter.check:1 of
+msgid "Compute and validate the metric value."
+msgstr ""
+
+#: freerec.utils.AverageMeter.check:3 of
+msgid "Arguments forwarded to the metric function."
+msgstr ""
+
+#: freerec.utils.AverageMeter.check:5 of
+msgid "The computed metric value."
+msgstr ""
+
+#: freerec.utils.AverageMeter.check:6 of
+msgid ":py:class:`float`"
+msgstr ""
+
+#: ../../api/freerec.utils.rst
+msgid "抛出"
+msgstr ""
+
+#: freerec.utils.AverageMeter.check:8 of
+msgid "If the metric value is NaN or Inf."
+msgstr ""
+
+#: freerec.utils.AverageMeter.plot:1 of
+msgid "Plot the meter history as a line chart."
+msgstr ""
+
+#: freerec.utils.AverageMeter.plot:3 of
+msgid "Evaluation frequency used to scale the x-axis, by default 1."
+msgstr ""
+
+#: freerec.utils.AverageMeter.save:1 of
+msgid "Save the plotted curve as a PNG file."
+msgstr ""
+
+#: freerec.utils.AverageMeter.save:3 of
+msgid "Directory path to save the file to."
+msgstr ""
+
+#: freerec.utils.AverageMeter.save:5 of
+msgid "Prefix to add to the filename, by default ``''``."
+msgstr ""
+
+#: freerec.utils.AverageMeter.save:8 of
+msgid "The filename of the saved file."
+msgstr ""
+
+#: freerec.utils.AverageMeter.which_is_better:1 of
+msgid "Return the better value between the current average and *other*."
+msgstr ""
+
+#: freerec.utils.AverageMeter.argbest:1 of
+msgid "Return the index and value of the best result in history."
+msgstr ""
+
+#: freerec.utils.AverageMeter.argbest:3 of
+msgid "Evaluation frequency used to scale the returned index, by default 1."
+msgstr ""
+
+#: freerec.utils.AverageMeter.argbest:7 of
+msgid ""
+"* **index** (:py:class:`int`) -- The scaled index of the best result, or "
+"-1 if history is empty. * **value** (:py:class:`float`) -- The best "
+"metric value, or -1 if history is empty."
+msgstr ""
+
+#: freerec.utils.AverageMeter.argbest:7 of
+msgid ""
+"**index** (:py:class:`int`) -- The scaled index of the best result, or -1"
+" if history is empty."
+msgstr ""
+
+#: freerec.utils.AverageMeter.argbest:8 of
+msgid ""
+"**value** (:py:class:`float`) -- The best metric value, or -1 if history "
+"is empty."
+msgstr ""
+
+#: freerec.utils.AverageMeter.argbest:10 of
+msgid "If ``caster`` is neither ``min`` nor ``max``."
+msgstr ""
+
+#: freerec.utils.Monitor:1 of
+msgid ""
+"A collection of :class:`AverageMeter` instances organized by prefix and "
+"metric."
+msgstr ""
+
+#: freerec.utils.Monitor:3 of
+msgid ""
+"Inherits from :class:`~freerec.dict2obj.Config` and provides "
+"serialization, state management, and TensorBoard integration."
+msgstr ""
+
+#: freerec.utils.Monitor.state_dict:1 of
+msgid "Return the state dictionary of all monitors."
+msgstr ""
+
+#: freerec.utils.Monitor.state_dict:3 of
+msgid "Nested dictionary mapping ``prefix -> metric -> meter.name -> history``."
+msgstr ""
+
+#: freerec.utils.Monitor.state_dict:4 of
+msgid ":py:class:`dict`"
+msgstr ""
+
+#: freerec.utils.Monitor.load_state_dict:1 of
+msgid "Load the history of monitors from a state dictionary."
+msgstr ""
+
+#: freerec.utils.Monitor.load_state_dict:3 of
+msgid "The state dictionary that contains the history of monitors."
+msgstr ""
+
+#: freerec.utils.Monitor.load_state_dict:5 of
+msgid ""
+"Whether to strictly enforce that the keys in *state_dict* match the keys "
+"in the monitor, by default ``False``."
+msgstr ""
+
+#: freerec.utils.Monitor.save:1 of
+msgid "Save the current state of the monitors to disk via :func:`export_pickle`."
+msgstr ""
+
+#: freerec.utils.Monitor.save:3 of
+msgid "Directory path to save the state file."
+msgstr ""
+
+#: freerec.utils.Monitor.save:5 of
+msgid "Name of the output file, by default ``'monitors.pickle'``."
+msgstr ""
+
+#: freerec.utils.Monitor.write:1 of
+msgid "Write the history of all monitors to TensorBoard."
+msgstr ""
+
+#: freerec.utils.Monitor.write:3 of
+msgid ""
+"Directory path for the :class:`~torch.utils.tensorboard.SummaryWriter` "
+"log."
+msgstr ""
+
+#: freerec.utils.export_pickle:1 of
+msgid "Export data into pickle format."
+msgstr ""
+
+#: freerec.utils.export_pickle:3 freerec.utils.export_yaml:3 of
+msgid "The object to serialize."
+msgstr ""
+
+#: freerec.utils.export_pickle:5 freerec.utils.export_yaml:5 of
+msgid "Destination file path."
+msgstr ""
+
+#: freerec.utils.export_pickle:8 of
+msgid "If pickling or writing to disk fails."
+msgstr ""
+
+#: freerec.utils.import_pickle:1 of
+msgid "Import data from a pickle file."
+msgstr ""
+
+#: freerec.utils.import_pickle:3 freerec.utils.import_yaml:3 of
+msgid "Source file path."
+msgstr ""
+
+#: freerec.utils.import_pickle:6 freerec.utils.import_yaml:6 of
+msgid "The deserialized object."
+msgstr ""
+
+#: freerec.utils.import_pickle:7 freerec.utils.import_yaml:7 of
+msgid ":py:class:`Any`"
+msgstr ""
+
+#: freerec.utils.import_pickle:9 of
+msgid "If unpickling or reading from disk fails."
+msgstr ""
+
+#: freerec.utils.export_yaml:1 of
+msgid "Export data into YAML format."
+msgstr ""
+
+#: freerec.utils.import_yaml:1 of
+msgid "Import data from a YAML file."
+msgstr ""
+
+#: freerec.utils.set_logger:1 of
+msgid "Set up a logger instance."
+msgstr ""
+
+#: freerec.utils.set_logger:3 of
+msgid "Directory path where the log file will be created."
+msgstr ""
+
+#: freerec.utils.set_logger:5 of
+msgid "Whether to log messages to a file, by default ``True``."
+msgstr ""
+
+#: freerec.utils.set_logger:7 of
+msgid "Whether to log messages to the console, by default ``True``."
+msgstr ""
+
+#: freerec.utils.set_logger:10 of
+msgid "A configured logger instance."
+msgstr ""
+
+#: freerec.utils.set_logger:11 of
+msgid ":class:`logging.Logger`"
+msgstr ""
+
+#: freerec.utils.set_color:1 of
+msgid "Set the ANSI color code for terminal output of the specified device."
+msgstr ""
+
+#: freerec.utils.set_color:3 of
+msgid "The device identifier, which can be an integer or string."
+msgstr ""
+
+#: freerec.utils.infoLogger:1 of
+msgid "Log an info-level message."
+msgstr ""
+
+#: freerec.utils.debugLogger:3 freerec.utils.infoLogger:3 of
+msgid "The message to log."
+msgstr ""
+
+#: freerec.utils.infoLogger:5 of
+msgid "If ``True``, only the main process logs the message, by default ``True``."
+msgstr ""
+
+#: freerec.utils.infoLogger:8 of
+msgid "The colorized message that was logged, or ``None`` if skipped."
+msgstr ""
+
+#: freerec.utils.debugLogger:1 of
+msgid "Log a debug-level message."
+msgstr ""
+
+#: freerec.utils.debugLogger:6 of
+msgid "The message that was logged."
+msgstr ""
+
+#: freerec.utils.warnLogger:1 of
+msgid "Log a warning-level message."
+msgstr ""
+
+#: freerec.utils.warnLogger:3 of
+msgid "The warning message to log."
+msgstr ""
+
+#: freerec.utils.warnLogger:6 of
+msgid "The formatted warning message that was logged."
+msgstr ""
+
+#: freerec.utils.timemeter:1 of
+msgid "Decorator that measures and logs the wall-clock time of a function."
+msgstr ""
+
+#: freerec.utils.timemeter:3 of
+msgid "The function to wrap."
+msgstr ""
+
+#: freerec.utils.timemeter:6 of
+msgid "The wrapped function that logs elapsed time after each call."
+msgstr ""
+
+#: freerec.utils.timemeter:7 of
+msgid ":py:class:`Callable`"
+msgstr ""
+
+#: freerec.utils.mkdirs:1 of
+msgid "Create directories, ignoring those that already exist."
+msgstr ""
+
+#: freerec.utils.mkdirs:3 of
+msgid "One or more directory paths to create."
+msgstr ""
+
+#: freerec.utils.activate_benchmark:1 of
+msgid "Activate or deactivate the cuDNN benchmark mode."
+msgstr ""
+
+#: freerec.utils.activate_benchmark:3 of
+msgid ""
+"If ``True``, enable ``cudnn.benchmark`` and disable deterministic mode; "
+"if ``False``, do the opposite."
+msgstr ""
+
+#: freerec.utils.set_seed:1 of
+msgid "Set the seed for all random number generators."
+msgstr ""
+
+#: freerec.utils.set_seed:3 of
+msgid "Configures ``random``, :mod:`numpy`, and :mod:`torch` (CPU and CUDA)."
+msgstr ""
+
+#: freerec.utils.set_seed:5 of
+msgid "The seed to set. If -1, a random seed between 0 and 2048 is generated."
+msgstr ""
+
+#: freerec.utils.set_seed:8 of
+msgid "The actual seed used."
+msgstr ""
+
+#: freerec.utils.set_seed:9 of
+msgid ":py:class:`int`"
+msgstr ""
+
+#~ msgid "freerec.parser"
+#~ msgstr ""
+
+#~ msgid "Configuration parser for recommendation system training."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Wraps :class:`argparse.ArgumentParser` and "
+#~ ":class:`~Config` to manage command-line "
+#~ "arguments, YAML configuration files, and "
+#~ "runtime settings such as device "
+#~ "selection, logging, and checkpoint paths."
+#~ msgstr ""
+
+#~ msgid "Filename for saved model parameters."
+#~ msgstr ""
+
+#~ msgid "type"
+#~ msgstr ""
+
+#~ msgid "Filename for saved best model parameters."
+#~ msgstr ""
+
+#~ msgid "Frequency of saving checkpoints."
+#~ msgstr ""
+
+#~ msgid "Modules to save in a checkpoint."
+#~ msgstr ""
+
+#~ msgid ":py:class:`list`"
+#~ msgstr ""
+
+#~ msgid "Filename of the saved checkpoint."
+#~ msgstr ""
+
+#~ msgid "Filename of the summary."
+#~ msgstr ""
+
+#~ msgid "Filename of the monitor."
+#~ msgstr ""
+
+#~ msgid "Filename of the best monitor."
+#~ msgstr ""
+
+#~ msgid "Directory for saving historical metric information."
+#~ msgstr ""
+
+#~ msgid "Directory for saving final summary information."
+#~ msgstr ""
+
+#~ msgid "Path for saving checkpoints."
+#~ msgstr ""
+
+#~ msgid "Path for saving logging information."
+#~ msgstr ""
+
+#~ msgid "List of metric names to monitor."
+#~ msgstr ""
+
+#~ msgid "Metric name used for selecting the best model."
+#~ msgstr ""
+
+#~ msgid "Initialize Parser with default CONFIG and parse arguments."
+#~ msgstr ""
+
+#~ msgid "Execute the function only on the main process."
+#~ msgstr ""
+
+#~ msgid "Reset all configurations to the defaults defined in CONFIG."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Register all command-line arguments to"
+#~ " the internal :class:`argparse.ArgumentParser`."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Registers arguments for data paths, "
+#~ "model hyperparameters, training schedule, "
+#~ "evaluation settings, logging, and "
+#~ "reproducibility."
+#~ msgstr ""
+
+#~ msgid "Add an argument to the internal :class:`argparse.ArgumentParser`."
+#~ msgstr ""
+
+#~ msgid "The name(s) of the argument."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Additional keyword arguments passed to "
+#~ ":meth:`argparse.ArgumentParser.add_argument`."
+#~ msgstr ""
+
+#~ msgid "备注"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Any underscore (``_``) in argument names"
+#~ " will be replaced by a hyphen "
+#~ "(``-``)."
+#~ msgstr ""
+
+#~ msgid "Set default values for registered arguments."
+#~ msgstr ""
+
+#~ msgid "Keyword arguments mapping argument names to their default values."
+#~ msgstr ""
+
+#~ msgid "Set the computation device and configure color output."
+#~ msgstr ""
+
+#~ msgid "The target device identifier."
+#~ msgstr ""
+
+#~ msgid "The resolved device identifier."
+#~ msgstr ""
+
+#~ msgid ":py:class:`device`"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Initialize Distributed Data Parallel (DDP) "
+#~ "if running in distributed mode."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Convert the ``tasktag`` string to a "
+#~ ":class:`~freerec.data.tags.TaskTags` enum."
+#~ msgstr ""
+
+#~ msgid "Load and merge settings from a YAML configuration file."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Parses command-line arguments first, "
+#~ "then overlays values from the YAML "
+#~ "file specified by ``--config`` if "
+#~ "provided."
+#~ msgstr ""
+
+#~ msgid "The parsed arguments with defaults overwritten by the config file."
+#~ msgstr ""
+
+#~ msgid ":class:`argparse.Namespace`"
+#~ msgstr ""
+
+#~ msgid "If a parameter key in the config file is not recognized."
+#~ msgstr ""
+
+#~ msgid "Compile the full runtime configuration."
+#~ msgstr ""
+
+#~ msgid "Performs the following steps in order:"
+#~ msgstr ""
+
+#~ msgid "Load settings from a YAML file if ``--config`` is specified."
+#~ msgstr ""
+
+#~ msgid "Generate ``CHECKPOINT_PATH`` and ``LOG_PATH`` from templates."
+#~ msgstr ""
+
+#~ msgid "Initialize DDP if running in distributed mode."
+#~ msgstr ""
+
+#~ msgid "Configure device, logger, random seed, and benchmark mode."
+#~ msgstr ""
+
+#~ msgid "Write README.md under both ``CHECKPOINT_PATH`` and ``LOG_PATH``."
+#~ msgstr ""
+
+#~ msgid "Configuration parser for hyperparameter grid search (tuning)."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Extends :class:`~Config` to manage environment"
+#~ " variables, parameter grids, and default"
+#~ " values for launching multiple training "
+#~ "subprocesses."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Names of environment-level arguments "
+#~ "that can be overridden from the "
+#~ "command line."
+#~ msgstr ""
+
+#~ msgid ":py:class:`tuple`"
+#~ msgstr ""
+
+#~ msgid "If ``True``, run grid search entries one by one."
+#~ msgstr ""
+
+#~ msgid ":py:class:`bool`"
+#~ msgstr ""
+
+#~ msgid "The shell command template for each subprocess."
+#~ msgstr ""
+
+#~ msgid "Environment variables shared across all subprocesses."
+#~ msgstr ""
+
+#~ msgid ":class:`~Config`"
+#~ msgstr ""
+
+#~ msgid "Parameter grid for hyperparameter search."
+#~ msgstr ""
+
+#~ msgid "Default parameter values used when ``EXCLUSIVE`` is ``True``."
+#~ msgstr ""
+
+#~ msgid "Initialize CoreParser with default CORE_CONFIG."
+#~ msgstr ""
+
+#~ msgid "Validate the loaded configuration."
+#~ msgstr ""
+
+#~ msgid "If ``COMMAND`` is not specified."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "If required environment variables (``root``,"
+#~ " ``dataset``,     ``device``) are missing "
+#~ "from ``ENVS``."
+#~ msgstr ""
+
+#~ msgid "Load settings from a YAML configuration file."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "The parsed command-line arguments "
+#~ "containing ``config``, ``exclusive``, ``resume``,"
+#~ " and environment overrides."
+#~ msgstr ""
+
+#~ msgid "Compile the full tuning configuration."
+#~ msgstr ""
+
+#~ msgid "The parsed command-line arguments."
+#~ msgstr ""
+
+#~ msgid "Performs the following steps:"
+#~ msgstr ""
+
+#~ msgid "Load parameter grid from a YAML file."
+#~ msgstr ""
+
+#~ msgid "Validate the configuration via :meth:`check`."
+#~ msgstr ""
+
+#~ msgid "Generate ``CORE_CHECKPOINT_PATH`` and ``CORE_LOG_PATH``."
+#~ msgstr ""
+
+#~ msgid "Configure the logger."
+#~ msgstr ""
+
+#~ msgid "Write README.md under ``CORE_LOG_PATH``."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Write a README.md file with environment,"
+#~ " parameter, and default settings."
+#~ msgstr ""
+
+#~ msgid "The directory to write the README.md file into."
+#~ msgstr ""
+
+#~ msgid "The file opening mode, by default ``\"w\"``."
+#~ msgstr ""
+
+#~ msgid "freerec.ddp"
+#~ msgstr ""
+
+#~ msgid "Primitives for multi-GPU communication in distributed training."
+#~ msgstr ""
+
+#~ msgid "Return the number of processes in the default process group."
+#~ msgstr ""
+
+#~ msgid "Return the rank of the current process in the default process group."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Return the rank of the current "
+#~ "process within the local (per-machine)"
+#~ " process group."
+#~ msgstr ""
+
+#~ msgid "The rank of the current process within its machine."
+#~ msgstr ""
+
+#~ msgid "Return the number of processes on the current machine."
+#~ msgstr ""
+
+#~ msgid "The size of the per-machine process group."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Check whether the current environment is"
+#~ " configured for distributed training."
+#~ msgstr ""
+
+#~ msgid "Check whether the current process is the main process (rank 0)."
+#~ msgstr ""
+
+#~ msgid "Decorator that restricts execution to the main process only."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "A wrapper that calls *func* only "
+#~ "when :func:`is_main_process` is ``True``."
+#~ msgstr ""
+
+#~ msgid ":py:class:`callable`"
+#~ msgstr ""
+
+#~ msgid "Synchronize (barrier) among all processes in distributed training."
+#~ msgstr ""
+
+#~ msgid "Run all-gather on arbitrary picklable data (not necessarily tensors)."
+#~ msgstr ""
+
+#~ msgid "Any picklable object."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "A torch process group. By default, "
+#~ "uses a group which contains all "
+#~ "ranks on the gloo backend."
+#~ msgstr ""
+
+#~ msgid "List of data gathered from each rank."
+#~ msgstr ""
+
+#~ msgid ":py:class:`list[T]`"
+#~ msgstr ""
+
+#~ msgid "Run gather on arbitrary picklable data (not necessarily tensors)."
+#~ msgstr ""
+
+#~ msgid "Destination rank. Default is ``0``."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "On *dst*, a list of data gathered"
+#~ " from each rank. Otherwise, an empty"
+#~ " list."
+#~ msgstr ""
+
+#~ msgid "Generate a random seed that is identical across all workers."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "A random number that is the same"
+#~ " across all workers. If workers need"
+#~ " a shared RNG, they can use "
+#~ "this shared seed to create one."
+#~ msgstr ""
+
+#~ msgid "All workers must call this function, otherwise it will deadlock."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Reduce the values in a dictionary "
+#~ "from all processes so that rank 0"
+#~ " has the reduced results."
+#~ msgstr ""
+
+#~ msgid "Inputs to be reduced. Values are not necessarily tensors."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Whether to average (``True``) or sum "
+#~ "(``False``) the values. Default is "
+#~ "``True``."
+#~ msgstr ""
+
+#~ msgid "A dict with the same keys as *input_dict*, after reduction."
+#~ msgstr ""
+
+#~ msgid "freerec.graph"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "This module requires ``torch-geometric``. "
+#~ "Install with ``pip install freerec[graph]``."
+#~ msgstr ""
+
+#~ msgid "Build a CSR sparse adjacency matrix from an edge index."
+#~ msgstr ""
+
+#~ msgid "Edge index of shape ``(2, E)`` where ``E`` is the number of edges."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Edge weights of shape ``(E,)``.  When"
+#~ " ``None``, all weights are set to "
+#~ "1."
+#~ msgstr ""
+
+#~ msgid "Number of nodes.  Inferred from *edge_index* when ``None``."
+#~ msgstr ""
+
+#~ msgid "Sparse CSR adjacency matrix of shape ``(num_nodes, num_nodes)``."
+#~ msgstr ""
+
+#~ msgid ":class:`torch.Tensor`"
+#~ msgstr ""
+
+#~ msgid "Normalize edge weights using degree-based normalization."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Supports symmetric square-root, left-"
+#~ "side, and right-side normalization:"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "\\text{sym:}   \\quad \\tilde{\\mathbf{A}} = "
+#~ "\\mathbf{D}_l^{-1/2}\\,\\mathbf{A}\\,\\mathbf{D}_r^{-1/2}\n"
+#~ "\n"
+#~ "\\text{left:}  \\quad \\tilde{\\mathbf{A}} = "
+#~ "\\mathbf{D}_l^{-1}\\,\\mathbf{A}\n"
+#~ "\n"
+#~ "\\text{right:} \\quad \\tilde{\\mathbf{A}} = "
+#~ "\\mathbf{A}\\,\\mathbf{D}_r^{-1}"
+#~ msgstr ""
+
+#~ msgid "Edge index of shape ``(2, E)``."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Normalization type.  One of ``'sym'`` "
+#~ "(default), ``'left'``, or ``'right'``."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "* **edge_index** (:class:`torch.Tensor`) -- "
+#~ "The (unchanged) edge index. * "
+#~ "**edge_weight** (:class:`torch.Tensor`) -- "
+#~ "Normalized edge weights."
+#~ msgstr ""
+
+#~ msgid "**edge_index** (:class:`torch.Tensor`) -- The (unchanged) edge index."
+#~ msgstr ""
+
+#~ msgid "**edge_weight** (:class:`torch.Tensor`) -- Normalized edge weights."
+#~ msgstr ""
+
+#~ msgid "If *normalization* is not one of the supported values."
+#~ msgstr ""
+
+#~ msgid "Construct a k-nearest-neighbor graph from a similarity matrix."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "For each row of *sim_mat* the "
+#~ "top-*k* entries are selected.  Optionally "
+#~ "the resulting directed graph is "
+#~ "symmetrized into an undirected one."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Similarity matrix of shape ``(M, N)``."
+#~ "  May be dense or sparse COO "
+#~ "(converted to dense internally)."
+#~ msgstr ""
+
+#~ msgid "Number of nearest neighbors per node."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "If ``True`` (default), convert to an "
+#~ "undirected graph using "
+#~ ":func:`torch_geometric.utils.to_undirected`.  Requires ``M"
+#~ " == N``."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Reduce operation passed to "
+#~ ":func:`torch_geometric.utils.to_undirected` for merging"
+#~ " duplicate edges.  Default is ``'max'``."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "* **edge_index** (:class:`torch.Tensor`) -- "
+#~ "Edge index of shape ``(2, E)``. *"
+#~ " **edge_weight** (:class:`torch.Tensor`) -- "
+#~ "Corresponding edge weights of shape "
+#~ "``(E,)``."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "**edge_index** (:class:`torch.Tensor`) -- Edge "
+#~ "index of shape ``(2, E)``."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "**edge_weight** (:class:`torch.Tensor`) -- "
+#~ "Corresponding edge weights of shape "
+#~ "``(E,)``."
+#~ msgstr ""
+

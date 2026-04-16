@@ -1,0 +1,166 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 11:32+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../tutorials/training_and_tuning.rst:2
+msgid "训练与调参"
+msgstr "Training and Tuning"
+
+#: ../../tutorials/training_and_tuning.rst:4
+msgid "本节介绍如何使用 FreeRec 进行模型训练和超参数搜索。"
+msgstr "This section describes how to use FreeRec for model training and hyperparameter search."
+
+#: ../../tutorials/training_and_tuning.rst:7
+msgid "配置文件"
+msgstr "Configuration File"
+
+#: ../../tutorials/training_and_tuning.rst:9
+msgid "FreeRec 使用 YAML 文件管理训练配置。一个典型的配置文件包含："
+msgstr "FreeRec uses YAML files to manage training configurations. A typical configuration file contains:"
+
+#: ../../tutorials/training_and_tuning.rst:39
+#: ../../tutorials/training_and_tuning.rst:107
+msgid "字段"
+msgstr "Field"
+
+#: ../../tutorials/training_and_tuning.rst:40
+#: ../../tutorials/training_and_tuning.rst:108
+msgid "说明"
+msgstr "Description"
+
+#: ../../tutorials/training_and_tuning.rst:41
+msgid "``root`` / ``dataset``"
+msgstr ""
+
+#: ../../tutorials/training_and_tuning.rst:42
+msgid "数据根目录和处理后的数据集名称"
+msgstr "Data root directory and processed dataset name"
+
+#: ../../tutorials/training_and_tuning.rst:43
+msgid "``epochs``"
+msgstr ""
+
+#: ../../tutorials/training_and_tuning.rst:44
+msgid "训练轮数"
+msgstr "Number of training epochs"
+
+#: ../../tutorials/training_and_tuning.rst:45
+msgid "``batch_size``"
+msgstr ""
+
+#: ../../tutorials/training_and_tuning.rst:46
+msgid "批大小"
+msgstr "Batch size"
+
+#: ../../tutorials/training_and_tuning.rst:47
+msgid "``optimizer``"
+msgstr ""
+
+#: ../../tutorials/training_and_tuning.rst:48
+msgid "优化器（``adam``、``sgd`` 等）"
+msgstr "Optimizer (``adam``, ``sgd``, etc.)"
+
+#: ../../tutorials/training_and_tuning.rst:49
+msgid "``lr`` / ``weight_decay``"
+msgstr ""
+
+#: ../../tutorials/training_and_tuning.rst:50
+msgid "学习率和权重衰减"
+msgstr "Learning rate and weight decay"
+
+#: ../../tutorials/training_and_tuning.rst:51
+msgid "``monitors``"
+msgstr ""
+
+#: ../../tutorials/training_and_tuning.rst:52
+msgid "训练过程中监控的指标列表"
+msgstr "List of metrics to monitor during training"
+
+#: ../../tutorials/training_and_tuning.rst:53
+msgid "``which4best``"
+msgstr ""
+
+#: ../../tutorials/training_and_tuning.rst:54
+msgid "用于选择最佳模型的指标"
+msgstr "Metric used for selecting the best model"
+
+#: ../../tutorials/training_and_tuning.rst:57
+msgid "单机训练"
+msgstr "Single-Machine Training"
+
+#: ../../tutorials/training_and_tuning.rst:63
+msgid "命令行参数会覆盖配置文件中的同名设置，方便临时调整："
+msgstr "Command-line arguments override the corresponding settings in the configuration file, making it easy to adjust on the fly:"
+
+#: ../../tutorials/training_and_tuning.rst:70
+msgid "分布式训练"
+msgstr "Distributed Training"
+
+#: ../../tutorials/training_and_tuning.rst:72
+msgid "使用 PyTorch 的 ``torchrun`` 进行多 GPU 训练："
+msgstr "Use PyTorch's ``torchrun`` for multi-GPU training:"
+
+#: ../../tutorials/training_and_tuning.rst:78
+msgid "``--nproc_per_node`` 指定使用的 GPU 数量。"
+msgstr "``--nproc_per_node`` specifies the number of GPUs to use."
+
+#: ../../tutorials/training_and_tuning.rst:81
+msgid "超参数搜索"
+msgstr "Hyperparameter Search"
+
+#: ../../tutorials/training_and_tuning.rst:83
+msgid "使用 ``freerec tune`` 进行网格搜索："
+msgstr "Use ``freerec tune`` for grid search:"
+
+#: ../../tutorials/training_and_tuning.rst:89
+msgid "搜索配置文件格式："
+msgstr "Search configuration file format:"
+
+#: ../../tutorials/training_and_tuning.rst:109
+msgid "``command``"
+msgstr ""
+
+#: ../../tutorials/training_and_tuning.rst:110
+msgid "单次运行的命令"
+msgstr "Command for a single run"
+
+#: ../../tutorials/training_and_tuning.rst:111
+msgid "``envs``"
+msgstr ""
+
+#: ../../tutorials/training_and_tuning.rst:112
+msgid "环境变量（数据路径、设备等）"
+msgstr "Environment variables (data paths, devices, etc.)"
+
+#: ../../tutorials/training_and_tuning.rst:113
+msgid "``params``"
+msgstr ""
+
+#: ../../tutorials/training_and_tuning.rst:114
+msgid "待搜索的超参数及其候选值"
+msgstr "Hyperparameters to search and their candidate values"
+
+#: ../../tutorials/training_and_tuning.rst:115
+msgid "``defaults``"
+msgstr ""
+
+#: ../../tutorials/training_and_tuning.rst:116
+msgid "所有运行共享的默认参数"
+msgstr "Default parameters shared across all runs"

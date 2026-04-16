@@ -1,0 +1,161 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 18:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../tutorials/seq_rec.rst:2
+msgid "序列推荐"
+msgstr "Sequential Recommendation"
+
+#: ../../tutorials/seq_rec.rst:4
+msgid ""
+"序列推荐模型基于用户的历史交互序列预测下一个可能感兴趣的物品。 FreeRec 中的序列推荐模型继承自 "
+":class:`~freerec.models.base.SeqRecArch`。"
+msgstr ""
+"Sequential recommendation models predict the next item of interest based on users' historical interaction sequences. "
+"Sequential recommendation models in FreeRec inherit from :class:`~freerec.models.base.SeqRecArch`."
+
+#: ../../tutorials/seq_rec.rst:8
+msgid "SASRec"
+msgstr ""
+
+#: ../../tutorials/seq_rec.rst:10
+msgid ""
+"**Self-Attentive Sequential Recommendation** — 基于自注意力机制， 通过 Transformer "
+"编码器捕捉用户行为序列中的长短期依赖关系。"
+msgstr ""
+"**Self-Attentive Sequential Recommendation** -- Based on the self-attention mechanism, "
+"it captures long- and short-term dependencies in user behavior sequences through a Transformer encoder."
+
+#: ../../tutorials/seq_rec.rst:20
+msgid "examples/SASRec/main.py"
+msgstr ""
+
+#: ../../tutorials/seq_rec.rst:25 ../../tutorials/seq_rec.rst:51
+#: ../../tutorials/seq_rec.rst:73
+msgid "**代码要点：**"
+msgstr "**Code Highlights:**"
+
+#: ../../tutorials/seq_rec.rst:27
+msgid ""
+"**配置解析** (L11-30)：通过 ``freerec.parser.Parser`` 定义超参数，``cfg.compile()`` "
+"完成解析"
+msgstr ""
+"**Configuration Parsing** (L11-30): Define hyperparameters via ``freerec.parser.Parser``; ``cfg.compile()`` "
+"completes parsing"
+
+#: ../../tutorials/seq_rec.rst:28
+msgid "**模型定义** (L54-231)：继承 ``SeqRecArch``，核心是多层自注意力 + Position Embedding"
+msgstr "**Model Definition** (L54-231): Inherits from ``SeqRecArch``; the core is multi-layer self-attention + Position Embedding"
+
+#: ../../tutorials/seq_rec.rst:29
+msgid ""
+"**数据管道** (L142-154)：``sure_trainpipe`` 定义训练数据流水线——打乱序列 → 正样本生成 → 负采样 → "
+"偏移填充 → 批处理 → 张量化"
+msgstr ""
+"**Data Pipeline** (L142-154): ``sure_trainpipe`` defines the training data pipeline -- shuffle sequences -> positive sample generation -> negative sampling -> "
+"offset padding -> batching -> tensorization"
+
+#: ../../tutorials/seq_rec.rst:30
+msgid "**前向传播** (L191-216)：``fit()`` 方法计算损失，支持 BCE / BPR / CE 三种损失函数"
+msgstr "**Forward Pass** (L191-216): The ``fit()`` method computes the loss, supporting BCE / BPR / CE loss functions"
+
+#: ../../tutorials/seq_rec.rst:31
+msgid ""
+"**推荐** (L218-231)：``recommend_from_full`` 对全量物品打分，``recommend_from_pool``"
+" 对候选池打分"
+msgstr ""
+"**Recommendation** (L218-231): ``recommend_from_full`` scores all items; ``recommend_from_pool``"
+" scores the candidate pool"
+
+#: ../../tutorials/seq_rec.rst:32
+msgid "**训练循环** (L234-249)：``CoachForSASRec`` 继承 ``Coach``，实现 ``train_per_epoch``"
+msgstr "**Training Loop** (L234-249): ``CoachForSASRec`` inherits from ``Coach`` and implements ``train_per_epoch``"
+
+#: ../../tutorials/seq_rec.rst:33
+msgid "**主函数** (L252-283)：加载数据集 → 创建模型 → 构建数据管道 → 组装 Coach → 训练"
+msgstr "**Main Function** (L252-283): Load dataset -> create model -> build data pipeline -> assemble Coach -> train"
+
+#: ../../tutorials/seq_rec.rst:36
+msgid "BERT4Rec"
+msgstr ""
+
+#: ../../tutorials/seq_rec.rst:38
+msgid ""
+"**BERT-based Sequential Recommendation** — 采用双向 Transformer 编码器 和 Masked "
+"Item Prediction 任务进行序列推荐。与 SASRec 的单向注意力不同， BERT4Rec 使用随机遮蔽策略实现双向建模。"
+msgstr ""
+"**BERT-based Sequential Recommendation** -- Uses a bidirectional Transformer encoder and Masked "
+"Item Prediction task for sequential recommendation. Unlike SASRec's unidirectional attention, BERT4Rec employs a random masking strategy for bidirectional modeling."
+
+#: ../../tutorials/seq_rec.rst:46
+msgid "examples/BERT4Rec/main.py"
+msgstr ""
+
+#: ../../tutorials/seq_rec.rst:53
+msgid ""
+"**遮蔽策略** ：``NUM_PADS = 2`` (0=padding, 1=mask)，``random_mask`` 方法以概率 "
+"``mask_ratio`` 随机遮蔽序列中的物品"
+msgstr ""
+"**Masking Strategy**: ``NUM_PADS = 2`` (0=padding, 1=mask); the ``random_mask`` method randomly masks items in the sequence with probability "
+"``mask_ratio``"
+
+#: ../../tutorials/seq_rec.rst:54
+msgid "**训练管道** ：与 SASRec 不同，BERT4Rec 不需要正/负样本拆分——直接对整个序列做遮蔽预测"
+msgstr "**Training Pipeline**: Unlike SASRec, BERT4Rec does not require positive/negative sample splitting -- it directly performs masked prediction on the entire sequence"
+
+#: ../../tutorials/seq_rec.rst:55
+msgid "**验证/测试管道** ：在序列末尾添加 MASK token，预测最后一个位置"
+msgstr "**Validation/Test Pipeline**: Appends a MASK token at the end of the sequence and predicts the last position"
+
+#: ../../tutorials/seq_rec.rst:56
+msgid "**损失函数** ：固定使用 CrossEntropy，在遮蔽位置上计算分类损失"
+msgstr "**Loss Function**: Uses CrossEntropy exclusively, computing the classification loss at masked positions"
+
+#: ../../tutorials/seq_rec.rst:59
+msgid "GRU4Rec"
+msgstr ""
+
+#: ../../tutorials/seq_rec.rst:61
+msgid ""
+"**Session-based Recommendations with RNNs** — 基于 GRU 的会话推荐模型， "
+"通过循环神经网络建模用户行为序列。结构简单但效果稳定。"
+msgstr ""
+"**Session-based Recommendations with RNNs** -- A GRU-based session recommendation model "
+"that models user behavior sequences through recurrent neural networks. Simple in structure but stable in performance."
+
+#: ../../tutorials/seq_rec.rst:68
+msgid "examples/GRU4Rec/main.py"
+msgstr ""
+
+#: ../../tutorials/seq_rec.rst:75
+msgid "**模型结构** ：Embedding → Dropout → GRU → Linear，使用最后一个有效隐状态作为用户表示"
+msgstr "**Model Architecture**: Embedding -> Dropout -> GRU -> Linear; uses the last valid hidden state as the user representation"
+
+#: ../../tutorials/seq_rec.rst:76
+msgid "**训练管道** ：使用 ``shuffled_roll_seqs_source`` 生成滚动子序列，只以最后一个物品为目标"
+msgstr "**Training Pipeline**: Uses ``shuffled_roll_seqs_source`` to generate rolling subsequences, targeting only the last item"
+
+#: ../../tutorials/seq_rec.rst:77
+msgid "**序列压缩** ：``shrink_pads`` 去除全 padding 的列，提高 GRU 效率"
+msgstr "**Sequence Compression**: ``shrink_pads`` removes all-padding columns to improve GRU efficiency"
+
+#: ../../tutorials/seq_rec.rst:78
+msgid "**隐状态提取** ：通过 ``gather`` 根据实际序列长度取最后一个非 padding 位置的输出"
+msgstr "**Hidden State Extraction**: Uses ``gather`` to retrieve the output at the last non-padding position based on the actual sequence length"

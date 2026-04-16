@@ -80,42 +80,6 @@
 训练流程总览
 ------------
 
-.. mermaid::
-
-   graph LR
-       subgraph setup ["1 · 初始化"]
-           direction TB
-           dataset["RecDataSet(root, dataset)"]
-           model["Model(dataset, ...)"]
-           pipe["model.sure_trainpipe()\nmodel.sure_validpipe()\nmodel.sure_testpipe()"]
-           dataset --> model --> pipe
-       end
-
-       subgraph coach_init ["2 · 组装"]
-           direction TB
-           coach["Coach(\n  dataset, trainpipe,\n  validpipe, testpipe,\n  model, cfg\n)"]
-       end
-
-       subgraph fit ["3 · 训练  coach.fit()"]
-           direction TB
-           train["train_per_epoch\ndata → model → loss\n→ backward → step"]
-           eval["evaluate\nmodel.recommend()\n→ metrics"]
-           ckpt["check_best\nsave if improved"]
-           train --> eval --> ckpt
-           ckpt -.->|"next epoch"| train
-       end
-
-       subgraph out ["4 · 输出"]
-           direction TB
-           summary["SUMMARY.md"]
-           tb["TensorBoard logs"]
-           plots["[metric].png"]
-       end
-
-       setup --> coach_init --> fit --> out
-
-   style setup fill:#fff8f0,stroke:#e07020,stroke-width:2px
-   style coach_init fill:#fff8f0,stroke:#e07020,stroke-width:2px
-   style fit fill:#fff8f0,stroke:#e07020,stroke-width:2px,stroke-dasharray: 6 3
-   style out fill:#fff8f0,stroke:#e07020,stroke-width:2px
-   style coach fill:#e07020,stroke:#b85a10,color:#fff
+.. image:: _static/img/flow.png
+   :align: center
+   :alt: Training Flow

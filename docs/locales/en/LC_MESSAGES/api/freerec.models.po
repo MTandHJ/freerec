@@ -1,0 +1,514 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 11:32+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../api/freerec.models.rst:2
+msgid "freerec.models"
+msgstr ""
+
+#: ../../api/freerec.models.rst:7
+msgid "Base Classes"
+msgstr ""
+
+#: freerec.models.base.RecSysArch:1 of
+msgid "A base PyTorch module for recommendation system architectures."
+msgstr ""
+
+#: freerec.models.base.RecSysArch:3 of
+msgid ""
+"This module provides common utilities for recommendation models, "
+"including tensor broadcasting, parameter initialization, and evaluation "
+"pipelines."
+msgstr ""
+
+#: ../../api/freerec.models.rst freerec.models.base.RecSysArch.__init__
+#: freerec.models.nn.attn.ScaledDotProductAttention.__init__
+#: freerec.models.nn.ffn.FeedForwardNetwork.__init__
+#: freerec.models.nn.utils.Unsqueeze.__init__ of
+msgid "参数"
+msgstr ""
+
+#: freerec.models.base.RecSysArch:7 of
+msgid "The recommendation dataset that provides field definitions."
+msgstr ""
+
+#: freerec.models.base.RecSysArch:12 of
+msgid "The loss criterion used for training."
+msgstr ""
+
+#: freerec.models.base.RecSysArch freerec.models.base.SeqRecArch
+#: freerec.models.nn.attn.ScaledDotProductAttention of
+msgid "type"
+msgstr ""
+
+#: freerec.models.base.RecSysArch:14 of
+msgid ":class:`~BaseCriterion`"
+msgstr ""
+
+#: freerec.models.base.RecSysArch:18 of
+msgid "The user ID field module."
+msgstr ""
+
+#: freerec.models.base.RecSysArch:20 freerec.models.base.RecSysArch:26
+#: freerec.models.base.RecSysArch:32 of
+msgid ":class:`~FieldModule`"
+msgstr ""
+
+#: freerec.models.base.RecSysArch:24 of
+msgid "The item ID field module."
+msgstr ""
+
+#: freerec.models.base.RecSysArch:30 of
+msgid "The label field module."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.__init__:1 of
+msgid "Initialize RecSysArch with the given dataset."
+msgstr ""
+
+#: ../../api/freerec.models.rst freerec.models.base.RecSysArch.__init__
+#: freerec.models.nn.utils.Unsqueeze.__init__ of
+msgid "返回类型"
+msgstr ""
+
+#: freerec.models.base.RecSysArch.fields:1 of
+msgid "Return the list of field modules."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.to:1 of
+msgid "Move and/or cast the parameters and buffers."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.to:3 of
+msgid "The destination device of the parameters and buffers."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.to:5 of
+msgid "The desired data type of the parameters and buffers."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.to:7 of
+msgid "Whether the copy should be asynchronous, by default ``False``."
+msgstr ""
+
+#: ../../api/freerec.models.rst
+msgid "返回"
+msgstr ""
+
+#: freerec.models.base.RecSysArch.to:10 of
+msgid "The module with parameters and buffers moved and/or cast."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.to:11 of
+msgid ":class:`~RecSysArch`"
+msgstr ""
+
+#: freerec.models.base.RecSysArch.reset_parameters:1 of
+msgid ""
+"Reset all learnable parameters using Xavier/truncated-normal "
+"initialization."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.sure_trainpipe:1 of
+msgid "Return the training data pipeline."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.sure_trainpipe:3 of
+msgid "The configured training post-processor."
+msgstr ""
+
+#: freerec.models.base.GenRecArch.sure_testpipe:9
+#: freerec.models.base.GenRecArch.sure_validpipe:9
+#: freerec.models.base.PredRecArch.sure_testpipe:7
+#: freerec.models.base.PredRecArch.sure_validpipe:7
+#: freerec.models.base.RecSysArch.sure_testpipe:4
+#: freerec.models.base.RecSysArch.sure_trainpipe:4
+#: freerec.models.base.RecSysArch.sure_validpipe:4
+#: freerec.models.base.SeqRecArch.sure_testpipe:11
+#: freerec.models.base.SeqRecArch.sure_validpipe:11 of
+msgid ":class:`~PostProcessor`"
+msgstr ""
+
+#: ../../api/freerec.models.rst
+msgid "抛出"
+msgstr ""
+
+#: freerec.models.base.RecSysArch.encode:9 freerec.models.base.RecSysArch.fit:9
+#: freerec.models.base.RecSysArch.recommend_from_full:9
+#: freerec.models.base.RecSysArch.recommend_from_pool:9
+#: freerec.models.base.RecSysArch.sure_testpipe:6
+#: freerec.models.base.RecSysArch.sure_trainpipe:6
+#: freerec.models.base.RecSysArch.sure_validpipe:6 of
+msgid "Subclasses must implement this method."
+msgstr ""
+
+#: freerec.models.base.GenRecArch.sure_validpipe:1
+#: freerec.models.base.PredRecArch.sure_validpipe:1
+#: freerec.models.base.RecSysArch.sure_validpipe:1 of
+msgid "Return the validation data pipeline."
+msgstr ""
+
+#: freerec.models.base.GenRecArch.sure_validpipe:8
+#: freerec.models.base.PredRecArch.sure_validpipe:6
+#: freerec.models.base.RecSysArch.sure_validpipe:3
+#: freerec.models.base.SeqRecArch.sure_validpipe:10 of
+msgid "The configured validation post-processor."
+msgstr ""
+
+#: freerec.models.base.GenRecArch.sure_testpipe:1
+#: freerec.models.base.PredRecArch.sure_testpipe:1
+#: freerec.models.base.RecSysArch.sure_testpipe:1 of
+msgid "Return the test data pipeline."
+msgstr ""
+
+#: freerec.models.base.GenRecArch.sure_testpipe:8
+#: freerec.models.base.PredRecArch.sure_testpipe:6
+#: freerec.models.base.RecSysArch.sure_testpipe:3
+#: freerec.models.base.SeqRecArch.sure_testpipe:10 of
+msgid "The configured test post-processor."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.reset_ranking_buffers:1 of
+msgid "Reset ranking buffers before evaluation."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.recommend_from_full:1 of
+msgid "Generate recommendations based on full ranking."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.encode:3 freerec.models.base.RecSysArch.fit:3
+#: freerec.models.base.RecSysArch.forward:3
+#: freerec.models.base.RecSysArch.recommend_from_full:3
+#: freerec.models.base.RecSysArch.recommend_from_pool:3 of
+msgid "A mapping from fields to their tensor representations."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.recommend_from_full:6 of
+msgid "Predicted scores for all items."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.recommend_from_full:7
+#: freerec.models.base.RecSysArch.recommend_from_pool:7
+#: freerec.models.nn.attn.ScaledDotProductAttention.forward:15
+#: freerec.models.nn.ffn.FeedForwardNetwork.forward:9
+#: freerec.models.nn.utils.Unsqueeze.forward:7 of
+msgid ":class:`torch.Tensor`"
+msgstr ""
+
+#: freerec.models.base.RecSysArch.recommend_from_pool:1 of
+msgid "Generate recommendations based on a candidate pool."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.recommend_from_pool:6 of
+msgid "Predicted scores for candidate items."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.encode:1 of
+msgid "Encode user and item embeddings."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.encode:6 of
+msgid ""
+"* **userEmbds** (:class:`torch.Tensor`) -- The encoded user embeddings. *"
+" **itemEmbds** (:class:`torch.Tensor`) -- The encoded item embeddings."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.encode:6 of
+msgid "**userEmbds** (:class:`torch.Tensor`) -- The encoded user embeddings."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.encode:7 of
+msgid "**itemEmbds** (:class:`torch.Tensor`) -- The encoded item embeddings."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.fit:1 of
+msgid "Compute training losses from the given data."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.fit:6 of
+msgid "The computed loss value(s)."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.fit:7
+#: freerec.models.base.RecSysArch.forward:9 of
+msgid ":class:`torch.Tensor` or :py:class:`tuple` of :class:`torch.Tensor`"
+msgstr ""
+
+#: freerec.models.base.RecSysArch.forward:1 of
+msgid "Run a forward pass for training or inference."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.forward:5 of
+msgid "The ranking strategy used during inference, by default ``'full'``."
+msgstr ""
+
+#: freerec.models.base.RecSysArch.forward:8 of
+msgid "Training losses (if training) or predicted scores (if evaluating)."
+msgstr ""
+
+#: freerec.models.base.GenRecArch:1 of
+msgid "Base architecture for general (non-sequential) recommendation models."
+msgstr ""
+
+#: freerec.models.base.GenRecArch:3 of
+msgid ""
+"This class provides default validation and test pipelines using ordered "
+"user ID sources."
+msgstr ""
+
+#: freerec.models.base.GenRecArch.sure_testpipe:3
+#: freerec.models.base.GenRecArch.sure_validpipe:3
+#: freerec.models.base.SeqRecArch.sure_testpipe:5
+#: freerec.models.base.SeqRecArch.sure_validpipe:5 of
+msgid "The ranking strategy, by default ``'full'``."
+msgstr ""
+
+#: freerec.models.base.GenRecArch.sure_testpipe:5
+#: freerec.models.base.GenRecArch.sure_validpipe:5
+#: freerec.models.base.SeqRecArch.sure_testpipe:7
+#: freerec.models.base.SeqRecArch.sure_validpipe:7 of
+msgid "The batch size, by default ``512``."
+msgstr ""
+
+#: freerec.models.base.SeqRecArch:1 of
+msgid "Base architecture for sequential recommendation models."
+msgstr ""
+
+#: freerec.models.base.SeqRecArch:3 of
+msgid ""
+"This class provides default validation and test pipelines with sequence "
+"pruning and padding."
+msgstr ""
+
+#: freerec.models.base.SeqRecArch:8 of
+msgid "Number of padding tokens, by default ``1``."
+msgstr ""
+
+#: freerec.models.base.SeqRecArch:10 freerec.models.base.SeqRecArch:16 of
+msgid ":py:class:`int`"
+msgstr ""
+
+#: freerec.models.base.SeqRecArch:14 of
+msgid "Value used for padding, by default ``0``."
+msgstr ""
+
+#: freerec.models.base.SeqRecArch.sure_validpipe:1 of
+msgid "Return the validation data pipeline with sequence handling."
+msgstr ""
+
+#: freerec.models.base.SeqRecArch.sure_testpipe:3
+#: freerec.models.base.SeqRecArch.sure_validpipe:3 of
+msgid "Maximum sequence length."
+msgstr ""
+
+#: freerec.models.base.SeqRecArch.sure_testpipe:1 of
+msgid "Return the test data pipeline with sequence handling."
+msgstr ""
+
+#: freerec.models.base.PredRecArch:1 of
+msgid "Base architecture for prediction-based recommendation models."
+msgstr ""
+
+#: freerec.models.base.PredRecArch:3 of
+msgid ""
+"This class provides default validation and test pipelines using ordered "
+"interaction sources."
+msgstr ""
+
+#: freerec.models.base.PredRecArch.sure_testpipe:3
+#: freerec.models.base.PredRecArch.sure_validpipe:3 of
+msgid "The batch size, by default ``4096``."
+msgstr ""
+
+#: ../../api/freerec.models.rst:14
+msgid "Neural Network Modules"
+msgstr ""
+
+#: ../../api/freerec.models.rst:21
+msgid "Attention"
+msgstr ""
+
+#: freerec.models.nn.attn.ScaledDotProductAttention:1 of
+msgid "Scaled Dot-Product Attention (SDPA)."
+msgstr ""
+
+#: freerec.models.nn.attn.ScaledDotProductAttention:3 of
+msgid ""
+"Implements multi-head scaled dot-product attention with residual "
+"connection and layer normalization."
+msgstr ""
+
+#: freerec.models.nn.attn.ScaledDotProductAttention:6
+#: freerec.models.nn.ffn.FeedForwardNetwork:3 of
+msgid "Size of the input embedding dimension."
+msgstr ""
+
+#: freerec.models.nn.attn.ScaledDotProductAttention:8 of
+msgid "Number of attention heads, by default ``1``."
+msgstr ""
+
+#: freerec.models.nn.attn.ScaledDotProductAttention:10 of
+msgid ""
+"Activation function class for the output projection, by default "
+":class:`torch.nn.ReLU`."
+msgstr ""
+
+#: freerec.models.nn.attn.ScaledDotProductAttention:13 of
+msgid ""
+"Hidden size per attention head. If ``None``, it is inferred as "
+"``embedding_dim // num_heads``."
+msgstr ""
+
+#: freerec.models.nn.attn.ScaledDotProductAttention:16 of
+msgid "Dropout rate applied to the output projection, by default ``0.0``."
+msgstr ""
+
+#: freerec.models.nn.attn.ScaledDotProductAttention:18 of
+msgid "Dropout rate applied to the attention scores, by default ``0.0``."
+msgstr ""
+
+#: freerec.models.nn.attn.ScaledDotProductAttention:20
+#: freerec.models.nn.ffn.FeedForwardNetwork:13 of
+msgid "Epsilon value for :class:`torch.nn.LayerNorm`, by default ``1e-12``."
+msgstr ""
+
+#: freerec.models.nn.attn.ScaledDotProductAttention:22
+#: freerec.models.nn.ffn.FeedForwardNetwork:15 of
+msgid ""
+"Whether to add bias terms in :class:`torch.nn.Linear` layers, by default "
+"``False``."
+msgstr ""
+
+#: freerec.models.nn.attn.ScaledDotProductAttention:26 of
+msgid ""
+"If ``hidden_size`` is ``None`` and ``embedding_dim`` is not     divisible"
+" by ``num_heads``."
+msgstr ""
+
+#: freerec.models.nn.attn.ScaledDotProductAttention:30 of
+msgid "Value used for masking attention scores (``-1e6``)."
+msgstr ""
+
+#: freerec.models.nn.attn.ScaledDotProductAttention:32 of
+msgid ":py:class:`float`"
+msgstr ""
+
+#: freerec.models.nn.attn.ScaledDotProductAttention.__init__:1 of
+msgid "Initialize ScaledDotProductAttention."
+msgstr ""
+
+#: freerec.models.nn.attn.ScaledDotProductAttention.forward:1 of
+msgid "Compute scaled dot-product attention."
+msgstr ""
+
+#: freerec.models.nn.attn.ScaledDotProductAttention.forward:3 of
+msgid ""
+"Input tensor of shape ``(B, M, D)``, where ``B`` is the batch size, ``M``"
+" is the query sequence length, and ``D`` is the embedding dimension."
+msgstr ""
+
+#: freerec.models.nn.attn.ScaledDotProductAttention.forward:7 of
+msgid ""
+"Key/value tensor of shape ``(B, N, D)``. If ``None``, ``x`` is used as "
+"both key and value (self-attention)."
+msgstr ""
+
+#: freerec.models.nn.attn.ScaledDotProductAttention.forward:10 of
+msgid ""
+"Attention mask of shape ``(M, N)``. Positions set to ``True`` are filled "
+"with ``ATTENTION_MASK_VALUE``."
+msgstr ""
+
+#: freerec.models.nn.attn.ScaledDotProductAttention.forward:14 of
+msgid "Output tensor of shape ``(B, M, D)``."
+msgstr ""
+
+#: ../../api/freerec.models.rst:28
+msgid "Feed-Forward Network"
+msgstr ""
+
+#: freerec.models.nn.ffn.FeedForwardNetwork:1 of
+msgid ""
+"Feed-Forward Network (FFN) with residual connection and layer "
+"normalization."
+msgstr ""
+
+#: freerec.models.nn.ffn.FeedForwardNetwork:5 of
+msgid ""
+"Activation function class used between linear layers, by default "
+":class:`torch.nn.ReLU`."
+msgstr ""
+
+#: freerec.models.nn.ffn.FeedForwardNetwork:8 of
+msgid ""
+"Hidden dimension of the FFN. If ``None``, it defaults to ``4 * "
+"embedding_dim``."
+msgstr ""
+
+#: freerec.models.nn.ffn.FeedForwardNetwork:11 of
+msgid "Dropout rate applied to the output, by default ``0.0``."
+msgstr ""
+
+#: freerec.models.nn.ffn.FeedForwardNetwork.__init__:1 of
+msgid "Initialize FeedForwardNetwork."
+msgstr ""
+
+#: freerec.models.nn.ffn.FeedForwardNetwork.forward:1 of
+msgid "Compute the feed-forward transformation with residual connection."
+msgstr ""
+
+#: freerec.models.nn.ffn.FeedForwardNetwork.forward:3 of
+msgid ""
+"Input tensor of shape ``(B, L, D)``, where ``B`` is the batch size, ``L``"
+" is the sequence length, and ``D`` is the embedding dimension."
+msgstr ""
+
+#: freerec.models.nn.ffn.FeedForwardNetwork.forward:8 of
+msgid "Output tensor of shape ``(B, L, D)``."
+msgstr ""
+
+#: ../../api/freerec.models.rst:35
+msgid "Utilities"
+msgstr ""
+
+#: freerec.models.nn.utils.Unsqueeze:1 of
+msgid "A module that unsqueezes a tensor along the specified dimension."
+msgstr ""
+
+#: freerec.models.nn.utils.Unsqueeze:3 of
+msgid "The dimension along which to unsqueeze."
+msgstr ""
+
+#: freerec.models.nn.utils.Unsqueeze.__init__:1 of
+msgid "Initialize Unsqueeze with the target dimension."
+msgstr ""
+
+#: freerec.models.nn.utils.Unsqueeze.forward:1 of
+msgid "Unsqueeze the input tensor along the configured dimension."
+msgstr ""
+
+#: freerec.models.nn.utils.Unsqueeze.forward:3 of
+msgid "The input tensor."
+msgstr ""
+
+#: freerec.models.nn.utils.Unsqueeze.forward:6 of
+msgid "The unsqueezed tensor with an additional dimension."
+msgstr ""
+

@@ -1,0 +1,5427 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 18:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../api/freerec.data.rst:2
+msgid "freerec.data"
+msgstr ""
+
+#: ../../api/freerec.data.rst:7
+msgid "Fields"
+msgstr ""
+
+#: freerec.data.fields.Field:1 of
+msgid "A field determined by a name and a collection of tags."
+msgstr ""
+
+#: freerec.data.fields.Field:3 of
+msgid ""
+"A :class:`~Field` represents a single column or feature in a dataset, "
+"identified by a human-readable *name* and annotated with one or more "
+":class:`~FieldTags`.  Fields support tag-based matching, forking "
+"(creating derived fields), normalization, and conversion to sparse "
+"tensors."
+msgstr ""
+
+#: ../../api/freerec.data.rst
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_1000_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104712_ROU
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104811_ROU
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_500_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_550_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104712_ROU
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104811_ROU
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_1000_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104712_ROU
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104811_ROU
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_1000_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104712_ROU
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104811_ROU
+#: freerec.data.datasets.amazon2014.Amazon2014Games_500_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014Games_550_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_500_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_550_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014Home_1000_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014Home_500_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014Home_550_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_1000_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104712_ROU
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104811_ROU
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_500_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_550_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014Office_500_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014Office_550_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_500_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_550_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_500_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_550_LOU
+#: freerec.data.datasets.amazon2014.Amazon2014Video_1000_LOU
+#: freerec.data.datasets.amazon2018.Amazon2018Books_550_LOU
+#: freerec.data.datasets.amazon2018.Amazon2018CDs_550_LOU
+#: freerec.data.datasets.amazon2018.Amazon2018Clothing_550_LOU
+#: freerec.data.datasets.amazon2018.Amazon2018Electronics_550_LOU
+#: freerec.data.datasets.amazon2018.Amazon2018Movies_550_LOU
+#: freerec.data.datasets.amazon2018.Amazon2018Office_550_LOU
+#: freerec.data.datasets.amazon2018.Amazon2018Sports_550_LOU
+#: freerec.data.datasets.amazon2018.Amazon2018Tools_550_LOU
+#: freerec.data.datasets.amazon2018.Amazon2018Toys_550_LOU
+#: freerec.data.datasets.amazon2023.Amazon2023Baby_554811_ROU
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_10104811_ROU
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_554811_ROU
+#: freerec.data.datasets.amazon2023.Amazon2023Fashion_554811_ROU
+#: freerec.data.datasets.amazon2023.Amazon2023Games_554811_ROU
+#: freerec.data.datasets.amazon2023.Amazon2023Office_554811_ROU
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_10104811_ROU
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_554811_ROU
+#: freerec.data.datasets.base.RecDataSet.to_bigraph
+#: freerec.data.datasets.base.RecDataSet.to_graph
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper
+#: freerec.data.datasets.criteo.Criteo_x1_BARS
+#: freerec.data.datasets.frappe.Frappe_x1_BARS
+#: freerec.data.datasets.gowalla.Gowalla2010_10100712_ROU
+#: freerec.data.datasets.gowalla.Gowalla2010_10100811_ROU
+#: freerec.data.datasets.microlens.MicroLens100K
+#: freerec.data.datasets.movielens.MovieLens100K_10101712_ROU
+#: freerec.data.datasets.movielens.MovieLens100K_10101811_ROU
+#: freerec.data.datasets.movielens.MovieLens100K_500_LOU
+#: freerec.data.datasets.movielens.MovieLens100K_550_LOU
+#: freerec.data.datasets.movielens.MovieLens10M_10101712_ROU
+#: freerec.data.datasets.movielens.MovieLens10M_10101811_ROU
+#: freerec.data.datasets.movielens.MovieLens10M_500_LOU
+#: freerec.data.datasets.movielens.MovieLens10M_550_LOU
+#: freerec.data.datasets.movielens.MovieLens1M_10101712_ROU
+#: freerec.data.datasets.movielens.MovieLens1M_10101811_ROU
+#: freerec.data.datasets.movielens.MovieLens1M_500_LOU
+#: freerec.data.datasets.movielens.MovieLens1M_550_LOU
+#: freerec.data.datasets.movielens.MovieLens20M_10101712_ROU
+#: freerec.data.datasets.movielens.MovieLens20M_10101811_ROU
+#: freerec.data.datasets.movielens.MovieLens20M_500_LOU
+#: freerec.data.datasets.movielens.MovieLens20M_550_LOU
+#: freerec.data.datasets.steam.Steam_550_LOU
+#: freerec.data.datasets.tiktok.Tiktok_000811_RAU
+#: freerec.data.datasets.yelp.Yelp2018_10104712_ROU
+#: freerec.data.datasets.yelp.Yelp2018_10104811_ROU
+#: freerec.data.datasets.yelp.Yelp2018_500_LOU
+#: freerec.data.datasets.yelp.Yelp2018_550_LOU
+#: freerec.data.datasets.yelp.Yelp2018_554311_ROU
+#: freerec.data.datasets.yelp.Yelp2021_10104712_ROU
+#: freerec.data.datasets.yelp.Yelp2021_10104811_ROU
+#: freerec.data.datasets.yelp.Yelp2021_500_LOU
+#: freerec.data.datasets.yelp.Yelp2021_550_LOU
+#: freerec.data.fields.Field.__init__ freerec.data.fields.Field.to_csr
+#: freerec.data.fields.FieldModule.__init__
+#: freerec.data.fields.FieldModuleList.__init__
+#: freerec.data.fields.FieldTuple.index
+#: freerec.data.postprocessing.base.BaseProcessor.__init__
+#: freerec.data.postprocessing.base.PostProcessor.__init__
+#: freerec.data.postprocessing.base.SampleMultiplexer.__init__
+#: freerec.data.postprocessing.base.Source.__init__
+#: freerec.data.postprocessing.column.Batcher_.__init__
+#: freerec.data.postprocessing.column.ToTensor.at_least_2d
+#: freerec.data.postprocessing.row.AddingRow.__init__
+#: freerec.data.postprocessing.row.LeftPaddingRow.__init__
+#: freerec.data.postprocessing.row.LeftPruningRow.__init__
+#: freerec.data.postprocessing.row.RightPaddingRow
+#: freerec.data.postprocessing.row.RightPruningRow
+#: freerec.data.postprocessing.row.RowFilter.__init__
+#: freerec.data.postprocessing.row.RowMapper.__init__
+#: freerec.data.postprocessing.sampler.GenTrainNegativeSampler.__init__
+#: freerec.data.postprocessing.sampler.SeqTrainNegativeSampler.__init__
+#: freerec.data.postprocessing.sampler.SeqTrainPositiveYielder.__init__
+#: freerec.data.postprocessing.sampler.ValidSampler.__init__
+#: freerec.data.postprocessing.source.OrderedSource.__init__
+#: freerec.data.postprocessing.source.RandomChoicedSource.__init__
+#: freerec.data.postprocessing.source.RandomShuffledSource.__init__
+#: freerec.data.preprocessing.amazon2023.extract_from_amazon2023
+#: freerec.data.preprocessing.base.AtomicConverter.__init__
+#: freerec.data.utils.safe_cast of
+msgid "参数"
+msgstr ""
+
+#: freerec.data.fields.Field:9 of
+msgid "Human-readable name for the field (e.g. ``\"User\"``)."
+msgstr ""
+
+#: freerec.data.fields.Field:11 freerec.data.fields.FieldModule:9 of
+msgid "One or more tags that describe the field."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_bigraph:18
+#: freerec.data.datasets.base.RecDataSet.to_graph:16
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:7
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:8
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:10
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:11
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:14
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:17
+#: freerec.data.fields.Field:15 freerec.data.fields.Field.to_csr:11
+#: freerec.data.fields.FieldTuple.index:10
+#: freerec.data.normalizer.MinMaxScaler:25 freerec.data.normalizer.Normalizer:8
+#: freerec.data.normalizer.ReIndexer:19
+#: freerec.data.normalizer.StandardScaler:32
+#: freerec.data.postprocessing.base.SampleMultiplexer:18
+#: freerec.data.postprocessing.row.AddingRow:17
+#: freerec.data.postprocessing.row.LeftPaddingRow:20
+#: freerec.data.postprocessing.row.LeftPruningRow:18
+#: freerec.data.postprocessing.row.RightPaddingRow:20
+#: freerec.data.postprocessing.row.RightPruningRow:18
+#: freerec.data.postprocessing.sampler.GenTrainNegativeSampler:18
+#: freerec.data.postprocessing.sampler.GenTrainPositiveSampler:7
+#: freerec.data.postprocessing.sampler.SeqTrainNegativeSampler:18
+#: freerec.data.postprocessing.sampler.SeqTrainPositiveYielder:16
+#: freerec.data.postprocessing.sampler.TestSampler:25
+#: freerec.data.postprocessing.sampler.ValidSampler:25
+#: freerec.data.preprocessing.amazon2023.extract_from_amazon2023:23 of
+msgid "示例"
+msgstr ""
+
+#: freerec.data.fields.Field.__init__:1 of
+msgid "Initialize field with a name and tags."
+msgstr ""
+
+#: ../../api/freerec.data.rst
+#: freerec.data.datasets.base.RecDataSet.has_duplicates
+#: freerec.data.datasets.base.RecDataSet.to_bigraph
+#: freerec.data.datasets.base.RecDataSet.to_graph
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper
+#: freerec.data.fields.Field.__init__ freerec.data.fields.Field.to_csr
+#: freerec.data.fields.FieldModule.__init__
+#: freerec.data.fields.FieldModuleList.__init__
+#: freerec.data.fields.FieldTuple.index
+#: freerec.data.normalizer.Normalizer.__init__
+#: freerec.data.postprocessing.base.BaseProcessor.__init__
+#: freerec.data.postprocessing.base.PostProcessor.__init__
+#: freerec.data.postprocessing.base.Source.__init__
+#: freerec.data.postprocessing.column.Batcher_.__init__
+#: freerec.data.postprocessing.row.AddingRow.__init__
+#: freerec.data.postprocessing.row.LeftPaddingRow.__init__
+#: freerec.data.postprocessing.row.LeftPruningRow.__init__
+#: freerec.data.postprocessing.sampler.GenTrainNegativeSampler.__init__
+#: freerec.data.postprocessing.sampler.SeqTrainNegativeSampler.__init__
+#: freerec.data.postprocessing.sampler.SeqTrainPositiveYielder.__init__
+#: freerec.data.postprocessing.sampler.ValidSampler.__init__
+#: freerec.data.postprocessing.source.OrderedSource.__init__
+#: freerec.data.postprocessing.source.RandomChoicedSource.__init__
+#: freerec.data.postprocessing.source.RandomShuffledSource.__init__
+#: freerec.data.preprocessing.base.AtomicConverter.__init__
+#: freerec.data.utils.safe_cast of
+msgid "返回类型"
+msgstr ""
+
+#: freerec.data.fields.Field.name:1 of
+msgid "Return the human-readable name of the field."
+msgstr ""
+
+#: freerec.data.fields.Field.tags:1 of
+msgid "Return the sorted tags of the field as a tuple."
+msgstr ""
+
+#: freerec.data.fields.Field.identifier:1 of
+msgid "Return the full identifier tuple ``(name, *sorted_tags)``."
+msgstr ""
+
+#: freerec.data.fields.Field.fork:1 of
+msgid "Create a derived field by appending additional tags."
+msgstr ""
+
+#: freerec.data.fields.Field.fork:3 of
+msgid "Additional tags to include in the forked field."
+msgstr ""
+
+#: ../../api/freerec.data.rst
+#: freerec.data.datasets.base.RecDataSet.has_duplicates
+#: freerec.data.datasets.base.RecDataSet.to_bigraph
+#: freerec.data.datasets.base.RecDataSet.to_graph
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper
+#: freerec.data.fields.Field.to_csr freerec.data.fields.FieldTuple.index
+#: freerec.data.preprocessing.amazon2023.extract_from_amazon2023
+#: freerec.data.utils.safe_cast of
+msgid "返回"
+msgstr ""
+
+#: freerec.data.fields.Field.fork:6 of
+msgid ""
+"A new field that carries the original name, the original tags, and the "
+"newly supplied tags."
+msgstr ""
+
+#: freerec.data.fields.Field.fork:8 of
+msgid ":class:`~Field`"
+msgstr ""
+
+#: freerec.data.fields.Field.to_module:1 of
+msgid "Convert this field to a :class:`~FieldModule`."
+msgstr ""
+
+#: freerec.data.fields.Field.to_module:3 of
+msgid "A module-wrapped copy of this field."
+msgstr ""
+
+#: freerec.data.fields.Field.to_module:4 of
+msgid ":class:`~FieldModule`"
+msgstr ""
+
+#: freerec.data.fields.Field.match:1 freerec.data.fields.Field.match_all:1 of
+msgid "Check whether this field matches all given tags."
+msgstr ""
+
+#: freerec.data.fields.Field.match:3 freerec.data.fields.Field.match_all:3
+#: freerec.data.fields.Field.match_any:3 of
+msgid "Tags to check against."
+msgstr ""
+
+#: freerec.data.fields.Field.match:6 freerec.data.fields.Field.match_all:6 of
+msgid "``True`` if the field's tag set is a superset of *tags*."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.has_duplicates:5
+#: freerec.data.fields.Field.issubfield:7
+#: freerec.data.fields.Field.issuperfield:7 freerec.data.fields.Field.match:7
+#: freerec.data.fields.Field.match_all:7 freerec.data.fields.Field.match_any:7
+#: freerec.data.utils.is_empty_dir:7 of
+msgid ":py:class:`bool`"
+msgstr ""
+
+#: freerec.data.fields.Field.match_any:1 of
+msgid "Check whether this field matches any of the given tags."
+msgstr ""
+
+#: freerec.data.fields.Field.match_any:6 of
+msgid "``True`` if the field matches at least one of the given tags."
+msgstr ""
+
+#: freerec.data.fields.Field.issubfield:1 of
+msgid "Check whether this field is a sub-field of *other*."
+msgstr ""
+
+#: freerec.data.fields.Field.issubfield:3 of
+msgid "The candidate super-field."
+msgstr ""
+
+#: freerec.data.fields.Field.issubfield:6 of
+msgid "``True`` if this field's tags are a superset of *other*'s tags."
+msgstr ""
+
+#: freerec.data.fields.Field.issuperfield:1 of
+msgid "Check whether this field is a super-field of *other*."
+msgstr ""
+
+#: freerec.data.fields.Field.issuperfield:3 of
+msgid "The candidate sub-field."
+msgstr ""
+
+#: freerec.data.fields.Field.issuperfield:6 of
+msgid "``True`` if *other*'s tags are a superset of this field's tags."
+msgstr ""
+
+#: freerec.data.fields.Field.set_normalizer:1 of
+msgid "Configure casting, null-filling and normalization for this field."
+msgstr ""
+
+#: freerec.data.fields.Field.set_normalizer:3 of
+msgid ""
+"Target data type.  When a string is given it is resolved via "
+"``getattr(pl, dtype)``.  ``None`` means no casting."
+msgstr ""
+
+#: freerec.data.fields.Field.set_normalizer:6 of
+msgid "Strategy passed to :meth:`polars.Series.fill_null`."
+msgstr ""
+
+#: freerec.data.fields.Field.set_normalizer:8 of
+msgid "Normalization method.  ``None`` falls back to a simple counter."
+msgstr ""
+
+#: freerec.data.fields.Field.set_normalizer:10 of
+msgid "Extra keyword arguments forwarded to the normalizer constructor."
+msgstr ""
+
+#: ../../api/freerec.data.rst freerec.data.utils.safe_cast of
+msgid "抛出"
+msgstr ""
+
+#: freerec.data.fields.Field.set_normalizer:12 of
+msgid "If *normalizer* is not registered or *kwargs* are invalid."
+msgstr ""
+
+#: freerec.data.fields.Field.cast:1 of
+msgid "Cast and null-fill a :class:`polars.Series`."
+msgstr ""
+
+#: freerec.data.fields.Field.cast:3 of
+msgid "Input series."
+msgstr ""
+
+#: freerec.data.fields.Field.cast:5 of
+msgid "Whether to use strict casting (default ``False``)."
+msgstr ""
+
+#: freerec.data.fields.Field.cast:8 of
+msgid ""
+"The series after optional casting, NaN-to-null conversion, and null "
+"filling."
+msgstr ""
+
+#: freerec.data.fields.Field.cast:10 freerec.data.fields.Field.fit:11
+#: freerec.data.fields.Field.normalize:9
+#: freerec.data.normalizer.Counter.normalize:7
+#: freerec.data.normalizer.MinMaxScaler.normalize:7
+#: freerec.data.normalizer.Normalizer.normalize:7
+#: freerec.data.normalizer.ReIndexer.normalize:7
+#: freerec.data.normalizer.StandardScaler.normalize:7 of
+msgid ":class:`polars.Series`"
+msgstr ""
+
+#: freerec.data.fields.Field.fit:1 of
+msgid "Fit the normalizer on *data* and return the cast series."
+msgstr ""
+
+#: freerec.data.fields.Field.fit:3 of
+msgid ""
+"Input data.  DataFrames and LazyFrames are converted to a "
+":class:`polars.Series` before processing."
+msgstr ""
+
+#: freerec.data.fields.Field.fit:6 of
+msgid ""
+"If ``True`` (default), partially fit on the given data. If ``False``, "
+"reset the normalizer before fitting."
+msgstr ""
+
+#: freerec.data.fields.Field.fit:10 of
+msgid "The cast (but not normalized) series."
+msgstr ""
+
+#: freerec.data.fields.Field.normalize:1 of
+msgid "Cast and normalize *data* using the fitted normalizer."
+msgstr ""
+
+#: freerec.data.fields.Field.normalize:3 of
+msgid "The processing pipeline is: ``data -> cast -> normalization -> data``."
+msgstr ""
+
+#: freerec.data.fields.Field.normalize:5 of
+msgid "Input data."
+msgstr ""
+
+#: freerec.data.fields.Field.normalize:8 of
+msgid "The normalized series."
+msgstr ""
+
+#: freerec.data.fields.Field.to_csr:1 of
+msgid "Convert a batch of variable-length index lists to a CSR tensor."
+msgstr ""
+
+#: freerec.data.fields.Field.to_csr:3 of
+msgid "A 2-D iterable where each inner sequence contains column indices."
+msgstr ""
+
+#: freerec.data.fields.Field.to_csr:6 of
+msgid ""
+"A sparse CSR tensor of shape ``(B, self.count)`` with ones at the "
+"indicated positions."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_normalized_adj:15
+#: freerec.data.fields.Field.to_csr:8 of
+msgid ":class:`torch.Tensor`"
+msgstr ""
+
+#: freerec.data.fields.FieldTuple:1 of
+msgid "An immutable tuple of :class:`~Field` instances with tag-based access."
+msgstr ""
+
+#: freerec.data.fields.FieldTuple:3 of
+msgid ""
+"Supports filtering by :class:`~FieldTags` and attribute-style look-up in "
+"addition to ordinary positional indexing."
+msgstr ""
+
+#: freerec.data.fields.FieldTuple.match:1
+#: freerec.data.fields.FieldTuple.match_all:1 of
+msgid "Return fields that match all given tags."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList.match:3
+#: freerec.data.fields.FieldModuleList.match_all:3
+#: freerec.data.fields.FieldModuleList.match_any:3
+#: freerec.data.fields.FieldModuleList.match_not:3
+#: freerec.data.fields.FieldTuple.match:3
+#: freerec.data.fields.FieldTuple.match_all:3
+#: freerec.data.fields.FieldTuple.match_any:3
+#: freerec.data.fields.FieldTuple.match_not:3 of
+msgid "Tags to match against."
+msgstr ""
+
+#: freerec.data.fields.FieldTuple.match:6
+#: freerec.data.fields.FieldTuple.match_all:6 of
+msgid "Subset of fields whose tags are a superset of *tags*."
+msgstr ""
+
+#: freerec.data.fields.FieldTuple.copy:4 freerec.data.fields.FieldTuple.match:7
+#: freerec.data.fields.FieldTuple.match_all:7
+#: freerec.data.fields.FieldTuple.match_any:7
+#: freerec.data.fields.FieldTuple.match_not:7 of
+msgid ":class:`~FieldTuple`"
+msgstr ""
+
+#: freerec.data.fields.FieldTuple.match_any:1 of
+msgid "Return fields that match any of the given tags."
+msgstr ""
+
+#: freerec.data.fields.FieldTuple.match_any:6 of
+msgid "Subset of fields that match at least one of the given tags."
+msgstr ""
+
+#: freerec.data.fields.FieldTuple.match_not:1 of
+msgid "Return fields that do **not** match all given tags."
+msgstr ""
+
+#: freerec.data.fields.FieldTuple.match_not:6 of
+msgid "Subset of fields that fail to match all given tags simultaneously."
+msgstr ""
+
+#: freerec.data.fields.FieldTuple.copy:1 of
+msgid "Return a shallow copy of this tuple."
+msgstr ""
+
+#: freerec.data.fields.FieldTuple.copy:3 of
+msgid "A new :class:`~FieldTuple` containing the same fields."
+msgstr ""
+
+#: freerec.data.fields.FieldTuple.index:1 of
+msgid "Return the index of the field matching the given tags."
+msgstr ""
+
+#: freerec.data.fields.FieldTuple.index:3 of
+msgid "Tags identifying the target field."
+msgstr ""
+
+#: freerec.data.fields.FieldTuple.index:6 of
+msgid "Positional index of the matching field."
+msgstr ""
+
+#: freerec.data.fields.FieldTuple.index:7
+#: freerec.data.normalizer.StandardScaler:11 of
+msgid ":py:class:`int`"
+msgstr ""
+
+#: freerec.data.fields.FieldModule:1 of
+msgid "A :class:`~Field` that is also a :class:`torch.nn.Module`."
+msgstr ""
+
+#: freerec.data.fields.FieldModule:3 of
+msgid ""
+"This allows a field to own learnable parameters (e.g. embedding tables) "
+"and participate in the standard PyTorch parameter-collection mechanism."
+msgstr ""
+
+#: freerec.data.fields.FieldModule:7 of
+msgid "Human-readable name for the field."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.has_duplicates:8
+#: freerec.data.datasets.base.RecDataSet.to_bigraph:14
+#: freerec.data.datasets.base.RecDataSet.to_graph:12
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:13
+#: freerec.data.datasets.movielens.MovieLens100K_500_LOU:17
+#: freerec.data.datasets.movielens.MovieLens100K_550_LOU:17
+#: freerec.data.datasets.movielens.MovieLens10M_500_LOU:17
+#: freerec.data.datasets.movielens.MovieLens10M_550_LOU:17
+#: freerec.data.datasets.movielens.MovieLens1M_500_LOU:17
+#: freerec.data.datasets.movielens.MovieLens1M_550_LOU:17
+#: freerec.data.datasets.movielens.MovieLens20M_500_LOU:17
+#: freerec.data.datasets.movielens.MovieLens20M_550_LOU:17
+#: freerec.data.datasets.tiktok.Tiktok_000811_RAU:12
+#: freerec.data.fields.FieldModule:13
+#: freerec.data.postprocessing.column.ToTensor:4
+#: freerec.data.postprocessing.row.AddingRow:11
+#: freerec.data.postprocessing.row.LeftPaddingRow:13
+#: freerec.data.postprocessing.row.LeftPruningRow:11
+#: freerec.data.postprocessing.row.RightPaddingRow:13
+#: freerec.data.postprocessing.row.RightPruningRow:11
+#: freerec.data.preprocessing.base.AtomicConverter:23
+#: freerec.data.utils.safe_cast:19 of
+msgid "备注"
+msgstr ""
+
+#: freerec.data.fields.FieldModule:14 of
+msgid ""
+"The fixed hash value inherited from :class:`~Field` means that two "
+":class:`~FieldModule` instances with the same name and tags will hash "
+"equally.  When both are registered as sub-modules of the same parent "
+":class:`torch.nn.Module`, only one will be discovered by "
+":meth:`~torch.nn.Module.parameters` because duplicates are removed during"
+" collection."
+msgstr ""
+
+#: freerec.data.fields.FieldModule:21 of
+msgid ""
+"For example, in the class below, ``self.field`` and ``self.field2`` share"
+" the same hash, so only the parameters of ``self.field`` will be found::"
+msgstr ""
+
+#: freerec.data.fields.FieldModule.__init__:1 of
+msgid "Initialize both the Module and Field bases."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList:1 of
+msgid "A :class:`torch.nn.ModuleList` that holds :class:`~FieldModule` instances."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList:3 of
+msgid ""
+"Provides the same tag-based filtering interface as :class:`~FieldTuple` "
+"while retaining PyTorch module semantics."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList:6 of
+msgid "The field modules to store."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList:9
+#: freerec.data.fields.FieldModuleList.extend:9 of
+msgid "If any element is not a :class:`~FieldModule`."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList.__init__:1 of
+msgid "Initialize with an iterable of :class:`~FieldModule` instances."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList.match:1
+#: freerec.data.fields.FieldModuleList.match_all:1 of
+msgid "Return field modules that match all given tags."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList.match:6
+#: freerec.data.fields.FieldModuleList.match_all:6 of
+msgid "Subset of field modules whose tags are a superset of *tags*."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList.append:7
+#: freerec.data.fields.FieldModuleList.extend:7
+#: freerec.data.fields.FieldModuleList.match:7
+#: freerec.data.fields.FieldModuleList.match_all:7
+#: freerec.data.fields.FieldModuleList.match_any:7
+#: freerec.data.fields.FieldModuleList.match_not:8 of
+msgid ":class:`~FieldModuleList`"
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList.match_any:1 of
+msgid "Return field modules that match any of the given tags."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList.match_any:6 of
+msgid "Subset of field modules that match at least one of the given tags."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList.match_not:1 of
+msgid "Return field modules that do **not** match all given tags."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList.match_not:6 of
+msgid "Subset of field modules that fail to match all given tags simultaneously."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList.insert:1 of
+msgid "Insert a :class:`~FieldModule` at the given position."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList.insert:3 of
+msgid "Position before which to insert."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList.insert:5 of
+msgid "The field module to insert."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList.append:9
+#: freerec.data.fields.FieldModuleList.insert:8 of
+msgid "If *field* is not a :class:`~FieldModule`."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList.append:1 of
+msgid "Append a :class:`~FieldModule` to the end."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList.append:3 of
+msgid "The field module to append."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList.append:6
+#: freerec.data.fields.FieldModuleList.extend:6 of
+msgid "This list (for chaining)."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList.extend:1 of
+msgid "Extend the list with an iterable of :class:`~FieldModule` instances."
+msgstr ""
+
+#: freerec.data.fields.FieldModuleList.extend:3 of
+msgid "The field modules to add."
+msgstr ""
+
+#: ../../api/freerec.data.rst:14
+msgid "Tags"
+msgstr ""
+
+#: freerec.data.tags.FieldTags:1 of
+msgid "Enumeration of tags used to describe and annotate fields."
+msgstr ""
+
+#: freerec.data.tags.FieldTags:3 of
+msgid "Members fall into three categories:"
+msgstr ""
+
+#: freerec.data.tags.FieldTags:5 of
+msgid ""
+"**Descriptive tags** identify the semantic role of a field: ``ID``, "
+"``USER``, ``ITEM``, ``LABEL``, ``RATING``, ``FEATURE``, ``TIMESTAMP``."
+msgstr ""
+
+#: freerec.data.tags.FieldTags:9 of
+msgid ""
+"**Functional tags** mark how a field is used during training or "
+"evaluation: ``SIZE``, ``SEEN``, ``UNSEEN``, ``SEQUENCE``, ``POSITIVE``, "
+"``NEGATIVE``."
+msgstr ""
+
+#: freerec.data.tags.FieldTags:13 of
+msgid ""
+"**Embedding tag** indicates the field carries learnable embeddings: "
+"``EMBED``."
+msgstr ""
+
+#: freerec.data.tags.FieldTags:16 of
+msgid "**Reserved tags** are placeholders for future use: ``X``, ``XX``, ``XXX``."
+msgstr ""
+
+#: freerec.data.tags.TaskTags:1 of
+msgid "Enumeration of tags used to identify recommendation task types."
+msgstr ""
+
+#: freerec.data.tags.TaskTags:4 of
+msgid "Members"
+msgstr ""
+
+#: freerec.data.tags.TaskTags:5 of
+msgid "MATCHING"
+msgstr ""
+
+#: freerec.data.tags.TaskTags:6 of
+msgid "User-item matching (e.g., collaborative filtering)."
+msgstr ""
+
+#: freerec.data.tags.TaskTags:7 of
+msgid "NEXTITEM"
+msgstr ""
+
+#: freerec.data.tags.TaskTags:8 of
+msgid "Next-item prediction (e.g., sequential recommendation)."
+msgstr ""
+
+#: freerec.data.tags.TaskTags:9 of
+msgid "PREDICTION"
+msgstr ""
+
+#: freerec.data.tags.TaskTags:10 of
+msgid "General prediction tasks (e.g., rating prediction)."
+msgstr ""
+
+#: ../../api/freerec.data.rst:21
+msgid "Datasets"
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet:1 of
+msgid "Recommendation dataset that adds sequence and graph utilities."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_pairs:1 of
+msgid "Return all (User, Item) interactions as row dicts."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_pairs:3 of
+msgid "Each dict maps the User and Item fields to integer IDs."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_pairs:4
+#: freerec.data.datasets.base.RecDataSet.to_roll_seqs:12
+#: freerec.data.datasets.base.RecDataSet.to_seqs:9
+#: freerec.data.postprocessing.base.BaseProcessor.to_rows:7 of
+msgid ":py:class:`list` of :py:class:`dict`"
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_seqs:1 of
+msgid "Group interactions into per-user item sequences."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_seqs:3 of
+msgid "If not ``None``, truncate each sequence to the most recent *maxlen* items."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_seqs:7 of
+msgid ""
+"Each dict maps the User field to a user ID and the Item (sequence) field "
+"to a tuple of item IDs."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_roll_seqs:1 of
+msgid "Generate rolling (expanding) sub-sequences per user."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_roll_seqs:3 of
+msgid "Minimum sub-sequence length to emit."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_roll_seqs:5 of
+msgid ""
+"Maximum length of the base sequence before rolling. If ``None``, use the "
+"full sequence."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_roll_seqs:8 of
+msgid "If ``True``, keep sequences shorter than *minlen* as-is."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_roll_seqs:11 of
+msgid "Row dicts with User and Item (sequence) fields."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.seqlens:1 of
+msgid "Return the sequence length for every user."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.seqlens:3 of
+msgid "Per-user sequence lengths."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.seqlens:4 of
+msgid ":py:class:`list` of :py:class:`int`"
+msgstr ""
+
+#: freerec.data.datasets.RecDataSet.maxlen:1 of
+msgid "Return the maximum sequence length across all users."
+msgstr ""
+
+#: freerec.data.datasets.RecDataSet.minlen:1 of
+msgid "Return the minimum sequence length across all users."
+msgstr ""
+
+#: freerec.data.datasets.RecDataSet.meanlen:1 of
+msgid "Return the mean sequence length across all users."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.has_duplicates:1 of
+msgid "Check whether any user has duplicate items across splits."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.has_duplicates:3 of
+msgid ""
+"``True`` if at least one user has a repeated item across the train, "
+"valid, and test sequences."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.has_duplicates:9 of
+msgid "Returns ``False`` for CTR datasets that lack User or Item fields."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:1
+#: of
+msgid "Convert the dataset to a heterogeneous graph."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:3
+#: of
+msgid ""
+"Each element is ``(source_tags, edge_name, dest_tags)`` where "
+"*source_tags* and *dest_tags* are tuples of :class:`~FieldTags` and "
+"*edge_name* is an optional str (``None`` auto-generates the name)."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:9
+#: of
+msgid "The constructed heterogeneous graph."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_bigraph:11
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:10
+#: of
+msgid ":class:`torch_geometric.data.HeteroData`"
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_bigraph:15
+#: freerec.data.datasets.base.RecDataSet.to_graph:13
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:14
+#: of
+msgid "A warning is raised if the current mode is not ``'train'``."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_bigraph:1 of
+msgid "Convert the dataset to a bipartite graph."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_bigraph:3
+#: freerec.data.datasets.base.RecDataSet.to_graph:3
+#: freerec.data.datasets.base.RecDataSet.to_normalized_adj:3 of
+msgid "Source node tags."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_bigraph:5
+#: freerec.data.datasets.base.RecDataSet.to_graph:5
+#: freerec.data.datasets.base.RecDataSet.to_normalized_adj:5 of
+msgid "Destination node tags."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_bigraph:7 of
+msgid "Edge name. If ``None``, derived from field names."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_bigraph:10 of
+msgid "The bipartite graph."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_graph:1 of
+msgid "Convert the dataset to an undirected homogeneous graph."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_graph:8 of
+msgid "The homogeneous graph with undirected edges."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_graph:9 of
+msgid ":class:`torch_geometric.data.Data`"
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_normalized_adj:1 of
+msgid "Convert the dataset to a normalized adjacency matrix."
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_normalized_adj:7 of
+#, python-brace-format
+msgid ""
+"Normalization type:  - ``'sym'`` -- Symmetric: :math:`D_l^{-1/2} A "
+"D_r^{-1/2}` - ``'left'`` -- Left: :math:`D_l^{-1} A` - ``'right'`` -- "
+"Right: :math:`A D_r^{-1}`"
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_normalized_adj:7 of
+msgid "Normalization type:"
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_normalized_adj:9 of
+#, python-brace-format
+msgid "``'sym'`` -- Symmetric: :math:`D_l^{-1/2} A D_r^{-1/2}`"
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_normalized_adj:10 of
+#, python-brace-format
+msgid "``'left'`` -- Left: :math:`D_l^{-1} A`"
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_normalized_adj:11 of
+#, python-brace-format
+msgid "``'right'`` -- Right: :math:`A D_r^{-1}`"
+msgstr ""
+
+#: freerec.data.datasets.base.RecDataSet.to_normalized_adj:14 of
+msgid "Normalized adjacency matrix in CSR format."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:1
+#: of
+msgid "Create an ordered source over all user IDs."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:3
+#: of
+msgid "Data source yielding user IDs in order."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:4
+#: of
+msgid ":class:`~OrderedSource`"
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:1
+#: of
+msgid "Create a randomly sampled source of user IDs."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:3
+#: of
+msgid ""
+"Data source yielding randomly chosen user IDs with size equal to the "
+"current dataset's interaction count."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:5
+#: of
+msgid ":class:`~RandomChoicedSource`"
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:1
+#: of
+msgid "Create a shuffled source of (User, Item) pairs."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:3
+#: of
+msgid "Data source yielding shuffled interaction pairs."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:4
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:7
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:11
+#: of
+msgid ":class:`~RandomShuffledSource`"
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:1
+#: of
+msgid "Create a shuffled source of (User, ItemSequence) data."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:3
+#: of
+msgid "Maximum sequence length. ``None`` keeps the full sequence."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:6
+#: of
+msgid "Data source yielding shuffled user sequences."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:1
+#: of
+msgid "Create a shuffled source of rolling (User, ItemSequence) data."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:3
+#: of
+msgid "Minimum sub-sequence length."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:5
+#: of
+msgid "Maximum base sequence length before rolling."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:7
+#: of
+msgid "If ``True``, keep sequences shorter than *minlen*."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:10
+#: of
+msgid "Data source yielding shuffled rolling sequences."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:1
+#: of
+msgid "Create an ordered source over all interactions."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:3
+#: of
+msgid "Data source yielding interactions in original order."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:4
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:8
+#: of
+msgid ":class:`~PipedSource`"
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:1
+#: of
+msgid "Create a shuffled source over all interactions."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:3
+#: of
+msgid "Shuffle buffer size. If ``None``, the default chunk size is used."
+msgstr ""
+
+#: freerec.data.datasets.base.safe_mode.<locals>.decorator.<locals>.wrapper:7
+#: of
+msgid "Data source yielding shuffled interactions."
+msgstr ""
+
+#: freerec.data.datasets.base.MatchingRecDataSet:1 of
+msgid "Recommendation dataset for item matching (retrieval) tasks."
+msgstr ""
+
+#: freerec.data.datasets.base.MatchingRecDataSet.summary:1 of
+msgid "Print a summary table with user/item/interaction statistics."
+msgstr ""
+
+#: freerec.data.datasets.base.NextItemRecDataSet:1 of
+msgid "Recommendation dataset for next-item prediction tasks."
+msgstr ""
+
+#: freerec.data.datasets.base.NextItemRecDataSet.summary:1 of
+msgid "Print a summary table including average sequence length."
+msgstr ""
+
+#: freerec.data.datasets.base.PredictionRecDataSet:1 of
+msgid "Recommendation dataset for rating/click prediction tasks."
+msgstr ""
+
+#: freerec.data.datasets.base.PredictionRecDataSet.summary:1 of
+msgid "Print a summary table of interaction counts per split."
+msgstr ""
+
+#: freerec.data.datasets.allrecipes.Allrecipes_MMSSL:1 of
+msgid "Allrecipes dataset used in [MMSSL](https://github.com/HKUDS/MMSSL)."
+msgstr ""
+
+#: freerec.data.datasets.allrecipes.Allrecipes_MMSSL:4
+#: freerec.data.datasets.amazon2014.Amazon2014Baby_550_MMRec:4
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_1000_LOU:9
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104712_ROU:10
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104811_ROU:10
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_500_LOU:9
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_550_LOU:9
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104712_ROU:10
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104811_ROU:10
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_1000_LOU:9
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104712_ROU:10
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104811_ROU:10
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_1000_LOU:9
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_550_MMRec:4
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104712_ROU:10
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104811_ROU:10
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_550_MMRec:4
+#: freerec.data.datasets.amazon2014.Amazon2014Games_500_LOU:9
+#: freerec.data.datasets.amazon2014.Amazon2014Games_550_LOU:9
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_500_LOU:9
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_550_LOU:9
+#: freerec.data.datasets.amazon2014.Amazon2014Home_1000_LOU:9
+#: freerec.data.datasets.amazon2014.Amazon2014Home_500_LOU:9
+#: freerec.data.datasets.amazon2014.Amazon2014Home_550_LOU:10
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_1000_LOU:9
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104712_ROU:10
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104811_ROU:10
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_500_LOU:9
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_550_LOU:9
+#: freerec.data.datasets.amazon2014.Amazon2014Office_500_LOU:9
+#: freerec.data.datasets.amazon2014.Amazon2014Office_550_LOU:9
+#: freerec.data.datasets.amazon2014.Amazon2014Sports_550_MMRec:4
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_500_LOU:9
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_550_LOU:9
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_500_LOU:9
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_550_LOU:9
+#: freerec.data.datasets.amazon2014.Amazon2014Video_1000_LOU:9
+#: freerec.data.datasets.amazon2018.Amazon2018Books_550_LOU:9
+#: freerec.data.datasets.amazon2018.Amazon2018CDs_550_LOU:9
+#: freerec.data.datasets.amazon2018.Amazon2018Clothing_550_LOU:9
+#: freerec.data.datasets.amazon2018.Amazon2018Electronics_550_LOU:9
+#: freerec.data.datasets.amazon2018.Amazon2018Movies_550_LOU:9
+#: freerec.data.datasets.amazon2018.Amazon2018Office_550_LOU:9
+#: freerec.data.datasets.amazon2018.Amazon2018Sports_550_LOU:9
+#: freerec.data.datasets.amazon2018.Amazon2018Tools_550_LOU:9
+#: freerec.data.datasets.amazon2018.Amazon2018Toys_550_LOU:9
+#: freerec.data.datasets.amazon2023.Amazon2023Baby_554811_ROU:10
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_10104811_ROU:10
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_554811_ROU:10
+#: freerec.data.datasets.amazon2023.Amazon2023Fashion_554811_ROU:10
+#: freerec.data.datasets.amazon2023.Amazon2023Games_554811_ROU:10
+#: freerec.data.datasets.amazon2023.Amazon2023Office_554811_ROU:10
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_10104811_ROU:10
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_554811_ROU:10
+#: freerec.data.datasets.gowalla.Gowalla2010_10100712_ROU:10
+#: freerec.data.datasets.gowalla.Gowalla2010_10100811_ROU:10
+#: freerec.data.datasets.microlens.MicroLens100K:6
+#: freerec.data.datasets.movielens.MovieLens100K_10101712_ROU:10
+#: freerec.data.datasets.movielens.MovieLens100K_10101811_ROU:10
+#: freerec.data.datasets.movielens.MovieLens100K_500_LOU:9
+#: freerec.data.datasets.movielens.MovieLens100K_550_LOU:9
+#: freerec.data.datasets.movielens.MovieLens10M_10101712_ROU:10
+#: freerec.data.datasets.movielens.MovieLens10M_10101811_ROU:10
+#: freerec.data.datasets.movielens.MovieLens10M_500_LOU:9
+#: freerec.data.datasets.movielens.MovieLens10M_550_LOU:9
+#: freerec.data.datasets.movielens.MovieLens1M_10101712_ROU:10
+#: freerec.data.datasets.movielens.MovieLens1M_10101811_ROU:10
+#: freerec.data.datasets.movielens.MovieLens1M_500_LOU:9
+#: freerec.data.datasets.movielens.MovieLens1M_550_LOU:9
+#: freerec.data.datasets.movielens.MovieLens20M_10101712_ROU:10
+#: freerec.data.datasets.movielens.MovieLens20M_10101811_ROU:10
+#: freerec.data.datasets.movielens.MovieLens20M_500_LOU:9
+#: freerec.data.datasets.movielens.MovieLens20M_550_LOU:9
+#: freerec.data.datasets.steam.Steam_550_LOU:9
+#: freerec.data.datasets.tiktok.Tiktok_000811_RAU:4
+#: freerec.data.datasets.tiktok.Tiktok_MMSSL:4
+#: freerec.data.datasets.yelp.Yelp2018_10104712_ROU:10
+#: freerec.data.datasets.yelp.Yelp2018_10104811_ROU:10
+#: freerec.data.datasets.yelp.Yelp2018_500_LOU:9
+#: freerec.data.datasets.yelp.Yelp2018_550_LOU:9
+#: freerec.data.datasets.yelp.Yelp2018_554311_ROU:10
+#: freerec.data.datasets.yelp.Yelp2019_550_S3Rec:6
+#: freerec.data.datasets.yelp.Yelp2021_10104712_ROU:10
+#: freerec.data.datasets.yelp.Yelp2021_10104811_ROU:10
+#: freerec.data.datasets.yelp.Yelp2021_500_LOU:9
+#: freerec.data.datasets.yelp.Yelp2021_550_LOU:9 of
+msgid "Statistics"
+msgstr ""
+
+#: freerec.data.datasets.allrecipes.Allrecipes_MMSSL:6
+#: freerec.data.datasets.amazon2014.Amazon2014Baby_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Sports_550_MMRec:6
+#: freerec.data.datasets.frappe.Frappe_x1_BARS:4
+#: freerec.data.datasets.microlens.MicroLens100K:8
+#: freerec.data.datasets.tiktok.Tiktok_MMSSL:6
+#: freerec.data.datasets.yelp.Yelp2019_550_S3Rec:8 of
+msgid "#Users"
+msgstr ""
+
+#: freerec.data.datasets.allrecipes.Allrecipes_MMSSL:6
+#: freerec.data.datasets.amazon2014.Amazon2014Baby_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Sports_550_MMRec:6
+#: freerec.data.datasets.frappe.Frappe_x1_BARS:4
+#: freerec.data.datasets.microlens.MicroLens100K:8
+#: freerec.data.datasets.tiktok.Tiktok_MMSSL:6
+#: freerec.data.datasets.yelp.Yelp2019_550_S3Rec:8 of
+msgid "#Items"
+msgstr ""
+
+#: freerec.data.datasets.allrecipes.Allrecipes_MMSSL:6
+#: freerec.data.datasets.amazon2014.Amazon2014Baby_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Sports_550_MMRec:6
+#: freerec.data.datasets.frappe.Frappe_x1_BARS:4
+#: freerec.data.datasets.microlens.MicroLens100K:8
+#: freerec.data.datasets.tiktok.Tiktok_MMSSL:6
+#: freerec.data.datasets.yelp.Yelp2019_550_S3Rec:8 of
+msgid "Avg.Len"
+msgstr ""
+
+#: freerec.data.datasets.allrecipes.Allrecipes_MMSSL:6
+#: freerec.data.datasets.amazon2014.Amazon2014Baby_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Games_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Games_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_550_LOU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Office_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Office_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Sports_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Video_1000_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Books_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018CDs_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Clothing_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Electronics_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Movies_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Office_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Sports_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Tools_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Toys_550_LOU:11
+#: freerec.data.datasets.amazon2023.Amazon2023Baby_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_10104811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Fashion_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Games_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Office_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_10104811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_554811_ROU:12
+#: freerec.data.datasets.criteo.Criteo_x1_BARS:4
+#: freerec.data.datasets.frappe.Frappe_x1_BARS:4
+#: freerec.data.datasets.gowalla.Gowalla2010_10100712_ROU:12
+#: freerec.data.datasets.gowalla.Gowalla2010_10100811_ROU:12
+#: freerec.data.datasets.microlens.MicroLens100K:8
+#: freerec.data.datasets.movielens.MovieLens100K_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens100K_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens100K_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens100K_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens10M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens10M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens10M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens10M_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens1M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens1M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens1M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens1M_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens20M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens20M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens20M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens20M_550_LOU:11
+#: freerec.data.datasets.steam.Steam_550_LOU:11
+#: freerec.data.datasets.tiktok.Tiktok_000811_RAU:6
+#: freerec.data.datasets.tiktok.Tiktok_MMSSL:6
+#: freerec.data.datasets.yelp.Yelp2018_10104712_ROU:12
+#: freerec.data.datasets.yelp.Yelp2018_10104811_ROU:12
+#: freerec.data.datasets.yelp.Yelp2018_500_LOU:11
+#: freerec.data.datasets.yelp.Yelp2018_550_LOU:11
+#: freerec.data.datasets.yelp.Yelp2018_554311_ROU:12
+#: freerec.data.datasets.yelp.Yelp2019_550_S3Rec:8
+#: freerec.data.datasets.yelp.Yelp2021_10104712_ROU:12
+#: freerec.data.datasets.yelp.Yelp2021_10104811_ROU:12
+#: freerec.data.datasets.yelp.Yelp2021_500_LOU:11
+#: freerec.data.datasets.yelp.Yelp2021_550_LOU:11 of
+msgid "#Interactions"
+msgstr ""
+
+#: freerec.data.datasets.allrecipes.Allrecipes_MMSSL:6
+#: freerec.data.datasets.amazon2014.Amazon2014Baby_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Games_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Games_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_550_LOU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Office_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Office_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Sports_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Video_1000_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Books_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018CDs_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Clothing_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Electronics_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Movies_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Office_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Sports_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Tools_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Toys_550_LOU:11
+#: freerec.data.datasets.amazon2023.Amazon2023Baby_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_10104811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Fashion_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Games_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Office_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_10104811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_554811_ROU:12
+#: freerec.data.datasets.criteo.Criteo_x1_BARS:4
+#: freerec.data.datasets.frappe.Frappe_x1_BARS:4
+#: freerec.data.datasets.gowalla.Gowalla2010_10100712_ROU:12
+#: freerec.data.datasets.gowalla.Gowalla2010_10100811_ROU:12
+#: freerec.data.datasets.microlens.MicroLens100K:8
+#: freerec.data.datasets.movielens.MovieLens100K_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens100K_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens100K_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens100K_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens10M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens10M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens10M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens10M_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens1M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens1M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens1M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens1M_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens20M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens20M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens20M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens20M_550_LOU:11
+#: freerec.data.datasets.steam.Steam_550_LOU:11
+#: freerec.data.datasets.tiktok.Tiktok_000811_RAU:6
+#: freerec.data.datasets.tiktok.Tiktok_MMSSL:6
+#: freerec.data.datasets.yelp.Yelp2018_10104712_ROU:12
+#: freerec.data.datasets.yelp.Yelp2018_10104811_ROU:12
+#: freerec.data.datasets.yelp.Yelp2018_500_LOU:11
+#: freerec.data.datasets.yelp.Yelp2018_550_LOU:11
+#: freerec.data.datasets.yelp.Yelp2018_554311_ROU:12
+#: freerec.data.datasets.yelp.Yelp2019_550_S3Rec:8
+#: freerec.data.datasets.yelp.Yelp2021_10104712_ROU:12
+#: freerec.data.datasets.yelp.Yelp2021_10104811_ROU:12
+#: freerec.data.datasets.yelp.Yelp2021_500_LOU:11
+#: freerec.data.datasets.yelp.Yelp2021_550_LOU:11 of
+msgid "#Train"
+msgstr ""
+
+#: freerec.data.datasets.allrecipes.Allrecipes_MMSSL:6
+#: freerec.data.datasets.amazon2014.Amazon2014Baby_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Games_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Games_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_550_LOU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Office_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Office_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Sports_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Video_1000_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Books_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018CDs_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Clothing_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Electronics_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Movies_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Office_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Sports_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Tools_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Toys_550_LOU:11
+#: freerec.data.datasets.amazon2023.Amazon2023Baby_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_10104811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Fashion_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Games_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Office_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_10104811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_554811_ROU:12
+#: freerec.data.datasets.criteo.Criteo_x1_BARS:4
+#: freerec.data.datasets.frappe.Frappe_x1_BARS:4
+#: freerec.data.datasets.gowalla.Gowalla2010_10100712_ROU:12
+#: freerec.data.datasets.gowalla.Gowalla2010_10100811_ROU:12
+#: freerec.data.datasets.microlens.MicroLens100K:8
+#: freerec.data.datasets.movielens.MovieLens100K_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens100K_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens100K_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens100K_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens10M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens10M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens10M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens10M_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens1M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens1M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens1M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens1M_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens20M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens20M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens20M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens20M_550_LOU:11
+#: freerec.data.datasets.steam.Steam_550_LOU:11
+#: freerec.data.datasets.tiktok.Tiktok_000811_RAU:6
+#: freerec.data.datasets.tiktok.Tiktok_MMSSL:6
+#: freerec.data.datasets.yelp.Yelp2018_10104712_ROU:12
+#: freerec.data.datasets.yelp.Yelp2018_10104811_ROU:12
+#: freerec.data.datasets.yelp.Yelp2018_500_LOU:11
+#: freerec.data.datasets.yelp.Yelp2018_550_LOU:11
+#: freerec.data.datasets.yelp.Yelp2018_554311_ROU:12
+#: freerec.data.datasets.yelp.Yelp2019_550_S3Rec:8
+#: freerec.data.datasets.yelp.Yelp2021_10104712_ROU:12
+#: freerec.data.datasets.yelp.Yelp2021_10104811_ROU:12
+#: freerec.data.datasets.yelp.Yelp2021_500_LOU:11
+#: freerec.data.datasets.yelp.Yelp2021_550_LOU:11 of
+msgid "#Valid"
+msgstr ""
+
+#: freerec.data.datasets.allrecipes.Allrecipes_MMSSL:6
+#: freerec.data.datasets.amazon2014.Amazon2014Baby_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Games_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Games_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_550_LOU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Office_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Office_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Sports_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Video_1000_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Books_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018CDs_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Clothing_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Electronics_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Movies_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Office_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Sports_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Tools_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Toys_550_LOU:11
+#: freerec.data.datasets.amazon2023.Amazon2023Baby_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_10104811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Fashion_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Games_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Office_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_10104811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_554811_ROU:12
+#: freerec.data.datasets.criteo.Criteo_x1_BARS:4
+#: freerec.data.datasets.frappe.Frappe_x1_BARS:4
+#: freerec.data.datasets.gowalla.Gowalla2010_10100712_ROU:12
+#: freerec.data.datasets.gowalla.Gowalla2010_10100811_ROU:12
+#: freerec.data.datasets.microlens.MicroLens100K:8
+#: freerec.data.datasets.movielens.MovieLens100K_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens100K_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens100K_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens100K_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens10M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens10M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens10M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens10M_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens1M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens1M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens1M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens1M_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens20M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens20M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens20M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens20M_550_LOU:11
+#: freerec.data.datasets.steam.Steam_550_LOU:11
+#: freerec.data.datasets.tiktok.Tiktok_000811_RAU:6
+#: freerec.data.datasets.tiktok.Tiktok_MMSSL:6
+#: freerec.data.datasets.yelp.Yelp2018_10104712_ROU:12
+#: freerec.data.datasets.yelp.Yelp2018_10104811_ROU:12
+#: freerec.data.datasets.yelp.Yelp2018_500_LOU:11
+#: freerec.data.datasets.yelp.Yelp2018_550_LOU:11
+#: freerec.data.datasets.yelp.Yelp2018_554311_ROU:12
+#: freerec.data.datasets.yelp.Yelp2019_550_S3Rec:8
+#: freerec.data.datasets.yelp.Yelp2021_10104712_ROU:12
+#: freerec.data.datasets.yelp.Yelp2021_10104811_ROU:12
+#: freerec.data.datasets.yelp.Yelp2021_500_LOU:11
+#: freerec.data.datasets.yelp.Yelp2021_550_LOU:11 of
+msgid "#Test"
+msgstr ""
+
+#: freerec.data.datasets.allrecipes.Allrecipes_MMSSL:6
+#: freerec.data.datasets.amazon2014.Amazon2014Baby_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Games_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Games_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_550_LOU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Office_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Office_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Sports_550_MMRec:6
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Video_1000_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Books_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018CDs_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Clothing_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Electronics_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Movies_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Office_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Sports_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Tools_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Toys_550_LOU:11
+#: freerec.data.datasets.amazon2023.Amazon2023Baby_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_10104811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Fashion_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Games_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Office_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_10104811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_554811_ROU:12
+#: freerec.data.datasets.frappe.Frappe_x1_BARS:4
+#: freerec.data.datasets.gowalla.Gowalla2010_10100712_ROU:12
+#: freerec.data.datasets.gowalla.Gowalla2010_10100811_ROU:12
+#: freerec.data.datasets.microlens.MicroLens100K:8
+#: freerec.data.datasets.movielens.MovieLens100K_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens100K_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens100K_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens100K_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens10M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens10M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens10M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens10M_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens1M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens1M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens1M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens1M_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens20M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens20M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens20M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens20M_550_LOU:11
+#: freerec.data.datasets.steam.Steam_550_LOU:11
+#: freerec.data.datasets.tiktok.Tiktok_000811_RAU:6
+#: freerec.data.datasets.tiktok.Tiktok_MMSSL:6
+#: freerec.data.datasets.yelp.Yelp2018_10104712_ROU:12
+#: freerec.data.datasets.yelp.Yelp2018_10104811_ROU:12
+#: freerec.data.datasets.yelp.Yelp2018_500_LOU:11
+#: freerec.data.datasets.yelp.Yelp2018_550_LOU:11
+#: freerec.data.datasets.yelp.Yelp2018_554311_ROU:12
+#: freerec.data.datasets.yelp.Yelp2019_550_S3Rec:8
+#: freerec.data.datasets.yelp.Yelp2021_10104712_ROU:12
+#: freerec.data.datasets.yelp.Yelp2021_10104811_ROU:12
+#: freerec.data.datasets.yelp.Yelp2021_500_LOU:11
+#: freerec.data.datasets.yelp.Yelp2021_550_LOU:11 of
+msgid "Density"
+msgstr ""
+
+#: freerec.data.datasets.allrecipes.Allrecipes_MMSSL:8 of
+msgid "19805"
+msgstr ""
+
+#: freerec.data.datasets.allrecipes.Allrecipes_MMSSL:8 of
+msgid "10068"
+msgstr ""
+
+#: freerec.data.datasets.allrecipes.Allrecipes_MMSSL:8 of
+msgid "4.975107296137339"
+msgstr ""
+
+#: freerec.data.datasets.allrecipes.Allrecipes_MMSSL:8 of
+msgid "73494"
+msgstr ""
+
+#: freerec.data.datasets.allrecipes.Allrecipes_MMSSL:8 of
+msgid "58922"
+msgstr ""
+
+#: freerec.data.datasets.allrecipes.Allrecipes_MMSSL:8 of
+msgid "6751"
+msgstr ""
+
+#: freerec.data.datasets.allrecipes.Allrecipes_MMSSL:8 of
+msgid "7821"
+msgstr ""
+
+#: freerec.data.datasets.allrecipes.Allrecipes_MMSSL:8 of
+msgid "0.0003685817531420022"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_1000_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104712_ROU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104811_ROU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_500_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_550_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104712_ROU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104811_ROU:2
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_1000_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104712_ROU:2
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104811_ROU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_1000_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104712_ROU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104811_ROU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Games_500_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Games_550_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_500_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_550_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Home_1000_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Home_500_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Home_550_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_1000_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104712_ROU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104811_ROU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_500_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_550_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Office_500_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Office_550_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_500_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_550_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_500_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_550_LOU:2
+#: freerec.data.datasets.amazon2014.Amazon2014Video_1000_LOU:2
+#: freerec.data.datasets.amazon2018.Amazon2018Books_550_LOU:2
+#: freerec.data.datasets.amazon2018.Amazon2018CDs_550_LOU:2
+#: freerec.data.datasets.amazon2018.Amazon2018Clothing_550_LOU:2
+#: freerec.data.datasets.amazon2018.Amazon2018Electronics_550_LOU:2
+#: freerec.data.datasets.amazon2018.Amazon2018Movies_550_LOU:2
+#: freerec.data.datasets.amazon2018.Amazon2018Office_550_LOU:2
+#: freerec.data.datasets.amazon2018.Amazon2018Sports_550_LOU:2
+#: freerec.data.datasets.amazon2018.Amazon2018Tools_550_LOU:2
+#: freerec.data.datasets.amazon2018.Amazon2018Toys_550_LOU:2
+#: freerec.data.datasets.amazon2023.Amazon2023Baby_554811_ROU:2
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_10104811_ROU:2
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_554811_ROU:2
+#: freerec.data.datasets.amazon2023.Amazon2023Fashion_554811_ROU:2
+#: freerec.data.datasets.amazon2023.Amazon2023Games_554811_ROU:2
+#: freerec.data.datasets.amazon2023.Amazon2023Office_554811_ROU:2
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_10104811_ROU:2
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_554811_ROU:2
+#: freerec.data.datasets.gowalla.Gowalla2010_10100712_ROU:2
+#: freerec.data.datasets.gowalla.Gowalla2010_10100811_ROU:2
+#: freerec.data.datasets.movielens.MovieLens100K_10101712_ROU:2
+#: freerec.data.datasets.movielens.MovieLens100K_10101811_ROU:2
+#: freerec.data.datasets.movielens.MovieLens100K_500_LOU:2
+#: freerec.data.datasets.movielens.MovieLens100K_550_LOU:2
+#: freerec.data.datasets.movielens.MovieLens10M_10101712_ROU:2
+#: freerec.data.datasets.movielens.MovieLens10M_10101811_ROU:2
+#: freerec.data.datasets.movielens.MovieLens10M_500_LOU:2
+#: freerec.data.datasets.movielens.MovieLens10M_550_LOU:2
+#: freerec.data.datasets.movielens.MovieLens1M_10101712_ROU:2
+#: freerec.data.datasets.movielens.MovieLens1M_10101811_ROU:2
+#: freerec.data.datasets.movielens.MovieLens1M_500_LOU:2
+#: freerec.data.datasets.movielens.MovieLens1M_550_LOU:2
+#: freerec.data.datasets.movielens.MovieLens20M_10101712_ROU:2
+#: freerec.data.datasets.movielens.MovieLens20M_10101811_ROU:2
+#: freerec.data.datasets.movielens.MovieLens20M_500_LOU:2
+#: freerec.data.datasets.movielens.MovieLens20M_550_LOU:2
+#: freerec.data.datasets.steam.Steam_550_LOU:2
+#: freerec.data.datasets.yelp.Yelp2018_10104712_ROU:2
+#: freerec.data.datasets.yelp.Yelp2018_10104811_ROU:2
+#: freerec.data.datasets.yelp.Yelp2018_500_LOU:2
+#: freerec.data.datasets.yelp.Yelp2018_550_LOU:2
+#: freerec.data.datasets.yelp.Yelp2018_554311_ROU:2
+#: freerec.data.datasets.yelp.Yelp2021_10104712_ROU:2
+#: freerec.data.datasets.yelp.Yelp2021_10104811_ROU:2
+#: freerec.data.datasets.yelp.Yelp2021_500_LOU:2
+#: freerec.data.datasets.yelp.Yelp2021_550_LOU:2 of
+msgid "Settings"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104712_ROU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104811_ROU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104712_ROU:3
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104712_ROU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104712_ROU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104811_ROU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104712_ROU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104811_ROU:3
+#: freerec.data.datasets.yelp.Yelp2018_10104712_ROU:3
+#: freerec.data.datasets.yelp.Yelp2021_10104712_ROU:3 of
+msgid "kcore4user: 10 kcore4item: 10 star4pos: 4 ratios: 7,1,2 splitting: ROU"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Games_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Games_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_550_LOU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Office_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Office_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Video_1000_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Books_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018CDs_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Clothing_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Electronics_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Movies_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Office_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Sports_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Tools_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Toys_550_LOU:11
+#: freerec.data.datasets.amazon2023.Amazon2023Baby_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_10104811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Fashion_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Games_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Office_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_10104811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_554811_ROU:12
+#: freerec.data.datasets.gowalla.Gowalla2010_10100712_ROU:12
+#: freerec.data.datasets.gowalla.Gowalla2010_10100811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens100K_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens100K_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens100K_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens100K_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens10M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens10M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens10M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens10M_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens1M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens1M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens1M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens1M_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens20M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens20M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens20M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens20M_550_LOU:11
+#: freerec.data.datasets.steam.Steam_550_LOU:11
+#: freerec.data.datasets.tiktok.Tiktok_000811_RAU:6
+#: freerec.data.datasets.yelp.Yelp2018_10104712_ROU:12
+#: freerec.data.datasets.yelp.Yelp2018_10104811_ROU:12
+#: freerec.data.datasets.yelp.Yelp2018_500_LOU:11
+#: freerec.data.datasets.yelp.Yelp2018_550_LOU:11
+#: freerec.data.datasets.yelp.Yelp2018_554311_ROU:12
+#: freerec.data.datasets.yelp.Yelp2021_10104712_ROU:12
+#: freerec.data.datasets.yelp.Yelp2021_10104811_ROU:12
+#: freerec.data.datasets.yelp.Yelp2021_500_LOU:11
+#: freerec.data.datasets.yelp.Yelp2021_550_LOU:11 of
+msgid "#User"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104712_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Games_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Games_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Home_550_LOU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_1000_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104811_ROU:12
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Office_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Office_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_500_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_550_LOU:11
+#: freerec.data.datasets.amazon2014.Amazon2014Video_1000_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Books_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018CDs_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Clothing_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Electronics_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Movies_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Office_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Sports_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Tools_550_LOU:11
+#: freerec.data.datasets.amazon2018.Amazon2018Toys_550_LOU:11
+#: freerec.data.datasets.amazon2023.Amazon2023Baby_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_10104811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Fashion_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Games_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Office_554811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_10104811_ROU:12
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_554811_ROU:12
+#: freerec.data.datasets.gowalla.Gowalla2010_10100712_ROU:12
+#: freerec.data.datasets.gowalla.Gowalla2010_10100811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens100K_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens100K_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens100K_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens100K_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens10M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens10M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens10M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens10M_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens1M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens1M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens1M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens1M_550_LOU:11
+#: freerec.data.datasets.movielens.MovieLens20M_10101712_ROU:12
+#: freerec.data.datasets.movielens.MovieLens20M_10101811_ROU:12
+#: freerec.data.datasets.movielens.MovieLens20M_500_LOU:11
+#: freerec.data.datasets.movielens.MovieLens20M_550_LOU:11
+#: freerec.data.datasets.steam.Steam_550_LOU:11
+#: freerec.data.datasets.tiktok.Tiktok_000811_RAU:6
+#: freerec.data.datasets.yelp.Yelp2018_10104712_ROU:12
+#: freerec.data.datasets.yelp.Yelp2018_10104811_ROU:12
+#: freerec.data.datasets.yelp.Yelp2018_500_LOU:11
+#: freerec.data.datasets.yelp.Yelp2018_550_LOU:11
+#: freerec.data.datasets.yelp.Yelp2018_554311_ROU:12
+#: freerec.data.datasets.yelp.Yelp2021_10104712_ROU:12
+#: freerec.data.datasets.yelp.Yelp2021_10104811_ROU:12
+#: freerec.data.datasets.yelp.Yelp2021_500_LOU:11
+#: freerec.data.datasets.yelp.Yelp2021_550_LOU:11 of
+msgid "#Item"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104712_ROU:14
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104811_ROU:14 of
+msgid "973"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104712_ROU:14
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104811_ROU:14 of
+msgid "645"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104712_ROU:14
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104811_ROU:14 of
+msgid "19263"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104811_ROU:14 of
+msgid "15008"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104811_ROU:14 of
+msgid "1845"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104811_ROU:14 of
+msgid "2410"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104712_ROU:14
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104811_ROU:14 of
+msgid "0.030693850235426277"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104712_ROU:14 of
+msgid "13063"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104712_ROU:14 of
+msgid "1945"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_10104712_ROU:14 of
+msgid "4255"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104811_ROU:3
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104811_ROU:3
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_10104811_ROU:3
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_10104811_ROU:3
+#: freerec.data.datasets.yelp.Yelp2018_10104811_ROU:3
+#: freerec.data.datasets.yelp.Yelp2021_10104811_ROU:3 of
+msgid "kcore4user: 10 kcore4item: 10 star4pos: 4 ratios: 8,1,1 splitting: ROU"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104712_ROU:14
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104811_ROU:14 of
+msgid "109730"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104712_ROU:14
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104811_ROU:14 of
+msgid "96421"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104712_ROU:14
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104811_ROU:14 of
+msgid "3181759"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104811_ROU:14 of
+msgid "2502323"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104811_ROU:14 of
+msgid "308885"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104811_ROU:14 of
+msgid "370551"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104712_ROU:14
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104811_ROU:14 of
+msgid "0.00030072551044609626"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104712_ROU:14 of
+msgid "2181889"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104712_ROU:14 of
+msgid "320434"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Books_10104712_ROU:14 of
+msgid "679436"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104712_ROU:14
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104811_ROU:14 of
+msgid "9954"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104712_ROU:14
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104811_ROU:14 of
+msgid "10877"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104712_ROU:14
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104811_ROU:14 of
+msgid "272086"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104811_ROU:14 of
+msgid "213755"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104811_ROU:14 of
+msgid "26342"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104811_ROU:14 of
+msgid "31989"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104712_ROU:14
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104811_ROU:14 of
+msgid "0.002513040172344499"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104712_ROU:14 of
+msgid "186347"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104712_ROU:14 of
+msgid "27408"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_10104712_ROU:14 of
+msgid "58331"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104712_ROU:14
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104811_ROU:14 of
+msgid "9279"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104712_ROU:14
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104811_ROU:14 of
+msgid "6065"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104712_ROU:14
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104811_ROU:14 of
+msgid "158979"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104811_ROU:14 of
+msgid "123648"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104811_ROU:14 of
+msgid "14988"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104811_ROU:14 of
+msgid "20343"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104712_ROU:14
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104811_ROU:14 of
+msgid "0.002824930586818252"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104712_ROU:14 of
+msgid "107674"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104712_ROU:14 of
+msgid "15974"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_10104712_ROU:14 of
+msgid "35331"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104811_ROU:14 of
+msgid "21506"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104811_ROU:14 of
+msgid "15269"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104811_ROU:14 of
+msgid "580420"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104811_ROU:14 of
+msgid "455956"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104811_ROU:14 of
+msgid "56162"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104811_ROU:14 of
+msgid "68302"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_10104811_ROU:14 of
+msgid "0.0017675517274430242"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Baby_550_MMRec:1 of
+msgid "Amazon2014Baby from [MMRec](https://github.com/enoche/MMRec)."
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Baby_550_MMRec:8 of
+msgid "19445"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Baby_550_MMRec:8 of
+msgid "7050"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Baby_550_MMRec:8 of
+msgid "8.096734379017743"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Baby_550_MMRec:8 of
+msgid "160792"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Baby_550_MMRec:8 of
+msgid "118551"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Baby_550_MMRec:8 of
+msgid "20559"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Baby_550_MMRec:8 of
+msgid "21682"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Baby_550_MMRec:8 of
+msgid "0.0011729172479570493"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Sports_550_MMRec:1 of
+msgid "Amazon2014Sports from [MMRec](https://github.com/enoche/MMRec)."
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Sports_550_MMRec:8 of
+msgid "35598"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Sports_550_MMRec:8 of
+msgid "18357"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Sports_550_MMRec:8 of
+msgid "8.13542895668296"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Sports_550_MMRec:8 of
+msgid "296337"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Sports_550_MMRec:8 of
+msgid "218409"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Sports_550_MMRec:8 of
+msgid "37899"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Sports_550_MMRec:8 of
+msgid "40029"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Sports_550_MMRec:8 of
+msgid "0.00045348045456958995"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_550_MMRec:1 of
+msgid "Amazon2014Clothing from [MMRec](https://github.com/enoche/MMRec)."
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_550_MMRec:8 of
+msgid "39387"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_550_MMRec:8 of
+msgid "23033"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_550_MMRec:8 of
+msgid "7.010231802371341"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_550_MMRec:8 of
+msgid "278677"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_550_MMRec:8 of
+msgid "197338"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_550_MMRec:8 of
+msgid "40150"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_550_MMRec:8 of
+msgid "41189"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_550_MMRec:8 of
+msgid "0.0003071833809100676"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_550_MMRec:1 of
+msgid "Amazon2014Electronics from [MMRec](https://github.com/enoche/MMRec)."
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_550_MMRec:8 of
+msgid "192403"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_550_MMRec:8 of
+msgid "63001"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_550_MMRec:8 of
+msgid "8.5198619564144"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_550_MMRec:8 of
+msgid "1689188"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_550_MMRec:8 of
+msgid "1254441"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_550_MMRec:8 of
+msgid "211296"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_550_MMRec:8 of
+msgid "223451"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Electronics_550_MMRec:8 of
+msgid "0.00013935376448339807"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_550_LOU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Games_550_LOU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_550_LOU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_550_LOU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Office_550_LOU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_500_LOU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_550_LOU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_550_LOU:3
+#: freerec.data.datasets.amazon2018.Amazon2018Books_550_LOU:3
+#: freerec.data.datasets.amazon2018.Amazon2018CDs_550_LOU:3
+#: freerec.data.datasets.amazon2018.Amazon2018Clothing_550_LOU:3
+#: freerec.data.datasets.amazon2018.Amazon2018Electronics_550_LOU:3
+#: freerec.data.datasets.amazon2018.Amazon2018Movies_550_LOU:3
+#: freerec.data.datasets.amazon2018.Amazon2018Office_550_LOU:3
+#: freerec.data.datasets.amazon2018.Amazon2018Sports_550_LOU:3
+#: freerec.data.datasets.amazon2018.Amazon2018Tools_550_LOU:3
+#: freerec.data.datasets.amazon2018.Amazon2018Toys_550_LOU:3
+#: freerec.data.datasets.movielens.MovieLens100K_550_LOU:3
+#: freerec.data.datasets.movielens.MovieLens10M_550_LOU:3
+#: freerec.data.datasets.movielens.MovieLens1M_550_LOU:3
+#: freerec.data.datasets.movielens.MovieLens20M_550_LOU:3
+#: freerec.data.datasets.steam.Steam_550_LOU:3
+#: freerec.data.datasets.yelp.Yelp2018_550_LOU:3
+#: freerec.data.datasets.yelp.Yelp2021_550_LOU:3 of
+msgid "kcore4user: 5 kcore4item: 5 star4pos: 0 splitting: LOU"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_550_LOU:13 of
+msgid "22363"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_550_LOU:13 of
+msgid "12101"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_550_LOU:13 of
+msgid "198502"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_550_LOU:13 of
+msgid "153776"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_550_LOU:13 of
+msgid "0.0007335227064174272"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_500_LOU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Games_500_LOU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_500_LOU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Home_500_LOU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_500_LOU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Office_500_LOU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_500_LOU:3
+#: freerec.data.datasets.movielens.MovieLens100K_500_LOU:3
+#: freerec.data.datasets.movielens.MovieLens10M_500_LOU:3
+#: freerec.data.datasets.movielens.MovieLens1M_500_LOU:3
+#: freerec.data.datasets.movielens.MovieLens20M_500_LOU:3
+#: freerec.data.datasets.yelp.Yelp2018_500_LOU:3
+#: freerec.data.datasets.yelp.Yelp2021_500_LOU:3 of
+msgid "kcore4user: 5 kcore4item: 0 star4pos: 0 splitting: LOU"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_500_LOU:13 of
+msgid "52374"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_500_LOU:13 of
+msgid "121291"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_500_LOU:13 of
+msgid "469771"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_500_LOU:13 of
+msgid "365023"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_500_LOU:13 of
+msgid "7.395063077984393e-05"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_1000_LOU:3
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_1000_LOU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_1000_LOU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Home_1000_LOU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_1000_LOU:3
+#: freerec.data.datasets.amazon2014.Amazon2014Video_1000_LOU:3 of
+msgid "kcore4user: 10 kcore4item: 0 star4pos: 0 splitting: LOU"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_1000_LOU:13 of
+msgid "12595"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_1000_LOU:13 of
+msgid "75253"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_1000_LOU:13 of
+msgid "222897"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_1000_LOU:13 of
+msgid "197707"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Beauty_1000_LOU:13 of
+msgid "0.0002351701701963355"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_1000_LOU:13 of
+msgid "41248"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_1000_LOU:13 of
+msgid "334305"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_1000_LOU:13 of
+msgid "1301231"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_1000_LOU:13 of
+msgid "1218735"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014CDs_1000_LOU:13 of
+msgid "9.436449789205816e-05"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_1000_LOU:13 of
+msgid "41878"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_1000_LOU:13 of
+msgid "355571"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_1000_LOU:13 of
+msgid "678329"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_1000_LOU:13 of
+msgid "594573"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Clothing_1000_LOU:13 of
+msgid "4.555416796464584e-05"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Games_550_LOU:13 of
+msgid "24303"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Games_550_LOU:13 of
+msgid "10672"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Games_550_LOU:13 of
+msgid "231780"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Games_550_LOU:13 of
+msgid "183174"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Games_550_LOU:13 of
+msgid "0.0008936557520523778"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Games_500_LOU:13 of
+msgid "31027"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Games_500_LOU:13 of
+msgid "33899"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Games_500_LOU:13 of
+msgid "300003"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Games_500_LOU:13 of
+msgid "237949"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Games_500_LOU:13 of
+msgid "0.0002852324451898322"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_550_LOU:13 of
+msgid "14681"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_550_LOU:13 of
+msgid "8713"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_550_LOU:13 of
+msgid "151254"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_550_LOU:13 of
+msgid "121892"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_550_LOU:13 of
+msgid "0.0011824519884614812"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_500_LOU:13 of
+msgid "32228"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_500_LOU:13 of
+msgid "84357"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_500_LOU:13 of
+msgid "329057"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_500_LOU:13 of
+msgid "264601"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Grocery_500_LOU:13 of
+msgid "0.00012103658242636469"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Home_550_LOU:3 of
+msgid "kcore4user: 5 kcore4user: 5 kcore4item: 5 star4pos: 0 splitting: LOU"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Home_550_LOU:14 of
+msgid "66519"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Home_550_LOU:14 of
+msgid "28237"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Home_550_LOU:14 of
+msgid "551682"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Home_550_LOU:14 of
+msgid "418644"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Home_550_LOU:14 of
+msgid "0.0002937139329503578"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Home_500_LOU:13 of
+msgid "115673"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Home_500_LOU:13 of
+msgid "194446"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Home_500_LOU:13 of
+msgid "980608"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Home_500_LOU:13 of
+msgid "749262"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Home_500_LOU:13 of
+msgid "4.359778437881578e-05"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Home_1000_LOU:13 of
+msgid "25251"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Home_1000_LOU:13 of
+msgid "115657"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Home_1000_LOU:13 of
+msgid "421132"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Home_1000_LOU:13 of
+msgid "370630"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Home_1000_LOU:13 of
+msgid "0.00014420082261520087"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_550_LOU:13 of
+msgid "123960"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_550_LOU:13 of
+msgid "50052"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_550_LOU:13 of
+msgid "1697533"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_550_LOU:13 of
+msgid "1449613"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_550_LOU:13 of
+msgid "0.00027359945140758034"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_500_LOU:13 of
+msgid "139138"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_500_LOU:13 of
+msgid "153436"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_500_LOU:13 of
+msgid "1932230"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_500_LOU:13 of
+msgid "1653954"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_500_LOU:13 of
+msgid "9.050775575045545e-05"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_1000_LOU:13 of
+msgid "46483"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_1000_LOU:13 of
+msgid "134198"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_1000_LOU:13 of
+msgid "1349351"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_1000_LOU:13 of
+msgid "1256385"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Movies_1000_LOU:13 of
+msgid "0.0002163140568148684"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_550_LOU:13 of
+msgid "16638"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_550_LOU:13 of
+msgid "10217"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_550_LOU:13 of
+msgid "134476"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_550_LOU:13 of
+msgid "101200"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_550_LOU:13 of
+msgid "0.0007910797527997544"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_500_LOU:13 of
+msgid "45791"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_500_LOU:13 of
+msgid "112855"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_500_LOU:13 of
+msgid "390454"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_500_LOU:13 of
+msgid "298872"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Tools_500_LOU:13 of
+msgid "7.555599745486971e-05"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_550_LOU:13 of
+msgid "19412"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_550_LOU:13 of
+msgid "11924"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_550_LOU:13 of
+msgid "167597"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_550_LOU:13 of
+msgid "128773"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_550_LOU:13 of
+msgid "0.0007240590571801228"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_500_LOU:13 of
+msgid "58315"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_500_LOU:13 of
+msgid "165371"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_500_LOU:13 of
+msgid "525535"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_500_LOU:13 of
+msgid "408905"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Toys_500_LOU:13 of
+msgid "5.4495671989733694e-05"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Office_550_LOU:13 of
+msgid "4905"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Office_550_LOU:13 of
+msgid "2420"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Office_550_LOU:13 of
+msgid "53258"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Office_550_LOU:13 of
+msgid "43448"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Office_550_LOU:13 of
+msgid "0.004486735579312727"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Office_500_LOU:13 of
+msgid "16772"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Office_500_LOU:13 of
+msgid "37956"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Office_500_LOU:13 of
+msgid "145141"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Office_500_LOU:13 of
+msgid "111597"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Office_500_LOU:13 of
+msgid "0.00022799473561677615"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Video_1000_LOU:13 of
+msgid "8057"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Video_1000_LOU:13 of
+msgid "26729"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Video_1000_LOU:13 of
+msgid "157494"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Video_1000_LOU:13 of
+msgid "141380"
+msgstr ""
+
+#: freerec.data.datasets.amazon2014.Amazon2014Video_1000_LOU:13 of
+msgid "0.0007313208218039309"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Books_550_LOU:13 of
+msgid "1855553"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Books_550_LOU:13 of
+msgid "702955"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Books_550_LOU:13 of
+msgid "27157802"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Books_550_LOU:13 of
+msgid "23446696"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Books_550_LOU:13 of
+msgid "2.082062344661726e-05"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018CDs_550_LOU:13 of
+msgid "112134"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018CDs_550_LOU:13 of
+msgid "73303"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018CDs_550_LOU:13 of
+msgid "1441330"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018CDs_550_LOU:13 of
+msgid "1217062"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018CDs_550_LOU:13 of
+msgid "0.00017534943175208346"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Clothing_550_LOU:13 of
+msgid "1219337"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Clothing_550_LOU:13 of
+msgid "376378"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Clothing_550_LOU:13 of
+msgid "11282445"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Clothing_550_LOU:13 of
+msgid "8843771"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Clothing_550_LOU:13 of
+msgid "2.4584152571414375e-05"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Electronics_550_LOU:13 of
+msgid "728489"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Electronics_550_LOU:13 of
+msgid "159729"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Electronics_550_LOU:13 of
+msgid "6737580"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Electronics_550_LOU:13 of
+msgid "5280602"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Electronics_550_LOU:13 of
+msgid "5.790247980421062e-05"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Movies_550_LOU:13 of
+msgid "297377"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Movies_550_LOU:13 of
+msgid "59925"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Movies_550_LOU:13 of
+msgid "3408612"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Movies_550_LOU:13 of
+msgid "2813858"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Movies_550_LOU:13 of
+msgid "0.00019127673500988237"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Office_550_LOU:13 of
+msgid "101133"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Office_550_LOU:13 of
+msgid "27500"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Office_550_LOU:13 of
+msgid "797563"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Office_550_LOU:13 of
+msgid "595297"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Office_550_LOU:13 of
+msgid "0.00028677376236333255"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Sports_550_LOU:13 of
+msgid "331844"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Sports_550_LOU:13 of
+msgid "103911"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Sports_550_LOU:13 of
+msgid "2835125"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Sports_550_LOU:13 of
+msgid "2171437"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Sports_550_LOU:13 of
+msgid "8.221985709448659e-05"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Tools_550_LOU:13 of
+msgid "240464"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Tools_550_LOU:13 of
+msgid "73153"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Tools_550_LOU:13 of
+msgid "2067876"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Tools_550_LOU:13 of
+msgid "1586948"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Tools_550_LOU:13 of
+msgid "0.00011755531903149089"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Toys_550_LOU:13 of
+msgid "207725"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Toys_550_LOU:13 of
+msgid "78098"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Toys_550_LOU:13 of
+msgid "1825066"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Toys_550_LOU:13 of
+msgid "1409616"
+msgstr ""
+
+#: freerec.data.datasets.amazon2018.Amazon2018Toys_550_LOU:13 of
+msgid "0.00011249931928815434"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Baby_554811_ROU:3
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_554811_ROU:3
+#: freerec.data.datasets.amazon2023.Amazon2023Fashion_554811_ROU:3
+#: freerec.data.datasets.amazon2023.Amazon2023Games_554811_ROU:3
+#: freerec.data.datasets.amazon2023.Amazon2023Office_554811_ROU:3
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_554811_ROU:3 of
+msgid "kcore4user: 5 kcore4item: 5 star4pos: 4 ratios: 8,1,1 splitting: ROU"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Baby_554811_ROU:14 of
+msgid "94207"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Baby_554811_ROU:14 of
+msgid "33086"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Baby_554811_ROU:14 of
+msgid "756243"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Baby_554811_ROU:14 of
+msgid "571033"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Baby_554811_ROU:14 of
+msgid "71777"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Baby_554811_ROU:14 of
+msgid "113433"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Baby_554811_ROU:14 of
+msgid "0.00024262409491624325"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_554811_ROU:14 of
+msgid "445360"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_554811_ROU:14 of
+msgid "187676"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_554811_ROU:14 of
+msgid "3972713"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_554811_ROU:14 of
+msgid "3016546"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_554811_ROU:14 of
+msgid "380101"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_554811_ROU:14 of
+msgid "576066"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_554811_ROU:14 of
+msgid "4.752993765386623e-05"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_10104811_ROU:14 of
+msgid "23873"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_10104811_ROU:14 of
+msgid "30380"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_10104811_ROU:14 of
+msgid "526100"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_10104811_ROU:14 of
+msgid "411845"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_10104811_ROU:14 of
+msgid "50406"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_10104811_ROU:14 of
+msgid "63849"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Beauty_10104811_ROU:14 of
+msgid "0.0007253932904278116"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Fashion_554811_ROU:14 of
+msgid "182"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Fashion_554811_ROU:14 of
+msgid "194"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Fashion_554811_ROU:14 of
+msgid "1073"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Fashion_554811_ROU:14 of
+msgid "814"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Fashion_554811_ROU:14 of
+msgid "73"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Fashion_554811_ROU:14 of
+msgid "186"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Fashion_554811_ROU:14 of
+msgid "0.0303897133794041"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Games_554811_ROU:14 of
+msgid "62142"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Games_554811_ROU:14 of
+msgid "22977"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Games_554811_ROU:14 of
+msgid "527547"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Games_554811_ROU:14 of
+msgid "399535"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Games_554811_ROU:14 of
+msgid "50302"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Games_554811_ROU:14 of
+msgid "77710"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Games_554811_ROU:14 of
+msgid "0.0003694729148213664"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Office_554811_ROU:14 of
+msgid "140844"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Office_554811_ROU:14 of
+msgid "64849"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Office_554811_ROU:14 of
+msgid "1136291"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Office_554811_ROU:14 of
+msgid "858947"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Office_554811_ROU:14 of
+msgid "106855"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Office_554811_ROU:14 of
+msgid "170489"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Office_554811_ROU:14 of
+msgid "0.00012440789240741342"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_554811_ROU:14 of
+msgid "309666"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_554811_ROU:14 of
+msgid "140148"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_554811_ROU:14 of
+msgid "2771911"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_554811_ROU:14 of
+msgid "2104274"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_554811_ROU:14 of
+msgid "265912"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_554811_ROU:14 of
+msgid "401725"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_554811_ROU:14 of
+msgid "6.387028486374657e-05"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_10104811_ROU:14 of
+msgid "13383"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_10104811_ROU:14 of
+msgid "10551"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_10104811_ROU:14 of
+msgid "214069"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_10104811_ROU:14 of
+msgid "166194"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_10104811_ROU:14 of
+msgid "20109"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_10104811_ROU:14 of
+msgid "27766"
+msgstr ""
+
+#: freerec.data.datasets.amazon2023.Amazon2023Toys_10104811_ROU:14 of
+msgid "0.0015160261038719765"
+msgstr ""
+
+#: freerec.data.datasets.criteo.Criteo_x1_BARS:1 of
+msgid "Criteo_x1 dataset used in [BARS](https://github.com/reczoo/Datasets)."
+msgstr ""
+
+#: freerec.data.datasets.criteo.Criteo_x1_BARS:6 of
+msgid "45840617"
+msgstr ""
+
+#: freerec.data.datasets.criteo.Criteo_x1_BARS:6 of
+msgid "33003326"
+msgstr ""
+
+#: freerec.data.datasets.criteo.Criteo_x1_BARS:6 of
+msgid "8250124"
+msgstr ""
+
+#: freerec.data.datasets.criteo.Criteo_x1_BARS:6 of
+msgid "4587167"
+msgstr ""
+
+#: freerec.data.datasets.frappe.Frappe_x1_BARS:1 of
+msgid "Frappe_x1 dataset used in [BARS](https://github.com/reczoo/Datasets)."
+msgstr ""
+
+#: freerec.data.datasets.frappe.Frappe_x1_BARS:6 of
+msgid "957"
+msgstr ""
+
+#: freerec.data.datasets.frappe.Frappe_x1_BARS:6 of
+msgid "4082"
+msgstr ""
+
+#: freerec.data.datasets.frappe.Frappe_x1_BARS:6 of
+msgid "301.57680250783704"
+msgstr ""
+
+#: freerec.data.datasets.frappe.Frappe_x1_BARS:6 of
+msgid "288609"
+msgstr ""
+
+#: freerec.data.datasets.frappe.Frappe_x1_BARS:6 of
+msgid "202027"
+msgstr ""
+
+#: freerec.data.datasets.frappe.Frappe_x1_BARS:6 of
+msgid "57722"
+msgstr ""
+
+#: freerec.data.datasets.frappe.Frappe_x1_BARS:6 of
+msgid "28860"
+msgstr ""
+
+#: freerec.data.datasets.frappe.Frappe_x1_BARS:6 of
+msgid "0.07387966744435007"
+msgstr ""
+
+#: freerec.data.datasets.gowalla.Gowalla2010_10100811_ROU:3 of
+msgid "kcore4user: 10 kcore4item: 10 star4pos: 0 ratios: 8,1,1 splitting: ROU"
+msgstr ""
+
+#: freerec.data.datasets.gowalla.Gowalla2010_10100712_ROU:14
+#: freerec.data.datasets.gowalla.Gowalla2010_10100811_ROU:14 of
+msgid "52985"
+msgstr ""
+
+#: freerec.data.datasets.gowalla.Gowalla2010_10100712_ROU:14
+#: freerec.data.datasets.gowalla.Gowalla2010_10100811_ROU:14 of
+msgid "121866"
+msgstr ""
+
+#: freerec.data.datasets.gowalla.Gowalla2010_10100712_ROU:14
+#: freerec.data.datasets.gowalla.Gowalla2010_10100811_ROU:14 of
+msgid "3301571"
+msgstr ""
+
+#: freerec.data.datasets.gowalla.Gowalla2010_10100811_ROU:14 of
+msgid "2620128"
+msgstr ""
+
+#: freerec.data.datasets.gowalla.Gowalla2010_10100811_ROU:14 of
+msgid "326791"
+msgstr ""
+
+#: freerec.data.datasets.gowalla.Gowalla2010_10100811_ROU:14 of
+msgid "354652"
+msgstr ""
+
+#: freerec.data.datasets.gowalla.Gowalla2010_10100712_ROU:14
+#: freerec.data.datasets.gowalla.Gowalla2010_10100811_ROU:14 of
+msgid "0.0005113110117881469"
+msgstr ""
+
+#: freerec.data.datasets.gowalla.Gowalla2010_10100712_ROU:3 of
+msgid "kcore4user: 10 kcore4item: 10 star4pos: 0 ratios: 7,1,2 splitting: ROU"
+msgstr ""
+
+#: freerec.data.datasets.gowalla.Gowalla2010_10100712_ROU:14 of
+msgid "2287870"
+msgstr ""
+
+#: freerec.data.datasets.gowalla.Gowalla2010_10100712_ROU:14 of
+msgid "332258"
+msgstr ""
+
+#: freerec.data.datasets.gowalla.Gowalla2010_10100712_ROU:14 of
+msgid "681443"
+msgstr ""
+
+#: freerec.data.datasets.microlens.MicroLens100K:1 of
+msgid "See [[here](https://github.com/westlake-repl/MicroLens)] for details."
+msgstr ""
+
+#: freerec.data.datasets.microlens.MicroLens100K:3 of
+msgid "Note: 100K indicates 100,000 users."
+msgstr ""
+
+#: freerec.data.datasets.microlens.MicroLens100K:10 of
+msgid "98129"
+msgstr ""
+
+#: freerec.data.datasets.microlens.MicroLens100K:10 of
+msgid "17228"
+msgstr ""
+
+#: freerec.data.datasets.microlens.MicroLens100K:10 of
+msgid "7.186193683824353"
+msgstr ""
+
+#: freerec.data.datasets.microlens.MicroLens100K:10 of
+msgid "705174"
+msgstr ""
+
+#: freerec.data.datasets.microlens.MicroLens100K:10 of
+msgid "500064"
+msgstr ""
+
+#: freerec.data.datasets.microlens.MicroLens100K:10 of
+msgid "101121"
+msgstr ""
+
+#: freerec.data.datasets.microlens.MicroLens100K:10 of
+msgid "103989"
+msgstr ""
+
+#: freerec.data.datasets.microlens.MicroLens100K:10 of
+msgid "0.0004171229210485462"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_10101811_ROU:3
+#: freerec.data.datasets.movielens.MovieLens10M_10101811_ROU:3
+#: freerec.data.datasets.movielens.MovieLens1M_10101811_ROU:3
+#: freerec.data.datasets.movielens.MovieLens20M_10101811_ROU:3 of
+msgid "kcore4user: 10 kcore4item: 10 star4pos: 1 ratios: 8,1,1 splitting: ROU"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_10101712_ROU:14
+#: freerec.data.datasets.movielens.MovieLens100K_10101811_ROU:14
+#: freerec.data.datasets.movielens.MovieLens100K_500_LOU:13
+#: freerec.data.datasets.movielens.MovieLens100K_550_LOU:13 of
+msgid "943"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_10101712_ROU:14
+#: freerec.data.datasets.movielens.MovieLens100K_10101811_ROU:14 of
+msgid "1152"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_10101712_ROU:14
+#: freerec.data.datasets.movielens.MovieLens100K_10101811_ROU:14 of
+msgid "97953"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_10101811_ROU:14 of
+msgid "77980"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_10101811_ROU:14 of
+msgid "9744"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_10101811_ROU:14 of
+msgid "10229"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_10101712_ROU:14
+#: freerec.data.datasets.movielens.MovieLens100K_10101811_ROU:14 of
+msgid "0.09016823524213503"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_10101712_ROU:3
+#: freerec.data.datasets.movielens.MovieLens10M_10101712_ROU:3
+#: freerec.data.datasets.movielens.MovieLens1M_10101712_ROU:3
+#: freerec.data.datasets.movielens.MovieLens20M_10101712_ROU:3 of
+msgid "kcore4user: 10 kcore4item: 10 star4pos: 1 ratios: 7,1,2 splitting: ROU"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_10101712_ROU:14 of
+msgid "68156"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_10101712_ROU:14 of
+msgid "9824"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_10101712_ROU:14 of
+msgid "19973"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens1M_10101712_ROU:14
+#: freerec.data.datasets.movielens.MovieLens1M_10101811_ROU:14
+#: freerec.data.datasets.movielens.MovieLens1M_500_LOU:13
+#: freerec.data.datasets.movielens.MovieLens1M_550_LOU:13 of
+msgid "6040"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens1M_10101712_ROU:14
+#: freerec.data.datasets.movielens.MovieLens1M_10101811_ROU:14 of
+msgid "3260"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens1M_10101712_ROU:14
+#: freerec.data.datasets.movielens.MovieLens1M_10101811_ROU:14 of
+msgid "998539"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens1M_10101811_ROU:14 of
+msgid "796389"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens1M_10101811_ROU:14 of
+msgid "99549"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens1M_10101811_ROU:14 of
+msgid "102601"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens1M_10101712_ROU:14
+#: freerec.data.datasets.movielens.MovieLens1M_10101811_ROU:14 of
+msgid "0.05071197131597124"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens1M_10101712_ROU:14 of
+msgid "696267"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens1M_10101712_ROU:14 of
+msgid "100122"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens1M_10101712_ROU:14 of
+msgid "202150"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens10M_10101712_ROU:14
+#: freerec.data.datasets.movielens.MovieLens10M_10101811_ROU:14 of
+msgid "69862"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens10M_10101712_ROU:14
+#: freerec.data.datasets.movielens.MovieLens10M_10101811_ROU:14 of
+msgid "9673"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens10M_10101712_ROU:14
+#: freerec.data.datasets.movielens.MovieLens10M_10101811_ROU:14 of
+msgid "9900255"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens10M_10101811_ROU:14 of
+msgid "7892719"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens10M_10101811_ROU:14 of
+msgid "985971"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens10M_10101811_ROU:14 of
+msgid "1021565"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens10M_10101712_ROU:14
+#: freerec.data.datasets.movielens.MovieLens10M_10101811_ROU:14 of
+msgid "0.0146502210855272"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens10M_10101712_ROU:14 of
+msgid "6899556"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens10M_10101712_ROU:14 of
+msgid "993163"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens10M_10101712_ROU:14 of
+msgid "2007536"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens20M_10101712_ROU:14
+#: freerec.data.datasets.movielens.MovieLens20M_10101811_ROU:14 of
+msgid "138425"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens20M_10101712_ROU:14
+#: freerec.data.datasets.movielens.MovieLens20M_10101811_ROU:14 of
+msgid "15329"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens20M_10101712_ROU:14
+#: freerec.data.datasets.movielens.MovieLens20M_10101811_ROU:14 of
+msgid "19725787"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens20M_10101811_ROU:14 of
+msgid "15726067"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens20M_10101811_ROU:14 of
+msgid "1964709"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens20M_10101811_ROU:14 of
+msgid "2035011"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens20M_10101712_ROU:14
+#: freerec.data.datasets.movielens.MovieLens20M_10101811_ROU:14 of
+msgid "0.009296211221662753"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens20M_10101712_ROU:14 of
+msgid "13747362"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens20M_10101712_ROU:14 of
+msgid "1978705"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens20M_10101712_ROU:14 of
+msgid "3999720"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_550_LOU:13 of
+msgid "1349"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_550_LOU:13 of
+msgid "99287"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_550_LOU:13 of
+msgid "97401"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_550_LOU:13 of
+msgid "0.07804925214624242"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_500_LOU:18
+#: freerec.data.datasets.movielens.MovieLens100K_550_LOU:18
+#: freerec.data.datasets.movielens.MovieLens10M_500_LOU:18
+#: freerec.data.datasets.movielens.MovieLens10M_550_LOU:18
+#: freerec.data.datasets.movielens.MovieLens1M_500_LOU:18
+#: freerec.data.datasets.movielens.MovieLens1M_550_LOU:18
+#: freerec.data.datasets.movielens.MovieLens20M_500_LOU:18
+#: freerec.data.datasets.movielens.MovieLens20M_550_LOU:18 of
+msgid ""
+"MovieLens is not suitable for next-item recommendation. Refer to [this "
+"paper](https://ceur-ws.org/Vol-2955/paper8.pdf) for details."
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_500_LOU:13 of
+msgid "1682"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_500_LOU:13 of
+msgid "100000"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_500_LOU:13 of
+msgid "98114"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens100K_500_LOU:13 of
+msgid "0.06304669364224531"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens1M_550_LOU:13 of
+msgid "3416"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens1M_550_LOU:13 of
+msgid "999611"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens1M_550_LOU:13 of
+msgid "987531"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens1M_550_LOU:13 of
+msgid "0.048448041549699894"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens1M_500_LOU:13 of
+msgid "3706"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens1M_500_LOU:13 of
+msgid "1000209"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens1M_500_LOU:13 of
+msgid "988129"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens1M_500_LOU:13 of
+msgid "0.044683625622312845"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens10M_500_LOU:13
+#: freerec.data.datasets.movielens.MovieLens10M_550_LOU:13 of
+msgid "69878"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens10M_550_LOU:13 of
+msgid "10196"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens10M_550_LOU:13 of
+msgid "9998816"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens10M_550_LOU:13 of
+msgid "9859060"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens10M_550_LOU:13 of
+msgid "0.01403389695234235"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens10M_500_LOU:13 of
+msgid "10677"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens10M_500_LOU:13 of
+msgid "10000054"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens10M_500_LOU:13 of
+msgid "9860298"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens10M_500_LOU:13 of
+msgid "0.013403327706083809"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens20M_500_LOU:13
+#: freerec.data.datasets.movielens.MovieLens20M_550_LOU:13 of
+msgid "138493"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens20M_550_LOU:13 of
+msgid "18345"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens20M_550_LOU:13 of
+msgid "19984024"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens20M_550_LOU:13 of
+msgid "19707038"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens20M_550_LOU:13 of
+msgid "0.007865700457998398"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens20M_500_LOU:13 of
+msgid "26744"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens20M_500_LOU:13 of
+msgid "20000263"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens20M_500_LOU:13 of
+msgid "19723277"
+msgstr ""
+
+#: freerec.data.datasets.movielens.MovieLens20M_500_LOU:13 of
+msgid "0.0053998478135544505"
+msgstr ""
+
+#: freerec.data.datasets.steam.Steam_550_LOU:13 of
+msgid "25389"
+msgstr ""
+
+#: freerec.data.datasets.steam.Steam_550_LOU:13 of
+msgid "4089"
+msgstr ""
+
+#: freerec.data.datasets.steam.Steam_550_LOU:13 of
+msgid "328278"
+msgstr ""
+
+#: freerec.data.datasets.steam.Steam_550_LOU:13 of
+msgid "277500"
+msgstr ""
+
+#: freerec.data.datasets.steam.Steam_550_LOU:13 of
+msgid "0.003162125283631449"
+msgstr ""
+
+#: freerec.data.datasets.tiktok.Tiktok_MMSSL:1 of
+msgid "Tiktok dataset used in [MMSSL](https://github.com/HKUDS/MMSSL)."
+msgstr ""
+
+#: freerec.data.datasets.tiktok.Tiktok_MMSSL:8 of
+msgid "9308"
+msgstr ""
+
+#: freerec.data.datasets.tiktok.Tiktok_MMSSL:8 of
+msgid "6710"
+msgstr ""
+
+#: freerec.data.datasets.tiktok.Tiktok_MMSSL:8 of
+msgid "8.40363519036352"
+msgstr ""
+
+#: freerec.data.datasets.tiktok.Tiktok_MMSSL:8 of
+msgid "68722"
+msgstr ""
+
+#: freerec.data.datasets.tiktok.Tiktok_MMSSL:8 of
+msgid "59541"
+msgstr ""
+
+#: freerec.data.datasets.tiktok.Tiktok_MMSSL:8 of
+msgid "3051"
+msgstr ""
+
+#: freerec.data.datasets.tiktok.Tiktok_MMSSL:8 of
+msgid "6130"
+msgstr ""
+
+#: freerec.data.datasets.tiktok.Tiktok_MMSSL:8 of
+msgid "0.0011003146500902705"
+msgstr ""
+
+#: freerec.data.datasets.tiktok.Tiktok_000811_RAU:1 of
+msgid "Tiktok dataset used in [MMGCN](https://github.com/weiyinwei/MMGCN)."
+msgstr ""
+
+#: freerec.data.datasets.tiktok.Tiktok_000811_RAU:8 of
+msgid "36656"
+msgstr ""
+
+#: freerec.data.datasets.tiktok.Tiktok_000811_RAU:8 of
+msgid "76085"
+msgstr ""
+
+#: freerec.data.datasets.tiktok.Tiktok_000811_RAU:8 of
+msgid "726065"
+msgstr ""
+
+#: freerec.data.datasets.tiktok.Tiktok_000811_RAU:8 of
+msgid "562209"
+msgstr ""
+
+#: freerec.data.datasets.tiktok.Tiktok_000811_RAU:8 of
+msgid "75685"
+msgstr ""
+
+#: freerec.data.datasets.tiktok.Tiktok_000811_RAU:8 of
+msgid "88171"
+msgstr ""
+
+#: freerec.data.datasets.tiktok.Tiktok_000811_RAU:8 of
+msgid "0.0002604621965738634"
+msgstr ""
+
+#: freerec.data.datasets.tiktok.Tiktok_000811_RAU:13 of
+msgid "Some of users have empty interactions."
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_10104712_ROU:14
+#: freerec.data.datasets.yelp.Yelp2018_10104811_ROU:14 of
+msgid "41801"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_10104712_ROU:14
+#: freerec.data.datasets.yelp.Yelp2018_10104811_ROU:14 of
+msgid "26512"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_10104712_ROU:14
+#: freerec.data.datasets.yelp.Yelp2018_10104811_ROU:14 of
+msgid "1022604"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_10104811_ROU:14 of
+msgid "801621"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_10104811_ROU:14 of
+msgid "98722"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_10104811_ROU:14 of
+msgid "122261"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_10104712_ROU:14
+#: freerec.data.datasets.yelp.Yelp2018_10104811_ROU:14 of
+msgid "0.0009227378271017908"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_10104712_ROU:14 of
+msgid "698623"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_10104712_ROU:14 of
+msgid "102998"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_10104712_ROU:14 of
+msgid "220983"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_554311_ROU:3 of
+msgid "kcore4user: 5 kcore4item: 5 star4pos: 4 ratios: 3,1,1 splitting: ROU"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_554311_ROU:14 of
+msgid "136346"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_554311_ROU:14 of
+msgid "64669"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_554311_ROU:14 of
+msgid "1856992"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_554311_ROU:14 of
+msgid "1067340"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_554311_ROU:14 of
+msgid "366300"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_554311_ROU:14 of
+msgid "423352"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_554311_ROU:14 of
+msgid "0.00021060636185649064"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2021_10104712_ROU:14
+#: freerec.data.datasets.yelp.Yelp2021_10104811_ROU:14 of
+msgid "78663"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2021_10104712_ROU:14
+#: freerec.data.datasets.yelp.Yelp2021_10104811_ROU:14 of
+msgid "44534"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2021_10104712_ROU:14
+#: freerec.data.datasets.yelp.Yelp2021_10104811_ROU:14 of
+msgid "2059757"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2021_10104811_ROU:14 of
+msgid "1616979"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2021_10104811_ROU:14 of
+msgid "199231"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2021_10104811_ROU:14 of
+msgid "243547"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2021_10104712_ROU:14
+#: freerec.data.datasets.yelp.Yelp2021_10104811_ROU:14 of
+msgid "0.0005879681178933354"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2021_10104712_ROU:14 of
+msgid "1409167"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2021_10104712_ROU:14 of
+msgid "207812"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2021_10104712_ROU:14 of
+msgid "442778"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_550_LOU:13 of
+msgid "213170"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_550_LOU:13 of
+msgid "94304"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_550_LOU:13 of
+msgid "3277932"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_550_LOU:13 of
+msgid "2851592"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_550_LOU:13 of
+msgid "0.00016305861179122036"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_500_LOU:13 of
+msgid "227110"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_500_LOU:13 of
+msgid "167876"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_500_LOU:13 of
+msgid "3515537"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_500_LOU:13 of
+msgid "3061317"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2018_500_LOU:13 of
+msgid "9.220761802399218e-05"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2021_550_LOU:13 of
+msgid "356622"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2021_550_LOU:13 of
+msgid "126449"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2021_550_LOU:13 of
+msgid "5635863"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2021_550_LOU:13 of
+msgid "4922619"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2021_550_LOU:13 of
+msgid "0.00012497895730411994"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2021_500_LOU:13 of
+msgid "365665"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2021_500_LOU:13 of
+msgid "159108"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2021_500_LOU:13 of
+msgid "5766970"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2021_500_LOU:13 of
+msgid "5035640"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2021_500_LOU:13 of
+msgid "9.91225080273759e-05"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2019_550_S3Rec:1 of
+msgid ""
+"Refer to "
+"[S3-Rec](https://github.com/RUCAIBox/CIKM2020-S3Rec/blob/master/data/data_process.py)"
+" Timestamp: 2019-01-01 00:00:00 - 2019-12-31 00:00:00 Note that Yelp "
+"dataset is not deduplicated."
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2019_550_S3Rec:10 of
+msgid "30431"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2019_550_S3Rec:10 of
+msgid "20033"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2019_550_S3Rec:10 of
+msgid "10.395780618448294"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2019_550_S3Rec:10 of
+msgid "316354"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2019_550_S3Rec:10 of
+msgid "255492"
+msgstr ""
+
+#: freerec.data.datasets.yelp.Yelp2019_550_S3Rec:10 of
+msgid "0.0005189327918159183"
+msgstr ""
+
+#: ../../api/freerec.data.rst:29
+msgid "Preprocessing"
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter:1 of
+msgid "Convert Atomic files into train/valid/test splits."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter:3 of
+msgid ""
+"This converter downloads RecBole-format Atomic files, applies filtering "
+"and tokenization, then splits and saves the processed dataset."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter:6 of
+msgid "Root directory for data storage."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter:8 of
+msgid "Name of the dataset. Used for naming the output directory."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter:10 of
+msgid ""
+"Directory containing the Atomic files. If ``None``, *dataset* is used "
+"instead."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter:13 of
+msgid "Column name for the user field in the raw data."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter:15 of
+msgid "Column name for the item field in the raw data."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter:17 of
+msgid "Column name for the rating field in the raw data."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter:19 of
+msgid "Column name for the timestamp field in the raw data."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter:24 of
+msgid ""
+"Most datasets from RecBole have two versions: *merged* (duplicate "
+"interactions removed) and *not_merged* (duplicates retained)."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.__init__:1 of
+msgid "Initialize the converter and prepare the data directory."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.convert_by_column:1 of
+msgid "Rename and cast columns according to the name converter."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.convert_by_column:3 of
+msgid "Raw dataframe whose columns will be renamed."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.convert_by_column:6 of
+msgid "The dataframe with renamed and type-cast columns."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.convert_by_column:7
+#: freerec.data.preprocessing.base.AtomicConverter.sort_by_timestamp:10 of
+msgid ":class:`pandas.DataFrame`"
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.load_inter_file:1 of
+msgid "Load and return the interaction file (``*.inter``)."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.load_inter_file:3 of
+msgid "The interaction dataframe, or ``None`` if no ``.inter`` file is found."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.load_inter_file:5
+#: freerec.data.preprocessing.base.AtomicConverter.load_item_file:5
+#: freerec.data.preprocessing.base.AtomicConverter.load_user_file:5 of
+msgid ":class:`pandas.DataFrame` or :py:obj:`None`"
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.load_user_file:1 of
+msgid "Load and return the user feature file (``*.user``)."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.load_user_file:3 of
+msgid "The user feature dataframe, or ``None`` if no ``.user`` file is found."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.load_item_file:1 of
+msgid "Load and return the item feature file (``*.item``)."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.load_item_file:3 of
+msgid "The item feature dataframe, or ``None`` if no ``.item`` file is found."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.load:1 of
+msgid "Load interaction, user feature, and item feature files."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.reserve:1 of
+msgid "Keep only the specified columns in the interaction dataframe."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.reserve:3 of
+msgid "Column names to retain."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.exclude:1 of
+msgid "Remove the specified columns from the interaction dataframe."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.exclude:3 of
+msgid "Column names to exclude."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.reorder:1 of
+msgid "Reorder the interaction dataframe so that *columns* come first."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.reorder:3 of
+msgid "Column names to place at the front of the dataframe."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.map_col:1 of
+msgid "Apply a mapping to a column across multiple dataframes."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.map_col:3 of
+msgid "Column name to transform."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.map_col:5 of
+msgid "Mapping from old values to new values."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.map_col:7 of
+msgid "Dataframes to transform. Defaults to all loaded dataframes."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.filter_by_rating:1 of
+msgid "Filter interactions by rating range."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.filter_by_rating:3 of
+msgid "Minimum rating (inclusive). ``None`` means no lower bound."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.filter_by_rating:5 of
+msgid "Maximum rating (inclusive). ``None`` means no upper bound."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.filter_by_core:1 of
+msgid "Filter interactions by k-core settings for users and items."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.filter_by_core:3 of
+msgid "Minimum interaction count for a user. ``None`` means negative infinity."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.filter_by_core:6 of
+msgid "Maximum interaction count for a user. ``None`` means positive infinity."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.filter_by_core:9 of
+msgid "Minimum interaction count for an item. ``None`` means negative infinity."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.filter_by_core:12 of
+msgid "Maximum interaction count for an item. ``None`` means positive infinity."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.filter_by_core:15
+#: freerec.data.preprocessing.base.AtomicConverter.user2token:3 of
+msgid "The column name used as the user identifier."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.filter_by_core:17 of
+msgid ""
+"If ``True``, iteratively filter until convergence. If ``False``, apply "
+"the filter only once."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.user2token:1 of
+msgid "Map raw user IDs to contiguous integer tokens."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.item2token:1 of
+msgid "Map raw item IDs to contiguous integer tokens."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.sort_by_timestamp:1 of
+msgid "Sort a dataframe by timestamp, optionally grouped by a master column."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.sort_by_timestamp:3 of
+msgid "The dataframe to sort."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.sort_by_timestamp:5 of
+msgid ""
+"If not ``None``, sort by ``[master, TIMESTAMP]``. Otherwise sort by "
+"``TIMESTAMP`` alone."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.sort_by_timestamp:9 of
+msgid "The sorted dataframe."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.sort_by_timestamp:12 of
+msgid "If *master* or the timestamp column is missing from the     dataframe."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_ROU:1 of
+msgid "Split interactions by ratio on a per-user basis."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_RAU:3
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_ROD:3
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_ROU:3 of
+msgid "Train/valid/test ratio. Defaults to ``(8, 1, 1)``."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_DOD:7
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_DOU:7
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_LOU:3
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_RAU:6
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_ROD:6
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_ROU:6 of
+msgid "A code string encoding the split configuration."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_DOD:8
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_DOU:8
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_LOU:4
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_RAU:7
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_ROD:7
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_ROU:7
+#: freerec.data.utils.check_sha1:8 freerec.data.utils.download_from_url:27 of
+msgid ":py:class:`str`"
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_RAU:1 of
+msgid ""
+"Split interactions by ratio, ensuring at least one item per user per "
+"split."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_ROD:1 of
+msgid "Split interactions by ratio over the whole dataset (global split)."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_LOU:1 of
+msgid "Split interactions using a leave-one-out strategy per user."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_DOU:1 of
+msgid "Split interactions by day boundary on a per-user basis."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_DOD:3
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_DOU:3 of
+msgid ""
+"Number of days reserved for each of the validation and test sets. "
+"Defaults to ``1``."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.split_by_DOD:1 of
+msgid "Split interactions by day boundary over the whole dataset."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.resort_iters:1 of
+msgid "Re-sort train, valid, and test splits by user and timestamp."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.save:1 of
+msgid "Save train/valid/test splits and optional feature files to disk."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.save:3 of
+msgid "Output directory path."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.make_dataset:1 of
+msgid "Run the full pipeline: load, filter, tokenize, split, and save."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.make_dataset:3 of
+msgid "Minimum interaction count per user for k-core filtering."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.make_dataset:5 of
+msgid "Minimum interaction count per item for k-core filtering."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.make_dataset:7 of
+msgid "Minimum rating to keep an interaction."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.make_dataset:9 of
+msgid ""
+"Splitting strategy:  - ``'ROU'`` -- Ratio on User - ``'RAU'`` -- Ratio "
+"and At least one on User - ``'ROD'`` -- Ratio on Dataset - ``'LOU'`` -- "
+"Leave-one-out on User - ``'DOU'`` -- Day on User - ``'DOD'`` -- Day on "
+"Dataset"
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.make_dataset:9 of
+msgid "Splitting strategy:"
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.make_dataset:11 of
+msgid "``'ROU'`` -- Ratio on User"
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.make_dataset:12 of
+msgid "``'RAU'`` -- Ratio and At least one on User"
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.make_dataset:13 of
+msgid "``'ROD'`` -- Ratio on Dataset"
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.make_dataset:14 of
+msgid "``'LOU'`` -- Leave-one-out on User"
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.make_dataset:15 of
+msgid "``'DOU'`` -- Day on User"
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.make_dataset:16 of
+msgid "``'DOD'`` -- Day on Dataset"
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.make_dataset:18 of
+msgid "Train/valid/test ratio for ``'ROU'``/``'RAU'``/``'ROD'`` strategies."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.make_dataset:21 of
+msgid "Number of days reserved for valid/test in ``'DOU'``/``'DOD'`` strategies."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.make_dataset:24 of
+msgid ""
+"If ``True``, iteratively apply k-core filtering until convergence. If "
+"``False``, apply only once."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.make_dataset:28 of
+msgid "If *splitting* is not one of the supported strategies."
+msgstr ""
+
+#: freerec.data.preprocessing.base.AtomicConverter.summary:1 of
+msgid "Print a summary table of dataset statistics."
+msgstr ""
+
+#: freerec.data.preprocessing.amazon2023.extract_from_amazon2023:1 of
+msgid "Extract interaction and item dataframes from Amazon Reviews 2023."
+msgstr ""
+
+#: freerec.data.preprocessing.amazon2023.extract_from_amazon2023:3 of
+msgid "Root directory containing the gzipped review and meta files."
+msgstr ""
+
+#: freerec.data.preprocessing.amazon2023.extract_from_amazon2023:5 of
+msgid ""
+"Filename of the review gzip file. If ``None``, the file is detected "
+"automatically."
+msgstr ""
+
+#: freerec.data.preprocessing.amazon2023.extract_from_amazon2023:8 of
+msgid ""
+"Filename of the meta gzip file. If ``None``, the file is detected "
+"automatically."
+msgstr ""
+
+#: freerec.data.preprocessing.amazon2023.extract_from_amazon2023:11 of
+msgid ""
+"Mapping from raw field names to canonical names for the interaction "
+"dataframe. Defaults to ``INTER_FIELDS``."
+msgstr ""
+
+#: freerec.data.preprocessing.amazon2023.extract_from_amazon2023:14 of
+msgid ""
+"Mapping from raw field names to canonical names for the item dataframe. "
+"Defaults to ``ITEM_FIELDS``."
+msgstr ""
+
+#: freerec.data.preprocessing.amazon2023.extract_from_amazon2023:18 of
+msgid ""
+"* **inter_df** (:class:`pandas.DataFrame`) -- Interaction dataframe with "
+"columns defined by *inter_fields*. * **item_df** "
+"(:class:`pandas.DataFrame`) -- Item metadata dataframe with columns "
+"defined by *item_fields*   plus a ``brand`` column."
+msgstr ""
+
+#: freerec.data.preprocessing.amazon2023.extract_from_amazon2023:18 of
+msgid ""
+"**inter_df** (:class:`pandas.DataFrame`) -- Interaction dataframe with "
+"columns defined by *inter_fields*."
+msgstr ""
+
+#: freerec.data.preprocessing.amazon2023.extract_from_amazon2023:19 of
+msgid ""
+"**item_df** (:class:`pandas.DataFrame`) -- Item metadata dataframe with "
+"columns defined by *item_fields* plus a ``brand`` column."
+msgstr ""
+
+#: ../../api/freerec.data.rst:37
+msgid "Postprocessing"
+msgstr ""
+
+#: freerec.data.postprocessing.base.BaseProcessor:1 of
+msgid "A base processor that defines the property of fields."
+msgstr ""
+
+#: freerec.data.postprocessing.base.BaseProcessor:3 of
+msgid "The recommendation dataset providing fields and metadata."
+msgstr ""
+
+#: freerec.data.postprocessing.base.BaseProcessor:6 of
+msgid "If ``fields`` are not given or ``None`` before using."
+msgstr ""
+
+#: freerec.data.postprocessing.base.BaseProcessor.__init__:1 of
+msgid "Initialize the BaseProcessor."
+msgstr ""
+
+#: freerec.data.postprocessing.BaseProcessor.dataset:1 of
+msgid "Return the underlying :class:`~RecDataSet`."
+msgstr ""
+
+#: freerec.data.postprocessing.BaseProcessor.fields:1 of
+msgid "Return the :class:`~FieldTuple` of fields."
+msgstr ""
+
+#: freerec.data.postprocessing.base.BaseProcessor.listmap:1 of
+msgid "Apply a function to multiple iterables and return a list."
+msgstr ""
+
+#: freerec.data.postprocessing.base.BaseProcessor.listmap:3 of
+msgid "The function to be applied."
+msgstr ""
+
+#: freerec.data.postprocessing.base.BaseProcessor.listmap:5 of
+msgid "Multiple iterables to be processed."
+msgstr ""
+
+#: freerec.data.postprocessing.base.BaseProcessor.listmap:7 of
+msgid "The results after applying the function to the iterables."
+msgstr ""
+
+#: freerec.data.normalizer.ReIndexer:16
+#: freerec.data.postprocessing.base.BaseProcessor.listmap:8
+#: freerec.data.utils.negsamp_vectorized_bsearch:17 of
+msgid ":py:class:`list`"
+msgstr ""
+
+#: freerec.data.postprocessing.base.BaseProcessor.to_rows:1 of
+msgid "Convert a column-oriented dict to a list of row dicts."
+msgstr ""
+
+#: freerec.data.postprocessing.base.BaseProcessor.to_rows:3 of
+msgid "Mapping from :class:`~Field` to an iterable of values."
+msgstr ""
+
+#: freerec.data.postprocessing.base.BaseProcessor.to_rows:6 of
+msgid "Each dict maps :class:`~Field` to a single value."
+msgstr ""
+
+#: freerec.data.postprocessing.base.Source:1 of
+msgid ""
+"Source datapipe that serves as the starting point of train/valid/test "
+"pipelines."
+msgstr ""
+
+#: freerec.data.postprocessing.base.Source:3
+#: freerec.data.postprocessing.source.OrderedSource:3
+#: freerec.data.postprocessing.source.RandomChoicedSource:6
+#: freerec.data.postprocessing.source.RandomShuffledSource:3 of
+msgid "The recommendation dataset."
+msgstr ""
+
+#: freerec.data.postprocessing.base.Source:5 of
+msgid ""
+"Source data, either an :class:`~IterDataPipe` or a finite iterable of row"
+" dicts."
+msgstr ""
+
+#: freerec.data.postprocessing.base.Source:7 of
+msgid "Override for the source length. If ``None``, inferred from ``source``."
+msgstr ""
+
+#: freerec.data.postprocessing.base.Source:9 of
+msgid "Whether to shuffle indices each epoch. Default is ``True``."
+msgstr ""
+
+#: freerec.data.postprocessing.base.Source.__init__:1 of
+msgid "Initialize the Source."
+msgstr ""
+
+#: freerec.data.postprocessing.base.Source.guard_mode:1 of
+msgid "Ensure the dataset is set to the required mode."
+msgstr ""
+
+#: freerec.data.postprocessing.base.Source.guard_mode:3 of
+msgid ""
+"This is especially necessary for datapipe sources where the mode may have"
+" been changed externally."
+msgstr ""
+
+#: freerec.data.postprocessing.base.PostProcessor:1 of
+msgid "A post-processor that wraps another :class:`~IterDataPipe` object."
+msgstr ""
+
+#: freerec.data.postprocessing.base.PostProcessor:3 of
+msgid "The data pipeline to be wrapped."
+msgstr ""
+
+#: freerec.data.postprocessing.base.PostProcessor.__init__:1 of
+msgid "Initialize the PostProcessor."
+msgstr ""
+
+#: freerec.data.postprocessing.base.SampleMultiplexer:1 of
+msgid "Yield items by sampling from weighted :class:`~IterDataPipe` instances."
+msgstr ""
+
+#: freerec.data.postprocessing.base.SampleMultiplexer:3 of
+msgid ""
+"Takes a dict of ``(IterDataPipe, weight)`` pairs and yields items by "
+"sampling from these datapipes with respect to their weights. When "
+"individual datapipes are exhausted, sampling continues from the remaining"
+" datapipes according to their relative weights."
+msgstr ""
+
+#: freerec.data.postprocessing.base.SampleMultiplexer:8 of
+msgid ""
+"If you wish to maintain the same ratio of weights indefinitely, ensure "
+"that the inputs are never exhausted, e.g. by applying ``cycle``."
+msgstr ""
+
+#: freerec.data.postprocessing.base.SampleMultiplexer:11 of
+msgid ""
+"Mapping from :class:`~IterDataPipe` to a positive float weight. The total"
+" weight of unexhausted datapipes is normalized to 1."
+msgstr ""
+
+#: freerec.data.postprocessing.base.SampleMultiplexer:15 of
+msgid "If ``pipes_to_weights_dict`` is empty or contains non-positive weights."
+msgstr ""
+
+#: freerec.data.postprocessing.base.SampleMultiplexer.__init__:1 of
+msgid "Initialize the SampleMultiplexer."
+msgstr ""
+
+#: freerec.data.postprocessing.base.SampleMultiplexer.set_seed:1
+#: freerec.data.postprocessing.source.RandomChoicedSource.set_seed:1 of
+msgid "Set the random seed for sampling."
+msgstr ""
+
+#: freerec.data.postprocessing.base.SampleMultiplexer.set_seed:3
+#: freerec.data.postprocessing.source.RandomChoicedSource.set_seed:3 of
+msgid "Random seed value."
+msgstr ""
+
+#: freerec.data.postprocessing.source.OrderedSource:1 of
+msgid "Datapipe that yields source rows in their original order."
+msgstr ""
+
+#: freerec.data.postprocessing.source.OrderedSource:5
+#: freerec.data.postprocessing.source.RandomShuffledSource:5 of
+msgid "The source data rows."
+msgstr ""
+
+#: freerec.data.postprocessing.source.OrderedSource.__init__:1 of
+msgid "Initialize the OrderedSource."
+msgstr ""
+
+#: freerec.data.postprocessing.source.RandomChoicedSource:1 of
+msgid "Datapipe that generates random items from a given source with replacement."
+msgstr ""
+
+#: freerec.data.postprocessing.source.RandomChoicedSource:3 of
+msgid ""
+"Each iteration samples ``dataset.datasize`` items uniformly at random "
+"(with replacement) from the stored source rows."
+msgstr ""
+
+#: freerec.data.postprocessing.source.RandomChoicedSource:8 of
+msgid "The source data rows to sample from."
+msgstr ""
+
+#: freerec.data.postprocessing.source.RandomChoicedSource.__init__:1 of
+msgid "Initialize the RandomChoicedSource."
+msgstr ""
+
+#: freerec.data.postprocessing.source.RandomShuffledSource:1 of
+msgid ""
+"Datapipe that yields every source row exactly once per epoch in shuffled "
+"order."
+msgstr ""
+
+#: freerec.data.postprocessing.source.RandomShuffledSource.__init__:1 of
+msgid "Initialize the RandomShuffledSource."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.GenTrainPositiveSampler:1 of
+msgid "Sample a positive item for each user."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.GenTrainPositiveSampler:3 of
+msgid ""
+"For every incoming row, a random positive item from the user's "
+"interaction history is sampled and stored under :pycode:`IPos`."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:1 of
+msgid "Build per-user sorted lists of seen items from training sequences."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.GenTrainNegativeSampler:1 of
+msgid "Sample negative items for each user."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.GenTrainNegativeSampler:3 of
+msgid ""
+"Extends :class:`~GenTrainPositiveSampler` by adding negative sampling. "
+"Negative items are drawn either from unseen items only or from all items."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.GenTrainNegativeSampler:6
+#: freerec.data.postprocessing.sampler.SeqTrainNegativeSampler:6
+#: freerec.data.postprocessing.sampler.SeqTrainPositiveYielder:6
+#: freerec.data.postprocessing.sampler.TestSampler:7
+#: freerec.data.postprocessing.sampler.ValidSampler:7 of
+msgid "Source datapipe."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.GenTrainNegativeSampler:8 of
+msgid "The number of negatives for each row. Default is ``1``."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.GenTrainNegativeSampler:10 of
+msgid ""
+"If ``True``, sample negatives from unseen items only. If ``False``, "
+"sample negatives from all items. Default is ``True``."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.GenTrainNegativeSampler:13
+#: freerec.data.postprocessing.sampler.SeqTrainNegativeSampler:13 of
+msgid "Threshold above which vectorized binary search is used. Default is ``17``."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.GenTrainNegativeSampler.__init__:1 of
+msgid "Initialize the GenTrainNegativeSampler."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:1 of
+msgid "Build per-user sorted lists of seen items for negative filtering."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.SeqTrainPositiveYielder:1 of
+msgid "Yield positive sequences derived from each user's item sequence."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.SeqTrainPositiveYielder:3 of
+msgid ""
+"Splits the item sequence into an input portion and a target portion "
+"according to the given indices."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.SeqTrainPositiveYielder:8 of
+msgid ""
+"Target sequence is ``seq[start_idx_for_target:]``. ``None`` keeps the "
+"full sequence. Default is ``1``."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.SeqTrainPositiveYielder:11 of
+msgid ""
+"Input sequence is ``seq[:end_idx_for_input]``. ``None`` keeps the full "
+"sequence. Default is ``-1``."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.SeqTrainPositiveYielder.__init__:1 of
+msgid "Initialize the SeqTrainPositiveYielder."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.SeqTrainNegativeSampler:1 of
+msgid "Sample negative items for each positive in the sequence."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.SeqTrainNegativeSampler:3 of
+msgid ""
+"For every positive item in the target sequence, one or more negative "
+"items are sampled."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.SeqTrainNegativeSampler:8 of
+msgid "The number of negatives for each positive. Default is ``1``."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.SeqTrainNegativeSampler:10 of
+msgid ""
+"If ``True``, sample negatives from unseen items only. If ``False``, "
+"sample from all items. Default is ``True``."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.SeqTrainNegativeSampler.__init__:1 of
+msgid "Initialize the SeqTrainNegativeSampler."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.ValidSampler:1 of
+msgid "Sampler for validation."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.ValidSampler:3 of
+msgid ""
+"Produces rows containing the user's input sequence, unseen target items, "
+"and seen items, optionally with sampled negative items for pool-based "
+"ranking."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.TestSampler:9
+#: freerec.data.postprocessing.sampler.ValidSampler:9 of
+msgid ""
+"``'full'`` for full ranking; ``'pool'`` for sample-based ranking. Default"
+" is ``'full'``."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.TestSampler:12
+#: freerec.data.postprocessing.sampler.ValidSampler:12 of
+msgid "The number of negatives for ``'pool'`` ranking. Default is ``100``."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.TestSampler
+#: freerec.data.postprocessing.sampler.ValidSampler of
+msgid "生成器"
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.TestSampler:16
+#: freerec.data.postprocessing.sampler.ValidSampler:16 of
+msgid ":py:class:`dict` -- Row dict containing:"
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.TestSampler:18
+#: freerec.data.postprocessing.sampler.ValidSampler:18 of
+msgid "``Field(USER:ID,USER)``: user id"
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.TestSampler:19
+#: freerec.data.postprocessing.sampler.ValidSampler:19 of
+msgid "``Field(ITEM:ID,ITEM,SEQUENCE)``: user sequence"
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.TestSampler:20
+#: freerec.data.postprocessing.sampler.ValidSampler:20 of
+msgid ""
+"``Field(ITEM:ID,ITEM,UNSEEN)``: target items (``'full'``) or target items"
+" + negative items (``'pool'``)"
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.TestSampler:22
+#: freerec.data.postprocessing.sampler.ValidSampler:22 of
+msgid "``Field(ITEM:ID,ITEM,SEEN)``: seen items"
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.ValidSampler.__init__:1 of
+msgid "Initialize the ValidSampler."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:1 of
+msgid "Build per-user seen and unseen item lists from train/valid splits."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.TestSampler:1 of
+msgid "Sampler for test."
+msgstr ""
+
+#: freerec.data.postprocessing.sampler.TestSampler:3 of
+msgid ""
+"Identical to :class:`~ValidSampler` except that seen items include both "
+"training and validation interactions, and unseen items come from the test"
+" split."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:1 of
+msgid "Build per-user seen and unseen item lists from train/valid/test splits."
+msgstr ""
+
+#: freerec.data.postprocessing.row.RowFilter:1 of
+msgid "Filter rows by applying a predicate to specified fields."
+msgstr ""
+
+#: freerec.data.postprocessing.row.AddingRow:3
+#: freerec.data.postprocessing.row.LeftPaddingRow:3
+#: freerec.data.postprocessing.row.LeftPruningRow:3
+#: freerec.data.postprocessing.row.RightPaddingRow:3
+#: freerec.data.postprocessing.row.RightPruningRow:3
+#: freerec.data.postprocessing.row.RowFilter:3
+#: freerec.data.postprocessing.row.RowMapper:3 of
+msgid "The source datapipe."
+msgstr ""
+
+#: freerec.data.postprocessing.row.RowFilter:5 of
+msgid "A function ``fn(field, value) -> bool`` applied to each checked field."
+msgstr ""
+
+#: freerec.data.postprocessing.row.RowFilter:7 of
+msgid "The fields to be checked."
+msgstr ""
+
+#: freerec.data.postprocessing.row.RowFilter:10 of
+msgid "If ``checked_fields`` is not an iterable."
+msgstr ""
+
+#: freerec.data.postprocessing.row.RowFilter.__init__:1 of
+msgid "Initialize the RowFilter."
+msgstr ""
+
+#: freerec.data.postprocessing.row.RowMapper:1 of
+msgid "Apply a mapping function to specified fields of each row."
+msgstr ""
+
+#: freerec.data.postprocessing.row.RowMapper:5 of
+msgid ""
+"A function ``fn(field, value) -> new_value`` applied to each modified "
+"field."
+msgstr ""
+
+#: freerec.data.postprocessing.row.AddingRow:7
+#: freerec.data.postprocessing.row.LeftPaddingRow:7
+#: freerec.data.postprocessing.row.LeftPruningRow:7
+#: freerec.data.postprocessing.row.RightPaddingRow:7
+#: freerec.data.postprocessing.row.RightPruningRow:7
+#: freerec.data.postprocessing.row.RowMapper:7 of
+msgid "The fields to be modified."
+msgstr ""
+
+#: freerec.data.postprocessing.row.RowMapper:10 of
+msgid "If ``modified_fields`` is not an iterable."
+msgstr ""
+
+#: freerec.data.postprocessing.row.RowMapper.__init__:1 of
+msgid "Initialize the RowMapper."
+msgstr ""
+
+#: freerec.data.postprocessing.row.LeftPruningRow:1 of
+msgid "Prune sequences from the left to a maximum length."
+msgstr ""
+
+#: freerec.data.postprocessing.row.LeftPruningRow:5
+#: freerec.data.postprocessing.row.RightPruningRow:5 of
+msgid "The maximum length to prune the input data to."
+msgstr ""
+
+#: freerec.data.postprocessing.row.LeftPruningRow.__init__:1 of
+msgid "Initialize the LeftPruningRow."
+msgstr ""
+
+#: freerec.data.postprocessing.row.RightPruningRow:1 of
+msgid "Prune sequences from the right to a maximum length."
+msgstr ""
+
+#: freerec.data.postprocessing.row.AddingRow:1 of
+msgid "Add a constant offset to specified fields."
+msgstr ""
+
+#: freerec.data.postprocessing.row.AddingRow:5 of
+msgid "Amount to add to the input data."
+msgstr ""
+
+#: freerec.data.postprocessing.row.AddingRow.__init__:1 of
+msgid "Initialize the AddingRow."
+msgstr ""
+
+#: freerec.data.postprocessing.row.LeftPaddingRow:1 of
+msgid "Left-pad sequences to a maximum length."
+msgstr ""
+
+#: freerec.data.postprocessing.row.LeftPaddingRow:5
+#: freerec.data.postprocessing.row.RightPaddingRow:5 of
+msgid "The maximum length to pad the sequences to."
+msgstr ""
+
+#: freerec.data.postprocessing.row.LeftPaddingRow:9
+#: freerec.data.postprocessing.row.RightPaddingRow:9 of
+msgid "The value to use for padding. Default is ``0``."
+msgstr ""
+
+#: freerec.data.postprocessing.row.LeftPaddingRow.__init__:1 of
+msgid "Initialize the LeftPaddingRow."
+msgstr ""
+
+#: freerec.data.postprocessing.row.LeftPaddingRow.sure_zero_elems:1 of
+msgid "Infer the padding element shape from the first row."
+msgstr ""
+
+#: freerec.data.postprocessing.row.RightPaddingRow:1 of
+msgid "Right-pad sequences to a maximum length."
+msgstr ""
+
+#: freerec.data.postprocessing.column.Batcher_:1 of
+msgid "Convert a stream of row dicts into batched column dicts."
+msgstr ""
+
+#: freerec.data.postprocessing.column.Batcher_:3 of
+msgid ""
+"Each yielded dict maps :class:`~Field` to a list of values collected from"
+" the batch, plus a special ``SIZE`` field recording the batch size."
+msgstr ""
+
+#: freerec.data.postprocessing.column.Batcher_:6 of
+msgid "A datapipe that yields individual row dicts."
+msgstr ""
+
+#: freerec.data.postprocessing.column.Batcher_:8 of
+msgid "Number of rows per batch."
+msgstr ""
+
+#: freerec.data.postprocessing.column.Batcher_:10 of
+msgid "Whether to drop the last incomplete batch. Default is ``False``."
+msgstr ""
+
+#: freerec.data.postprocessing.column.Batcher_.__init__:1 of
+msgid "Initialize the Batcher_."
+msgstr ""
+
+#: freerec.data.postprocessing.column.ToTensor:1 of
+msgid "Convert list columns into :class:`torch.Tensor` objects."
+msgstr ""
+
+#: freerec.data.postprocessing.column.ToTensor:5 of
+msgid ""
+"The returned tensor is at least 2-dimensional. Ragged data that cannot be"
+" stacked into a tensor is passed through unchanged."
+msgstr ""
+
+#: freerec.data.postprocessing.column.ToTensor.at_least_2d:1 of
+msgid "Reshape a 1-D tensor to 2-D by adding a trailing dimension."
+msgstr ""
+
+#: freerec.data.postprocessing.column.ToTensor.to_tensor:1 of
+msgid "Convert column data to a :class:`torch.Tensor` if possible."
+msgstr ""
+
+#: freerec.data.postprocessing.column.ToTensor.to_tensor:3 of
+msgid "Column data to convert."
+msgstr ""
+
+#: freerec.data.postprocessing.column.ToTensor.to_tensor:6 of
+msgid "A tensor when conversion succeeds, the original iterable otherwise."
+msgstr ""
+
+#: freerec.data.postprocessing.column.ToTensor.to_tensor:7 of
+msgid ":class:`torch.Tensor` or :py:class:`iterable`"
+msgstr ""
+
+#: ../../api/freerec.data.rst:44
+msgid "Normalizer"
+msgstr ""
+
+#: freerec.data.normalizer.Normalizer:1 of
+msgid "Identity normalizer that returns data unchanged."
+msgstr ""
+
+#: freerec.data.normalizer.Normalizer:3 of
+msgid ""
+"This is the base class for all normalizers. Subclasses should override "
+"``partial_fit`` and ``normalize`` to implement specific normalization "
+"logic."
+msgstr ""
+
+#: freerec.data.normalizer.Normalizer.__init__:1 of
+msgid "Initialize and reset the normalizer."
+msgstr ""
+
+#: freerec.data.normalizer.Normalizer.reset:1 of
+msgid "Reset the normalizer to its initial state."
+msgstr ""
+
+#: freerec.data.normalizer.Normalizer.count:1 of
+msgid "Return the number of unique old values."
+msgstr ""
+
+#: freerec.data.normalizer.Normalizer.partial_fit:1 of
+msgid "Incrementally fit the normalizer on a batch of data."
+msgstr ""
+
+#: freerec.data.normalizer.Normalizer.partial_fit:3 of
+msgid "A data batch to fit on."
+msgstr ""
+
+#: freerec.data.normalizer.Normalizer.normalize:1 of
+msgid "Normalize the given data."
+msgstr ""
+
+#: freerec.data.normalizer.Counter.normalize:3
+#: freerec.data.normalizer.Normalizer.normalize:3 of
+msgid "The data to normalize."
+msgstr ""
+
+#: freerec.data.normalizer.Normalizer.normalize:6 of
+msgid "The normalized data."
+msgstr ""
+
+#: freerec.data.normalizer.Counter:1 of
+msgid "Normalizer that counts unique non-float values."
+msgstr ""
+
+#: freerec.data.normalizer.Counter:3 of
+msgid ""
+"Collects unique values seen during ``partial_fit`` but returns the data "
+"unchanged from ``normalize``."
+msgstr ""
+
+#: freerec.data.normalizer.Counter.reset:1 of
+msgid "Reset the counter to an empty state."
+msgstr ""
+
+#: freerec.data.normalizer.Counter.count:1 of
+msgid "Return the number of unique values seen so far."
+msgstr ""
+
+#: freerec.data.normalizer.Counter.partial_fit:1 of
+msgid "Accumulate unique values from a data batch."
+msgstr ""
+
+#: freerec.data.normalizer.Counter.partial_fit:3 of
+msgid "A data batch. Only non-float series are counted."
+msgstr ""
+
+#: freerec.data.normalizer.Counter.normalize:1 of
+msgid "Return the data unchanged."
+msgstr ""
+
+#: freerec.data.normalizer.Counter.normalize:6 of
+msgid "The original data, unmodified."
+msgstr ""
+
+#: freerec.data.normalizer.ReIndexer:1 of
+msgid "Re-index categorical features into contiguous integer tokens."
+msgstr ""
+
+#: freerec.data.normalizer.ReIndexer:3 of
+msgid ""
+"Unique values accumulated via ``partial_fit`` are sorted and mapped to "
+"``0, 1, ..., count - 1`` upon the first call to ``normalize``."
+msgstr ""
+
+#: freerec.data.normalizer.ReIndexer:8 of
+msgid "Unique classes seen during fitting."
+msgstr ""
+
+#: freerec.data.normalizer.MinMaxScaler freerec.data.normalizer.ReIndexer
+#: freerec.data.normalizer.StandardScaler of
+msgid "type"
+msgstr ""
+
+#: freerec.data.normalizer.ReIndexer:10 of
+msgid ":py:class:`list` or :py:class:`set`"
+msgstr ""
+
+#: freerec.data.normalizer.ReIndexer:14 of
+msgid "Contiguous integer indices assigned after normalization."
+msgstr ""
+
+#: freerec.data.normalizer.ReIndexer.normalize:1 of
+msgid "Map categorical values to contiguous integer indices."
+msgstr ""
+
+#: freerec.data.normalizer.ReIndexer.normalize:3 of
+msgid "The categorical data to re-index."
+msgstr ""
+
+#: freerec.data.normalizer.ReIndexer.normalize:6 of
+msgid "The re-indexed data with integer tokens."
+msgstr ""
+
+#: freerec.data.normalizer.StandardScaler:1 of
+msgid "Normalize numerical features to zero mean and unit variance."
+msgstr ""
+
+#: freerec.data.normalizer.StandardScaler:3 of
+msgid ""
+"Incrementally accumulates count, sum, and squared sum during "
+"``partial_fit``, then applies the standard scaling formula ``(x - mean) /"
+" (std + eps)`` in ``normalize``."
+msgstr ""
+
+#: freerec.data.normalizer.StandardScaler:9 of
+msgid "The number of fitted values."
+msgstr ""
+
+#: freerec.data.normalizer.StandardScaler:15 of
+msgid "The running sum of fitted values."
+msgstr ""
+
+#: freerec.data.normalizer.MinMaxScaler:10
+#: freerec.data.normalizer.MinMaxScaler:16
+#: freerec.data.normalizer.MinMaxScaler:22
+#: freerec.data.normalizer.StandardScaler:17
+#: freerec.data.normalizer.StandardScaler:23
+#: freerec.data.normalizer.StandardScaler:29 of
+msgid ":py:class:`float`"
+msgstr ""
+
+#: freerec.data.normalizer.StandardScaler:21 of
+msgid "The running sum of squared fitted values."
+msgstr ""
+
+#: freerec.data.normalizer.MinMaxScaler:20
+#: freerec.data.normalizer.StandardScaler:27 of
+msgid "Small constant to avoid division by zero."
+msgstr ""
+
+#: freerec.data.normalizer.StandardScaler.reset:1 of
+msgid "Reset all accumulators to zero."
+msgstr ""
+
+#: freerec.data.normalizer.StandardScaler.mean:1 of
+msgid "Return the running mean of fitted values."
+msgstr ""
+
+#: freerec.data.normalizer.StandardScaler.std:1 of
+msgid "Return the sample standard deviation of fitted values."
+msgstr ""
+
+#: freerec.data.normalizer.StandardScaler.partial_fit:1 of
+msgid "Accumulate statistics from a data batch."
+msgstr ""
+
+#: freerec.data.normalizer.MinMaxScaler.partial_fit:3
+#: freerec.data.normalizer.StandardScaler.partial_fit:3 of
+msgid "A numerical data batch."
+msgstr ""
+
+#: freerec.data.normalizer.StandardScaler.normalize:1 of
+msgid "Apply standard scaling to the data."
+msgstr ""
+
+#: freerec.data.normalizer.MinMaxScaler.normalize:3
+#: freerec.data.normalizer.StandardScaler.normalize:3 of
+msgid "The numerical data to normalize."
+msgstr ""
+
+#: freerec.data.normalizer.StandardScaler.normalize:6 of
+msgid "The standard-scaled data."
+msgstr ""
+
+#: freerec.data.normalizer.MinMaxScaler:1 of
+msgid "Scale numerical features to the range [0, 1]."
+msgstr ""
+
+#: freerec.data.normalizer.MinMaxScaler:3 of
+msgid ""
+"Tracks the running minimum and maximum during ``partial_fit``, then "
+"applies ``(x - min) / (max - min + eps)`` in ``normalize``."
+msgstr ""
+
+#: freerec.data.normalizer.MinMaxScaler:8 of
+msgid "The minimum value seen during fitting."
+msgstr ""
+
+#: freerec.data.normalizer.MinMaxScaler:14 of
+msgid "The maximum value seen during fitting."
+msgstr ""
+
+#: freerec.data.normalizer.MinMaxScaler.reset:1 of
+msgid "Reset min and max to initial sentinel values."
+msgstr ""
+
+#: freerec.data.normalizer.MinMaxScaler.partial_fit:1 of
+msgid "Update running min and max from a data batch."
+msgstr ""
+
+#: freerec.data.normalizer.MinMaxScaler.normalize:1 of
+msgid "Apply min-max scaling to the data."
+msgstr ""
+
+#: freerec.data.normalizer.MinMaxScaler.normalize:6 of
+msgid "The scaled data in range [0, 1]."
+msgstr ""
+
+#: ../../api/freerec.data.rst:51
+msgid "Utilities"
+msgstr ""
+
+#: freerec.data.utils.DataSetLoadingError:1 of
+msgid "Exception raised when a dataset fails to load."
+msgstr ""
+
+#: freerec.data.utils.safe_cast:1 of
+msgid "Cast a value to the specified type with a fallback default."
+msgstr ""
+
+#: freerec.data.utils.safe_cast:3 of
+msgid ""
+"If ``val`` is ``None`` or an empty string, ``default`` is used instead. "
+"Both ``val`` and ``default`` are cast through ``dest_type``."
+msgstr ""
+
+#: freerec.data.utils.safe_cast:6 of
+msgid "The value to cast."
+msgstr ""
+
+#: freerec.data.utils.safe_cast:8 of
+msgid "A callable that performs the type conversion."
+msgstr ""
+
+#: freerec.data.utils.safe_cast:10 of
+msgid "The fallback value when ``val`` is ``None`` or ``''``."
+msgstr ""
+
+#: freerec.data.utils.safe_cast:13 of
+msgid "The value cast to the specified type."
+msgstr ""
+
+#: freerec.data.utils.safe_cast:14 of
+msgid ":py:class:`T`"
+msgstr ""
+
+#: freerec.data.utils.safe_cast:16 of
+msgid "If neither ``val`` nor ``default`` can be cast by ``dest_type``."
+msgstr ""
+
+#: freerec.data.utils.safe_cast:20 of
+msgid ""
+"This function casts ``val`` to the specified type using ``dest_type``. If"
+" ``val`` is ``None`` or an empty string, the function uses ``default``. "
+"If ``default`` is also ``None``, a ``ValueError`` is raised."
+msgstr ""
+
+#: freerec.data.utils.download_from_url:1 of
+msgid "Download a file from a URL to a local directory."
+msgstr ""
+
+#: freerec.data.utils.download_from_url:3 of
+msgid "Codes borrowed from dgl.data.utils."
+msgstr ""
+
+#: freerec.data.utils.download_from_url:5 of
+msgid "The URL to download the file from."
+msgstr ""
+
+#: freerec.data.utils.download_from_url:7 of
+msgid "The directory where the file will be saved. Default is ``'.'``."
+msgstr ""
+
+#: freerec.data.utils.download_from_url:9 of
+msgid ""
+"The name for the downloaded file. If ``None``, the filename is inferred "
+"from the URL."
+msgstr ""
+
+#: freerec.data.utils.download_from_url:12 of
+msgid "Whether to overwrite an existing file. Default is ``False``."
+msgstr ""
+
+#: freerec.data.utils.download_from_url:14 of
+msgid "Number of retry attempts on failure. Default is ``5``."
+msgstr ""
+
+#: freerec.data.utils.download_from_url:16 of
+msgid "Download chunk size in bytes. Default is ``1048576`` (1 MB)."
+msgstr ""
+
+#: freerec.data.utils.download_from_url:18 of
+msgid ""
+"Expected SHA-1 hash in hexadecimal. If specified and the existing file "
+"does not match, the file is re-downloaded."
+msgstr ""
+
+#: freerec.data.utils.download_from_url:21 of
+msgid "Whether to verify SSL certificates. Default is ``True``."
+msgstr ""
+
+#: freerec.data.utils.download_from_url:23 of
+msgid "Whether to log download progress. Default is ``True``."
+msgstr ""
+
+#: freerec.data.utils.download_from_url:26 of
+msgid "The file path of the downloaded file."
+msgstr ""
+
+#: freerec.data.utils.download_from_url:29 of
+msgid "If the server returns a non-200 status code."
+msgstr ""
+
+#: freerec.data.utils.download_from_url:30 of
+msgid "If the downloaded file's SHA-1 hash does not match ``sha1_hash``."
+msgstr ""
+
+#: freerec.data.utils.extract_archive:1 of
+msgid "Extract an archive file to a target directory."
+msgstr ""
+
+#: freerec.data.utils.extract_archive:3 of
+msgid ""
+"Supports ``.tar.gz``, ``.tar``, ``.tgz``, ``.gz``, and ``.zip`` formats. "
+"Codes borrowed from dgl/data/utils.py."
+msgstr ""
+
+#: freerec.data.utils.extract_archive:6 of
+msgid "The path to the archive file."
+msgstr ""
+
+#: freerec.data.utils.extract_archive:8 of
+msgid "The directory to extract the archive contents into."
+msgstr ""
+
+#: freerec.data.utils.extract_archive:10 of
+msgid "Whether to overwrite existing files. Default is ``False``."
+msgstr ""
+
+#: freerec.data.utils.extract_archive:13 of
+msgid "If the archive format is not recognized."
+msgstr ""
+
+#: freerec.data.utils.check_sha1:1 of
+msgid "Compute the SHA-1 hash of a file or raw bytes."
+msgstr ""
+
+#: freerec.data.utils.check_sha1:3 of
+msgid ""
+"If str, treated as a file path whose contents are hashed. If bytes, the "
+"raw data is hashed directly."
+msgstr ""
+
+#: freerec.data.utils.check_sha1:7 of
+msgid "The hexadecimal SHA-1 digest."
+msgstr ""
+
+#: freerec.data.utils.is_empty_dir:1 of
+msgid "Check whether a directory is empty or does not exist."
+msgstr ""
+
+#: freerec.data.utils.is_empty_dir:3 of
+msgid "The directory path to check."
+msgstr ""
+
+#: freerec.data.utils.is_empty_dir:6 of
+msgid "``True`` if the directory does not exist or contains no entries."
+msgstr ""
+
+#: freerec.data.utils.negsamp_vectorized_bsearch:1 of
+msgid "Sample negative indices uniformly, excluding given positives."
+msgstr ""
+
+#: freerec.data.utils.negsamp_vectorized_bsearch:3 of
+msgid ""
+"Uses a binary-search-based algorithm for efficient negative sampling. See"
+" `here <https://tech.hbc.com/2018-03-23-negative-sampling-in-"
+"numpy.html>`_ for more details."
+msgstr ""
+
+#: freerec.data.utils.negsamp_vectorized_bsearch:7 of
+msgid "Sorted 1-D sequence of positive indices to exclude."
+msgstr ""
+
+#: freerec.data.utils.negsamp_vectorized_bsearch:9 of
+msgid "Total number of items (index range is ``[0, n_items)``)."
+msgstr ""
+
+#: freerec.data.utils.negsamp_vectorized_bsearch:11 of
+msgid "Shape of the output sample. Default is ``1``."
+msgstr ""
+
+#: freerec.data.utils.negsamp_vectorized_bsearch:13 of
+msgid "If ``True``, sample with replacement. Default is ``True``."
+msgstr ""
+
+#: freerec.data.utils.negsamp_vectorized_bsearch:16 of
+msgid "The sampled negative indices."
+msgstr ""
+
+#: freerec.data.utils.negsamp_vectorized_bsearch:19 of
+msgid "If ``positives`` is not 1-D."
+msgstr ""
+
+#: freerec.data.utils.negsamp_vectorized_bsearch:20 of
+msgid ""
+"If ``replacement`` is ``False`` and the requested sample size     exceeds"
+" the number of available negatives."
+msgstr ""
+

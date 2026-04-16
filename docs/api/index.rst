@@ -10,3 +10,6 @@ API Reference
    freerec.metrics
    freerec.criterions
    freerec.utils
+   freerec.parser
+   freerec.ddp
+   freerec.graph

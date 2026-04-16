@@ -1,0 +1,57 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 11:32+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../installation.rst:2
+msgid "安装指南"
+msgstr "Installation Guide"
+
+#: ../../installation.rst:5
+msgid "环境要求"
+msgstr "Requirements"
+
+#: ../../installation.rst:7
+msgid "Python >= 3.9"
+msgstr ""
+
+#: ../../installation.rst:8
+msgid "`PyTorch >= 2.0 <https://pytorch.org/get-started/locally/>`_"
+msgstr ""
+
+#: ../../installation.rst:11
+msgid "安装步骤"
+msgstr "Installation Steps"
+
+#: ../../installation.rst:27
+msgid ""
+"FreeRec 依赖 torchdata 0.7.0，因为更新版本不再支持 datapipe 功能。 ``freerec setup`` 会以 "
+"``--no-deps`` 方式安装，避免覆盖你已有的 PyTorch。"
+msgstr ""
+"FreeRec depends on torchdata 0.7.0, as newer versions no longer support "
+"the datapipe functionality. ``freerec setup`` installs it with "
+"``--no-deps`` to avoid overwriting your existing PyTorch installation."
+
+#: ../../installation.rst:31
+msgid "可选依赖"
+msgstr "Optional Dependencies"
+
+#: ../../installation.rst:33
+msgid "根据需要安装额外功能："
+msgstr "Install additional features as needed:"

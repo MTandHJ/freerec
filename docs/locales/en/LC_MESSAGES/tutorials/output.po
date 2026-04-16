@@ -1,0 +1,141 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 18:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../tutorials/output.rst:2
+msgid "训练输出"
+msgstr "Training Output"
+
+#: ../../tutorials/output.rst:4
+msgid "训练完成后，FreeRec 会在 ``logs/`` 和 ``infos/`` 目录下生成完整的实验记录。"
+msgstr "After training, FreeRec generates complete experiment records in the ``logs/`` and ``infos/`` directories."
+
+#: ../../tutorials/output.rst:7
+msgid "目录结构"
+msgstr "Directory Structure"
+
+#: ../../tutorials/output.rst:30
+msgid "各文件说明"
+msgstr "File Descriptions"
+
+#: ../../tutorials/output.rst:33
+msgid "README.md"
+msgstr ""
+
+#: ../../tutorials/output.rst:35
+msgid "配置快照，记录了本次实验的所有参数设置，便于复现。"
+msgstr "Configuration snapshot recording all parameter settings of the experiment for reproducibility."
+
+#: ../../tutorials/output.rst:38
+msgid "log.txt"
+msgstr ""
+
+#: ../../tutorials/output.rst:40
+msgid "完整的训练日志，包括每个 epoch 的损失值、评估指标、最佳指标更新记录等。"
+msgstr "Complete training log, including the loss value for each epoch, evaluation metrics, best metric update records, etc."
+
+#: ../../tutorials/output.rst:43
+msgid "SUMMARY.md"
+msgstr ""
+
+#: ../../tutorials/output.rst:45
+msgid "训练结束后自动生成的 Markdown 汇总表，包含各指标的最佳值及其对应的 epoch："
+msgstr "An automatically generated Markdown summary table after training, containing the best value and corresponding epoch for each metric:"
+
+#: ../../tutorials/output.rst:56
+msgid "指标曲线图 (\\*.png)"
+msgstr "Metric Plots (\\*.png)"
+
+#: ../../tutorials/output.rst:58
+#, python-brace-format
+msgid ""
+"每个被监控的指标生成一张 PNG 曲线图（横轴为 epoch，纵轴为指标值）， 文件名格式为 ``{mode}{METRIC}.png``，例如 "
+"``validNDCG@10.png``。"
+msgstr ""
+"A PNG curve plot is generated for each monitored metric (x-axis: epoch, y-axis: metric value). "
+"The filename format is ``{mode}{METRIC}.png``, e.g., ``validNDCG@10.png``."
+
+#: ../../tutorials/output.rst:62
+msgid "monitors.pkl"
+msgstr ""
+
+#: ../../tutorials/output.rst:64
+msgid "所有指标的完整历史记录（pickle 格式），三层嵌套结构："
+msgstr "Complete history of all metrics (pickle format) with a three-level nested structure:"
+
+#: ../../tutorials/output.rst:66
+msgid "**第一层** — 模式：``train`` / ``valid`` / ``test``"
+msgstr "**Level 1** -- Mode: ``train`` / ``valid`` / ``test``"
+
+#: ../../tutorials/output.rst:68
+msgid "**第二层** — 指标族：``LOSS`` / ``NDCG`` / ``HITRATE`` 等（不含 @K）"
+msgstr "**Level 2** -- Metric family: ``LOSS`` / ``NDCG`` / ``HITRATE``, etc. (without @K)"
+
+#: ../../tutorials/output.rst:70
+msgid ""
+"**第三层** — 具体指标：``NDCG@5`` / ``NDCG@10`` / ``HITRATE@1`` 等（含 "
+"@K），值为历史列表。对于无 K 的指标如 ``LOSS``，键重复为 ``LOSS -> LOSS``。"
+msgstr ""
+"**Level 3** -- Specific metric: ``NDCG@5`` / ``NDCG@10`` / ``HITRATE@1``, etc. (with "
+"@K); values are history lists. For metrics without K such as ``LOSS``, the key is repeated as ``LOSS -> LOSS``."
+
+#: ../../tutorials/output.rst:104
+msgid "可用于自定义可视化："
+msgstr "Can be used for custom visualization:"
+
+#: ../../tutorials/output.rst:114
+msgid "best.pkl"
+msgstr ""
+
+#: ../../tutorials/output.rst:116
+msgid "最佳 checkpoint 对应的测试集评估结果， 用于超参搜索场景下的 TensorBoard 对比："
+msgstr "Test set evaluation results corresponding to the best checkpoint, used for TensorBoard comparison in hyperparameter search scenarios:"
+
+#: ../../tutorials/output.rst:127
+msgid "model.pt / best.pt"
+msgstr ""
+
+#: ../../tutorials/output.rst:129
+msgid "均保存在 ``logs/`` 目录下（不在 ``infos/``）："
+msgstr "Both saved in the ``logs/`` directory (not in ``infos/``):"
+
+#: ../../tutorials/output.rst:131
+msgid "``model.pt`` — 训练结束时的最终模型权重"
+msgstr "``model.pt`` -- Final model weights at the end of training"
+
+#: ../../tutorials/output.rst:132
+msgid "``best.pt`` — 验证集指标最优时保存的模型权重"
+msgstr "``best.pt`` -- Model weights saved when validation metrics are optimal"
+
+#: ../../tutorials/output.rst:141
+msgid "checkpoint.tar"
+msgstr ""
+
+#: ../../tutorials/output.rst:143
+msgid "保存在 ``infos/`` 目录下，仅用于 ``--resume`` 恢复训练。包含："
+msgstr "Saved in the ``infos/`` directory, used only for ``--resume`` to resume training. Contains:"
+
+#: ../../tutorials/output.rst:160
+msgid "TensorBoard"
+msgstr ""
+
+#: ../../tutorials/output.rst:162
+msgid "指标历史会同时写入 TensorBoard 格式，可用标准工具查看："
+msgstr "Metric history is also written in TensorBoard format and can be viewed with standard tools:"

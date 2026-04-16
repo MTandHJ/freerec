@@ -1,12 +1,6 @@
 FreeRec
 =======
 
-.. image:: _static/img/logo_pixel.png
-   :align: center
-   :alt: FreeRec Logo
-
-|
-
 FreeRec 是一个基于 PyTorch 的推荐系统库，提供从数据预处理到模型训练的全流程支持。
 
 .. code-block:: bash
@@ -25,88 +19,16 @@ FreeRec 是一个基于 PyTorch 的推荐系统库，提供从数据预处理到
 数据流水线
 ----------
 
-.. mermaid::
-
-   graph LR
-       raw["📄 Raw Files\n.inter / .user / .item"]
-       make["⚙️ freerec make\nfilter & split"]
-       chunks["📦 Chunks\ntrain / valid / test .pkl"]
-
-       raw --> make --> chunks
-
-       chunks --> dataset["RecDataSet"]
-
-       dataset -->|"fields\n(USER·ID, ITEM·ID, ...)"| source
-
-       subgraph datapipe ["Postprocessor Chain"]
-           direction LR
-           source["Source\nordered / shuffled\n/ choiced"]
-           sampler["Sampler\ntrain_pos · train_neg\nvalid · test"]
-           rowop["Row Ops\nlpad · rpad\nlprune · add"]
-           batch["batch_"]
-           tensor["tensor_"]
-
-           source --> sampler --> rowop --> batch --> tensor
-       end
-
-       tensor --> trainpipe["trainpipe"]
-       tensor --> validpipe["validpipe"]
-       tensor --> testpipe["testpipe"]
-
-   style raw fill:#fef3e2,stroke:#e07020,color:#333
-   style make fill:#fef3e2,stroke:#e07020,color:#333
-   style chunks fill:#fef3e2,stroke:#e07020,color:#333
-   style dataset fill:#e07020,stroke:#b85a10,color:#fff
-   style datapipe fill:#fff8f0,stroke:#e07020,stroke-width:2px
-   style trainpipe fill:#e07020,stroke:#b85a10,color:#fff
-   style validpipe fill:#e07020,stroke:#b85a10,color:#fff
-   style testpipe fill:#e07020,stroke:#b85a10,color:#fff
+.. image:: _static/img/pipeline.png
+   :align: center
+   :alt: Data Pipeline
 
 训练流程
 --------
 
-.. mermaid::
-
-   graph TB
-       subgraph inputs ["输入组件"]
-           direction TB
-           dataset["RecDataSet"]
-           pipes["trainpipe / validpipe / testpipe"]
-           model["Model\nGenRecArch / SeqRecArch / PredRecArch"]
-           optim["Optimizer + LR Scheduler"]
-       end
-
-       cfg["📝 config.yaml"] -->|compile| coach["Coach"]
-       inputs --> coach
-
-       coach -->|fit| loop
-
-       subgraph loop ["Epoch Loop  ×N"]
-           direction TB
-           train["🔄 train_per_epoch\nforward → loss → backward → step"]
-           eval["📊 evaluate\nrecommend → metrics"]
-           best["🏆 check_best\nsave if improved"]
-
-           train --> eval --> best
-       end
-
-       loop --> output
-
-       subgraph output ["输出"]
-           direction LR
-           summary["SUMMARY.md"]
-           tb["TensorBoard"]
-           plots["[metric].png"]
-       end
-
-   style cfg fill:#fef3e2,stroke:#e07020,color:#333
-   style inputs fill:#fff8f0,stroke:#e07020,stroke-width:2px
-   style coach fill:#e07020,stroke:#b85a10,color:#fff
-   style loop fill:#fff8f0,stroke:#e07020,stroke-width:2px,stroke-dasharray: 6 3
-   style output fill:#fff8f0,stroke:#e07020,stroke-width:2px
-   style train fill:#fef3e2,stroke:#e07020,color:#333
-   style eval fill:#fef3e2,stroke:#e07020,color:#333
-   style best fill:#fef3e2,stroke:#e07020,color:#333
+.. image:: _static/img/flow.png
+   :align: center
+   :alt: Training Flow
 
 .. toctree::
    :maxdepth: 2
@@ -120,12 +42,6 @@ FreeRec 是一个基于 PyTorch 的推荐系统库，提供从数据预处理到
    :caption: 教程
 
    tutorials/index
-
-.. toctree::
-   :maxdepth: 2
-   :caption: 示例
-
-   examples/index
 
 .. toctree::
    :maxdepth: 2

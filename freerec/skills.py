@@ -72,7 +72,7 @@ freerec make [DatasetName] [OPTIONS]
 ```
 data/
 └── Processed/
-    └── [DatasetName]_[kcore4user][kcore4item][star4pos]_[splitting]/
+    └── [DatasetName]_[star4pos][kcore4user][kcore4item]_[splitting]/
         ├── train.txt      # Training interactions
         ├── valid.txt      # Validation interactions
         ├── test.txt       # Test interactions
@@ -401,18 +401,38 @@ logs/
 ### METRIC FILES
 
 #### monitors.pkl (Full History)
+
+Structure: `mode → metric_family (e.g. NDCG) → specific_metric (e.g. NDCG@10) → [history]`
+
 ```python
 {
     'train': {
         'LOSS': {
-            'LOSS': [0.5, 0.4, 0.35, ...],  # History per eval point
+            'LOSS': [0.5, 0.4, 0.35, ...],
         },
-        'NDCG@10': {
-            'NDCG@10': [0.25, 0.30, 0.35, ...]
-        }
+        'NDCG': {
+            'NDCG@5': [],
+            'NDCG@10': [],
+        },
+        'HITRATE': {
+            'HITRATE@1': [],
+            'HITRATE@5': [],
+            'HITRATE@10': [],
+        },
     },
-    'valid': {...},
-    'test': {...}
+    'valid': {
+        'LOSS': {'LOSS': []},
+        'NDCG': {
+            'NDCG@5': [0.0253, 0.0289, ...],
+            'NDCG@10': [0.0332, 0.0371, ...],
+        },
+        'HITRATE': {
+            'HITRATE@1': [0.0099, ...],
+            'HITRATE@5': [0.0407, ...],
+            'HITRATE@10': [0.0654, ...],
+        },
+    },
+    'test': {...},
 }
 ```
 
@@ -475,7 +495,7 @@ from freerec.utils import import_pickle
 # Load full history
 monitors = import_pickle('logs/exp/dataset/id/data/monitors.pkl')
 train_loss_history = monitors['train']['LOSS']['LOSS']
-valid_ndcg_history = monitors['valid']['NDCG@10']['NDCG@10']
+valid_ndcg_history = monitors['valid']['NDCG']['NDCG@10']
 
 # Load best results
 best = import_pickle('logs/exp/dataset/id/data/best.pkl')

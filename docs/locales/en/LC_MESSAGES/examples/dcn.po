@@ -1,0 +1,36 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 11:32+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../examples/dcn.rst:2
+msgid "DCN"
+msgstr ""
+
+#: ../../examples/dcn.rst:4
+msgid "**Deep & Cross Network**"
+msgstr ""
+
+#: ../../examples/dcn.rst:6
+msgid "用于点击率预测的深度交叉网络，通过交叉网络显式建模特征交互。"
+msgstr "A Deep & Cross Network for click-through rate prediction that explicitly models feature interactions through the cross network."
+
+#: ../../examples/dcn.rst:9
+msgid "用法"
+msgstr "Usage"

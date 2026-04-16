@@ -1,0 +1,356 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 11:32+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../tutorials/dataset_processing.rst:2
+msgid "数据集处理"
+msgstr "Dataset Processing"
+
+#: ../../tutorials/dataset_processing.rst:4
+msgid "FreeRec 使用 ``freerec make`` 命令对原始数据集进行拆分和过滤，生成可直接用于训练的标准格式。"
+msgstr "FreeRec uses the ``freerec make`` command to split and filter raw datasets, producing a standardized format ready for training."
+
+#: ../../tutorials/dataset_processing.rst:7
+msgid "原始数据格式"
+msgstr "Raw Data Format"
+
+#: ../../tutorials/dataset_processing.rst:9
+msgid ""
+"FreeRec 采用与 `RecBole <https://github.com/RUCAIBox/RecSysDatasets>`_ 兼容的 "
+"atomic 文件格式。 原始数据集目录结构如下："
+msgstr ""
+"FreeRec uses the atomic file format compatible with "
+"`RecBole <https://github.com/RUCAIBox/RecSysDatasets>`_. "
+"The raw dataset directory structure is as follows:"
+
+#: ../../tutorials/dataset_processing.rst:20
+msgid "各文件均为 Tab 分隔的文本文件，首行为列名。"
+msgstr "All files are tab-separated text files with column names in the first row."
+
+#: ../../tutorials/dataset_processing.rst:22
+msgid "``.inter`` 文件示例："
+msgstr "``.inter`` file example:"
+
+#: ../../tutorials/dataset_processing.rst:30
+msgid "``.user`` 文件示例："
+msgstr "``.user`` file example:"
+
+#: ../../tutorials/dataset_processing.rst:37
+msgid "``.item`` 文件示例："
+msgstr "``.item`` file example:"
+
+#: ../../tutorials/dataset_processing.rst:45
+msgid "命令行参数"
+msgstr "Command-Line Arguments"
+
+#: ../../tutorials/dataset_processing.rst:51
+msgid "**必选参数：**"
+msgstr "**Required arguments:**"
+
+#: ../../tutorials/dataset_processing.rst:53
+msgid "``dataset`` — 数据集名称（如 ``MovieLens1M``）"
+msgstr "``dataset`` -- Dataset name (e.g., ``MovieLens1M``)"
+
+#: ../../tutorials/dataset_processing.rst:55
+msgid "**常用选项：**"
+msgstr "**Common options:**"
+
+#: ../../tutorials/dataset_processing.rst:61
+msgid "参数"
+msgstr "Argument"
+
+#: ../../tutorials/dataset_processing.rst:62
+msgid "默认值"
+msgstr "Default"
+
+#: ../../tutorials/dataset_processing.rst:63
+msgid "说明"
+msgstr "Description"
+
+#: ../../tutorials/dataset_processing.rst:64
+msgid "``--root``"
+msgstr ""
+
+#: ../../tutorials/dataset_processing.rst:65
+msgid "``data``"
+msgstr ""
+
+#: ../../tutorials/dataset_processing.rst:66
+msgid "数据根目录"
+msgstr "Data root directory"
+
+#: ../../tutorials/dataset_processing.rst:67
+msgid "``--filedir``"
+msgstr ""
+
+#: ../../tutorials/dataset_processing.rst:68
+msgid "同 dataset"
+msgstr "Same as dataset"
+
+#: ../../tutorials/dataset_processing.rst:69
+msgid "存放 atomic 文件的子目录名"
+msgstr "Subdirectory name for atomic files"
+
+#: ../../tutorials/dataset_processing.rst:70
+msgid "``--splitting``"
+msgstr ""
+
+#: ../../tutorials/dataset_processing.rst:71
+msgid "（必填）"
+msgstr "(required)"
+
+#: ../../tutorials/dataset_processing.rst:72
+msgid "拆分方法，见下表"
+msgstr "Splitting method, see the table below"
+
+#: ../../tutorials/dataset_processing.rst:73
+msgid "``--ratios``"
+msgstr ""
+
+#: ../../tutorials/dataset_processing.rst:75
+msgid "拆分比例（用于 ROU/ROD）"
+msgstr "Split ratios (for ROU/ROD)"
+
+#: ../../tutorials/dataset_processing.rst:76
+msgid "``--days``"
+msgstr ""
+
+#: ../../tutorials/dataset_processing.rst:78
+msgid "拆分天数（用于 DOU/DOD）"
+msgstr "Split days (for DOU/DOD)"
+
+#: ../../tutorials/dataset_processing.rst:79
+msgid "``--star4pos``"
+msgstr ""
+
+#: ../../tutorials/dataset_processing.rst:80
+msgid "0"
+msgstr ""
+
+#: ../../tutorials/dataset_processing.rst:81
+msgid "保留评分 >= 该值的交互"
+msgstr "Keep interactions with rating >= this value"
+
+#: ../../tutorials/dataset_processing.rst:82
+msgid "``--kcore4user``"
+msgstr ""
+
+#: ../../tutorials/dataset_processing.rst:83
+#: ../../tutorials/dataset_processing.rst:86
+msgid "10"
+msgstr ""
+
+#: ../../tutorials/dataset_processing.rst:84
+msgid "用户至少有 k 条交互"
+msgstr "Users must have at least k interactions"
+
+#: ../../tutorials/dataset_processing.rst:85
+msgid "``--kcore4item``"
+msgstr ""
+
+#: ../../tutorials/dataset_processing.rst:87
+msgid "物品至少有 k 条交互"
+msgstr "Items must have at least k interactions"
+
+#: ../../tutorials/dataset_processing.rst:89
+msgid "**列名设置** （仅在列名不是默认值时需要指定）："
+msgstr "**Column name settings** (only required when column names differ from defaults):"
+
+#: ../../tutorials/dataset_processing.rst:91
+msgid "``--userColname`` — 用户 ID 列名（默认 ``USER``）"
+msgstr "``--userColname`` -- User ID column name (default ``USER``)"
+
+#: ../../tutorials/dataset_processing.rst:92
+msgid "``--itemColname`` — 物品 ID 列名（默认 ``ITEM``）"
+msgstr "``--itemColname`` -- Item ID column name (default ``ITEM``)"
+
+#: ../../tutorials/dataset_processing.rst:93
+msgid "``--ratingColname`` — 评分列名（默认 ``RATING``，无评分可省略）"
+msgstr "``--ratingColname`` -- Rating column name (default ``RATING``, can be omitted if no ratings)"
+
+#: ../../tutorials/dataset_processing.rst:94
+msgid "``--timestampColname`` — 时间戳列名（默认 ``TIMESTAMP``）"
+msgstr "``--timestampColname`` -- Timestamp column name (default ``TIMESTAMP``)"
+
+#: ../../tutorials/dataset_processing.rst:97
+msgid "拆分方法"
+msgstr "Splitting Methods"
+
+#: ../../tutorials/dataset_processing.rst:99
+msgid "拆分方法示意图"
+msgstr "Splitting methods diagram"
+
+#: ../../tutorials/dataset_processing.rst:109
+msgid "方法"
+msgstr "Method"
+
+#: ../../tutorials/dataset_processing.rst:110
+msgid "训练集"
+msgstr "Training Set"
+
+#: ../../tutorials/dataset_processing.rst:111
+msgid "验证集"
+msgstr "Validation Set"
+
+#: ../../tutorials/dataset_processing.rst:112
+msgid "测试集"
+msgstr "Test Set"
+
+#: ../../tutorials/dataset_processing.rst:113
+msgid "**ROU**"
+msgstr ""
+
+#: ../../tutorials/dataset_processing.rst:114
+msgid "每个用户最早的部分交互"
+msgstr "Earliest portion of interactions per user"
+
+#: ../../tutorials/dataset_processing.rst:115
+msgid "每个用户中间时段的交互"
+msgstr "Middle portion of interactions per user"
+
+#: ../../tutorials/dataset_processing.rst:116
+msgid "每个用户最后的交互"
+msgstr "Latest interactions per user"
+
+#: ../../tutorials/dataset_processing.rst:117
+msgid "**RAU**"
+msgstr ""
+
+#: ../../tutorials/dataset_processing.rst:118
+msgid "同 ROU，但保证测试集至少一条"
+msgstr "Same as ROU, but guarantees at least one interaction in the test set"
+
+#: ../../tutorials/dataset_processing.rst:119
+msgid "同 ROU"
+msgstr "Same as ROU"
+
+#: ../../tutorials/dataset_processing.rst:120
+msgid "至少保留一条"
+msgstr "At least one interaction retained"
+
+#: ../../tutorials/dataset_processing.rst:121
+msgid "**ROD**"
+msgstr ""
+
+#: ../../tutorials/dataset_processing.rst:122
+msgid "全局最早的部分交互"
+msgstr "Earliest portion of interactions globally"
+
+#: ../../tutorials/dataset_processing.rst:123
+msgid "全局中间时段的交互"
+msgstr "Middle portion of interactions globally"
+
+#: ../../tutorials/dataset_processing.rst:124
+msgid "全局最后的交互"
+msgstr "Latest interactions globally"
+
+#: ../../tutorials/dataset_processing.rst:125
+msgid "**LOU**"
+msgstr ""
+
+#: ../../tutorials/dataset_processing.rst:126
+msgid "每个用户序列（除最后两条）"
+msgstr "Each user's sequence (excluding the last two)"
+
+#: ../../tutorials/dataset_processing.rst:127
+msgid "每个用户倒数第二条"
+msgstr "Second-to-last interaction per user"
+
+#: ../../tutorials/dataset_processing.rst:128
+msgid "每个用户最后一条"
+msgstr "Last interaction per user"
+
+#: ../../tutorials/dataset_processing.rst:129
+msgid "**DOU**"
+msgstr ""
+
+#: ../../tutorials/dataset_processing.rst:130
+msgid "最后交互在 T-2d 之前的用户"
+msgstr "Users whose last interaction is before T-2d"
+
+#: ../../tutorials/dataset_processing.rst:131
+msgid "最后交互在 T-2d 至 T-d 之间的用户"
+msgstr "Users whose last interaction is between T-2d and T-d"
+
+#: ../../tutorials/dataset_processing.rst:132
+msgid "最后交互在 T-d 之后的用户"
+msgstr "Users whose last interaction is after T-d"
+
+#: ../../tutorials/dataset_processing.rst:133
+msgid "**DOD**"
+msgstr ""
+
+#: ../../tutorials/dataset_processing.rst:134
+msgid "T-2d 之前的全部交互"
+msgstr "All interactions before T-2d"
+
+#: ../../tutorials/dataset_processing.rst:135
+msgid "T-2d 至 T-d 之间的交互"
+msgstr "Interactions between T-2d and T-d"
+
+#: ../../tutorials/dataset_processing.rst:136
+msgid "T-d 之后的全部交互"
+msgstr "All interactions after T-d"
+
+#: ../../tutorials/dataset_processing.rst:139
+msgid "完整示例"
+msgstr "Complete Example"
+
+#: ../../tutorials/dataset_processing.rst:141
+msgid "以 MovieLens1M、LOU 拆分、kcore=5 为例："
+msgstr "Using MovieLens1M with LOU splitting and kcore=5 as an example:"
+
+#: ../../tutorials/dataset_processing.rst:147
+msgid "输出目录："
+msgstr "Output directory:"
+
+#: ../../tutorials/dataset_processing.rst:161
+msgid "输出的数据格式与输入一致（Tab 分隔），但 USER 和 ITEM 的 ID 已重新编号（从 0 开始）。"
+msgstr "The output data format is the same as the input (tab-separated), but USER and ITEM IDs have been re-indexed (starting from 0)."
+
+#: ../../tutorials/dataset_processing.rst:165
+msgid ""
+"此处以 MovieLens1M 为示例，因其易于理解。但如 `文献 <https://arxiv.org/abs/2307.09985v3>`_ "
+"所述，MovieLens1M 并非序列推荐的理想基准数据集。"
+msgstr ""
+"MovieLens1M is used here as an example for its simplicity. However, as noted in "
+"the `literature <https://arxiv.org/abs/2307.09985v3>`_, MovieLens1M is not an "
+"ideal benchmark dataset for sequential recommendation."
+
+#: ../../tutorials/dataset_processing.rst:170
+msgid "内置数据集"
+msgstr "Built-in Datasets"
+
+#: ../../tutorials/dataset_processing.rst:172
+msgid ""
+"以下数据集可由 FreeRec 自动下载，涵盖 Amazon 2014/2018、MovieLens、Yelp、Steam 等主流推荐数据集。 "
+"完整列表请参阅 :mod:`freerec.data.datasets`。"
+msgstr ""
+"The following datasets can be automatically downloaded by FreeRec, covering "
+"mainstream recommendation datasets such as Amazon 2014/2018, MovieLens, Yelp, Steam, and more. "
+"For the complete list, see :mod:`freerec.data.datasets`."
+
+#: ../../tutorials/dataset_processing.rst:177
+msgid ""
+"对于 RecBole 的其他 atomic 文件，只需手动指定 ``--userColname``、``--itemColname`` "
+"等列名参数即可使用。"
+msgstr ""
+"For other RecBole atomic files, simply specify the column name arguments "
+"such as ``--userColname`` and ``--itemColname`` manually."

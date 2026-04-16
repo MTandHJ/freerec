@@ -39,6 +39,7 @@ docs = [
     "pydata-sphinx-theme>=0.15",
     "sphinx-copybutton>=0.5",
     "sphinxcontrib-mermaid>=0.9",
+    "sphinx-intl>=2.0",
 ]
 all = [
     "freerec[graph]",

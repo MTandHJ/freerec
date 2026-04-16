@@ -28,9 +28,10 @@ DATA_DIR : str
 SUMMARY_DIR : str
     Directory for saving final summary information.
 CHECKPOINT_PATH : str
-    Path for saving checkpoints.
+    Path for saving training checkpoints (``checkpoint.tar`` only, used for ``--resume``).
 LOG_PATH : str
-    Path for saving logging information.
+    Path for saving all experiment outputs: logs, model weights (``model.pt``, ``best.pt``),
+    metric data (``monitors.pkl``, ``best.pkl``), and summaries.
 CORE_CHECKPOINT_PATH : str
     Path for tuning.
 CORE_LOG_PATH : str
@@ -46,9 +47,9 @@ CORE_CONFIG : Config
 Configurations:
 ---------------
 SAVED_FILENAME : str
-    The filename of saved model parameters.
+    The filename of saved model parameters (saved under ``LOG_PATH``).
 BEST_FILENAME : str
-    The filename of saved best model parameters.
+    The filename of saved best model parameters (saved under ``LOG_PATH``).
 CHECKPOINT_FREQ : int
     The frequency of saving checkpoints.
 CHECKPOINT_MODULES : list

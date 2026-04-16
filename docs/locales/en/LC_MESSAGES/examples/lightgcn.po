@@ -1,0 +1,42 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 11:32+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../examples/lightgcn.rst:2
+msgid "LightGCN"
+msgstr ""
+
+#: ../../examples/lightgcn.rst:4
+msgid ""
+"**LightGCN: Simplifying and Powering Graph Convolution Network for "
+"Recommendation**"
+msgstr ""
+
+#: ../../examples/lightgcn.rst:6
+msgid "轻量级图卷积推荐模型，通过简化 GCN 去除特征变换和非线性激活，仅保留邻域聚合。"
+msgstr "A lightweight graph convolution recommendation model that simplifies GCN by removing feature transformations and nonlinear activations, retaining only neighborhood aggregation."
+
+#: ../../examples/lightgcn.rst:10
+msgid "需要安装 ``torch-geometric``：``pip install freerec[graph]``"
+msgstr "Requires ``torch-geometric``: ``pip install freerec[graph]``"
+
+#: ../../examples/lightgcn.rst:13
+msgid "用法"
+msgstr "Usage"

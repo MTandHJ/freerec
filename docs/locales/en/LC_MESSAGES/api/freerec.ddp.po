@@ -1,0 +1,182 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 18:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../api/freerec.ddp.rst:2
+msgid "freerec.ddp"
+msgstr ""
+
+#: freerec.ddp:1 of
+msgid "Primitives for multi-GPU communication in distributed training."
+msgstr ""
+
+#: freerec.ddp.get_world_size:1 of
+msgid "Return the number of processes in the default process group."
+msgstr ""
+
+#: ../../api/freerec.ddp.rst freerec.ddp.get_rank freerec.ddp.get_world_size
+#: freerec.ddp.is_distributed freerec.ddp.is_main_process
+#: freerec.ddp.shared_random_seed of
+msgid "返回类型"
+msgstr ""
+
+#: freerec.ddp.get_rank:1 of
+msgid "Return the rank of the current process in the default process group."
+msgstr ""
+
+#: freerec.ddp.get_local_rank:1 of
+msgid ""
+"Return the rank of the current process within the local (per-machine) "
+"process group."
+msgstr ""
+
+#: ../../api/freerec.ddp.rst freerec.ddp.shared_random_seed of
+msgid "返回"
+msgstr ""
+
+#: freerec.ddp.get_local_rank:3 of
+msgid "The rank of the current process within its machine."
+msgstr ""
+
+#: freerec.ddp.get_local_rank:4 freerec.ddp.get_local_size:4
+#: freerec.ddp.shared_random_seed:5 of
+msgid ":py:class:`int`"
+msgstr ""
+
+#: freerec.ddp.get_local_size:1 of
+msgid "Return the number of processes on the current machine."
+msgstr ""
+
+#: freerec.ddp.get_local_size:3 of
+msgid "The size of the per-machine process group."
+msgstr ""
+
+#: freerec.ddp.is_distributed:1 of
+msgid ""
+"Check whether the current environment is configured for distributed "
+"training."
+msgstr ""
+
+#: freerec.ddp.is_main_process:1 of
+msgid "Check whether the current process is the main process (rank 0)."
+msgstr ""
+
+#: freerec.ddp.main_process_only:1 of
+msgid "Decorator that restricts execution to the main process only."
+msgstr ""
+
+#: ../../api/freerec.ddp.rst
+msgid "参数"
+msgstr ""
+
+#: freerec.ddp.main_process_only:3 of
+msgid "The function to wrap."
+msgstr ""
+
+#: freerec.ddp.main_process_only:6 of
+msgid "A wrapper that calls *func* only when :func:`is_main_process` is ``True``."
+msgstr ""
+
+#: freerec.ddp.main_process_only:7 of
+msgid ":py:class:`callable`"
+msgstr ""
+
+#: freerec.ddp.synchronize:1 of
+msgid "Synchronize (barrier) among all processes in distributed training."
+msgstr ""
+
+#: freerec.ddp.all_gather:1 of
+msgid "Run all-gather on arbitrary picklable data (not necessarily tensors)."
+msgstr ""
+
+#: freerec.ddp.all_gather:3 freerec.ddp.gather:3 of
+msgid "Any picklable object."
+msgstr ""
+
+#: freerec.ddp.all_gather:5 freerec.ddp.gather:7 of
+msgid ""
+"A torch process group. By default, uses a group which contains all ranks "
+"on the gloo backend."
+msgstr ""
+
+#: freerec.ddp.all_gather:9 of
+msgid "List of data gathered from each rank."
+msgstr ""
+
+#: freerec.ddp.all_gather:10 freerec.ddp.gather:13 of
+msgid ":py:class:`list[T]`"
+msgstr ""
+
+#: freerec.ddp.gather:1 of
+msgid "Run gather on arbitrary picklable data (not necessarily tensors)."
+msgstr ""
+
+#: freerec.ddp.gather:5 of
+msgid "Destination rank. Default is ``0``."
+msgstr ""
+
+#: freerec.ddp.gather:11 of
+msgid ""
+"On *dst*, a list of data gathered from each rank. Otherwise, an empty "
+"list."
+msgstr ""
+
+#: freerec.ddp.shared_random_seed:1 of
+msgid "Generate a random seed that is identical across all workers."
+msgstr ""
+
+#: freerec.ddp.shared_random_seed:3 of
+msgid ""
+"A random number that is the same across all workers. If workers need a "
+"shared RNG, they can use this shared seed to create one."
+msgstr ""
+
+#: freerec.ddp.shared_random_seed:8 of
+msgid "备注"
+msgstr ""
+
+#: freerec.ddp.shared_random_seed:9 of
+msgid "All workers must call this function, otherwise it will deadlock."
+msgstr ""
+
+#: freerec.ddp.reduce_dict:1 of
+msgid ""
+"Reduce the values in a dictionary from all processes so that rank 0 has "
+"the reduced results."
+msgstr ""
+
+#: freerec.ddp.reduce_dict:3 of
+msgid "Inputs to be reduced. Values are not necessarily tensors."
+msgstr ""
+
+#: freerec.ddp.reduce_dict:5 of
+msgid ""
+"Whether to average (``True``) or sum (``False``) the values. Default is "
+"``True``."
+msgstr ""
+
+#: freerec.ddp.reduce_dict:9 of
+msgid "A dict with the same keys as *input_dict*, after reduction."
+msgstr ""
+
+#: freerec.ddp.reduce_dict:10 of
+msgid ":py:class:`dict`"
+msgstr ""
+

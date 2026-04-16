@@ -1,0 +1,524 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 18:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../api/freerec.launcher.rst:2
+msgid "freerec.launcher"
+msgstr ""
+
+#: freerec.launcher.ChiefCoach:1 of
+msgid "Top-level class for running training and evaluation loops."
+msgstr ""
+
+#: ../../api/freerec.launcher.rst freerec.launcher.Adapter.deploy_params
+#: freerec.launcher.Adapter.get_option freerec.launcher.Adapter.load_best
+#: freerec.launcher.Adapter.poll freerec.launcher.Adapter.run
+#: freerec.launcher.Adapter.save_checkpoint freerec.launcher.Adapter.terminate
+#: freerec.launcher.Adapter.wait freerec.launcher.Adapter.write
+#: freerec.launcher.ChiefCoach.__init__ freerec.launcher.ChiefCoach.set_model
+#: freerec.launcher.ChiefCoach.set_monitors
+#: freerec.launcher.Coach.dict_to_device of
+msgid "参数"
+msgstr ""
+
+#: freerec.launcher.ChiefCoach:3 of
+msgid "The original dataset."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach:5 of
+msgid "Data pipeline for training data."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach:7 of
+msgid "Data pipeline for validation data."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach:9 of
+msgid ""
+"Data pipeline for testing data. If ``None``, ``validpipe`` is used "
+"instead."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach:12 of
+msgid "Model for training and evaluation."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach:14 of
+msgid "Runtime configuration."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.__init__:1 of
+msgid "Initialize ChiefCoach."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.set_device:1 of
+msgid "Set the computation device."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.set_dataset:1 of
+msgid "Set the dataset and extract common field references."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.set_dataset:3 of
+msgid "The recommendation dataset."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.set_datapipe:1 of
+msgid "Set the train, validation, and test data pipelines."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.set_model:1 of
+msgid "Move the model to the target device and wrap with DDP if distributed."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.set_optimizer:1 of
+msgid "Create the optimizer based on ``cfg.optimizer``."
+msgstr ""
+
+#: ../../api/freerec.launcher.rst
+msgid "抛出"
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.set_optimizer:3 of
+msgid ""
+"If the optimizer name is not one of ``'sgd'``, ``'adam'``,     or "
+"``'adamw'``."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.set_lr_scheduler:1 of
+msgid "Set the learning rate scheduler. Override to use a real scheduler."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.set_dataloader:1 of
+msgid ""
+"Create :class:`torchdata.dataloader2.DataLoader2` instances for train, "
+"valid, and test."
+msgstr ""
+
+#: ../../api/freerec.launcher.rst freerec.launcher.Adapter.__init__
+#: freerec.launcher.Adapter.get_option freerec.launcher.Adapter.save_checkpoint
+#: freerec.launcher.ChiefCoach.set_dataloader
+#: freerec.launcher.Coach.dict_to_device freerec.launcher.Coach.load_best
+#: freerec.launcher.Coach.save_best of
+msgid "返回类型"
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.set_other:1 of
+msgid "Hook for additional setup. Override in subclasses."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.get_res_sys_arch:1 of
+msgid ""
+"Unwrap the underlying :class:`~freerec.models.RecSysArch` from DDP or "
+"DataParallel."
+msgstr ""
+
+#: ../../api/freerec.launcher.rst freerec.launcher.Adapter.get_option of
+msgid "返回"
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.get_res_sys_arch:3 of
+msgid "The unwrapped model."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.get_res_sys_arch:4 of
+msgid ":class:`~freerec.models.RecSysArch`"
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.fields:1 of
+msgid "The dataset fields."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.mode:1 of
+msgid "The current mode (``'train'``, ``'valid'``, or ``'test'``)."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.dataloader:1 of
+msgid "The dataloader for the current mode."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.shutdown:1 of
+msgid "Shutdown all dataloaders."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.train_per_epoch:1 of
+msgid "Run one training epoch. Must be implemented by subclasses."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.evaluate:3
+#: freerec.launcher.ChiefCoach.train_per_epoch:3
+#: freerec.launcher.Coach.check_best:3 freerec.launcher.Coach.evaluate:3
+#: freerec.launcher.Coach.save_checkpoint:3 freerec.launcher.Coach.step:3
+#: freerec.utils.timemeter.<locals>.wrapper:3 of
+msgid "The current epoch number."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.evaluate:1 of
+msgid "Run evaluation. Must be implemented by subclasses."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.evaluate:5 freerec.launcher.Coach.step:5 of
+msgid "The step number within the epoch, by default -1."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.evaluate:7 freerec.launcher.Coach.evaluate:7 of
+msgid "One of ``'valid'`` or ``'test'``, by default ``'valid'``."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.register_metric:1 of
+msgid "Register a custom metric."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.register_metric:3 of
+msgid ""
+"The full metric name, e.g. ``'NDCG@10'``. The ``@`` separator indicates "
+"``metric@k``; in this case ``func`` must accept a ``k`` argument."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.register_metric:7 of
+msgid "The metric function."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.register_metric:9 of
+msgid "The display format string, by default ``'.4f'``."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.register_metric:11 of
+msgid ""
+"Either ``max`` or ``min``, indicating whether higher or lower values are "
+"better, by default ``max``."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.register_metric:14 of
+msgid "Additional keyword arguments forwarded to ``func``."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.monitors:1 of
+msgid "The :class:`~freerec.utils.Monitor` dictionary keyed by mode."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.set_monitors:1 of
+msgid "Initialize monitors for all modes."
+msgstr ""
+
+#: freerec.launcher.ChiefCoach.set_monitors:3 of
+msgid ""
+"Metric names to monitor (e.g. ``['RECALL@10', 'NDCG@20']``). ``'LOSS'`` "
+"is always included automatically."
+msgstr ""
+
+#: freerec.launcher.Adapter:7 freerec.launcher.Adapter.get_option:11
+#: freerec.launcher.ChiefCoach.set_monitors:8 of
+msgid "示例"
+msgstr ""
+
+#: freerec.launcher.Coach:1 of
+msgid ""
+"Concrete training coach with checkpointing, early stopping, and "
+"evaluation."
+msgstr ""
+
+#: freerec.launcher.Coach:3 of
+msgid ""
+"Inherits from :class:`ChiefCoach` and implements the full training loop "
+"including model saving/loading, checkpoint management, early stopping, "
+"and summary generation."
+msgstr ""
+
+#: freerec.launcher.Coach.meter4best:1 of
+msgid "The :class:`~freerec.utils.AverageMeter` used for best-model selection."
+msgstr ""
+
+#: freerec.launcher.Coach.remove_seen:1 of
+msgid "Whether to remove seen items during full-ranking evaluation."
+msgstr ""
+
+#: freerec.launcher.Coach.save:1 of
+msgid "Save the model state dict to ``LOG_PATH``."
+msgstr ""
+
+#: freerec.launcher.Coach.save:3 of
+msgid "Target filename. If ``None``, uses ``cfg.SAVED_FILENAME``."
+msgstr ""
+
+#: freerec.launcher.Coach.load:1 of
+msgid "Load model state dict from disk."
+msgstr ""
+
+#: freerec.launcher.Coach.load:3 of
+msgid "Directory containing the model file."
+msgstr ""
+
+#: freerec.launcher.Coach.load:5 of
+msgid "Model filename. If ``None``, uses ``cfg.SAVED_FILENAME``."
+msgstr ""
+
+#: freerec.launcher.Coach.save_checkpoint:1 of
+msgid "Save a training checkpoint at the given epoch."
+msgstr ""
+
+#: freerec.launcher.Coach.load_checkpoint:1 of
+msgid "Load the last saved checkpoint."
+msgstr ""
+
+#: freerec.launcher.Coach.load_checkpoint:3 of
+msgid "The epoch number stored in the checkpoint."
+msgstr ""
+
+#: freerec.launcher.Coach.load_checkpoint:4 freerec.launcher.Coach.resume:4 of
+msgid ":py:class:`int`"
+msgstr ""
+
+#: freerec.launcher.Coach.resume:1 of
+msgid "Resume training from the last checkpoint if ``cfg.resume`` is set."
+msgstr ""
+
+#: freerec.launcher.Coach.resume:3 of
+msgid "The epoch number to resume from (0 if not resuming)."
+msgstr ""
+
+#: freerec.launcher.Coach.save_best:1 of
+msgid "Save the current model as the best model."
+msgstr ""
+
+#: freerec.launcher.Coach.load_best:1 of
+msgid "Load the best saved model."
+msgstr ""
+
+#: freerec.launcher.Coach.check_best:1 of
+msgid "Check if the current metric is the best and update accordingly."
+msgstr ""
+
+#: freerec.launcher.Coach.check_best:5 of
+msgid "The current step number, by default -1."
+msgstr ""
+
+#: freerec.launcher.Coach.check_best:8 of
+msgid "If the early stopping patience is exceeded."
+msgstr ""
+
+#: freerec.launcher.Coach.eval_at_best:1 of
+msgid "Load the best model and run validation and test evaluation."
+msgstr ""
+
+#: freerec.ddp.main_process_only.<locals>.wrapper:1 of
+msgid "Execute the function only on the main process."
+msgstr ""
+
+#: freerec.launcher.Coach.monitor:1 of
+msgid "Feed data values into the metric monitors."
+msgstr ""
+
+#: freerec.launcher.Coach.monitor:3 of
+msgid "Data values passed to each metric function."
+msgstr ""
+
+#: freerec.launcher.Coach.monitor:4 of
+msgid "The batch size, by default 1."
+msgstr ""
+
+#: freerec.launcher.Coach.monitor:6 of
+msgid "Reduction method: ``'sum'`` or ``'mean'``, by default ``'mean'``."
+msgstr ""
+
+#: freerec.launcher.Coach.monitor:8 of
+msgid "One of ``'train'``, ``'valid'``, or ``'test'``, by default ``'train'``."
+msgstr ""
+
+#: freerec.launcher.Coach.monitor:10 of
+msgid "Metric names to update. If ``None``, all metrics in ``mode`` are updated."
+msgstr ""
+
+#: freerec.launcher.Coach.monitor:12 of
+msgid ""
+"If ``True``, immediately step the meter (results will not be printed), by"
+" default ``False``."
+msgstr ""
+
+#: freerec.launcher.Coach.step:1 of
+msgid "Print metrics and reset all active meters."
+msgstr ""
+
+#: freerec.launcher.Coach.dict_to_device:1 of
+msgid "Move all :class:`torch.Tensor` values in a dict to the target device."
+msgstr ""
+
+#: freerec.launcher.Coach.evaluate:1 of
+msgid "Run evaluation over the current dataloader and update monitors."
+msgstr ""
+
+#: freerec.launcher.Coach.evaluate:5 of
+msgid "The step number, by default -1."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:1 of
+msgid "Run one training epoch and print metrics."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:1 of
+msgid "Run validation, check for best model, and print metrics."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:1 of
+msgid "Run test evaluation and print metrics."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:1 of
+msgid "Run the full training loop with evaluation, early stopping, and summary."
+msgstr ""
+
+#: freerec.launcher.Adapter:1 of
+msgid "Hyperparameter grid-search tuner."
+msgstr ""
+
+#: freerec.launcher.Adapter:3 of
+msgid ""
+"Manages multi-device subprocess-based grid search over hyperparameters, "
+"writing results to TensorBoard for comparison."
+msgstr ""
+
+#: freerec.launcher.Adapter.__init__:1 of
+msgid "Initialize Adapter."
+msgstr ""
+
+#: freerec.launcher.Adapter.COMMAND:1 of
+msgid "The base shell command template."
+msgstr ""
+
+#: freerec.launcher.Adapter.register:1 of
+msgid "Register a new experiment run on the given device."
+msgstr ""
+
+#: freerec.launcher.Adapter.register:3 of
+msgid "The device identifier for this run."
+msgstr ""
+
+#: freerec.launcher.Adapter.register:6 of
+msgid "``(command, id, log_path)`` for the registered run."
+msgstr ""
+
+#: freerec.launcher.Adapter.register:7 of
+msgid ":py:class:`tuple` of :py:class:`(str`, :py:class:`str`, :py:class:`str)`"
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:1 of
+msgid "Configure the command, environments, and parameter grid."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:3 of
+msgid ""
+"Configuration containing ``COMMAND``, ``ENVS``, ``PARAMS``, and "
+"``DEFAULTS``."
+msgstr ""
+
+#: freerec.launcher.Adapter.deploy_params:1 of
+msgid "Register a parameter and its candidate values for grid search."
+msgstr ""
+
+#: freerec.launcher.Adapter.get_option:1 of
+msgid "Convert a key-value pair to a CLI option string."
+msgstr ""
+
+#: freerec.launcher.Adapter.get_option:3 of
+msgid "The parameter name. Underscores are replaced by hyphens."
+msgstr ""
+
+#: freerec.launcher.Adapter.get_option:5 of
+msgid "The parameter value."
+msgstr ""
+
+#: freerec.launcher.Adapter.get_option:7 of
+msgid "A string in the form ``' --key=val'``."
+msgstr ""
+
+#: freerec.launcher.Adapter.get_option:8 of
+msgid ":py:class:`str`"
+msgstr ""
+
+#: freerec.launcher.Adapter.load_best:1 of
+msgid "Load the best results pickle from a subprocess log directory."
+msgstr ""
+
+#: freerec.launcher.Adapter.write:1 of
+msgid "Write experiment results to TensorBoard."
+msgstr ""
+
+#: freerec.launcher.Adapter.write:3 of
+msgid "Experiment ID."
+msgstr ""
+
+#: freerec.launcher.Adapter.write:5 of
+msgid "Path to the experiment logs."
+msgstr ""
+
+#: freerec.launcher.Adapter.write:7 of
+msgid "Hyperparameter configuration of the experiment."
+msgstr ""
+
+#: freerec.launcher.Adapter.write:11 of
+msgid "备注"
+msgstr ""
+
+#: freerec.launcher.Adapter.write:12 of
+msgid ""
+"A value of ``-1`` in TensorBoard indicates a non-numeric metric value "
+"that could not be recorded."
+msgstr ""
+
+#: freerec.launcher.Adapter.each_grid:1 of
+msgid "Yield parameter dicts for exclusive (one-at-a-time) grid search."
+msgstr ""
+
+#: freerec.launcher.Adapter.product_grid:1 of
+msgid "Yield parameter dicts for full Cartesian-product grid search."
+msgstr ""
+
+#: freerec.launcher.Adapter.save_checkpoint:1 of
+msgid "Save remaining parameter combinations to a checkpoint."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:1 of
+msgid "Load remaining parameter combinations from a checkpoint."
+msgstr ""
+
+#: freerec.launcher.Adapter.resume:1 of
+msgid "Resume grid search from the last checkpoint or start fresh."
+msgstr ""
+
+#: freerec.launcher.Adapter.run:1 of
+msgid "Launch a training subprocess with the given parameters."
+msgstr ""
+
+#: freerec.launcher.Adapter.wait:1 of
+msgid "Block until all running subprocesses terminate."
+msgstr ""
+
+#: freerec.launcher.Adapter.poll:1 of
+msgid "Poll until any subprocess terminates, then return its slot index."
+msgstr ""
+
+#: freerec.launcher.Adapter.terminate:1 of
+msgid "Terminate all running subprocesses and exit."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:1 of
+msgid "Run the full grid search loop across all devices."
+msgstr ""
+

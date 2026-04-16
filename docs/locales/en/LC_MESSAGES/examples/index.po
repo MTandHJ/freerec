@@ -1,0 +1,48 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 11:32+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../examples/index.rst:2
+msgid "模型示例"
+msgstr "Model Examples"
+
+#: ../../examples/index.rst:4
+msgid "以下示例展示了如何使用 FreeRec 实现常见的推荐模型。 每个模型均提供完整的训练代码和配置文件，可直接运行。"
+msgstr "The following examples demonstrate how to implement common recommendation models using FreeRec. Each model comes with complete training code and configuration files, ready to run."
+
+#: ../../examples/index.rst:7
+msgid "**序列推荐：**"
+msgstr "**Sequential Recommendation:**"
+
+#: ../../examples/index.rst:16
+msgid "**协同过滤：**"
+msgstr "**Collaborative Filtering:**"
+
+#: ../../examples/index.rst:24
+msgid "**点击率预测：**"
+msgstr "**Click-Through Rate Prediction:**"
+
+#: ../../examples/index.rst:32
+msgid "通用用法"
+msgstr "General Usage"
+
+#: ../../examples/index.rst:34
+msgid "大多数示例的运行方式相同："
+msgstr "Most examples are run in the same way:"

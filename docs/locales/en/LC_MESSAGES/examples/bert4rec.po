@@ -1,0 +1,36 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 11:32+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../examples/bert4rec.rst:2
+msgid "BERT4Rec"
+msgstr ""
+
+#: ../../examples/bert4rec.rst:4
+msgid "**BERT-based Sequential Recommendation**"
+msgstr ""
+
+#: ../../examples/bert4rec.rst:6
+msgid "采用双向 Transformer 编码器和 Masked Item Prediction 任务进行序列推荐。"
+msgstr "Uses a bidirectional Transformer encoder with a Masked Item Prediction task for sequential recommendation."
+
+#: ../../examples/bert4rec.rst:9
+msgid "用法"
+msgstr "Usage"

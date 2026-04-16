@@ -1,0 +1,97 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 18:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../index.rst:33
+msgid "入门"
+msgstr "Getting Started"
+
+#: ../../index.rst:40
+msgid "教程"
+msgstr "Tutorials"
+
+#: ../../index.rst:46
+msgid "API 参考"
+msgstr "API Reference"
+
+#: ../../index.rst:2
+msgid "FreeRec"
+msgstr ""
+
+#: ../../index.rst:4
+msgid "FreeRec 是一个基于 PyTorch 的推荐系统库，提供从数据预处理到模型训练的全流程支持。"
+msgstr ""
+"FreeRec is a PyTorch-based recommendation system library that provides "
+"end-to-end support from data preprocessing to model training."
+
+#: ../../index.rst:11
+msgid "核心特性"
+msgstr "Key Features"
+
+#: ../../index.rst:13
+msgid "**数据处理流水线** — 内置 30+ 公开数据集，一键完成拆分与过滤"
+msgstr ""
+"**Data Processing Pipeline** -- Built-in 30+ public datasets with one-"
+"command splitting and filtering"
+
+#: ../../index.rst:14
+msgid "**模型架构基类** — 通用推荐、序列推荐、评分预测等基类，快速搭建模型"
+msgstr ""
+"**Model Architecture Base Classes** -- Base classes for general "
+"recommendation, sequential recommendation, rating prediction, etc., "
+"enabling rapid model development"
+
+#: ../../index.rst:15
+msgid "**丰富的评估指标** — Precision、Recall、NDCG、AUC 等 20+ 指标"
+msgstr ""
+"**Rich Evaluation Metrics** -- 20+ metrics including Precision, Recall, "
+"NDCG, AUC, and more"
+
+#: ../../index.rst:16
+msgid "**灵活的训练框架** — YAML 配置驱动，支持分布式训练与超参搜索"
+msgstr ""
+"**Flexible Training Framework** -- YAML configuration-driven, with "
+"support for distributed training and hyperparameter search"
+
+#: ../../index.rst:17
+msgid "**可选图神经网络** — 集成 PyG，支持图推荐模型（如 LightGCN）"
+msgstr ""
+"**Optional Graph Neural Networks** -- Integrated with PyG, supporting "
+"graph-based recommendation models (e.g., LightGCN)"
+
+#: ../../index.rst:20
+msgid "数据流水线"
+msgstr "Data Pipeline"
+
+#: ../../index.rst:22
+msgid "Data Pipeline"
+msgstr ""
+
+#: ../../index.rst:27
+msgid "训练流程"
+msgstr "Training Pipeline"
+
+#: ../../index.rst:29
+msgid "Training Flow"
+msgstr ""
+
+#~ msgid "示例"
+#~ msgstr "Examples"
+

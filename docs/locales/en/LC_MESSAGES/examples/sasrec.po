@@ -1,0 +1,48 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 11:32+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../examples/sasrec.rst:2
+msgid "SASRec"
+msgstr ""
+
+#: ../../examples/sasrec.rst:4
+msgid "**Self-Attentive Sequential Recommendation**"
+msgstr ""
+
+#: ../../examples/sasrec.rst:6
+msgid "基于自注意力机制的序列推荐模型，通过 Transformer 编码器捕捉用户行为序列中的长短期依赖关系。"
+msgstr "A self-attention-based sequential recommendation model that captures long- and short-term dependencies in user behavior sequences through a Transformer encoder."
+
+#: ../../examples/sasrec.rst:9
+msgid "用法"
+msgstr "Usage"
+
+#: ../../examples/sasrec.rst:20
+msgid "配置示例"
+msgstr "Configuration Example"
+
+#: ../../examples/sasrec.rst:42
+msgid ""
+"模型继承自 :class:`~freerec.models.base.SeqRecArch`，使用 "
+":class:`~freerec.launcher.Coach` 管理训练流程。"
+msgstr ""
+"The model inherits from :class:`~freerec.models.base.SeqRecArch` and uses "
+":class:`~freerec.launcher.Coach` to manage the training pipeline."

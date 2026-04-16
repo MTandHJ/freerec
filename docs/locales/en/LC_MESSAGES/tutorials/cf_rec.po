@@ -1,0 +1,112 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 18:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../tutorials/cf_rec.rst:2
+msgid "协同过滤"
+msgstr "Collaborative Filtering"
+
+#: ../../tutorials/cf_rec.rst:4
+msgid ""
+"协同过滤模型基于用户-物品交互矩阵进行推荐，不依赖序列信息。 FreeRec 中的协同过滤模型继承自 "
+":class:`~freerec.models.base.GenRecArch`。"
+msgstr ""
+"Collaborative filtering models make recommendations based on the user-item interaction matrix without relying on sequential information. "
+"Collaborative filtering models in FreeRec inherit from :class:`~freerec.models.base.GenRecArch`."
+
+#: ../../tutorials/cf_rec.rst:8
+msgid "MF-BPR"
+msgstr ""
+
+#: ../../tutorials/cf_rec.rst:10
+msgid ""
+"**Matrix Factorization with Bayesian Personalized Ranking** — 经典的矩阵分解模型， "
+"使用 BPR 损失函数优化隐式反馈推荐的 pairwise 排序。"
+msgstr ""
+"**Matrix Factorization with Bayesian Personalized Ranking** -- A classic matrix factorization model "
+"that uses the BPR loss function to optimize pairwise ranking for implicit feedback recommendation."
+
+#: ../../tutorials/cf_rec.rst:17
+msgid "examples/MF-BPR/main.py"
+msgstr ""
+
+#: ../../tutorials/cf_rec.rst:22 ../../tutorials/cf_rec.rst:48
+msgid "**代码要点：**"
+msgstr "**Code Highlights:**"
+
+#: ../../tutorials/cf_rec.rst:24
+msgid "**模型结构** ：用户和物品各一个 Embedding 层，直接内积计算相似度"
+msgstr "**Model Architecture**: One Embedding layer each for users and items; similarity is computed via dot product"
+
+#: ../../tutorials/cf_rec.rst:25
+msgid "**训练管道** ：``choiced_user_ids_source`` 随机采样用户 → 正样本采样 → 负样本采样"
+msgstr "**Training Pipeline**: ``choiced_user_ids_source`` randomly samples users -> positive sample sampling -> negative sample sampling"
+
+#: ../../tutorials/cf_rec.rst:26
+msgid "**排序缓存** ：``reset_ranking_buffers`` 在评估前预计算所有嵌入，避免重复计算"
+msgstr "**Ranking Buffer**: ``reset_ranking_buffers`` precomputes all embeddings before evaluation to avoid redundant computation"
+
+#: ../../tutorials/cf_rec.rst:27
+msgid "**损失函数** ：BPR Loss，优化正样本得分高于负样本"
+msgstr "**Loss Function**: BPR Loss, optimizing positive sample scores to be higher than negative samples"
+
+#: ../../tutorials/cf_rec.rst:30
+msgid "LightGCN"
+msgstr ""
+
+#: ../../tutorials/cf_rec.rst:32
+msgid ""
+"**Simplifying Graph Convolution Network for Recommendation** — "
+"轻量级图卷积推荐模型， 去除特征变换和非线性激活，仅保留邻域聚合操作。"
+msgstr ""
+"**Simplifying Graph Convolution Network for Recommendation** -- "
+"A lightweight graph convolution recommendation model that removes feature transformation and nonlinear activation, retaining only neighborhood aggregation."
+
+#: ../../tutorials/cf_rec.rst:37
+msgid "需要安装 ``torch-geometric``：``pip install freerec[graph]``"
+msgstr "Requires ``torch-geometric``: ``pip install freerec[graph]``"
+
+#: ../../tutorials/cf_rec.rst:43
+msgid "examples/LightGCN/main.py"
+msgstr ""
+
+#: ../../tutorials/cf_rec.rst:50
+msgid "**图构建** ：``to_normalized_adj`` 从训练集构建对称归一化邻接矩阵，注册为 buffer"
+msgstr "**Graph Construction**: ``to_normalized_adj`` builds a symmetric normalized adjacency matrix from the training set, registered as a buffer"
+
+#: ../../tutorials/cf_rec.rst:51
+msgid "**图卷积** ：``encode`` 方法执行多层邻域聚合，最终嵌入为各层的均值"
+msgstr "**Graph Convolution**: The ``encode`` method performs multi-layer neighborhood aggregation; the final embedding is the mean across all layers"
+
+#: ../../tutorials/cf_rec.rst:52
+msgid ""
+"**双损失** ：``fit`` 返回 ``(rec_loss, emb_loss)``，Coach 中以 ``weight_decay`` "
+"加权合并"
+msgstr ""
+"**Dual Loss**: ``fit`` returns ``(rec_loss, emb_loss)``; combined in the Coach with ``weight_decay`` "
+"weighting"
+
+#: ../../tutorials/cf_rec.rst:53
+msgid ""
+"**自定义 Coach** ：``CoachForLightGCN`` 重写了 ``set_optimizer`` 以禁用 PyTorch 内置 "
+"weight_decay（改由 emb_loss 手动控制正则化）"
+msgstr ""
+"**Custom Coach**: ``CoachForLightGCN`` overrides ``set_optimizer`` to disable PyTorch's built-in "
+"weight_decay (regularization is manually controlled via emb_loss instead)"

@@ -1,0 +1,383 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024, MTandHJ
+# This file is distributed under the same license as the FreeRec package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeRec \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-16 18:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../api/freerec.parser.rst:2
+msgid "freerec.parser"
+msgstr ""
+
+#: freerec.parser.Parser:1 of
+msgid "Configuration parser for recommendation system training."
+msgstr ""
+
+#: freerec.parser.Parser:3 of
+msgid ""
+"Wraps :class:`argparse.ArgumentParser` and :class:`~Config` to manage "
+"command-line arguments, YAML configuration files, and runtime settings "
+"such as device selection, logging, and checkpoint paths."
+msgstr ""
+
+#: freerec.parser.Parser:9 of
+msgid "Filename for saved model parameters."
+msgstr ""
+
+#: freerec.parser.CoreParser freerec.parser.Parser of
+msgid "type"
+msgstr ""
+
+#: freerec.parser.CoreParser:23 freerec.parser.Parser:11
+#: freerec.parser.Parser:17 freerec.parser.Parser:35 freerec.parser.Parser:41
+#: freerec.parser.Parser:47 freerec.parser.Parser:53 freerec.parser.Parser:59
+#: freerec.parser.Parser:65 freerec.parser.Parser:71 freerec.parser.Parser:77
+#: freerec.parser.Parser:89 of
+msgid ":py:class:`str`"
+msgstr ""
+
+#: freerec.parser.Parser:15 of
+msgid "Filename for saved best model parameters."
+msgstr ""
+
+#: freerec.parser.Parser:21 of
+msgid "Frequency of saving checkpoints."
+msgstr ""
+
+#: freerec.parser.Parser:23 of
+msgid ":py:class:`int`"
+msgstr ""
+
+#: freerec.parser.Parser:27 of
+msgid "Modules to save in a checkpoint."
+msgstr ""
+
+#: freerec.parser.Parser:29 freerec.parser.Parser:83 of
+msgid ":py:class:`list`"
+msgstr ""
+
+#: freerec.parser.Parser:33 of
+msgid "Filename of the saved checkpoint."
+msgstr ""
+
+#: freerec.parser.Parser:39 of
+msgid "Filename of the summary."
+msgstr ""
+
+#: freerec.parser.Parser:45 of
+msgid "Filename of the monitor."
+msgstr ""
+
+#: freerec.parser.Parser:51 of
+msgid "Filename of the best monitor."
+msgstr ""
+
+#: freerec.parser.Parser:57 of
+msgid "Directory for saving historical metric information."
+msgstr ""
+
+#: freerec.parser.Parser:63 of
+msgid "Directory for saving final summary information."
+msgstr ""
+
+#: freerec.parser.Parser:69 of
+msgid "Path for saving checkpoints."
+msgstr ""
+
+#: freerec.parser.Parser:75 of
+msgid "Path for saving logging information."
+msgstr ""
+
+#: freerec.parser.Parser:81 of
+msgid "List of metric names to monitor."
+msgstr ""
+
+#: freerec.parser.Parser:87 of
+msgid "Metric name used for selecting the best model."
+msgstr ""
+
+#: freerec.parser.Parser.__init__:1 of
+msgid "Initialize Parser with default CONFIG and parse arguments."
+msgstr ""
+
+#: ../../api/freerec.parser.rst freerec.parser.CoreParser.__init__
+#: freerec.parser.Parser.__init__ of
+msgid "返回类型"
+msgstr ""
+
+#: freerec.ddp.main_process_only.<locals>.wrapper:1 of
+msgid "Execute the function only on the main process."
+msgstr ""
+
+#: freerec.parser.Parser.reset:1 of
+msgid "Reset all configurations to the defaults defined in CONFIG."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:1 of
+msgid ""
+"Register all command-line arguments to the internal "
+":class:`argparse.ArgumentParser`."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:3 of
+msgid ""
+"Registers arguments for data paths, model hyperparameters, training "
+"schedule, evaluation settings, logging, and reproducibility."
+msgstr ""
+
+#: freerec.parser.Parser.add_argument:1 of
+msgid "Add an argument to the internal :class:`argparse.ArgumentParser`."
+msgstr ""
+
+#: ../../api/freerec.parser.rst freerec.parser.Parser.add_argument of
+msgid "参数"
+msgstr ""
+
+#: freerec.parser.Parser.add_argument:3 of
+msgid "The name(s) of the argument."
+msgstr ""
+
+#: freerec.parser.Parser.add_argument:5 of
+msgid ""
+"Additional keyword arguments passed to "
+":meth:`argparse.ArgumentParser.add_argument`."
+msgstr ""
+
+#: freerec.parser.Parser.add_argument:9
+#: freerec.utils.timemeter.<locals>.wrapper:7 of
+msgid "备注"
+msgstr ""
+
+#: freerec.parser.Parser.add_argument:10 of
+msgid ""
+"Any underscore (``_``) in argument names will be replaced by a hyphen "
+"(``-``)."
+msgstr ""
+
+#: freerec.parser.Parser.set_defaults:1 of
+msgid "Set default values for registered arguments."
+msgstr ""
+
+#: freerec.parser.Parser.set_defaults:3 of
+msgid "Keyword arguments mapping argument names to their default values."
+msgstr ""
+
+#: freerec.parser.Parser.set_device:1 of
+msgid "Set the computation device and configure color output."
+msgstr ""
+
+#: freerec.parser.Parser.set_device:3 of
+msgid "The target device identifier."
+msgstr ""
+
+#: ../../api/freerec.parser.rst
+msgid "返回"
+msgstr ""
+
+#: freerec.parser.Parser.set_device:6 of
+msgid "The resolved device identifier."
+msgstr ""
+
+#: freerec.parser.Parser.set_device:7 of
+msgid ":py:class:`device`"
+msgstr ""
+
+#: freerec.parser.Parser.init_ddp:1 of
+msgid "Initialize Distributed Data Parallel (DDP) if running in distributed mode."
+msgstr ""
+
+#: freerec.parser.Parser.set_tasktag:1 of
+msgid ""
+"Convert the ``tasktag`` string to a :class:`~freerec.data.tags.TaskTags` "
+"enum."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:1 of
+msgid "Load and merge settings from a YAML configuration file."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:3 of
+msgid ""
+"Parses command-line arguments first, then overlays values from the YAML "
+"file specified by ``--config`` if provided."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:6 of
+msgid "The parsed arguments with defaults overwritten by the config file."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:7 of
+msgid ":class:`argparse.Namespace`"
+msgstr ""
+
+#: ../../api/freerec.parser.rst
+msgid "抛出"
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:9 of
+msgid "If a parameter key in the config file is not recognized."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:1 of
+msgid "Compile the full runtime configuration."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:3 of
+msgid "Performs the following steps in order:"
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:5 of
+msgid "Load settings from a YAML file if ``--config`` is specified."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:6 of
+msgid "Generate ``CHECKPOINT_PATH`` and ``LOG_PATH`` from templates."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:7 of
+msgid "Initialize DDP if running in distributed mode."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:8 of
+msgid "Configure device, logger, random seed, and benchmark mode."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:9 of
+msgid "Write README.md under both ``CHECKPOINT_PATH`` and ``LOG_PATH``."
+msgstr ""
+
+#: freerec.parser.CoreParser:1 of
+msgid "Configuration parser for hyperparameter grid search (tuning)."
+msgstr ""
+
+#: freerec.parser.CoreParser:3 of
+msgid ""
+"Extends :class:`~Config` to manage environment variables, parameter "
+"grids, and default values for launching multiple training subprocesses."
+msgstr ""
+
+#: freerec.parser.CoreParser:8 of
+msgid ""
+"Names of environment-level arguments that can be overridden from the "
+"command line."
+msgstr ""
+
+#: freerec.parser.CoreParser:11 of
+msgid ":py:class:`tuple`"
+msgstr ""
+
+#: freerec.parser.CoreParser:15 of
+msgid "If ``True``, run grid search entries one by one."
+msgstr ""
+
+#: freerec.parser.CoreParser:17 of
+msgid ":py:class:`bool`"
+msgstr ""
+
+#: freerec.parser.CoreParser:21 of
+msgid "The shell command template for each subprocess."
+msgstr ""
+
+#: freerec.parser.CoreParser:27 of
+msgid "Environment variables shared across all subprocesses."
+msgstr ""
+
+#: freerec.parser.CoreParser:29 freerec.parser.CoreParser:35
+#: freerec.parser.CoreParser:41 of
+msgid ":class:`~Config`"
+msgstr ""
+
+#: freerec.parser.CoreParser:33 of
+msgid "Parameter grid for hyperparameter search."
+msgstr ""
+
+#: freerec.parser.CoreParser:39 of
+msgid "Default parameter values used when ``EXCLUSIVE`` is ``True``."
+msgstr ""
+
+#: freerec.parser.CoreParser.__init__:1 of
+msgid "Initialize CoreParser with default CORE_CONFIG."
+msgstr ""
+
+#: freerec.parser.CoreParser.check:1 of
+msgid "Validate the loaded configuration."
+msgstr ""
+
+#: freerec.parser.CoreParser.check:3 of
+msgid "If ``COMMAND`` is not specified."
+msgstr ""
+
+#: freerec.parser.CoreParser.check:4 of
+msgid ""
+"If required environment variables (``root``, ``dataset``,     ``device``)"
+" are missing from ``ENVS``."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:1 of
+msgid "Load settings from a YAML configuration file."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:3 of
+msgid ""
+"The parsed command-line arguments containing ``config``, ``exclusive``, "
+"``resume``, and environment overrides."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:1 of
+msgid "Compile the full tuning configuration."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:3 of
+msgid "The parsed command-line arguments."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:8 of
+msgid "Performs the following steps:"
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:10 of
+msgid "Load parameter grid from a YAML file."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:11 of
+msgid "Validate the configuration via :meth:`check`."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:12 of
+msgid "Generate ``CORE_CHECKPOINT_PATH`` and ``CORE_LOG_PATH``."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:13 of
+msgid "Configure the logger."
+msgstr ""
+
+#: freerec.utils.timemeter.<locals>.wrapper:14 of
+msgid "Write README.md under ``CORE_LOG_PATH``."
+msgstr ""
+
+#: freerec.parser.CoreParser.readme:1 of
+msgid "Write a README.md file with environment, parameter, and default settings."
+msgstr ""
+
+#: freerec.parser.CoreParser.readme:3 of
+msgid "The directory to write the README.md file into."
+msgstr ""
+
+#: freerec.parser.CoreParser.readme:5 of
+msgid "The file opening mode, by default ``\"w\"``."
+msgstr ""
+
