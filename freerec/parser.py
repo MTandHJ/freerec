@@ -40,7 +40,7 @@ LOG_PATH : str
 CORE_CHECKPOINT_PATH : str
     Path for tuning.
 CORE_LOG_PATH : str
-    Path for tuning logging.
+    Path for tuning logging and aggregated results (``results.json``).
 TIME : str
     A string representation of time in the format of "%m%d%H%M%S".
 CONFIG : Config
@@ -67,6 +67,8 @@ MONITOR_FILENAME : str
     The filename of the monitor.
 MONITOR_BEST_FILENAME : str
     The filename of the best monitor.
+RESULTS_FILENAME : str
+    The filename of the aggregated tuning results JSON (saved under ``CORE_LOG_PATH``).
 description : str
     The description of the recommender system.
 EXCLUSIVE : bool
@@ -99,6 +101,7 @@ CONFIG = Config(
     SUMMARY_FILENAME="SUMMARY.md",
     MONITOR_FILENAME="monitors.pkl",
     MONITOR_BEST_FILENAME="best.pkl",
+    RESULTS_FILENAME="results.json",
     # monitors
     monitors=[],
     which4best="LOSS",
@@ -107,6 +110,7 @@ CONFIG = Config(
 CORE_CONFIG = Config(
     MONITOR_BEST_FILENAME=CONFIG.MONITOR_BEST_FILENAME,
     CHECKPOINT_FILENAME=CONFIG.CHECKPOINT_FILENAME,
+    RESULTS_FILENAME=CONFIG.RESULTS_FILENAME,
     EXCLUSIVE=False,
     COMMAND=None,
     ENVS=dict(),

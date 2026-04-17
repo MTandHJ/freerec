@@ -23,6 +23,11 @@
        ├── trainLOSS.png           # 训练损失曲线
        └── (TensorBoard 事件文件)
 
+   ./logs/{description}/core/          # freerec tune 专用
+   ├── results.json                    # 所有子实验的聚合结果
+   ├── README.md                       # 配置快照
+   └── log.txt                         # 调参协调日志
+
    ./infos/{description}/{dataset}/{device}/
    └── checkpoint.tar              # 训练断点（仅用于 --resume 恢复）
 
@@ -164,3 +169,50 @@ TensorBoard
 .. code-block:: bash
 
    tensorboard --logdir ./logs/{description}
+
+results.json（freerec tune）
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``freerec tune`` 完成每个子实验后，会将参数和指标追加写入
+``logs/{description}/core/results.json``，用于下游 leaderboard 聚合。
+
+.. code-block:: json
+
+   {
+       "description": "SASRec",
+       "dataset": "Amazon2014Beauty_550_LOU",
+       "timestamp": "2026-04-17T10:30:00",
+       "runs": [
+           {
+               "id": "0417103000",
+               "params": {"seed": 0, "lr": 5e-4, "embedding_dim": 64},
+               "metrics": {
+                   "train": {"LOSS": 0.123},
+                   "valid": {"NDCG@10": 0.456, "HitRate@10": 0.789},
+                   "test":  {"NDCG@10": 0.432, "HitRate@10": 0.765},
+                   "best":  {"NDCG@10": 0.445, "HitRate@10": 0.778}
+               }
+           }
+       ]
+   }
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 75
+
+   * - 字段
+     - 说明
+   * - ``description``
+     - 实验描述
+   * - ``dataset``
+     - 数据集名称
+   * - ``timestamp``
+     - 最近一次写入时间（ISO 8601）
+   * - ``runs[].id``
+     - 子实验 ID（时间戳格式）
+   * - ``runs[].params``
+     - 网格搜索变量（含 seed）
+   * - ``runs[].metrics``
+     - 各模式下的最佳指标（train/valid/test/best）
+
+多次 ``freerec tune`` 的结果会追加到同一文件。

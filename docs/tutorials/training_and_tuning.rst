@@ -114,3 +114,7 @@ FreeRec 使用 YAML 文件管理训练配置。一个典型的配置文件包含
      - 待搜索的超参数及其候选值
    * - ``defaults``
      - 所有运行共享的默认参数
+
+每个子实验完成后，其参数和指标会自动追加到
+``logs/<experiment_name>/core/results.json``，
+格式详情参见 :doc:`output`。

@@ -225,7 +225,8 @@ logs/
 └── [description]/              # Experiment name from --description
     ├── core/                   # Core tuning logs (for hyperparameter tuning)
     │   ├── README.md           # Config summary
-    │   └── log.txt             # Tuning process log
+    │   ├── log.txt             # Tuning process log
+    │   └── results.json        # Aggregated results for all runs
     └── [dataset]/              # Dataset name
         └── [timestamp-id]/     # Individual run logs (MMDDHHMMSS)
             ├── log.txt         # Training log
@@ -255,23 +256,49 @@ logs/
 - `'test'`: Metrics on test set using the **last checkpoint** (final epoch)
 - `'best'`: Metrics on test set using the **best validation checkpoint** (selected by `which4best`)
 
+### AGGREGATED RESULTS FORMAT
+
+`results.json` structure (aggregated across all runs in a tune session):
+```json
+{
+    "description": "SASRec",
+    "dataset": "Amazon2014Beauty_550_LOU",
+    "timestamp": "2026-04-17T10:30:00",
+    "runs": [
+        {
+            "id": "0417103000",
+            "params": {"seed": 0, "lr": 5e-4},
+            "metrics": {
+                "train": {"LOSS": 0.123},
+                "valid": {"NDCG@10": 0.456},
+                "test": {"NDCG@10": 0.432},
+                "best": {"NDCG@10": 0.445}
+            }
+        }
+    ]
+}
+```
+
+Results are appended incrementally as each run completes. Multiple tune sessions
+to the same description will append to the same file.
+
 ### READING RESULTS PROGRAMMATICALLY
 
 ```python
+import json
 import pickle
 from freerec.utils import import_pickle
+
+# Load aggregated results from a tune session
+with open('logs/expName/core/results.json') as f:
+    results = json.load(f)
+for run in results['runs']:
+    print(run['params'], run['metrics']['best'])
 
 # Load best results for a single run
 best = import_pickle('logs/expName/dataset/id/data/best.pkl')
 best_test_ndcg = best['best']['NDCG@10']  # Best test performance
 last_test_ndcg = best['test']['NDCG@10']  # Last epoch test performance
-
-# Compare across multiple runs
-import glob
-results = []
-for run_dir in glob.glob('logs/expName/core/*/'):
-    best = import_pickle(run_dir + 'data/best.pkl')
-    results.append(best['best'])
 ```
 
 ### CODE REFERENCE
@@ -531,17 +558,21 @@ logs/
 └── [ExperimentName]/
     ├── core/
     │   ├── README.md           # Config summary
-    │   └── log.txt             # Tuning coordinator log
+    │   ├── log.txt             # Tuning coordinator log
+    │   └── results.json        # Aggregated results for all runs
     └── [timestamp]/            # Individual runs
         └── ...
 ```
 
-To compare results across runs, read each run's `best.pkl`:
+To compare results across runs, read the aggregated ``results.json``:
 ```python
-import glob
-for run_dir in glob.glob('logs/expName/*'):
-    best = import_pickle(run_dir + '/data/best.pkl')
-    print(f"Run {run_dir}: best_test_ndcg = {best['best']['NDCG@10']}")
+import json
+
+with open('logs/expName/core/results.json') as f:
+    results = json.load(f)
+for run in results['runs']:
+    print(f"Run {run['id']}: params={run['params']}, "
+          f"best_test_ndcg={run['metrics']['best']['NDCG@10']}")
 ```
 
 ### CODE REFERENCE
@@ -742,6 +773,12 @@ self.step(epoch)  # Prints: [Coach] >>> TRAIN @Epoch: 1 >>> LOSS Avg: 0.52341
 | `data/best.pkl` | Best results |
 | `model.pt` | Final weights |
 | `best.pt` | Best weights |
+
+**Tuning-specific outputs** (under ``core/``):
+
+| File | Content |
+|------|---------|
+| `results.json` | Aggregated params and metrics for all runs |
 
 ### EXECUTION FLOW
 

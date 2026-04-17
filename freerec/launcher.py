@@ -1,4 +1,5 @@
 import abc
+import json
 import os
 import signal
 import sys
@@ -963,7 +964,8 @@ class Adapter:
     r"""Hyperparameter grid-search tuner.
 
     Manages multi-device subprocess-based grid search over hyperparameters,
-    writing results to TensorBoard for comparison.
+    writing results to TensorBoard for comparison and to ``results.json``
+    for downstream leaderboard aggregation.
 
     Examples
     --------
@@ -1069,7 +1071,7 @@ class Adapter:
         return import_pickle(file_)
 
     def write(self, id_: str, logPath: str, params: Dict):
-        r"""Write experiment results to TensorBoard.
+        r"""Write experiment results to TensorBoard and ``results.json``.
 
         Parameters
         ----------
@@ -1084,6 +1086,9 @@ class Adapter:
         -----
         A value of ``-1`` in TensorBoard indicates a non-numeric metric
         value that could not be recorded.
+
+        The results are also appended to ``results.json`` under
+        ``CORE_LOG_PATH`` for downstream leaderboard aggregation.
         """
         try:
             data = self.load_best(logPath)
@@ -1098,6 +1103,26 @@ class Adapter:
                     params,
                     metrics,
                 )
+
+            # Append to results.json
+            results_path = os.path.join(
+                self.cfg.CORE_LOG_PATH, self.cfg.RESULTS_FILENAME
+            )
+            if os.path.exists(results_path):
+                with open(results_path, "r", encoding="utf8") as f:
+                    results = json.load(f)
+            else:
+                results = {
+                    "description": self.cfg.ENVS.get("description", ""),
+                    "dataset": self.cfg.ENVS.get("dataset", ""),
+                    "runs": [],
+                }
+            results["timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+            results["runs"].append(
+                {"id": id_, "params": params, "metrics": data}
+            )
+            with open(results_path, "w", encoding="utf8") as f:
+                json.dump(results, f, indent=2)
         except Exception:
             infoLogger(
                 "\033[0;31;47m[Adapter] >>> Unknown errors happen. This is mainly due to abnormal exits of child processes.\033[0m"
