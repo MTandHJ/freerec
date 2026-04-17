@@ -5,8 +5,8 @@ import numpy as np
 import polars as pl
 import torch
 
-from .normalizer import NORMALIZERS
-from .tags import FieldTags
+from freerec.data.normalizer import NORMALIZERS
+from freerec.data.tags import FieldTags
 
 __all__ = ["Field", "FieldTuple", "FieldModule", "FieldModuleList"]
 

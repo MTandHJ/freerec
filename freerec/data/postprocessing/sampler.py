@@ -3,9 +3,9 @@ from typing import Iterable, List, Literal, Optional, Tuple
 
 import torchdata.datapipes as dp
 
-from ...utils import timemeter
-from ..fields import Field
-from ..tags import (
+from freerec.data.fields import Field
+from freerec.data.postprocessing.base import BaseProcessor, PostProcessor
+from freerec.data.tags import (
     ID,
     ITEM,
     MATCHING,
@@ -17,8 +17,8 @@ from ..tags import (
     UNSEEN,
     USER,
 )
-from ..utils import negsamp_vectorized_bsearch
-from .base import BaseProcessor, PostProcessor
+from freerec.data.utils import negsamp_vectorized_bsearch
+from freerec.utils import timemeter
 
 __all__ = [
     "GenTrainPositiveSampler",

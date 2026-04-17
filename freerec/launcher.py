@@ -12,16 +12,16 @@ from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, Tuple
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from .data.datasets import RecDataSet
-from .data.fields import Field, FieldTuple
-from .data.postprocessing import PostProcessor
-from .data.tags import ID, ITEM, LABEL, SEEN, SIZE, UNSEEN, USER
-from .ddp import is_distributed, is_main_process, main_process_only, synchronize
-from .dict2obj import Config
-from .metrics import *
-from .models import RecSysArch
-from .parser import TIME, Parser
-from .utils import (
+from freerec.data.datasets import RecDataSet
+from freerec.data.fields import Field, FieldTuple
+from freerec.data.postprocessing import PostProcessor
+from freerec.data.tags import ID, ITEM, LABEL, SEEN, SIZE, UNSEEN, USER
+from freerec.ddp import is_distributed, is_main_process, main_process_only, synchronize
+from freerec.dict2obj import Config
+from freerec.metrics import *
+from freerec.models import RecSysArch
+from freerec.parser import TIME, Parser
+from freerec.utils import (
     AverageMeter,
     Monitor,
     export_pickle,

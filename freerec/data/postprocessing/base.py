@@ -16,8 +16,8 @@ import torchdata.datapipes as dp
 from torch.utils.data.datapipes.datapipe import IterDataPipe
 from torch.utils.data.graph_settings import get_all_graph_pipes
 
-from ..datasets.base import RecDataSet
-from ..fields import Field, FieldTuple
+from freerec.data.datasets.base import RecDataSet
+from freerec.data.fields import Field, FieldTuple
 
 __all__ = ["BaseProcessor", "Source", "PostProcessor", "SampleMultiplexer"]
 

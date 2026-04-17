@@ -5,9 +5,9 @@ from typing import Iterable, Literal, Mapping, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from ...utils import infoLogger, mkdirs
-from ..tags import ITEM, RATING, TIMESTAMP, USER
-from ..utils import download_from_url, extract_archive
+from freerec.data.tags import ITEM, RATING, TIMESTAMP, USER
+from freerec.data.utils import download_from_url, extract_archive
+from freerec.utils import infoLogger, mkdirs
 
 __all__ = ["AtomicConverter"]
 

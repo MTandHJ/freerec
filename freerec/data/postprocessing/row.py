@@ -4,8 +4,8 @@ from typing import Any, Callable, Dict, Iterable, List
 import numpy as np
 import torchdata.datapipes as dp
 
-from ..fields import Field
-from .base import PostProcessor
+from freerec.data.fields import Field
+from freerec.data.postprocessing.base import PostProcessor
 
 __all__ = [
     "LeftPruningRow",

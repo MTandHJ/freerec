@@ -14,9 +14,9 @@ from typing import (
 import torchdata.datapipes as dp
 from torch.utils.data import DataChunk, default_collate
 
-from ..datasets.base import RecDataSet
-from ..fields import Field, FieldTuple
-from .sampler import NUM_NEGS_FOR_SAMPLE_BASED_RANKING
+from freerec.data.datasets.base import RecDataSet
+from freerec.data.fields import Field, FieldTuple
+from freerec.data.postprocessing.sampler import NUM_NEGS_FOR_SAMPLE_BASED_RANKING
 
 __all__ = ["BaseProcessor", "PostProcessor"]
 

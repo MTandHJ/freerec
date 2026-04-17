@@ -1,4 +1,4 @@
-from .base import MatchingRecDataSet
+from freerec.data.datasets.base import MatchingRecDataSet
 
 
 class MicroLens100K(MatchingRecDataSet):

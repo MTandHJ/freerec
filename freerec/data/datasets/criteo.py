@@ -1,4 +1,4 @@
-from .base import PredictionRecDataSet
+from freerec.data.datasets.base import PredictionRecDataSet
 
 
 class Criteo_x1_BARS(PredictionRecDataSet):

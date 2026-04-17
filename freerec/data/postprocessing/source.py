@@ -3,9 +3,9 @@ from typing import Any, Dict, Iterable
 
 import torchdata.datapipes as dp
 
-from ..datasets.base import RecDataSet
-from ..fields import Field
-from .base import Source
+from freerec.data.datasets.base import RecDataSet
+from freerec.data.fields import Field
+from freerec.data.postprocessing.base import Source
 
 __all__ = [
     "RandomChoicedSource",

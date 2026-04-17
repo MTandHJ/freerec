@@ -1,4 +1,4 @@
-from .base import MatchingRecDataSet, NextItemRecDataSet
+from freerec.data.datasets.base import MatchingRecDataSet, NextItemRecDataSet
 
 # ===================================MatchingRecDataSset===================================
 

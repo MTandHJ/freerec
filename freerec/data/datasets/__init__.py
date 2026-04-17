@@ -1,8 +1,8 @@
-from .allrecipes import (
+from freerec.data.datasets.allrecipes import (
     # Matching (MMSSL)
     Allrecipes_MMSSL,
 )
-from .amazon2014 import (
+from freerec.data.datasets.amazon2014 import (
     # Matching (MMRec)
     Amazon2014Baby_550_MMRec,
     Amazon2014Beauty_500_LOU,
@@ -43,7 +43,7 @@ from .amazon2014 import (
     Amazon2014Toys_550_LOU,
     Amazon2014Video_1000_LOU,
 )
-from .amazon2018 import (
+from freerec.data.datasets.amazon2018 import (
     # NextItem
     Amazon2018Books_550_LOU,
     Amazon2018CDs_550_LOU,
@@ -55,7 +55,7 @@ from .amazon2018 import (
     Amazon2018Tools_550_LOU,
     Amazon2018Toys_550_LOU,
 )
-from .amazon2023 import (
+from freerec.data.datasets.amazon2023 import (
     # Matching
     Amazon2023Baby_554811_ROU,
     Amazon2023Beauty_554811_ROU,
@@ -66,21 +66,21 @@ from .amazon2023 import (
     Amazon2023Toys_554811_ROU,
     Amazon2023Toys_10104811_ROU,
 )
-from .base import (
+from freerec.data.datasets.base import (
     MatchingRecDataSet,
     NextItemRecDataSet,
     PredictionRecDataSet,
     RecDataSet,
 )
-from .criteo import Criteo_x1_BARS  # Prediction
-from .frappe import Frappe_x1_BARS  # Prediction
-from .gowalla import (
+from freerec.data.datasets.criteo import Criteo_x1_BARS  # Prediction
+from freerec.data.datasets.frappe import Frappe_x1_BARS  # Prediction
+from freerec.data.datasets.gowalla import (
     Gowalla2010_10100712_ROU,
     # Matching
     Gowalla2010_10100811_ROU,
 )
-from .microlens import MicroLens100K  # Matching
-from .movielens import (
+from freerec.data.datasets.microlens import MicroLens100K  # Matching
+from freerec.data.datasets.movielens import (
     MovieLens1M_500_LOU,
     MovieLens1M_550_LOU,
     MovieLens1M_10101712_ROU,
@@ -100,14 +100,14 @@ from .movielens import (
     # Matching
     MovieLens100K_10101811_ROU,
 )
-from .steam import Steam_550_LOU  # NextItem
-from .tiktok import (
+from freerec.data.datasets.steam import Steam_550_LOU  # NextItem
+from freerec.data.datasets.tiktok import (
     # Matching (MMGCN)
     Tiktok_000811_RAU,
     # Matching (MMSSL)
     Tiktok_MMSSL,
 )
-from .yelp import (
+from freerec.data.datasets.yelp import (
     Yelp2018_500_LOU,
     # NextItem
     Yelp2018_550_LOU,

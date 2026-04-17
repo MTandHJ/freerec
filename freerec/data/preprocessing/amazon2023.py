@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 
 import pandas as pd
 
-from ..tags import ITEM, RATING, TIMESTAMP, USER
+from freerec.data.tags import ITEM, RATING, TIMESTAMP, USER
 
 __all__ = ["extract_from_amazon2023"]
 

@@ -1,7 +1,12 @@
-from .base import BaseProcessor, PostProcessor, SampleMultiplexer, Source
-from .column import Batcher_, ToTensor
-from .other import Marker
-from .row import (
+from freerec.data.postprocessing.base import (
+    BaseProcessor,
+    PostProcessor,
+    SampleMultiplexer,
+    Source,
+)
+from freerec.data.postprocessing.column import Batcher_, ToTensor
+from freerec.data.postprocessing.other import Marker
+from freerec.data.postprocessing.row import (
     AddingRow,
     LeftPaddingRow,
     LeftPruningRow,
@@ -10,7 +15,7 @@ from .row import (
     RowFilter,
     RowMapper,
 )
-from .sampler import (
+from freerec.data.postprocessing.sampler import (
     GenTrainNegativeSampler,
     GenTrainPositiveSampler,
     SeqTrainNegativeSampler,
@@ -18,7 +23,11 @@ from .sampler import (
     TestSampler,
     ValidSampler,
 )
-from .source import OrderedSource, RandomChoicedSource, RandomShuffledSource
+from freerec.data.postprocessing.source import (
+    OrderedSource,
+    RandomChoicedSource,
+    RandomShuffledSource,
+)
 
 __all__ = [
     "BaseProcessor",

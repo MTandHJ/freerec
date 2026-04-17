@@ -1,4 +1,4 @@
-from .base import NextItemRecDataSet
+from freerec.data.datasets.base import NextItemRecDataSet
 
 # ===================================NextItemRecDataSset===================================
 

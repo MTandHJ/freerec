@@ -6,14 +6,13 @@ import time
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, NoReturn, Union
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import yaml
 from torch.utils.tensorboard import SummaryWriter
 
-from .ddp import all_gather, is_main_process
-from .dict2obj import Config
+from freerec.ddp import all_gather, is_main_process
+from freerec.dict2obj import Config
 
 LOGGER = Config(
     name="RecSys",
@@ -170,6 +169,8 @@ class AverageMeter:
             Evaluation frequency used to scale the x-axis, by default 1.
         """
         timeline = np.arange(len(self.history)) * freq
+        import matplotlib.pyplot as plt
+
         self.fig = plt.figure(dpi=300)
         ax = self.fig.gca()
         ax.plot(timeline, self.history, marker="", figure=self.fig)
@@ -192,6 +193,8 @@ class AverageMeter:
         """
         filename = f"{mode}{self.name}.png"
         self.fig.savefig(os.path.join(path, filename))
+        import matplotlib.pyplot as plt
+
         plt.close(self.fig)
         return filename
 

@@ -24,17 +24,8 @@ import torch
 import torchdata.datapipes as dp
 import yaml
 
-from ...utils import (
-    export_pickle,
-    import_pickle,
-    import_yaml,
-    infoLogger,
-    mkdirs,
-    timemeter,
-    warnLogger,
-)
-from ..fields import Field, FieldTuple
-from ..tags import (
+from freerec.data.fields import Field, FieldTuple
+from freerec.data.tags import (
     FEATURE,
     ID,
     ITEM,
@@ -46,7 +37,21 @@ from ..tags import (
     FieldTags,
     TaskTags,
 )
-from ..utils import check_sha1, download_from_url, extract_archive, is_empty_dir
+from freerec.data.utils import (
+    check_sha1,
+    download_from_url,
+    extract_archive,
+    is_empty_dir,
+)
+from freerec.utils import (
+    export_pickle,
+    import_pickle,
+    import_yaml,
+    infoLogger,
+    mkdirs,
+    timemeter,
+    warnLogger,
+)
 
 __all__ = [
     "BaseSet",
@@ -855,7 +860,7 @@ class RecDataSet(BaseSet):
         :class:`torch.Tensor`
             Normalized adjacency matrix in CSR format.
         """
-        from ...graph import to_adjacency, to_normalized
+        from freerec.graph import to_adjacency, to_normalized
 
         User = self.fields[src]
         Item = self.fields[dst]
@@ -877,7 +882,7 @@ class RecDataSet(BaseSet):
         --------
         >>> source = dataset.valid().ordered_user_ids_source()
         """
-        from ..postprocessing.source import OrderedSource
+        from freerec.data.postprocessing.source import OrderedSource
 
         User = self.fields[USER, ID]
         source = self.to_rows({User: list(range(User.count))})
@@ -897,7 +902,7 @@ class RecDataSet(BaseSet):
         --------
         >>> source = dataset.train().choiced_user_ids_source()
         """
-        from ..postprocessing.source import RandomChoicedSource
+        from freerec.data.postprocessing.source import RandomChoicedSource
 
         User = self.fields[USER, ID]
         source = self.to_rows({User: list(range(User.count))})
@@ -918,7 +923,7 @@ class RecDataSet(BaseSet):
         >>> list(source)[0].keys()
         dict_keys([Field(USER:ID,USER), Field(ITEM:ID,ITEM)])
         """
-        from ..postprocessing.source import RandomShuffledSource
+        from freerec.data.postprocessing.source import RandomShuffledSource
 
         return RandomShuffledSource(self, self.to_pairs())
 
@@ -942,7 +947,7 @@ class RecDataSet(BaseSet):
         >>> list(source)[0].keys()
         dict_keys([Field(USER:ID,USER), Field(ITEM:ID,ITEM,SEQUENCE)])
         """
-        from ..postprocessing.source import RandomShuffledSource
+        from freerec.data.postprocessing.source import RandomShuffledSource
 
         return RandomShuffledSource(self, self.to_seqs(maxlen))
 
@@ -975,7 +980,7 @@ class RecDataSet(BaseSet):
         >>> list(source)[0].keys()
         dict_keys([Field(USER:ID,USER), Field(ITEM:ID,ITEM,SEQUENCE)])
         """
-        from ..postprocessing.source import RandomShuffledSource
+        from freerec.data.postprocessing.source import RandomShuffledSource
 
         return RandomShuffledSource(
             self, self.to_roll_seqs(minlen, maxlen, keep_at_least_itself)
@@ -994,7 +999,7 @@ class RecDataSet(BaseSet):
         --------
         >>> source = dataset.valid().ordered_inter_source()
         """
-        from ..postprocessing.source import PipedSource
+        from freerec.data.postprocessing.source import PipedSource
 
         return PipedSource(self, self)
 
@@ -1018,7 +1023,7 @@ class RecDataSet(BaseSet):
         >>> source = dataset.train().shuffled_inter_source()
         """
         buffer_size = self.DEFAULT_CHUNK_SIZE if buffer_size is None else buffer_size
-        from ..postprocessing.source import PipedSource
+        from freerec.data.postprocessing.source import PipedSource
 
         return PipedSource(self, self.shuffle(buffer_size=buffer_size))
 

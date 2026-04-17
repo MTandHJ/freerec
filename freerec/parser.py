@@ -6,9 +6,9 @@ from typing import List, Union
 
 import torch
 
-from .ddp import all_gather, is_distributed, is_main_process, main_process_only
-from .dict2obj import Config
-from .utils import (
+from freerec.ddp import all_gather, is_distributed, is_main_process, main_process_only
+from freerec.dict2obj import Config
+from freerec.utils import (
     activate_benchmark,
     import_yaml,
     infoLogger,
@@ -300,9 +300,9 @@ class Parser(Config):
             "-lr", "--lr", "--LR", "--learning-rate", type=float, default=None
         )
         self.add_argument(
-            "-b", 
-            "--batch-size", 
-            type=int, 
+            "-b",
+            "--batch-size",
+            type=int,
             default=None,
             help="batch size per device"
         )

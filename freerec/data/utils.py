@@ -7,7 +7,7 @@ import numpy as np
 import requests
 import tqdm
 
-from ..utils import infoLogger
+from freerec.utils import infoLogger
 
 T = TypeVar("T")
 

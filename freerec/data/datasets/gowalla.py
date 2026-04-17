@@ -1,4 +1,4 @@
-from .base import MatchingRecDataSet
+from freerec.data.datasets.base import MatchingRecDataSet
 
 
 class Gowalla2010_10100811_ROU(MatchingRecDataSet):

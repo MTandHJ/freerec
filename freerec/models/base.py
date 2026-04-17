@@ -4,11 +4,11 @@ from typing import Dict, Iterable, Literal, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 
-from ..criterions import BaseCriterion
-from ..data.datasets.base import RecDataSet
-from ..data.fields import Field, FieldModule, FieldModuleList
-from ..data.postprocessing import PostProcessor
-from ..data.tags import (
+from freerec.criterions import BaseCriterion
+from freerec.data.datasets.base import RecDataSet
+from freerec.data.fields import Field, FieldModule, FieldModuleList
+from freerec.data.postprocessing import PostProcessor
+from freerec.data.tags import (
     ID,
     ITEM,
     LABEL,

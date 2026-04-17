@@ -3,9 +3,9 @@ from typing import Iterable, Iterator, Union
 import torch
 import torchdata.datapipes as dp
 
-from ..fields import Field
-from ..tags import SIZE
-from .base import PostProcessor
+from freerec.data.fields import Field
+from freerec.data.postprocessing.base import PostProcessor
+from freerec.data.tags import SIZE
 
 __all__ = ["Batcher_", "ToTensor"]
 

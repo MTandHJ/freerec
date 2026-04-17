@@ -1,5 +1,5 @@
 import torch.nn as nn
 
-from .attn import ScaledDotProductAttention
-from .ffn import FeedForwardNetwork
-from .utils import Unsqueeze
+from freerec.models.nn.attn import ScaledDotProductAttention
+from freerec.models.nn.ffn import FeedForwardNetwork
+from freerec.models.nn.utils import Unsqueeze

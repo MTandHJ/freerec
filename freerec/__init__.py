@@ -4,18 +4,47 @@ This package provides modular components for building, training,
 and evaluating recommendation systems.
 """
 
+from __future__ import annotations
+
+import importlib
 from importlib.metadata import version
+from typing import TYPE_CHECKING
 
 __version__ = version("freerec")
 
-try:
-    from freerec.dict2obj import Config
-
+if TYPE_CHECKING:
     from . import criterions, data, ddp, graph, launcher, metrics, models, parser, utils
+    from .dict2obj import Config
     from .utils import infoLogger
-except ModuleNotFoundError:
-    # torch/torchdata not yet installed; CLI (e.g., freerec setup) still works.
-    pass
+
+_SUBMODULES = {
+    "criterions",
+    "data",
+    "ddp",
+    "graph",
+    "launcher",
+    "metrics",
+    "models",
+    "parser",
+    "utils",
+}
+
+_ATTRS = {
+    "Config": ("dict2obj", "Config"),
+    "infoLogger": ("utils", "infoLogger"),
+}
+
+__all__ = [*_SUBMODULES, *_ATTRS]
+
+
+def __getattr__(name: str):
+    if name in _SUBMODULES:
+        return importlib.import_module(f".{name}", __name__)
+    if name in _ATTRS:
+        module_name, attr_name = _ATTRS[name]
+        module = importlib.import_module(f".{module_name}", __name__)
+        return getattr(module, attr_name)
+    raise AttributeError(f"module 'freerec' has no attribute {name!r}")
 
 
 def declare(*, version: str):
