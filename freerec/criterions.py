@@ -1,17 +1,17 @@
-
-
-from typing import Iterable, Union, Optional
+from typing import Iterable, Optional, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 __all__ = [
     "BaseCriterion",
-    "CrossEntropy4Logits", "KLDivLoss4Logits",
-    "BPRLoss", "BCELoss4Logits",
-    "MSELoss", "L1Loss",
+    "CrossEntropy4Logits",
+    "KLDivLoss4Logits",
+    "BPRLoss",
+    "BCELoss4Logits",
+    "MSELoss",
+    "L1Loss",
 ]
 
 
@@ -28,13 +28,15 @@ class BaseCriterion(nn.Module):
         ``'sum'``, or ``'mean'`` (default).
     """
 
-    def __init__(self, reduction: str = 'mean') -> None:
+    def __init__(self, reduction: str = "mean") -> None:
         r"""Initialize BaseCriterion with the given reduction mode."""
         super().__init__()
         self.reduction = reduction
 
     @staticmethod
-    def regularize(params: Union[torch.Tensor, Iterable[torch.Tensor]], rtype: str = 'l2'):
+    def regularize(
+        params: Union[torch.Tensor, Iterable[torch.Tensor]], rtype: str = "l2"
+    ):
         r"""Compute a regularization penalty over the given parameters.
 
         Parameters
@@ -56,9 +58,9 @@ class BaseCriterion(nn.Module):
             If *rtype* is not ``'l1'`` or ``'l2'``.
         """
         params = [params] if isinstance(params, torch.Tensor) else params
-        if rtype == 'l1':
+        if rtype == "l1":
             return sum(param.abs().sum() for param in params)
-        elif rtype == 'l2':
+        elif rtype == "l2":
             return sum(param.pow(2).sum() for param in params) / 2
         else:
             raise NotImplementedError(f"{rtype} regularization is not supported ...")
@@ -71,8 +73,10 @@ class CrossEntropy4Logits(BaseCriterion):
     """
 
     def forward(
-        self, logits: torch.Tensor, targets: torch.Tensor,
-        reduction: Optional[str] = None
+        self,
+        logits: torch.Tensor,
+        targets: torch.Tensor,
+        reduction: Optional[str] = None,
     ):
         r"""Compute the cross-entropy loss.
 
@@ -103,8 +107,10 @@ class BCELoss4Logits(BaseCriterion):
     """
 
     def forward(
-        self, logits: torch.Tensor, targets: torch.Tensor,
-        reduction: Optional[str] = None
+        self,
+        logits: torch.Tensor,
+        targets: torch.Tensor,
+        reduction: Optional[str] = None,
     ):
         r"""Compute the binary cross-entropy loss.
 
@@ -138,13 +144,15 @@ class KLDivLoss4Logits(BaseCriterion):
         Reduction mode.  Default is ``'batchmean'``.
     """
 
-    def __init__(self, reduction: str = 'batchmean') -> None:
+    def __init__(self, reduction: str = "batchmean") -> None:
         r"""Initialize KLDivLoss4Logits with the given reduction mode."""
         super().__init__(reduction)
 
     def forward(
-        self, logits: torch.Tensor, targets: torch.Tensor,
-        reduction: Optional[str] = None
+        self,
+        logits: torch.Tensor,
+        targets: torch.Tensor,
+        reduction: Optional[str] = None,
     ):
         r"""Compute the KL divergence loss.
 
@@ -174,8 +182,10 @@ class BPRLoss(BaseCriterion):
     """
 
     def forward(
-        self, pos_scores: torch.Tensor, neg_scores: torch.Tensor,
-        reduction: Optional[str] = None
+        self,
+        pos_scores: torch.Tensor,
+        neg_scores: torch.Tensor,
+        reduction: Optional[str] = None,
     ):
         r"""Compute the BPR loss.
 
@@ -204,8 +214,10 @@ class MSELoss(BaseCriterion):
     """
 
     def forward(
-        self, inputs: torch.Tensor, targets: torch.Tensor,
-        reduction: Optional[str] = None
+        self,
+        inputs: torch.Tensor,
+        targets: torch.Tensor,
+        reduction: Optional[str] = None,
     ):
         r"""Compute the MSE loss.
 
@@ -234,8 +246,10 @@ class L1Loss(BaseCriterion):
     """
 
     def forward(
-        self, inputs: torch.Tensor, targets: torch.Tensor,
-        reduction: Optional[str] = None
+        self,
+        inputs: torch.Tensor,
+        targets: torch.Tensor,
+        reduction: Optional[str] = None,
     ):
         r"""Compute the L1 loss.
 
@@ -257,10 +271,8 @@ class L1Loss(BaseCriterion):
         return F.l1_loss(inputs, targets, reduction=reduction)
 
 
-
 def cross_entropy_with_logits(
-    logits: torch.Tensor, targets: torch.Tensor,
-    reduction: str = "mean"
+    logits: torch.Tensor, targets: torch.Tensor, reduction: str = "mean"
 ) -> torch.Tensor:
     r"""Compute cross-entropy loss from unnormalized logits.
 
@@ -281,9 +293,9 @@ def cross_entropy_with_logits(
     """
     return F.cross_entropy(logits, targets, reduction=reduction)
 
+
 def binary_cross_entropy_with_logits(
-    logits: torch.Tensor, targets: torch.Tensor,
-    reduction: str = "mean"
+    logits: torch.Tensor, targets: torch.Tensor, reduction: str = "mean"
 ) -> torch.Tensor:
     r"""Compute binary cross-entropy loss from unnormalized logits.
 
@@ -301,11 +313,13 @@ def binary_cross_entropy_with_logits(
     :class:`torch.Tensor`
         Computed loss.
     """
-    return F.binary_cross_entropy_with_logits(logits, targets.to(logits.dtype), reduction=reduction)
+    return F.binary_cross_entropy_with_logits(
+        logits, targets.to(logits.dtype), reduction=reduction
+    )
+
 
 def kl_div_loss_with_logits(
-    logits: torch.Tensor, targets: torch.Tensor,
-    reduction: str = "batchmean"
+    logits: torch.Tensor, targets: torch.Tensor, reduction: str = "batchmean"
 ) -> torch.Tensor:
     r"""Compute KL divergence loss from unnormalized logits.
 
@@ -332,9 +346,9 @@ def kl_div_loss_with_logits(
     targets = F.softmax(targets, dim=-1)
     return F.kl_div(inputs, targets, reduction=reduction)
 
+
 def bpr_loss_with_logits(
-    pos_scores: torch.Tensor, neg_scores: torch.Tensor,
-    reduction: str = "mean"
+    pos_scores: torch.Tensor, neg_scores: torch.Tensor, reduction: str = "mean"
 ) -> torch.Tensor:
     r"""Compute Bayesian Personalized Ranking loss.
 
@@ -365,11 +379,13 @@ def bpr_loss_with_logits(
         If *reduction* is not a supported value.
     """
     loss = F.softplus(neg_scores - pos_scores)
-    if reduction == 'none':
+    if reduction == "none":
         return loss
-    elif reduction == 'mean':
+    elif reduction == "mean":
         return loss.mean()
-    elif reduction == 'sum':
+    elif reduction == "sum":
         return loss.sum()
     else:
-        raise NotImplementedError(f"reduction mode of '{reduction}' is not supported ...")
+        raise NotImplementedError(
+            f"reduction mode of '{reduction}' is not supported ..."
+        )

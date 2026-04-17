@@ -1,22 +1,18 @@
+from itertools import chain
+from typing import Iterable, Iterator, Literal, Tuple, TypeVar, Union
 
-
-from typing import Iterable, Tuple, Union, Literal, Iterator, TypeVar
-
-import torch
 import numpy as np
 import polars as pl
-from itertools import chain
+import torch
 
-from .tags import FieldTags
 from .normalizer import NORMALIZERS
+from .tags import FieldTags
+
+__all__ = ["Field", "FieldTuple", "FieldModule", "FieldModuleList"]
 
 
-__all__ = [
-    'Field', 'FieldTuple', 'FieldModule', 'FieldModuleList'
-]
+T = TypeVar("T")
 
-
-T = TypeVar('T')
 
 class Field:
     r"""A field determined by a name and a collection of tags.
@@ -64,11 +60,13 @@ class Field:
     False
     """
 
-    def __init__(self, name: str,  *tags: FieldTags) -> None:
+    def __init__(self, name: str, *tags: FieldTags) -> None:
         r"""Initialize field with a name and tags."""
         self.__name = str(name)
         self.__tags = set(tags)
-        self.__identifier = (name,) + tuple(sorted(self.__tags, key=lambda tag: tag.value))
+        self.__identifier = (name,) + tuple(
+            sorted(self.__tags, key=lambda tag: tag.value)
+        )
         self.__hash_value = hash(self.identifier)
         self.count = None
 
@@ -105,7 +103,7 @@ class Field:
         field.count = self.count
         return field
 
-    def to_module(self) -> 'FieldModule':
+    def to_module(self) -> "FieldModule":
         r"""Convert this field to a :class:`~FieldModule`.
 
         Returns
@@ -113,9 +111,7 @@ class Field:
         :class:`~FieldModule`
             A module-wrapped copy of this field.
         """
-        field = FieldModule(
-            self.name, *self.tags
-        )
+        field = FieldModule(self.name, *self.tags)
         field.count = self.count
         return field
 
@@ -164,7 +160,7 @@ class Field:
         """
         return any(self.match(tag) for tag in tags)
 
-    def issubfield(self, other: 'Field') -> bool:
+    def issubfield(self, other: "Field") -> bool:
         r"""Check whether this field is a sub-field of *other*.
 
         Parameters
@@ -179,7 +175,7 @@ class Field:
         """
         return self.match(*other.tags)
 
-    def issuperfield(self, other: 'Field') -> bool:
+    def issuperfield(self, other: "Field") -> bool:
         r"""Check whether this field is a super-field of *other*.
 
         Parameters
@@ -208,14 +204,18 @@ class Field:
 
     def __str__(self) -> str:
         r"""Return a concise string of the form ``name:count:TAG1,TAG2``."""
-        return f"{self.name}:{self.count}:{','.join(map(lambda tag: tag.name, self.tags))}"
+        return (
+            f"{self.name}:{self.count}:{','.join(map(lambda tag: tag.name, self.tags))}"
+        )
 
     def set_normalizer(
         self,
         dtype: Union[None, str, pl.DataType] = None,
-        fill_null_strategy: Literal['forward', 'backward', 'min', 'max', 'zero', 'one'] = 'zero',
-        normalizer: Union[None, Literal['standard', 'minmax', 'reindex']] = None,
-        **kwargs
+        fill_null_strategy: Literal[
+            "forward", "backward", "min", "max", "zero", "one"
+        ] = "zero",
+        normalizer: Union[None, Literal["standard", "minmax", "reindex"]] = None,
+        **kwargs,
     ):
         r"""Configure casting, null-filling and normalization for this field.
 
@@ -239,23 +239,19 @@ class Field:
         self._dtype = getattr(pl, dtype) if isinstance(dtype, str) else dtype
         self._fill_null_strategy = fill_null_strategy
 
-        normalizer = 'counter' if normalizer is None else normalizer
+        normalizer = "counter" if normalizer is None else normalizer
         try:
             self._normalizer = NORMALIZERS[normalizer.upper()](**kwargs)
         except KeyError:
-            availables = '; '.join(NORMALIZERS.keys())
+            availables = "; ".join(NORMALIZERS.keys())
             raise KeyError(
                 f"Receive an invalid normalizer not existing in: [{availables}]. "
                 f"You should register this via `register_normalizer(normalizer, name)` ..."
             )
         except TypeError:
-            raise KeyError(
-                f"Receive invalid kwargs for {normalizer}: {kwargs}"
-            )
+            raise KeyError(f"Receive invalid kwargs for {normalizer}: {kwargs}")
 
-    def cast(
-        self, data: pl.Series, strict: bool = False
-    ) -> pl.Series:
+    def cast(self, data: pl.Series, strict: bool = False) -> pl.Series:
         r"""Cast and null-fill a :class:`polars.Series`.
 
         Parameters
@@ -283,9 +279,7 @@ class Field:
             return data
 
     def fit(
-        self,
-        data: Union[pl.Series, pl.DataFrame, pl.LazyFrame],
-        partial: bool = True
+        self, data: Union[pl.Series, pl.DataFrame, pl.LazyFrame], partial: bool = True
     ) -> pl.Series:
         r"""Fit the normalizer on *data* and return the cast series.
 
@@ -375,7 +369,9 @@ class Field:
         """
         if isinstance(data, (torch.Tensor, np.ndarray)):
             data = data.tolist()
-        assert isinstance(data[0], (list, tuple)), f"Each row of data should be `list'|`tuple' but `{type(data[0])}' received ..."
+        assert isinstance(data[0], (list, tuple)), (
+            f"Each row of data should be `list'|`tuple' but `{type(data[0])}' received ..."
+        )
 
         crow_indices = np.cumsum([0] + list(map(len, data)), dtype=np.int64)
         col_indices = list(chain(*data))
@@ -385,7 +381,7 @@ class Field:
             crow_indices=crow_indices,
             col_indices=col_indices,
             values=values,
-            size=(len(data), self.count) # B x Num of Items
+            size=(len(data), self.count),  # B x Num of Items
         )
 
 
@@ -440,7 +436,7 @@ class FieldTuple(tuple):
     in addition to ordinary positional indexing.
     """
 
-    def match(self, *tags: FieldTags) -> 'FieldTuple':
+    def match(self, *tags: FieldTags) -> "FieldTuple":
         r"""Return fields that match all given tags.
 
         Parameters
@@ -455,7 +451,7 @@ class FieldTuple(tuple):
         """
         return FieldTuple(field for field in self if field.match(*tags))
 
-    def match_all(self, *tags: FieldTags) -> 'FieldTuple':
+    def match_all(self, *tags: FieldTags) -> "FieldTuple":
         r"""Return fields that match all given tags.
 
         Parameters
@@ -470,7 +466,7 @@ class FieldTuple(tuple):
         """
         return FieldTuple(field for field in self if field.match_all(*tags))
 
-    def match_any(self, *tags: FieldTags) -> 'FieldTuple':
+    def match_any(self, *tags: FieldTags) -> "FieldTuple":
         r"""Return fields that match any of the given tags.
 
         Parameters
@@ -485,7 +481,7 @@ class FieldTuple(tuple):
         """
         return FieldTuple(field for field in self if field.match_any(*tags))
 
-    def match_not(self, *tags: FieldTags) -> 'FieldTuple':
+    def match_not(self, *tags: FieldTags) -> "FieldTuple":
         r"""Return fields that do **not** match all given tags.
 
         Parameters
@@ -500,7 +496,7 @@ class FieldTuple(tuple):
         """
         return FieldTuple(field for field in self if not field.match_all(*tags))
 
-    def copy(self) -> 'FieldTuple':
+    def copy(self) -> "FieldTuple":
         r"""Return a shallow copy of this tuple.
 
         Returns
@@ -540,7 +536,9 @@ class FieldTuple(tuple):
         r"""Iterate over the fields in the tuple."""
         return super().__iter__()
 
-    def __getitem__(self, index: Union[int, str, slice, FieldTags, Iterable[FieldTags]]) -> Union[Field, 'FieldTuple', None]:
+    def __getitem__(
+        self, index: Union[int, str, slice, FieldTags, Iterable[FieldTags]]
+    ) -> Union[Field, "FieldTuple", None]:
         r"""Retrieve fields by position, name, slice, or tag(s).
 
         Parameters
@@ -592,17 +590,15 @@ class FieldTuple(tuple):
         elif isinstance(index, str):
             fields = FieldTuple(field for field in self if field.name == index)
         elif isinstance(index, slice):
-            fields = FieldTuple(
-                super().__getitem__(index)
-            )
+            fields = FieldTuple(super().__getitem__(index))
         elif isinstance(index, FieldTags):
-            fields =  self.match(index)
+            fields = self.match(index)
         else:
             fields = self.match(*index)
         if len(fields) == 1:
             return fields[0]
         elif len(fields) == 0:
-            return None # for a safety purpose
+            return None  # for a safety purpose
         else:
             return fields
 
@@ -627,9 +623,11 @@ class FieldModuleList(torch.nn.ModuleList):
     def __init__(self, fields: Iterable[FieldModule]) -> None:
         r"""Initialize with an iterable of :class:`~FieldModule` instances."""
         super().__init__(fields)
-        assert all(isinstance(field, FieldModule) for field in self), "'FieldModuleList' receives 'FieldModule' only ..."
+        assert all(isinstance(field, FieldModule) for field in self), (
+            "'FieldModuleList' receives 'FieldModule' only ..."
+        )
 
-    def match(self, *tags: FieldTags) -> 'FieldModuleList':
+    def match(self, *tags: FieldTags) -> "FieldModuleList":
         r"""Return field modules that match all given tags.
 
         Parameters
@@ -644,7 +642,7 @@ class FieldModuleList(torch.nn.ModuleList):
         """
         return FieldModuleList(field for field in self if field.match(*tags))
 
-    def match_all(self, *tags: FieldTags) -> 'FieldModuleList':
+    def match_all(self, *tags: FieldTags) -> "FieldModuleList":
         r"""Return field modules that match all given tags.
 
         Parameters
@@ -659,7 +657,7 @@ class FieldModuleList(torch.nn.ModuleList):
         """
         return FieldModuleList(field for field in self if field.match_all(*tags))
 
-    def match_any(self, *tags: FieldTags) -> 'FieldModuleList':
+    def match_any(self, *tags: FieldTags) -> "FieldModuleList":
         r"""Return field modules that match any of the given tags.
 
         Parameters
@@ -674,7 +672,7 @@ class FieldModuleList(torch.nn.ModuleList):
         """
         return FieldModuleList(field for field in self if field.match_any(*tags))
 
-    def match_not(self, *tags: FieldTags) -> 'FieldModuleList':
+    def match_not(self, *tags: FieldTags) -> "FieldModuleList":
         r"""Return field modules that do **not** match all given tags.
 
         Parameters
@@ -705,10 +703,12 @@ class FieldModuleList(torch.nn.ModuleList):
         AssertionError
             If *field* is not a :class:`~FieldModule`.
         """
-        assert isinstance(field, FieldModule), "'FieldModuleList' receives 'FieldModule' only ..."
+        assert isinstance(field, FieldModule), (
+            "'FieldModuleList' receives 'FieldModule' only ..."
+        )
         return super().insert(index, field)
 
-    def append(self, field: FieldModule) -> 'FieldModuleList':
+    def append(self, field: FieldModule) -> "FieldModuleList":
         r"""Append a :class:`~FieldModule` to the end.
 
         Parameters
@@ -726,10 +726,12 @@ class FieldModuleList(torch.nn.ModuleList):
         AssertionError
             If *field* is not a :class:`~FieldModule`.
         """
-        assert isinstance(field, FieldModule), "'FieldModuleList' receives 'FieldModule' only ..."
+        assert isinstance(field, FieldModule), (
+            "'FieldModuleList' receives 'FieldModule' only ..."
+        )
         return super().append(field)
 
-    def extend(self, fields: Iterable[FieldModule]) -> 'FieldModuleList':
+    def extend(self, fields: Iterable[FieldModule]) -> "FieldModuleList":
         r"""Extend the list with an iterable of :class:`~FieldModule` instances.
 
         Parameters
@@ -748,14 +750,18 @@ class FieldModuleList(torch.nn.ModuleList):
             If any element is not a :class:`~FieldModule`.
         """
         fields = list(fields)
-        assert all(isinstance(field, FieldModule) for field in fields), "'FieldModuleList' receives 'FieldModule' only ..."
+        assert all(isinstance(field, FieldModule) for field in fields), (
+            "'FieldModuleList' receives 'FieldModule' only ..."
+        )
         return super().extend(fields)
 
     def __iter__(self) -> Iterator[FieldModule]:
         r"""Iterate over the field modules."""
         return super().__iter__()
 
-    def __getitem__(self, index: Union[int, str, FieldTags, Iterable[FieldTags]]) -> Union[FieldModule, 'FieldModuleList', None]:
+    def __getitem__(
+        self, index: Union[int, str, FieldTags, Iterable[FieldTags]]
+    ) -> Union[FieldModule, "FieldModuleList", None]:
         r"""Retrieve field modules by position, name, slice, or tag(s).
 
         Parameters
@@ -808,16 +814,14 @@ class FieldModuleList(torch.nn.ModuleList):
         elif isinstance(index, str):
             fields = FieldModuleList(field for field in self if field.name == index)
         elif isinstance(index, slice):
-            fields = FieldModuleList(
-                super().__getitem__(index)
-            )
+            fields = FieldModuleList(super().__getitem__(index))
         elif isinstance(index, FieldTags):
-            fields =  self.match(index)
+            fields = self.match(index)
         else:
             fields = self.match(*index)
         if len(fields) == 1:
             return fields[0]
         elif len(fields) == 0:
-            return None # for a safety purpose
+            return None  # for a safety purpose
         else:
             return fields

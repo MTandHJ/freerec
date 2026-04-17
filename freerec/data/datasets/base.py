@@ -1,34 +1,63 @@
-
-
-
-from typing import Any, TypeVar, Literal, Union, Optional, Callable, Iterator, Iterable, Dict, Tuple, List
-
-import torch, os, abc, glob, yaml, random
-import numpy as np
-import polars as pl
-import torchdata.datapipes as dp
+import abc
+import glob
+import os
+import random
 from copy import copy
 from functools import lru_cache
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
-from ..tags import (
-    FieldTags, TaskTags,
-    USER, ITEM, LABEL, ID, RATING, TIMESTAMP, FEATURE, SEQUENCE
+import numpy as np
+import polars as pl
+import torch
+import torchdata.datapipes as dp
+import yaml
+
+from ...utils import (
+    export_pickle,
+    import_pickle,
+    import_yaml,
+    infoLogger,
+    mkdirs,
+    timemeter,
+    warnLogger,
 )
 from ..fields import Field, FieldTuple
-from ..utils import download_from_url, extract_archive, is_empty_dir, check_sha1
-from ...utils import (
-    timemeter, infoLogger, warnLogger,
-    mkdirs, import_pickle, export_pickle, import_yaml
+from ..tags import (
+    FEATURE,
+    ID,
+    ITEM,
+    LABEL,
+    RATING,
+    SEQUENCE,
+    TIMESTAMP,
+    USER,
+    FieldTags,
+    TaskTags,
 )
-
+from ..utils import check_sha1, download_from_url, extract_archive, is_empty_dir
 
 __all__ = [
-    'BaseSet', 'RecDataSet',
-    'MatchingRecDataSet', 'NextItemRecDataSet', 'PredictionRecDataSet'
+    "BaseSet",
+    "RecDataSet",
+    "MatchingRecDataSet",
+    "NextItemRecDataSet",
+    "PredictionRecDataSet",
 ]
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def safe_mode(*modes):
@@ -45,25 +74,33 @@ def safe_mode(*modes):
         Decorated function that emits a warning when invoked in an
         unexpected mode.
     """
+
     def decorator(func):
         r"""Wrap *func* with a mode check."""
+
         def wrapper(self, *args, **kwargs):
             r"""Call the wrapped function after an optional mode warning."""
             if self.mode not in modes:
                 fname = f"\033[0m\033[0;31;47m{func.__name__}\033[0m\033[1;31m"
                 mode = f"\033[0m\033[0;31;47m{self.mode}\033[0m\033[1;31m"
-                warnLogger(f"{fname} runs in {mode} mode. Make sure that this is intentional ...")
+                warnLogger(
+                    f"{fname} runs in {mode} mode. Make sure that this is intentional ..."
+                )
             return func(self, *args, **kwargs)
+
         wrapper.__name__ == func.__name__
         wrapper.__doc__ = func.__doc__
         return wrapper
+
     return decorator
 
 
-#===============================Basic Class===============================
+# ===============================Basic Class===============================
+
 
 class RecSetBuildingError(Exception):
     r"""Raised when a :class:`~BaseSet` schema cannot be loaded or built."""
+
     ...
 
 
@@ -97,14 +134,14 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         ITEM.name: Field(ITEM.name, ITEM, ID),
         LABEL.name: Field(LABEL.name, LABEL),
         RATING.name: Field(RATING.name, RATING),
-        TIMESTAMP.name: Field(TIMESTAMP.name, TIMESTAMP)
+        TIMESTAMP.name: Field(TIMESTAMP.name, TIMESTAMP),
     }
 
     DEFAULT_FIELD_CONFIG = {
-        'tags': tuple(),
-        'dtype': None,
-        'fill_null_strategy': 'zero',
-        'normalizer': None,
+        "tags": tuple(),
+        "dtype": None,
+        "fill_null_strategy": "zero",
+        "normalizer": None,
     }
 
     DEFAULT_CSV_FILE = "{mode}.txt"
@@ -114,7 +151,9 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     DEFAULT_CHUNK_FILE = "p{chunk}.pkl"
     DEFAULT_CHUNK_SIZE = 256 * 512
     DEFAULT_CONFIG_FILE = "config.yaml"
-    STREAMING: bool = True # if `False`, iter(dataset) will shuffle the saved chunks during training.
+    STREAMING: bool = (
+        True  # if `False`, iter(dataset) will shuffle the saved chunks during training.
+    )
 
     TASK: TaskTags
     URL: Optional[str] = None
@@ -132,17 +171,16 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         super().__init__()
 
         self.fields = []
-        self.__mode: Literal['train', 'valid', 'test'] = 'train'
+        self.__mode: Literal["train", "valid", "test"] = "train"
         if tasktag is not None:
             self.TASK = tasktag
 
         filedir = filedir if filedir else self.__class__.__name__
-        self.path = os.path.join(root, 'Processed', filedir)
+        self.path = os.path.join(root, "Processed", filedir)
         if is_empty_dir(self.path):
             if download and self.URL is not None:
                 extract_archive(
-                    download_from_url(self.URL, root, overwrite=False),
-                    self.path
+                    download_from_url(self.URL, root, overwrite=False), self.path
                 )
             else:
                 raise FileNotFoundError(
@@ -185,31 +223,31 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         ...
 
     @property
-    def mode(self) -> Literal['train', 'test', 'valid']:
+    def mode(self) -> Literal["train", "test", "valid"]:
         r"""Return the current dataset mode."""
         return self.__mode
 
     def train(self: T) -> T:
         r"""Switch the dataset mode to ``'train'``."""
-        self.__mode = 'train'
+        self.__mode = "train"
         return self
 
     def valid(self: T) -> T:
         r"""Switch the dataset mode to ``'valid'``."""
-        self.__mode = 'valid'
+        self.__mode = "valid"
         return self
 
     def test(self: T) -> T:
         r"""Switch the dataset mode to ``'test'``."""
-        self.__mode = 'test'
+        self.__mode = "test"
         return self
 
     @property
     def datasize(self):
         r"""Return the number of interactions for the current mode."""
-        if self.mode == 'train':
+        if self.mode == "train":
             return self.trainsize
-        elif self.mode == 'valid':
+        elif self.mode == "valid":
             return self.validsize
         else:
             return self.testsize
@@ -224,7 +262,9 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         r"""Set the dataset fields."""
         self.__fields = FieldTuple(fields)
 
-    def build_fields(self, columns: Iterable[str], *tags: FieldTags) -> FieldTuple[Field]:
+    def build_fields(
+        self, columns: Iterable[str], *tags: FieldTags
+    ) -> FieldTuple[Field]:
         r"""Build :class:`~Field` objects from column names and optional tags.
 
         Parameters
@@ -242,10 +282,9 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         fields = []
         for colname in columns:
             field_cfg = self.cfg.get(colname, self.DEFAULT_FIELD_CONFIG).copy()
-            private_tags = [FieldTags(tag) for tag in field_cfg.pop('tags')]
+            private_tags = [FieldTags(tag) for tag in field_cfg.pop("tags")]
             field = self.DEFAULT_FIELD_BUILDER.get(
-                colname,
-                Field(colname, FEATURE)
+                colname, Field(colname, FEATURE)
             ).fork(*tags, *private_tags)
             field.set_normalizer(**field_cfg)
             fields.append(field)
@@ -262,9 +301,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         self.rng.seed(seed)
 
     def read_chunk(
-        self,
-        fields: Iterable[Field],
-        streaming: bool = True
+        self, fields: Iterable[Field], streaming: bool = True
     ) -> Iterator[pl.DataFrame]:
         r"""Yield chunks of data for the current mode.
 
@@ -284,9 +321,9 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         path = os.path.join(
             self.path,
             self.DEFAULT_CHUNK_DIR.format(mode=self.mode),
-            self.DEFAULT_CHUNK_FILE
+            self.DEFAULT_CHUNK_FILE,
         )
-        num_chunks = len(glob.glob(path.format(chunk='*')))
+        num_chunks = len(glob.glob(path.format(chunk="*")))
         chunks = list(range(num_chunks))
         if not streaming:
             self.rng.shuffle(chunks)
@@ -303,85 +340,66 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         normalizes and persists them as chunked pickle files.
         """
         schema_file = os.path.join(self.path, self.DEFAULT_SCHEMA_FILE)
-        sha1_hash = check_sha1(
-            yaml.dump(self.cfg).encode()
-        )
+        sha1_hash = check_sha1(yaml.dump(self.cfg).encode())
         try:
             if os.path.exists(schema_file):
                 infoLogger(f"[DataSet] >>> Load Schema from {schema_file} ...")
                 schema = import_pickle(schema_file)
-                if sha1_hash != schema.get('sha1_hash', ''):
-                    infoLogger(f"[DataSet] >>> Schema's sha1 hash value is not matched ...")
+                if sha1_hash != schema.get("sha1_hash", ""):
+                    infoLogger(
+                        "[DataSet] >>> Schema's sha1 hash value is not matched ..."
+                    )
                     raise RecSetBuildingError
             else:
                 raise RecSetBuildingError
         except RecSetBuildingError:
             schema = {
-                'fields': None,
-                'sha1_hash': sha1_hash,
-                'trainsize': 0,
-                'validsize': 0,
-                'testsize': 0,
+                "fields": None,
+                "sha1_hash": sha1_hash,
+                "trainsize": 0,
+                "validsize": 0,
+                "testsize": 0,
             }
             # fitting fields over csv files
-            for mode in ('train', 'valid', 'test'):
+            for mode in ("train", "valid", "test"):
                 infoLogger(f"[DataSet] >>> Fitting fields over `{mode}` set ...")
                 df = pl.read_csv(
-                    os.path.join(
-                        self.path,
-                        self.DEFAULT_CSV_FILE.format(mode=mode)
-                    ),
-                    separator=self.DEFAULT_CSV_SEPARATOR
+                    os.path.join(self.path, self.DEFAULT_CSV_FILE.format(mode=mode)),
+                    separator=self.DEFAULT_CSV_SEPARATOR,
                 )
-                schema[mode + 'size'] = df.height
-                if schema['fields'] is None:
-                    schema['fields'] = self.build_fields(
-                        df.columns
-                    )
+                schema[mode + "size"] = df.height
+                if schema["fields"] is None:
+                    schema["fields"] = self.build_fields(df.columns)
 
-                for field in schema['fields']:
-                    field.fit(
-                        df.select(pl.col(field.name)),
-                        partial=True
-                    )
+                for field in schema["fields"]:
+                    field.fit(df.select(pl.col(field.name)), partial=True)
 
             # transforming and splitting csv files into chunk formats
-            for mode in ('train', 'valid', 'test'):
+            for mode in ("train", "valid", "test"):
                 infoLogger(f"[DataSet] >>> Normalizing fields over `{mode}` set ...")
-                path = os.path.join(
-                    self.path,
-                    self.DEFAULT_CHUNK_DIR.format(mode=mode)
-                )
+                path = os.path.join(self.path, self.DEFAULT_CHUNK_DIR.format(mode=mode))
                 mkdirs(path)
 
                 df = pl.read_csv(
-                    os.path.join(
-                        self.path,
-                        self.DEFAULT_CSV_FILE.format(mode=mode)
-                    ),
-                    separator=self.DEFAULT_CSV_SEPARATOR
+                    os.path.join(self.path, self.DEFAULT_CSV_FILE.format(mode=mode)),
+                    separator=self.DEFAULT_CSV_SEPARATOR,
                 )
 
                 for k, chunk in enumerate(df.iter_slices(self.DEFAULT_CHUNK_SIZE)):
                     chunk = chunk.with_columns(
-                        field.normalize(
-                            chunk.select(pl.col(field.name))
-                        )
-                        for field in schema['fields']
+                        field.normalize(chunk.select(pl.col(field.name)))
+                        for field in schema["fields"]
                     )
                     export_pickle(
                         chunk.to_dict(as_series=False),
-                        os.path.join(
-                            path,
-                            self.DEFAULT_CHUNK_FILE.format(chunk=k)
-                        )
+                        os.path.join(path, self.DEFAULT_CHUNK_FILE.format(chunk=k)),
                     )
             export_pickle(schema, schema_file)
         # .fork() for consistent hash value
-        self.fields = [field.fork() for field in schema['fields']]
-        self.trainsize = schema['trainsize']
-        self.validsize = schema['validsize']
-        self.testsize = schema['testsize']
+        self.fields = [field.fork() for field in schema["fields"]]
+        self.trainsize = schema["trainsize"]
+        self.validsize = schema["validsize"]
+        self.testsize = schema["testsize"]
 
     def summary(self):
         r"""Print a summary of the dataset."""
@@ -494,21 +512,22 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         """
         fields = coldata.keys()
         return cls.listmap(
-            lambda values: dict(zip(fields, values)),
-            zip(*coldata.values())
+            lambda values: dict(zip(fields, values)), zip(*coldata.values())
         )
 
     def __repr__(self) -> str:
         r"""Return a compact string representation."""
-        cfg = '|'.join(map(str, self.fields))
+        cfg = "|".join(map(str, self.fields))
         return f"{self.__class__.__name__}({cfg})"
 
     def __str__(self) -> str:
         r"""Return a human-readable string representation."""
-        cfg = ' | '.join(map(str, self.fields))
+        cfg = " | ".join(map(str, self.fields))
         return f"[{self.__class__.__name__}] >>> " + cfg
 
-    def __getitem__(self, fields: Union[Field, Iterable[Field]]) -> Optional[Dict[Field, List]]:
+    def __getitem__(
+        self, fields: Union[Field, Iterable[Field]]
+    ) -> Optional[Dict[Field, List]]:
         r"""Retrieve full column data for the given fields.
 
         Parameters
@@ -541,8 +560,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     def __iter__(self) -> Iterator[Dict[Field, Any]]:
         r"""Iterate over the dataset row by row for the current mode."""
         for chunk in self.read_chunk(
-            self.fields,
-            streaming=self.STREAMING or (self.mode != 'train')
+            self.fields, streaming=self.STREAMING or (self.mode != "train")
         ):
             yield from self.to_rows(chunk)
 
@@ -562,7 +580,9 @@ class RecDataSet(BaseSet):
         Item = self.fields[ITEM, ID]
         return self.to_rows(self[User, Item])
 
-    def to_seqs(self, maxlen: Optional[int] = None) -> List[Dict[Field, Union[int, Tuple[int]]]]:
+    def to_seqs(
+        self, maxlen: Optional[int] = None
+    ) -> List[Dict[Field, Union[int, Tuple[int]]]]:
         r"""Group interactions into per-user item sequences.
 
         Parameters
@@ -581,10 +601,7 @@ class RecDataSet(BaseSet):
         Item = self.fields[ITEM, ID]
         seqs = [[] for id_ in range(User.count)]
 
-        self.listmap(
-            lambda data: seqs[data[User]].append(data[Item]),
-            self.to_pairs()
-        )
+        self.listmap(lambda data: seqs[data[User]].append(data[Item]), self.to_pairs())
         users = list(range(User.count))
         if maxlen is not None:
             seqs = [tuple(items[-maxlen:]) for items in seqs]
@@ -594,8 +611,10 @@ class RecDataSet(BaseSet):
         return self.to_rows({User: users, Item.fork(SEQUENCE): seqs})
 
     def to_roll_seqs(
-        self, minlen: int = 2, maxlen: Optional[int] = None,
-        keep_at_least_itself: bool = True
+        self,
+        minlen: int = 2,
+        maxlen: Optional[int] = None,
+        keep_at_least_itself: bool = True,
     ) -> List[Dict[Field, Union[int, Tuple[int]]]]:
         r"""Generate rolling (expanding) sub-sequences per user.
 
@@ -622,14 +641,10 @@ class RecDataSet(BaseSet):
         for row in data:
             user, seq = row[User], row[ISeq]
             if len(seq) <= minlen and keep_at_least_itself:
-                roll_seqs.append(
-                    {User: user, ISeq: seq}
-                )
+                roll_seqs.append({User: user, ISeq: seq})
                 continue
             for k in range(minlen, len(seq) + 1):
-                roll_seqs.append(
-                    {User: user, ISeq: seq[:k]}
-                )
+                roll_seqs.append({User: user, ISeq: seq[:k]})
 
         return roll_seqs
 
@@ -689,9 +704,11 @@ class RecDataSet(BaseSet):
                     return True
         return False
 
-    @safe_mode('train')
+    @safe_mode("train")
     @timemeter
-    def to_heterograph(self, *edge_types: Tuple[Tuple[FieldTags], Optional[str], Tuple[FieldTags]]):
+    def to_heterograph(
+        self, *edge_types: Tuple[Tuple[FieldTags], Optional[str], Tuple[FieldTags]]
+    ):
         r"""Convert the dataset to a heterogeneous graph.
 
         Parameters
@@ -724,10 +741,14 @@ class RecDataSet(BaseSet):
         srcs = [self.fields[src] for src in srcs]
         dsts = [self.fields[dst] for dst in dsts]
         nodes = set(srcs + dsts)
-        edges = list(map(
-            lambda src, edge, dst: edge if edge else f"{src.name}2{dst.name}",
-            srcs, edges, dsts
-        ))
+        edges = list(
+            map(
+                lambda src, edge, dst: edge if edge else f"{src.name}2{dst.name}",
+                srcs,
+                edges,
+                dsts,
+            )
+        )
         data = self[nodes]
         for key in data:
             data[key] = torch.tensor(data[key], dtype=torch.long)
@@ -740,14 +761,16 @@ class RecDataSet(BaseSet):
                 graph[node.name].x = torch.empty((node.count, 0), dtype=torch.long)
         for src, edge, dst in zip(srcs, edges, dsts):
             u, v = data[src], data[dst]
-            graph[src.name, edge, dst.name].edge_index = torch.stack((u, v), dim=0) # 2 x N
+            graph[src.name, edge, dst.name].edge_index = torch.stack(
+                (u, v), dim=0
+            )  # 2 x N
         return graph.coalesce()
 
     def to_bigraph(
         self,
         src: Tuple[FieldTags] = (USER, ID),
         dst: Tuple[FieldTags] = (ITEM, ID),
-        edge_type: Optional[str] = None
+        edge_type: Optional[str] = None,
     ):
         r"""Convert the dataset to a bipartite graph.
 
@@ -776,9 +799,7 @@ class RecDataSet(BaseSet):
         return self.to_heterograph((src, edge_type, dst))
 
     def to_graph(
-        self,
-        src: Tuple[FieldTags] = (USER, ID),
-        dst: Tuple[FieldTags] = (ITEM, ID)
+        self, src: Tuple[FieldTags] = (USER, ID), dst: Tuple[FieldTags] = (ITEM, ID)
     ):
         r"""Convert the dataset to an undirected homogeneous graph.
 
@@ -803,6 +824,7 @@ class RecDataSet(BaseSet):
         >>> graph = dataset.to_graph((USER, ID), (ITEM, ID))
         """
         from torch_geometric.utils import to_undirected
+
         graph = self.to_heterograph((src, None, dst)).to_homogeneous()
         graph.edge_index = to_undirected(graph.edge_index)
         return graph
@@ -811,7 +833,7 @@ class RecDataSet(BaseSet):
         self,
         src: Tuple[FieldTags] = (USER, ID),
         dst: Tuple[FieldTags] = (ITEM, ID),
-        normalization: str = 'sym'
+        normalization: str = "sym",
     ):
         r"""Convert the dataset to a normalized adjacency matrix.
 
@@ -833,18 +855,16 @@ class RecDataSet(BaseSet):
         :class:`torch.Tensor`
             Normalized adjacency matrix in CSR format.
         """
-        from ...graph import to_normalized, to_adjacency
+        from ...graph import to_adjacency, to_normalized
+
         User = self.fields[src]
         Item = self.fields[dst]
         edge_index, edge_weight = to_normalized(
             self.to_graph(src, dst).edge_index, normalization=normalization
         )
-        return to_adjacency(
-            edge_index, edge_weight,
-            num_nodes=User.count + Item.count
-        )
+        return to_adjacency(edge_index, edge_weight, num_nodes=User.count + Item.count)
 
-    @safe_mode('valid', 'test')
+    @safe_mode("valid", "test")
     def ordered_user_ids_source(self):
         r"""Create an ordered source over all user IDs.
 
@@ -858,11 +878,12 @@ class RecDataSet(BaseSet):
         >>> source = dataset.valid().ordered_user_ids_source()
         """
         from ..postprocessing.source import OrderedSource
+
         User = self.fields[USER, ID]
         source = self.to_rows({User: list(range(User.count))})
         return OrderedSource(self, source)
 
-    @safe_mode('train')
+    @safe_mode("train")
     def choiced_user_ids_source(self):
         r"""Create a randomly sampled source of user IDs.
 
@@ -877,11 +898,12 @@ class RecDataSet(BaseSet):
         >>> source = dataset.train().choiced_user_ids_source()
         """
         from ..postprocessing.source import RandomChoicedSource
+
         User = self.fields[USER, ID]
         source = self.to_rows({User: list(range(User.count))})
         return RandomChoicedSource(self, source)
 
-    @safe_mode('train')
+    @safe_mode("train")
     def shuffled_pairs_source(self):
         r"""Create a shuffled source of (User, Item) pairs.
 
@@ -897,9 +919,10 @@ class RecDataSet(BaseSet):
         dict_keys([Field(USER:ID,USER), Field(ITEM:ID,ITEM)])
         """
         from ..postprocessing.source import RandomShuffledSource
+
         return RandomShuffledSource(self, self.to_pairs())
 
-    @safe_mode('train')
+    @safe_mode("train")
     def shuffled_seqs_source(self, maxlen: Optional[int] = None):
         r"""Create a shuffled source of (User, ItemSequence) data.
 
@@ -920,12 +943,15 @@ class RecDataSet(BaseSet):
         dict_keys([Field(USER:ID,USER), Field(ITEM:ID,ITEM,SEQUENCE)])
         """
         from ..postprocessing.source import RandomShuffledSource
+
         return RandomShuffledSource(self, self.to_seqs(maxlen))
 
-    @safe_mode('train')
+    @safe_mode("train")
     def shuffled_roll_seqs_source(
-        self, minlen: int = 2, maxlen: Optional[int] = None,
-        keep_at_least_itself: bool = True
+        self,
+        minlen: int = 2,
+        maxlen: Optional[int] = None,
+        keep_at_least_itself: bool = True,
     ):
         r"""Create a shuffled source of rolling (User, ItemSequence) data.
 
@@ -950,11 +976,12 @@ class RecDataSet(BaseSet):
         dict_keys([Field(USER:ID,USER), Field(ITEM:ID,ITEM,SEQUENCE)])
         """
         from ..postprocessing.source import RandomShuffledSource
+
         return RandomShuffledSource(
             self, self.to_roll_seqs(minlen, maxlen, keep_at_least_itself)
         )
 
-    @safe_mode('valid', 'test')
+    @safe_mode("valid", "test")
     def ordered_inter_source(self):
         r"""Create an ordered source over all interactions.
 
@@ -968,14 +995,11 @@ class RecDataSet(BaseSet):
         >>> source = dataset.valid().ordered_inter_source()
         """
         from ..postprocessing.source import PipedSource
-        return PipedSource(
-            self, self
-        )
 
-    @safe_mode('train')
-    def shuffled_inter_source(
-        self, buffer_size: Optional[int] = None
-    ):
+        return PipedSource(self, self)
+
+    @safe_mode("train")
+    def shuffled_inter_source(self, buffer_size: Optional[int] = None):
         r"""Create a shuffled source over all interactions.
 
         Parameters
@@ -995,55 +1019,93 @@ class RecDataSet(BaseSet):
         """
         buffer_size = self.DEFAULT_CHUNK_SIZE if buffer_size is None else buffer_size
         from ..postprocessing.source import PipedSource
-        return PipedSource(
-            self, self.shuffle(buffer_size=buffer_size)
-        )
+
+        return PipedSource(self, self.shuffle(buffer_size=buffer_size))
 
 
 class MatchingRecDataSet(RecDataSet):
     r"""Recommendation dataset for item matching (retrieval) tasks."""
+
     TASK = TaskTags.MATCHING
 
     def summary(self):
         r"""Print a summary table with user/item/interaction statistics."""
         super().summary()
         from prettytable import PrettyTable
+
         User, Item = self.fields[USER, ID], self.fields[ITEM, ID]
 
-        table = PrettyTable(['#Users', '#Items', '#Interactions', '#Train', '#Valid', '#Test', 'Density'])
-        table.add_row([
-            User.count, Item.count,
-            self.trainsize + self.validsize + self.testsize,
-            self.trainsize, self.validsize, self.testsize,
-            (self.trainsize + self.validsize + self.testsize) / (User.count * Item.count)
-        ])
+        table = PrettyTable(
+            [
+                "#Users",
+                "#Items",
+                "#Interactions",
+                "#Train",
+                "#Valid",
+                "#Test",
+                "Density",
+            ]
+        )
+        table.add_row(
+            [
+                User.count,
+                Item.count,
+                self.trainsize + self.validsize + self.testsize,
+                self.trainsize,
+                self.validsize,
+                self.testsize,
+                (self.trainsize + self.validsize + self.testsize)
+                / (User.count * Item.count),
+            ]
+        )
 
         infoLogger(table)
 
 
 class NextItemRecDataSet(RecDataSet):
     r"""Recommendation dataset for next-item prediction tasks."""
+
     TASK = TaskTags.NEXTITEM
 
     def summary(self):
         r"""Print a summary table including average sequence length."""
         super().summary()
         from prettytable import PrettyTable
+
         User, Item = self.fields[USER, ID], self.fields[ITEM, ID]
 
-        table = PrettyTable(['#Users', '#Items', 'Avg.Len', '#Interactions', '#Train', '#Valid', '#Test', 'Density'])
-        table.add_row([
-            User.count, Item.count, self.train().meanlen + self.valid().meanlen + self.test().meanlen,
-            self.trainsize + self.validsize + self.testsize,
-            self.trainsize, self.validsize, self.testsize,
-            (self.trainsize + self.validsize + self.testsize) / (User.count * Item.count)
-        ])
+        table = PrettyTable(
+            [
+                "#Users",
+                "#Items",
+                "Avg.Len",
+                "#Interactions",
+                "#Train",
+                "#Valid",
+                "#Test",
+                "Density",
+            ]
+        )
+        table.add_row(
+            [
+                User.count,
+                Item.count,
+                self.train().meanlen + self.valid().meanlen + self.test().meanlen,
+                self.trainsize + self.validsize + self.testsize,
+                self.trainsize,
+                self.validsize,
+                self.testsize,
+                (self.trainsize + self.validsize + self.testsize)
+                / (User.count * Item.count),
+            ]
+        )
 
         infoLogger(table)
 
 
 class PredictionRecDataSet(RecDataSet):
     r"""Recommendation dataset for rating/click prediction tasks."""
+
     TASK = TaskTags.PREDICTION
     STREAMING = False
 
@@ -1052,10 +1114,14 @@ class PredictionRecDataSet(RecDataSet):
         super().summary()
         from prettytable import PrettyTable
 
-        table = PrettyTable(['#Interactions', '#Train', '#Valid', '#Test'])
-        table.add_row([
-            self.trainsize + self.validsize + self.testsize,
-            self.trainsize, self.validsize, self.testsize,
-        ])
+        table = PrettyTable(["#Interactions", "#Train", "#Valid", "#Test"])
+        table.add_row(
+            [
+                self.trainsize + self.validsize + self.testsize,
+                self.trainsize,
+                self.validsize,
+                self.testsize,
+            ]
+        )
 
         infoLogger(table)

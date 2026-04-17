@@ -5,12 +5,14 @@ and evaluating recommendation systems.
 """
 
 from importlib.metadata import version
+
 __version__ = version("freerec")
 
 try:
-    from . import data, models, criterions, ddp, graph, launcher, metrics, parser, utils
-    from .utils import infoLogger
     from freerec.dict2obj import Config
+
+    from . import criterions, data, ddp, graph, launcher, metrics, models, parser, utils
+    from .utils import infoLogger
 except ModuleNotFoundError:
     # torch/torchdata not yet installed; CLI (e.g., freerec setup) still works.
     pass
@@ -27,4 +29,6 @@ def declare(*, version: str):
         The expected FreeRec version string.
     """
     if version != __version__:
-        print(f"\033[1;31m[Warning] FreeRec version of {version} is required but current version is {__version__} \033[0m")
+        print(
+            f"\033[1;31m[Warning] FreeRec version of {version} is required but current version is {__version__} \033[0m"
+        )

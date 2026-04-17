@@ -1,96 +1,104 @@
-
-
-from typing import Any, Literal, Callable, Iterable, List, Dict, Optional, Tuple
-
-import torch, abc, os, time, sys, signal, inspect
-from torch.utils.tensorboard import SummaryWriter
+import abc
+import os
+import signal
+import sys
+import time
+from collections import defaultdict
 from functools import partial
 from itertools import product
-from collections import defaultdict
+from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, Tuple
+
+import torch
+from torch.utils.tensorboard import SummaryWriter
 
 from .data.datasets import RecDataSet
-from .data.postprocessing import PostProcessor
 from .data.fields import Field, FieldTuple
-from .data.tags import USER, ITEM, ID, LABEL, SIZE, UNSEEN, SEEN
-from .models import RecSysArch
+from .data.postprocessing import PostProcessor
+from .data.tags import ID, ITEM, LABEL, SEEN, SIZE, UNSEEN, USER
+from .ddp import is_distributed, is_main_process, main_process_only, synchronize
 from .dict2obj import Config
-from .utils import AverageMeter, Monitor, timemeter, infoLogger, import_pickle, export_pickle
 from .metrics import *
+from .models import RecSysArch
 from .parser import TIME, Parser
-from .ddp import is_main_process, main_process_only, is_distributed, synchronize
+from .utils import (
+    AverageMeter,
+    Monitor,
+    export_pickle,
+    import_pickle,
+    infoLogger,
+    timemeter,
+)
 
-
-__all__ = [
-    'ChiefCoach', 'Coach', 'Adapter'
-]
+__all__ = ["ChiefCoach", "Coach", "Adapter"]
 
 
 DEFAULT_METRICS = {
-    'LOSS': lambda x: x,
+    "LOSS": lambda x: x,
     #############
-    'MSE': mean_squared_error,
-    'MAE': mean_abs_error,
-    'RMSE': root_mse,
+    "MSE": mean_squared_error,
+    "MAE": mean_abs_error,
+    "RMSE": root_mse,
     #############
-    'PRECISION': precision,
-    'RECALL': recall,
-    'F1': f1_score,
-    'HITRATE': hit_rate,
+    "PRECISION": precision,
+    "RECALL": recall,
+    "F1": f1_score,
+    "HITRATE": hit_rate,
     #############
-    'NDCG': normalized_dcg,
-    'MRR': mean_reciprocal_rank,
-    'MAP': mean_average_precision,
+    "NDCG": normalized_dcg,
+    "MRR": mean_reciprocal_rank,
+    "MAP": mean_average_precision,
     #############
-    'AUC': auroc,
-    'GAUC': group_auroc,
-    'LOGLOSS': log_loss
+    "AUC": auroc,
+    "GAUC": group_auroc,
+    "LOGLOSS": log_loss,
 }
 
 DEFAULT_FMTS = {
-    'LOSS': ".5f",
+    "LOSS": ".5f",
     #############
-    'MSE': ".4f",
-    'MAE': ".4f",
-    'RMSE': ".4f",
+    "MSE": ".4f",
+    "MAE": ".4f",
+    "RMSE": ".4f",
     #############
-    'PRECISION': ".4f",
-    'RECALL': ".4f",
-    'F1': ".4f",
-    'HITRATE': ".4f",
+    "PRECISION": ".4f",
+    "RECALL": ".4f",
+    "F1": ".4f",
+    "HITRATE": ".4f",
     #############
-    'NDCG': ".4f",
-    'MRR': ".4f",
-    'MAP': ".4f",
+    "NDCG": ".4f",
+    "MRR": ".4f",
+    "MAP": ".4f",
     #############
-    'AUC': ".4f",
-    'GAUC': ".4f",
-    'LOGLOSS': ".5f"
+    "AUC": ".4f",
+    "GAUC": ".4f",
+    "LOGLOSS": ".5f",
 }
 
 DEFAULT_BEST_CASTER = {
-    'LOSS': min,
+    "LOSS": min,
     #############
-    'MSE': min,
-    'MAE': min,
-    'RMSE': min,
+    "MSE": min,
+    "MAE": min,
+    "RMSE": min,
     #############
-    'PRECISION': max,
-    'RECALL': max,
-    'F1': max,
-    'HITRATE': max,
+    "PRECISION": max,
+    "RECALL": max,
+    "F1": max,
+    "HITRATE": max,
     #############
-    'NDCG': max,
-    'MRR': max,
-    'MAP': max,
+    "NDCG": max,
+    "MRR": max,
+    "MAP": max,
     #############
-    'AUC': max,
-    'GAUC': max,
-    'LOGLOSS': min
+    "AUC": max,
+    "GAUC": max,
+    "LOGLOSS": min,
 }
 
 
 class EarlyStopError(Exception):
     r"""Raised when early stopping criteria are met."""
+
 
 class _DummyModule(torch.nn.Module):
     r"""Placeholder module used before a real model is assigned."""
@@ -101,7 +109,9 @@ class _DummyModule(torch.nn.Module):
 
     def step(self, *args, **kwargs):
         r"""Raise :class:`NotImplementedError`."""
-        raise NotImplementedError("No optimizer or lr scheduler available for Coach ...")
+        raise NotImplementedError(
+            "No optimizer or lr scheduler available for Coach ..."
+        )
 
     def backward(self, *args, **kwargs):
         r"""Raise :class:`NotImplementedError`."""
@@ -129,21 +139,23 @@ class ChiefCoach(metaclass=abc.ABCMeta):
     """
 
     def __init__(
-        self, *,
+        self,
+        *,
         dataset: RecDataSet,
-        trainpipe: PostProcessor, validpipe: PostProcessor, testpipe: Optional[PostProcessor],
-        model: RecSysArch, cfg: Parser
+        trainpipe: PostProcessor,
+        validpipe: PostProcessor,
+        testpipe: Optional[PostProcessor],
+        model: RecSysArch,
+        cfg: Parser,
     ):
         r"""Initialize ChiefCoach."""
 
         self.cfg = cfg
-        self.__mode = 'train'
+        self.__mode = "train"
 
         self.set_device(self.cfg.device)
         self.set_dataset(dataset)
-        self.set_datapipe(
-            trainpipe, validpipe, testpipe
-        )
+        self.set_datapipe(trainpipe, validpipe, testpipe)
         self.set_dataloader()
 
         self.set_model(model)
@@ -187,14 +199,12 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         self.validpipe = validpipe
         self.testpipe = self.validpipe if testpipe is None else testpipe
 
-    def set_model(
-        self, model: RecSysArch
-    ):
+    def set_model(self, model: RecSysArch):
         r"""Move the model to the target device and wrap with DDP if distributed."""
         self.model = model.to(self.device)
         if is_distributed():
             self.model = torch.nn.parallel.DistributedDataParallel(model)
-    
+
     def set_optimizer(self):
         r"""Create the optimizer based on ``cfg.optimizer``.
 
@@ -204,29 +214,30 @@ class ChiefCoach(metaclass=abc.ABCMeta):
             If the optimizer name is not one of ``'sgd'``, ``'adam'``,
             or ``'adamw'``.
         """
-        if self.cfg.optimizer.lower() == 'sgd':
+        if self.cfg.optimizer.lower() == "sgd":
             self.optimizer = torch.optim.SGD(
-                self.model.parameters(), lr=self.cfg.lr, 
+                self.model.parameters(),
+                lr=self.cfg.lr,
                 momentum=self.cfg.momentum,
                 nesterov=self.cfg.nesterov,
-                weight_decay=self.cfg.weight_decay
+                weight_decay=self.cfg.weight_decay,
             )
-        elif self.cfg.optimizer.lower() == 'adam':
+        elif self.cfg.optimizer.lower() == "adam":
             self.optimizer = torch.optim.Adam(
-                self.model.parameters(), lr=self.cfg.lr,
+                self.model.parameters(),
+                lr=self.cfg.lr,
                 betas=(self.cfg.beta1, self.cfg.beta2),
-                weight_decay=self.cfg.weight_decay
+                weight_decay=self.cfg.weight_decay,
             )
-        elif self.cfg.optimizer.lower() == 'adamw':
+        elif self.cfg.optimizer.lower() == "adamw":
             self.optimizer = torch.optim.AdamW(
-                self.model.parameters(), lr=self.cfg.lr,
+                self.model.parameters(),
+                lr=self.cfg.lr,
                 betas=(self.cfg.beta1, self.cfg.beta2),
-                weight_decay=self.cfg.weight_decay
+                weight_decay=self.cfg.weight_decay,
             )
         else:
-            raise NotImplementedError(
-                f"Unexpected optimizer {self.cfg.optimizer} ..."
-            )
+            raise NotImplementedError(f"Unexpected optimizer {self.cfg.optimizer} ...")
 
     def set_lr_scheduler(self):
         r"""Set the learning rate scheduler. Override to use a real scheduler."""
@@ -235,32 +246,30 @@ class ChiefCoach(metaclass=abc.ABCMeta):
     def set_dataloader(self) -> None:
         r"""Create :class:`torchdata.dataloader2.DataLoader2` instances for train, valid, and test."""
         from torchdata.dataloader2 import (
-            DataLoader2, 
-            MultiProcessingReadingService, DistributedReadingService, 
-            SequentialReadingService
+            DataLoader2,
+            DistributedReadingService,
+            MultiProcessingReadingService,
+            SequentialReadingService,
         )
 
-        def get_reading_servie():
+        def get_reading_service():
             if is_distributed():
                 rs = SequentialReadingService(
                     DistributedReadingService(),
-                    MultiProcessingReadingService(self.cfg.num_workers)
+                    MultiProcessingReadingService(self.cfg.num_workers),
                 )
             else:
                 rs = MultiProcessingReadingService(self.cfg.num_workers)
             return rs
 
         self.trainloader = DataLoader2(
-            datapipe=self.trainpipe, 
-            reading_service=get_reading_servie()
+            datapipe=self.trainpipe, reading_service=get_reading_service()
         )
         self.validloader = DataLoader2(
-            datapipe=self.validpipe, 
-            reading_service=get_reading_servie()
+            datapipe=self.validpipe, reading_service=get_reading_service()
         )
         self.testloader = DataLoader2(
-            datapipe=self.testpipe, 
-            reading_service=get_reading_servie()
+            datapipe=self.testpipe, reading_service=get_reading_service()
         )
 
     def set_other(self):
@@ -301,7 +310,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
     @mode.setter
     def mode(self, mode: str):
         r"""Set the current mode and toggle model train/eval accordingly."""
-        if mode == 'train':
+        if mode == "train":
             self.model.train()
         else:
             self.model.eval()
@@ -310,9 +319,9 @@ class ChiefCoach(metaclass=abc.ABCMeta):
     @property
     def dataloader(self):
         r"""The dataloader for the current mode."""
-        if self.mode == 'train':
+        if self.mode == "train":
             return self.trainloader
-        elif self.mode == 'valid':
+        elif self.mode == "valid":
             return self.validloader
         else:
             return self.testloader
@@ -337,7 +346,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         )
 
     @abc.abstractmethod
-    def evaluate(self, epoch: int, step: int = -1, mode: str = 'valid'):
+    def evaluate(self, epoch: int, step: int = -1, mode: str = "valid"):
         r"""Run evaluation. Must be implemented by subclasses.
 
         Parameters
@@ -354,9 +363,12 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         )
 
     def register_metric(
-        self, name: str, func: Callable,
-        fmt: str = '.4f', best_caster: Callable = max,
-        **kwargs
+        self,
+        name: str,
+        func: Callable,
+        fmt: str = ".4f",
+        best_caster: Callable = max,
+        **kwargs,
     ) -> None:
         r"""Register a custom metric.
 
@@ -377,9 +389,9 @@ class ChiefCoach(metaclass=abc.ABCMeta):
             Additional keyword arguments forwarded to ``func``.
         """
         name = name.upper()
-        if '@' in name:
-            lastname, K = name.split('@')
-            kwargs['k'] = int(K)
+        if "@" in name:
+            lastname, K = name.split("@")
+            kwargs["k"] = int(K)
         else:
             lastname = name
 
@@ -387,17 +399,10 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         DEFAULT_FMTS[lastname] = fmt
         DEFAULT_BEST_CASTER[lastname] = best_caster
 
-        for mode in ('train', 'valid', 'test'):
-            self._set_monitor(
-                name=name,
-                lastname=lastname,
-                mode=mode,
-                **kwargs
-            )
+        for mode in ("train", "valid", "test"):
+            self._set_monitor(name=name, lastname=lastname, mode=mode, **kwargs)
 
-    def _set_monitor(
-        self, name: str, lastname: str, mode: str = 'train', **kwargs
-    ):
+    def _set_monitor(self, name: str, lastname: str, mode: str = "train", **kwargs):
         r"""Create and register an :class:`~freerec.utils.AverageMeter` for a metric.
 
         Parameters
@@ -424,16 +429,16 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         name, lastname = name.upper(), lastname.upper()
         try:
             meter = AverageMeter(
-                    name=name,
-                    metric=partial(DEFAULT_METRICS[lastname], **kwargs),
-                    fmt=DEFAULT_FMTS[lastname],
-                    best_caster=DEFAULT_BEST_CASTER[lastname]
-                )
+                name=name,
+                metric=partial(DEFAULT_METRICS[lastname], **kwargs),
+                fmt=DEFAULT_FMTS[lastname],
+                best_caster=DEFAULT_BEST_CASTER[lastname],
+            )
             self.__monitors[mode][lastname].append(meter)
 
-            if mode == 'valid' and name == self.cfg.which4best.upper():
+            if mode == "valid" and name == self.cfg.which4best.upper():
                 self.meter4best = meter
-                self._best = -float('inf') if meter.caster is max else float('inf')
+                self._best = -float("inf") if meter.caster is max else float("inf")
                 self._best_epoch: int = 0
                 self._best_step: int = -1
                 self._stopping_steps: int = 0
@@ -451,9 +456,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         r"""The :class:`~freerec.utils.Monitor` dictionary keyed by mode."""
         return self.__monitors
 
-    def set_monitors(
-        self, monitors: List[str]
-    ):
+    def set_monitors(self, monitors: List[str]):
         r"""Initialize monitors for all modes.
 
         Parameters
@@ -468,31 +471,22 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         """
         # meters for train|valid|test
         self.__monitors = Monitor()
-        self.__monitors['train'] = defaultdict(list)
-        self.__monitors['valid'] = defaultdict(list)
-        self.__monitors['test'] = defaultdict(list)
+        self.__monitors["train"] = defaultdict(list)
+        self.__monitors["valid"] = defaultdict(list)
+        self.__monitors["test"] = defaultdict(list)
 
         # UPPER
-        monitors = ['LOSS'] + [name.upper() for name in monitors]
+        monitors = ["LOSS"] + [name.upper() for name in monitors]
         monitors = sorted(set(monitors), key=monitors.index)
 
         for name in monitors:
-            for mode in ('train', 'valid', 'test'):
-                if '@' in name:
-                    lastname, K = name.split('@')
-                    self._set_monitor(
-                        name=name,
-                        lastname=lastname,
-                        mode=mode,
-                        k=int(K)
-                    )
+            for mode in ("train", "valid", "test"):
+                if "@" in name:
+                    lastname, K = name.split("@")
+                    self._set_monitor(name=name, lastname=lastname, mode=mode, k=int(K))
                 else:
                     lastname = name
-                    self._set_monitor(
-                        name=name,
-                        lastname=lastname,
-                        mode=mode
-                    )
+                    self._set_monitor(name=name, lastname=lastname, mode=mode)
 
 
 class Coach(ChiefCoach):
@@ -529,10 +523,12 @@ class Coach(ChiefCoach):
         """
         if is_main_process():
             filename = self.cfg.SAVED_FILENAME if filename is None else filename
-            torch.save(self.model.state_dict(), os.path.join(self.cfg.LOG_PATH, filename))
+            torch.save(
+                self.model.state_dict(), os.path.join(self.cfg.LOG_PATH, filename)
+            )
 
         synchronize()
-        return 
+        return
 
     def load(self, path: str, filename: Optional[str] = None) -> None:
         r"""Load model state dict from disk.
@@ -547,9 +543,9 @@ class Coach(ChiefCoach):
         filename = self.cfg.SAVED_FILENAME if filename is None else filename
         self.model.load_state_dict(
             torch.load(
-                os.path.join(path, filename), 
+                os.path.join(path, filename),
                 map_location=self.device,
-                weights_only=True
+                weights_only=True,
             )
         )
 
@@ -566,10 +562,10 @@ class Coach(ChiefCoach):
         """
         path = os.path.join(self.cfg.CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
         checkpoint = dict()
-        checkpoint['epoch'] = epoch
+        checkpoint["epoch"] = epoch
         for module in self.cfg.CHECKPOINT_MODULES:
             checkpoint[module] = getattr(self, module).state_dict()
-        checkpoint['monitors'] = self.monitors.state_dict()
+        checkpoint["monitors"] = self.monitors.state_dict()
         torch.save(checkpoint, path)
 
         synchronize()
@@ -587,10 +583,10 @@ class Coach(ChiefCoach):
         checkpoint = torch.load(path, weights_only=False)
         for module in self.cfg.CHECKPOINT_MODULES:
             getattr(self, module).load_state_dict(checkpoint[module])
-        self.monitors.load_state_dict(checkpoint['monitors'])
+        self.monitors.load_state_dict(checkpoint["monitors"])
 
         synchronize()
-        return checkpoint['epoch']
+        return checkpoint["epoch"]
 
     def resume(self) -> int:
         r"""Resume training from the last checkpoint if ``cfg.resume`` is set.
@@ -603,7 +599,9 @@ class Coach(ChiefCoach):
         start_epoch: int = 0
         if self.cfg.resume:
             start_epoch = self.load_checkpoint()
-            infoLogger(f"[Coach] >>> Load last checkpoint and train from epoch: {start_epoch}")
+            infoLogger(
+                f"[Coach] >>> Load last checkpoint and train from epoch: {start_epoch}"
+            )
         return start_epoch
 
     def save_best(self) -> None:
@@ -612,7 +610,9 @@ class Coach(ChiefCoach):
 
     def load_best(self) -> None:
         r"""Load the best saved model."""
-        infoLogger(f"[Coach] >>> Load best model @Epoch: {self._best_epoch} ({self._best_step}) ")
+        infoLogger(
+            f"[Coach] >>> Load best model @Epoch: {self._best_epoch} ({self._best_step}) "
+        )
         self.load(self.cfg.LOG_PATH, self.cfg.BEST_FILENAME)
 
     def check_best(self, epoch: int, step: int = -1) -> None:
@@ -637,7 +637,9 @@ class Coach(ChiefCoach):
                 self._best_epoch = epoch
                 self._best_step = step
                 self._stopping_steps = 0
-                infoLogger(f"[Coach] >>> Better ***{self.meter4best.name}*** of ***{self._best:.4f}*** ")
+                infoLogger(
+                    f"[Coach] >>> Better ***{self.meter4best.name}*** of ***{self._best:.4f}*** "
+                )
                 self.save_best()
             else:
                 if self._stopping_steps >= self._early_stop_patience:
@@ -654,7 +656,7 @@ class Coach(ChiefCoach):
             self.test(self._best_epoch, self._best_step)
             self.load(self.cfg.LOG_PATH, self.cfg.SAVED_FILENAME)
         except FileNotFoundError:
-            infoLogger(f"[Coach] >>> No best model was recorded. Skip it ...")
+            infoLogger("[Coach] >>> No best model was recorded. Skip it ...")
 
     @main_process_only
     def easy_record_best(self, best: defaultdict):
@@ -666,24 +668,31 @@ class Coach(ChiefCoach):
             Dictionary collecting the best metric values by mode.
         """
 
-        for lastname, meters in self.monitors['test'].items():
+        for lastname, meters in self.monitors["test"].items():
             for meter in meters:
                 # Skip those meters never activated.
                 if len(meter.history) == 0:
                     continue
                 # Note that meter.history[-1] is the result at the best checkpoint.
                 val = meter.history[-1]
-                best['best'][meter.name] = val
+                best["best"][meter.name] = val
 
-        export_pickle(best, os.path.join(self.cfg.LOG_PATH, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME))
+        export_pickle(
+            best,
+            os.path.join(
+                self.cfg.LOG_PATH, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME
+            ),
+        )
 
     @torch.no_grad()
     def monitor(
-        self, *values,
-        n: int = 1, reduction: str = 'mean',
-        mode: Literal['train', 'valid', 'test'] = 'train',
+        self,
+        *values,
+        n: int = 1,
+        reduction: str = "mean",
+        mode: Literal["train", "valid", "test"] = "train",
         pool: Optional[Iterable] = None,
-        refresh: bool = False
+        refresh: bool = False,
     ):
         r"""Feed data values into the metric monitors.
 
@@ -732,7 +741,7 @@ class Coach(ChiefCoach):
                 infos += [meter.step() for meter in meters if meter.active]
             if len(infos) == 1:
                 continue
-            infoLogger(' || '.join(infos))
+            infoLogger(" || ".join(infos))
 
     @main_process_only
     @timemeter
@@ -759,41 +768,57 @@ class Coach(ChiefCoach):
 
         for mode, metrics in self.monitors.items():
             metrics: defaultdict[str, List[AverageMeter]]
-            freq = 1 if mode == 'train' else self.cfg.eval_freq
+            freq = 1 if mode == "train" else self.cfg.eval_freq
             for lastname, meters in metrics.items():
                 for meter in meters:
                     # Skip those meters never activated.
                     if len(meter.history) == 0:
                         continue
                     meter.plot(freq=freq)
-                    imgname = meter.save(path=os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR), mode=mode)
+                    imgname = meter.save(
+                        path=os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR),
+                        mode=mode,
+                    )
                     step, val = meter.argbest(freq)
                     info += s.format(
-                        mode=mode, name=meter.name,
-                        val=val, step=step, img=f"![]({imgname})"
+                        mode=mode,
+                        name=meter.name,
+                        val=val,
+                        step=step,
+                        img=f"![]({imgname})",
                     )
                     data.append([mode, meter.name, val, step])
-                    if val != -1: # Only save available data.
+                    if val != -1:  # Only save available data.
                         best[mode][meter.name] = val
 
-        file_ = os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR, self.cfg.SUMMARY_FILENAME)
+        file_ = os.path.join(
+            self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR, self.cfg.SUMMARY_FILENAME
+        )
         with open(file_, "w", encoding="utf8") as fh:
             fh.write(info)
 
-        df = pd.DataFrame(data, columns=['Mode', 'Metric', 'Best', '@Step'])
+        df = pd.DataFrame(data, columns=["Mode", "Metric", "Best", "@Step"])
         infoLogger(str(df))
         infoLogger(f"[LoG_PaTH] >>> {self.cfg.LOG_PATH}")
 
-        self.monitors.write(os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR)) # tensorboard
-        self.monitors.save(os.path.join(self.cfg.LOG_PATH, self.cfg.DATA_DIR), self.cfg.MONITOR_FILENAME)
+        self.monitors.write(
+            os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR)
+        )  # tensorboard
+        self.monitors.save(
+            os.path.join(self.cfg.LOG_PATH, self.cfg.DATA_DIR),
+            self.cfg.MONITOR_FILENAME,
+        )
 
         return best
 
     def dict_to_device(self, data: Dict[Field, Any]) -> Dict[Field, Any]:
         r"""Move all :class:`torch.Tensor` values in a dict to the target device."""
-        return {field: value.to(self.device) if isinstance(value, torch.Tensor) else value for field, value in data.items()}
+        return {
+            field: value.to(self.device) if isinstance(value, torch.Tensor) else value
+            for field, value in data.items()
+        }
 
-    def evaluate(self, epoch: int, step: int = -1, mode: str = 'valid'):
+    def evaluate(self, epoch: int, step: int = -1, mode: str = "valid"):
         r"""Run evaluation over the current dataloader and update monitors.
 
         Parameters
@@ -813,18 +838,25 @@ class Coach(ChiefCoach):
             bsz = data[self.Size]
             if self.User in data:
                 users = data[self.User].flatten().tolist()
-            else: # No User field
+            else:  # No User field
                 users = [0] * bsz
 
             data = self.dict_to_device(data)
-            if self.cfg.ranking == 'full':
-                scores = self.model(data, ranking='full')
+            if self.cfg.ranking == "full":
+                scores = self.model(data, ranking="full")
                 if self.remove_seen:
-                    seen = self.Item.to_csr(data[self.ISeen]).to(self.device).to_dense().bool()
+                    seen = (
+                        self.Item.to_csr(data[self.ISeen])
+                        .to(self.device)
+                        .to_dense()
+                        .bool()
+                    )
                     scores[seen] = -1e23
-                targets = self.Item.to_csr(data[self.IUnseen]).to(self.device).to_dense()
-            elif self.cfg.ranking == 'pool':
-                scores = self.model(data, ranking='pool')
+                targets = (
+                    self.Item.to_csr(data[self.IUnseen]).to(self.device).to_dense()
+                )
+            elif self.cfg.ranking == "pool":
+                scores = self.model(data, ranking="pool")
                 if self.Label in data:
                     targets = data[self.Label]
                 else:
@@ -841,21 +873,20 @@ class Coach(ChiefCoach):
                 y_true.extend(targets.flatten().tolist())
 
             self.monitor(
-                scores, targets,
-                n=bsz, reduction="mean", mode=mode,
-                pool=['HITRATE', 'PRECISION', 'RECALL', 'NDCG', 'MRR']
+                scores,
+                targets,
+                n=bsz,
+                reduction="mean",
+                mode=mode,
+                pool=["HITRATE", "PRECISION", "RECALL", "NDCG", "MRR"],
             )
-        
+
         # TODO: Multi GPUs Support
         self.monitor(
-            y_pred, y_true,
-            n=1, reduction="mean", mode=mode,
-            pool=['LOGLOSS', 'AUC']
+            y_pred, y_true, n=1, reduction="mean", mode=mode, pool=["LOGLOSS", "AUC"]
         )
         self.monitor(
-            y_pred, y_true, groups,
-            n=1, reduction="mean", mode=mode,
-            pool=['GAUC']
+            y_pred, y_true, groups, n=1, reduction="mean", mode=mode, pool=["GAUC"]
         )
 
     @timemeter
@@ -867,7 +898,7 @@ class Coach(ChiefCoach):
         epoch : int
             The current epoch number.
         """
-        self.mode = 'train'
+        self.mode = "train"
         # self.dataloader.seed(epoch)
         self.train_per_epoch(epoch)
         self.step(epoch)
@@ -878,8 +909,8 @@ class Coach(ChiefCoach):
         r"""Run validation, check for best model, and print metrics."""
         mode_ = self.mode
 
-        self.mode = 'valid'
-        self.evaluate(epoch=epoch, step=step, mode='valid')
+        self.mode = "valid"
+        self.evaluate(epoch=epoch, step=step, mode="valid")
         self.check_best(epoch, step)
         self.step(epoch, step)
 
@@ -891,12 +922,12 @@ class Coach(ChiefCoach):
         r"""Run test evaluation and print metrics."""
         mode_ = self.mode
 
-        self.mode = 'test'
-        self.evaluate(epoch=epoch, step=step, mode='test')
+        self.mode = "test"
+        self.evaluate(epoch=epoch, step=step, mode="test")
         self.step(epoch, step)
 
         self.mode = mode_
-            
+
     @timemeter
     def fit(self):
         r"""Run the full training loop with evaluation, early stopping, and summary."""
@@ -965,10 +996,10 @@ class Adapter:
         tuple of (str, str, str)
             ``(command, id, log_path)`` for the registered run.
         """
-        self.cfg.ENVS['id'] = time.strftime(TIME)
-        self.cfg.ENVS['device'] = device
-        command = self.COMMAND + self.get_option('id', self.cfg.ENVS.id)
-        command += self.get_option('device', self.cfg.ENVS.device)
+        self.cfg.ENVS["id"] = time.strftime(TIME)
+        self.cfg.ENVS["device"] = device
+        command = self.COMMAND + self.get_option("id", self.cfg.ENVS.id)
+        command += self.get_option("device", self.cfg.ENVS.device)
         return command, self.cfg.ENVS.id, self.cfg.LOG_PATH.format(**self.cfg.ENVS)
 
     @timemeter
@@ -985,8 +1016,8 @@ class Adapter:
         piece = "\t{key}: {vals} \n"
         envs, params, defaults = "", "", ""
         for key, val in self.cfg.ENVS.items():
-            if key == 'device':
-                self.devices = tuple(val.split(','))
+            if key == "device":
+                self.devices = tuple(val.split(","))
             else:
                 self.cfg.COMMAND += self.get_option(key, val)
             envs += piece.format(key=key, vals=val)
@@ -1062,13 +1093,14 @@ class Adapter:
                 for mode, best in data.items():
                     for metric, val in best.items():
                         val = val if isinstance(val, (int, float)) else -1
-                        metrics['/'.join([mode, metric])] = val
+                        metrics["/".join([mode, metric])] = val
                 writer.add_hparams(
-                    params, metrics,
+                    params,
+                    metrics,
                 )
         except Exception:
             infoLogger(
-                f"\033[0;31;47m[Adapter] >>> Unknown errors happen. This is mainly due to abnormal exits of child processes.\033[0m"
+                "\033[0;31;47m[Adapter] >>> Unknown errors happen. This is mainly due to abnormal exits of child processes.\033[0m"
             )
 
     def each_grid(self):
@@ -1080,22 +1112,24 @@ class Adapter:
     def product_grid(self):
         r"""Yield parameter dicts for full Cartesian-product grid search."""
         for vals in product(*self.values):
-            yield self.cfg.DEFAULTS | {option:val for option, val in zip(self.params, vals)}
+            yield self.cfg.DEFAULTS | {
+                option: val for option, val in zip(self.params, vals)
+            }
 
     def save_checkpoint(self, source: List) -> None:
         r"""Save remaining parameter combinations to a checkpoint."""
         path = os.path.join(self.cfg.CORE_CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
         checkpoint = dict()
-        checkpoint['source'] = source
+        checkpoint["source"] = source
         torch.save(checkpoint, path)
 
     @timemeter
     def load_checkpoint(self) -> int:
         r"""Load remaining parameter combinations from a checkpoint."""
-        infoLogger(f"[Coach] >>> Load the recent checkpoint ...")
+        infoLogger("[Coach] >>> Load the recent checkpoint ...")
         path = os.path.join(self.cfg.CORE_CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
         checkpoint = torch.load(path, weights_only=True)
-        return checkpoint['source']
+        return checkpoint["source"]
 
     def resume(self):
         r"""Resume grid search from the last checkpoint or start fresh."""
@@ -1106,7 +1140,9 @@ class Adapter:
 
     def run(self, command: str, params: Dict):
         r"""Launch a training subprocess with the given parameters."""
-        import subprocess, shlex
+        import shlex
+        import subprocess
+
         for option, val in params.items():
             command += self.get_option(option, val)
         infoLogger(f"\033[0;31;47m{command}\033[0m")
@@ -1121,10 +1157,12 @@ class Adapter:
 
     def poll(self, tasks: List):
         r"""Poll until any subprocess terminates, then return its slot index."""
+
         def is_null(task):
             return task is None
+
         buffer_source = [task[-1] for task in tasks if task is not None]
-        time.sleep(1) # for unique id
+        time.sleep(1)  # for unique id
         while not any(map(is_null, tasks)):
             time.sleep(7)
             buffer_source = []
@@ -1156,8 +1194,11 @@ class Adapter:
         tasks = [None for _ in range(len(self.devices))]
 
         def signal_handler(sig, frame):
-            infoLogger(f"\033[0;31;47m===============================TERMINATE ALL SUBPROCESSES===============================\033[0m")
+            infoLogger(
+                "\033[0;31;47m===============================TERMINATE ALL SUBPROCESSES===============================\033[0m"
+            )
             self.terminate(tasks)
+
         signal.signal(signal.SIGINT, signal_handler)
 
         try:

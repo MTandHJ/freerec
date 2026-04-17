@@ -1,19 +1,13 @@
-
-
-
-from typing import Iterator, Iterable, List, Union, TypeVar, Dict
+from typing import Iterable, Iterator, Union
 
 import torch
 import torchdata.datapipes as dp
 
-from .base import PostProcessor
 from ..fields import Field
 from ..tags import SIZE
+from .base import PostProcessor
 
-
-__all__ = [
-    "Batcher_", "ToTensor"
-]
+__all__ = ["Batcher_", "ToTensor"]
 
 
 @dp.functional_datapipe("batch_")
@@ -34,8 +28,7 @@ class Batcher_(PostProcessor):
     """
 
     def __init__(
-        self, source: PostProcessor,
-        batch_size: int, drop_last: bool = False
+        self, source: PostProcessor, batch_size: int, drop_last: bool = False
     ) -> None:
         r"""Initialize the Batcher_."""
         super().__init__(source)
@@ -81,7 +74,7 @@ class ToTensor(PostProcessor):
         try:
             if isinstance(col, Iterable):
                 col = self.at_least_2d(torch.tensor(col))
-        except ValueError: # skip ragged data
+        except ValueError:  # skip ragged data
             pass
         finally:
             return col

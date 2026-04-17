@@ -1,11 +1,11 @@
+import math
+from typing import Callable, Optional
 
-from typing import Optional, Callable
-
-import torch, math
+import torch
 import torch.nn as nn
 from einops import rearrange
 
-__all__ = ['ScaledDotProductAttention']
+__all__ = ["ScaledDotProductAttention"]
 
 
 class ScaledDotProductAttention(nn.Module):
@@ -49,7 +49,7 @@ class ScaledDotProductAttention(nn.Module):
     """
 
     # value used for masking attention scores
-    ATTENTION_MASK_VALUE = -1.e6
+    ATTENTION_MASK_VALUE = -1.0e6
 
     def __init__(
         self,
@@ -57,18 +57,19 @@ class ScaledDotProductAttention(nn.Module):
         num_heads: int = 1,
         activation: Callable = nn.ReLU,
         hidden_size: Optional[int] = None,
-        hidden_dropout_rate: float = 0.,
-        attn_dropout_rate: float = 0.,
-        norm_eps: float = 1.e-12,
+        hidden_dropout_rate: float = 0.0,
+        attn_dropout_rate: float = 0.0,
+        norm_eps: float = 1.0e-12,
         bias: bool = False,
     ):
         r"""Initialize ScaledDotProductAttention."""
         super().__init__()
 
         if hidden_size is None:
-            assert embedding_dim % num_heads == 0, \
+            assert embedding_dim % num_heads == 0, (
                 f"`embedding_dim` value {embedding_dim} is not divisible by the `num_heads` {num_heads}"
-            self.hidden_size =  embedding_dim // num_heads
+            )
+            self.hidden_size = embedding_dim // num_heads
         else:
             self.hidden_size = hidden_size
 
@@ -83,7 +84,7 @@ class ScaledDotProductAttention(nn.Module):
         self.to_out = nn.Sequential(
             nn.Linear(num_heads * self.hidden_size, embedding_dim, bias=bias),
             activation(),
-            nn.Dropout(p=hidden_dropout_rate)
+            nn.Dropout(p=hidden_dropout_rate),
         )
         self.norm = nn.LayerNorm(embedding_dim, eps=norm_eps)
 
@@ -91,7 +92,7 @@ class ScaledDotProductAttention(nn.Module):
         self,
         x: torch.Tensor,
         key: Optional[torch.Tensor] = None,
-        attn_mask: Optional[torch.BoolTensor] = None
+        attn_mask: Optional[torch.BoolTensor] = None,
     ):
         r"""Compute scaled dot-product attention.
 

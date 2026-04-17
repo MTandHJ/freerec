@@ -1,18 +1,22 @@
-
-
-
-from typing import TypeVar, Callable, Optional, Union, List, Tuple
+import hashlib
+import os
+import warnings
+from typing import Callable, List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
-import os, requests, warnings, hashlib, tqdm
+import requests
+import tqdm
 
 from ..utils import infoLogger
 
+T = TypeVar("T")
 
-T = TypeVar('T')
+
 class DataSetLoadingError(Exception):
     r"""Exception raised when a dataset fails to load."""
+
     ...
+
 
 def safe_cast(val: T, dest_type: Callable[[T], T], default: T) -> T:
     r"""Cast a value to the specified type with a fallback default.
@@ -46,24 +50,29 @@ def safe_cast(val: T, dest_type: Callable[[T], T], default: T) -> T:
     If ``default`` is also ``None``, a ``ValueError`` is raised.
     """
     try:
-        if val not in (None, ''):
+        if val not in (None, ""):
             return dest_type(val)
-        else: # fill_na
+        else:  # fill_na
             if default is None:
                 raise ValueError
             return dest_type(default)
     except (ValueError, TypeError):
         raise ValueError(
-            f"Using '{dest_type.__name__}' to convert '{val}' where the default value is '{default}' ..." \
+            f"Using '{dest_type.__name__}' to convert '{val}' where the default value is '{default}' ..."
             f"This happens when the value (or the default value: '{default}') to be cast is not of the type '{dest_type.__name__}'.",
         )
 
 
 def download_from_url(
-    url: str, root: str = '.', filename: Optional[str] = None,
-    overwrite: bool = False, retries=5, chunk_size: int = 1024 * 1024,
-    sha1_hash: Optional[str] = None, verify_ssl: bool = True,
-    log: bool = True
+    url: str,
+    root: str = ".",
+    filename: Optional[str] = None,
+    overwrite: bool = False,
+    retries=5,
+    chunk_size: int = 1024 * 1024,
+    sha1_hash: Optional[str] = None,
+    verify_ssl: bool = True,
+    log: bool = True,
 ):
     r"""Download a file from a URL to a local directory.
 
@@ -105,36 +114,45 @@ def download_from_url(
         If the downloaded file's SHA-1 hash does not match ``sha1_hash``.
     """
     if filename is None:
-        filename = url.split('/')[-1]
+        filename = url.split("/")[-1]
         # Empty filenames are invalid
-        assert filename, 'Can\'t construct file-name from this URL. ' \
-            'Please set the `filename` option manually.'
+        assert filename, (
+            "Can't construct file-name from this URL. "
+            "Please set the `filename` option manually."
+        )
     file_ = os.path.join(root, filename)
 
     assert retries >= 0, "Number of retries should be at least 0"
 
     if not verify_ssl:
         warnings.warn(
-            'Unverified HTTPS request is being made (verify_ssl=False). '
-            'Adding certificate verification is strongly advised.')
+            "Unverified HTTPS request is being made (verify_ssl=False). "
+            "Adding certificate verification is strongly advised."
+        )
 
-    if overwrite or not os.path.exists(file_) or (sha1_hash and sha1_hash != check_sha1(file_)):
+    if (
+        overwrite
+        or not os.path.exists(file_)
+        or (sha1_hash and sha1_hash != check_sha1(file_))
+    ):
         dirname = os.path.dirname(os.path.abspath(os.path.expanduser(file_)))
         if not os.path.exists(dirname):
             os.makedirs(dirname)
-        while retries+1 > 0:
+        while retries + 1 > 0:
             # Disable pyling too broad Exception
             # pylint: disable=W0703
             try:
                 if log:
-                    infoLogger('[DataSet] >>> Downloading %s from %s...' % (file_, url))
+                    infoLogger("[DataSet] >>> Downloading %s from %s..." % (file_, url))
                 r = requests.get(url, stream=True, verify=verify_ssl)
                 filesize = int(r.headers.get("Content-Length", 0))
                 if r.status_code != 200:
                     raise RuntimeError("Failed downloading url %s" % url)
-                with open(file_, 'wb') as f:
+                with open(file_, "wb") as f:
                     if log:
-                        progress_bar = tqdm.tqdm(total=filesize, unit="B", unit_scale=True, desc="վ'ᴗ' ի-")
+                        progress_bar = tqdm.tqdm(
+                            total=filesize, unit="B", unit_scale=True, desc="վ'ᴗ' ի-"
+                        )
                         for chunk in r.iter_content(chunk_size=chunk_size):
                             if chunk:  # filter out keep-alive new chunks
                                 progress_bar.update(len(chunk))
@@ -146,10 +164,10 @@ def download_from_url(
                                 f.write(chunk)
                 if sha1_hash and not check_sha1(file_, sha1_hash):
                     raise DataSetLoadingError(
-                        'File {} is downloaded but the content hash does not match.'
-                        ' The repo may be outdated or download may be incomplete. '
+                        "File {} is downloaded but the content hash does not match."
+                        " The repo may be outdated or download may be incomplete. "
                         'If the "repo_url" is overridden, consider switching to '
-                        'the default repo.'.format(file_)
+                        "the default repo.".format(file_)
                     )
                 return file_
             except Exception as e:
@@ -158,8 +176,11 @@ def download_from_url(
                     raise e
                 else:
                     if log:
-                        infoLogger("[DataSet] >>> Download failed, retrying, {} attempt{} left"
-                              .format(retries, 's' if retries > 1 else ''))
+                        infoLogger(
+                            "[DataSet] >>> Download failed, retrying, {} attempt{} left".format(
+                                retries, "s" if retries > 1 else ""
+                            )
+                        )
         infoLogger("Failed downloading url %s" % url)
     return file_
 
@@ -187,24 +208,28 @@ def extract_archive(file_, target_dir, overwrite=False):
 
     if os.path.exists(target_dir) and not overwrite:
         return
-    infoLogger('[DataSet] >>> Extracting file to {}'.format(target_dir))
-    if file_.endswith('.tar.gz') or file_.endswith('.tar') or file_.endswith('.tgz'):
+    infoLogger("[DataSet] >>> Extracting file to {}".format(target_dir))
+    if file_.endswith(".tar.gz") or file_.endswith(".tar") or file_.endswith(".tgz"):
         import tarfile
-        with tarfile.open(file_, 'r') as archive:
+
+        with tarfile.open(file_, "r") as archive:
             archive.extractall(path=target_dir)
-    elif file_.endswith('.gz'):
+    elif file_.endswith(".gz"):
         import gzip
         import shutil
-        with gzip.open(file_, 'rb') as f_in:
+
+        with gzip.open(file_, "rb") as f_in:
             target_file = os.path.join(target_dir, os.path.basename(file_)[:-3])
-            with open(target_file, 'wb') as f_out:
+            with open(target_file, "wb") as f_out:
                 shutil.copyfileobj(f_in, f_out)
-    elif file_.endswith('.zip'):
+    elif file_.endswith(".zip"):
         import zipfile
-        with zipfile.ZipFile(file_, 'r') as archive:
+
+        with zipfile.ZipFile(file_, "r") as archive:
             archive.extractall(path=target_dir)
     else:
-        raise DataSetLoadingError('Unrecognized file type: ' + file_)
+        raise DataSetLoadingError("Unrecognized file type: " + file_)
+
 
 def check_sha1(data: Union[str, bytes]) -> str:
     r"""Compute the SHA-1 hash of a file or raw bytes.
@@ -222,7 +247,7 @@ def check_sha1(data: Union[str, bytes]) -> str:
     """
     sha1 = hashlib.sha1()
     if isinstance(data, str):
-        with open(data, 'rb') as f:
+        with open(data, "rb") as f:
             while True:
                 data = f.read(1048576)
                 if not data:
@@ -231,6 +256,7 @@ def check_sha1(data: Union[str, bytes]) -> str:
     else:
         sha1.update(data)
     return sha1.hexdigest()
+
 
 def is_empty_dir(path: str) -> bool:
     r"""Check whether a directory is empty or does not exist.
@@ -247,10 +273,12 @@ def is_empty_dir(path: str) -> bool:
     """
     return not os.path.exists(path) or not any(True for _ in os.scandir(path))
 
+
 def negsamp_vectorized_bsearch(
-    positives: Union[Tuple, List], n_items: int,
+    positives: Union[Tuple, List],
+    n_items: int,
     size: Union[int, List[int], Tuple[int]] = 1,
-    replacement: bool = True
+    replacement: bool = True,
 ) -> List:
     r"""Sample negative indices uniformly, excluding given positives.
 
@@ -283,17 +311,21 @@ def negsamp_vectorized_bsearch(
         exceeds the number of available negatives.
     """
     positives = np.asarray(positives)
-    assert positives.ndim == 1, f"positives should be 1-D array but {positives.ndim}-D received ..."
+    assert positives.ndim == 1, (
+        f"positives should be 1-D array but {positives.ndim}-D received ..."
+    )
     try:
         if replacement:
             raw_samp = np.random.randint(0, n_items - len(positives), size=size)
         else:
-            raw_samp = np.random.choice(n_items - len(positives), size=size, replace=replacement)
+            raw_samp = np.random.choice(
+                n_items - len(positives), size=size, replace=replacement
+            )
     except ValueError:
         raise ValueError(
             "The number of required negatives is larger than that of candidates, but replacement is False ..."
         )
     pos_inds_adj = positives - np.arange(len(positives))
-    ss = np.searchsorted(pos_inds_adj, raw_samp, side='right')
+    ss = np.searchsorted(pos_inds_adj, raw_samp, side="right")
     neg_inds = raw_samp + ss
     return neg_inds.tolist()

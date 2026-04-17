@@ -1,9 +1,6 @@
-
-
 from .base import MatchingRecDataSet, NextItemRecDataSet
 
-
-#===================================MatchingRecDataSset===================================
+# ===================================MatchingRecDataSset===================================
 
 
 class Amazon2014Books_10104811_ROU(MatchingRecDataSet):
@@ -218,6 +215,7 @@ class Amazon2014Baby_550_MMRec(MatchingRecDataSet):
     | 19445  |  7050  | 8.096734379017743 |     160792    | 118551 | 20559  | 21682 | 0.0011729172479570493 |
     +--------+--------+-------------------+---------------+--------+--------+-------+-----------------------+
     """
+
     URL = "https://zenodo.org/records/11003225/files/Amazon2014Baby_550_MMRec.zip"
 
 
@@ -233,6 +231,7 @@ class Amazon2014Sports_550_MMRec(MatchingRecDataSet):
     | 35598  | 18357  | 8.13542895668296 |     296337    | 218409 | 37899  | 40029 | 0.00045348045456958995 |
     +--------+--------+------------------+---------------+--------+--------+-------+------------------------+
     """
+
     URL = "https://zenodo.org/records/11003225/files/Amazon2014Sports_550_MMRec.zip"
 
 
@@ -248,6 +247,7 @@ class Amazon2014Clothing_550_MMRec(MatchingRecDataSet):
     | 39387  | 23033  | 7.010231802371341 |     278677    | 197338 | 40150  | 41189 | 0.0003071833809100676 |
     +--------+--------+-------------------+---------------+--------+--------+-------+-----------------------+
     """
+
     URL = "https://zenodo.org/records/11003225/files/Amazon2014Clothing_550_MMRec.zip"
 
 
@@ -263,10 +263,13 @@ class Amazon2014Electronics_550_MMRec(MatchingRecDataSet):
     | 192403 | 63001  | 8.5198619564144 |    1689188    | 1254441 | 211296 | 223451 | 0.00013935376448339807 |
     +--------+--------+-----------------+---------------+---------+--------+--------+------------------------+
     """
-    URL = "https://zenodo.org/records/11003225/files/Amazon2014Electronics_550_MMRec.zip"
+
+    URL = (
+        "https://zenodo.org/records/11003225/files/Amazon2014Electronics_550_MMRec.zip"
+    )
 
 
-#===================================NextItemRecDataSset===================================
+# ===================================NextItemRecDataSset===================================
 
 
 class Amazon2014Beauty_550_LOU(NextItemRecDataSet):

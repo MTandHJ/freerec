@@ -1,20 +1,15 @@
+import os
+from math import floor
+from typing import Iterable, Literal, Mapping, Optional, Tuple, Union
 
-
-
-from typing import Literal, Tuple, Iterable, Optional, Union, Mapping
-
-import os, random
 import numpy as np
 import pandas as pd
-from math import floor, ceil
 
-from ..tags import USER, ITEM, ID, RATING, TIMESTAMP, FEATURE
-from ..fields import Field, FieldTuple
+from ...utils import infoLogger, mkdirs
+from ..tags import ITEM, RATING, TIMESTAMP, USER
 from ..utils import download_from_url, extract_archive
-from ...utils import infoLogger, warnLogger, mkdirs
 
-
-__all__ = ['AtomicConverter']
+__all__ = ["AtomicConverter"]
 
 
 class AtomicConverter:
@@ -46,16 +41,18 @@ class AtomicConverter:
     Most datasets from RecBole have two versions: *merged* (duplicate
     interactions removed) and *not_merged* (duplicates retained).
     """
+
     filename: str
 
     def __init__(
-        self, root: str,
+        self,
+        root: str,
         dataset: str,
         filedir: Optional[str],
         userColname: str = USER.name,
         itemColname: str = ITEM.name,
         ratingColname: str = RATING.name,
-        timestampColname: str = TIMESTAMP.name
+        timestampColname: str = TIMESTAMP.name,
     ) -> None:
         r"""Initialize the converter and prepare the data directory."""
         super().__init__()
@@ -65,28 +62,30 @@ class AtomicConverter:
         filedir = filedir if filedir else dataset
         self.path = os.path.join(self.root, filedir)
 
-        if not os.path.exists(self.path) or not any(True for _ in os.scandir(self.path)):
+        if not os.path.exists(self.path) or not any(
+            True for _ in os.scandir(self.path)
+        ):
             infoLogger(f"[Converter] >>> {self.path} is not available ...")
             zipfile = dataset + ".zip"
             zippath = os.path.join(self.root, zipfile)
             if os.path.exists(zippath):
                 infoLogger(f"[Converter] >>> Find a compressed file: {zipfile} ...")
-                extract_archive(
-                    zippath,
-                    self.path
-                )
+                extract_archive(zippath, self.path)
             else:
                 try:
                     extract_archive(
                         download_from_url(
                             URLS[self.dataset],
-                            root=self.root, filename=zipfile,
-                            overwrite=False
+                            root=self.root,
+                            filename=zipfile,
+                            overwrite=False,
                         ),
-                        self.path
+                        self.path,
                     )
                 except KeyError:
-                    raise FileNotFoundError(f"No such file of {self.path} and no such dataset {self.dataset} online...")
+                    raise FileNotFoundError(
+                        f"No such file of {self.path} and no such dataset {self.dataset} online..."
+                    )
 
         self.dataset = dataset if dataset else self.__class__.__name__
 
@@ -94,7 +93,7 @@ class AtomicConverter:
             userColname.upper(): USER.name,
             itemColname.upper(): ITEM.name,
             ratingColname.upper(): RATING.name,
-            timestampColname.upper(): TIMESTAMP.name
+            timestampColname.upper(): TIMESTAMP.name,
         }
 
     def convert_by_column(self, df: pd.DataFrame):
@@ -115,7 +114,7 @@ class AtomicConverter:
 
         for colname in old_columns:
             newname = colname.upper()
-            newname =  self.name_converter.get(newname, newname)
+            newname = self.name_converter.get(newname, newname)
             if newname in (RATING.name, TIMESTAMP.name):
                 df[colname] = df[colname].astype(float)
             else:
@@ -135,13 +134,13 @@ class AtomicConverter:
         """
         for file_ in os.scandir(self.path):
             filename = file_.name
-            if not filename.endswith('.inter'):
+            if not filename.endswith(".inter"):
                 continue
             file_ = os.path.join(self.path, filename)
-            df = pd.read_csv(file_, sep='\t')
+            df = pd.read_csv(file_, sep="\t")
             infoLogger(f"[Converter] >>> Load `{filename}' ...")
             return self.convert_by_column(df)
-        infoLogger(f"[Converter] >>> No file ends with `.inter' ...")
+        infoLogger("[Converter] >>> No file ends with `.inter' ...")
 
     def load_user_file(self):
         r"""Load and return the user feature file (``*.user``).
@@ -154,13 +153,13 @@ class AtomicConverter:
         """
         for file_ in os.scandir(self.path):
             filename = file_.name
-            if not filename.endswith('.user'):
+            if not filename.endswith(".user"):
                 continue
             file_ = os.path.join(self.path, filename)
-            df = pd.read_csv(file_, sep='\t')
+            df = pd.read_csv(file_, sep="\t")
             infoLogger(f"[Converter] >>> Load `{filename}' ...")
             return self.convert_by_column(df)
-        infoLogger(f"[Converter] >>> No file ends with `.user' ...")
+        infoLogger("[Converter] >>> No file ends with `.user' ...")
 
     def load_item_file(self):
         r"""Load and return the item feature file (``*.item``).
@@ -173,13 +172,13 @@ class AtomicConverter:
         """
         for file_ in os.scandir(self.path):
             filename = file_.name
-            if not filename.endswith('.item'):
+            if not filename.endswith(".item"):
                 continue
             file_ = os.path.join(self.path, filename)
-            df = pd.read_csv(file_, sep='\t')
+            df = pd.read_csv(file_, sep="\t")
             infoLogger(f"[Converter] >>> Load `{filename}' ...")
             return self.convert_by_column(df)
-        infoLogger(f"[Converter] >>> No file ends with `.item' ...")
+        infoLogger("[Converter] >>> No file ends with `.item' ...")
 
     def load(self):
         r"""Load interaction, user feature, and item feature files."""
@@ -232,8 +231,7 @@ class AtomicConverter:
         self.interactions = self.interactions[columns]
 
     def map_col(
-        self, col: str, mapper: Mapping,
-        pools: Optional[Iterable[pd.DataFrame]] = None
+        self, col: str, mapper: Mapping, pools: Optional[Iterable[pd.DataFrame]] = None
     ):
         r"""Apply a mapping to a column across multiple dataframes.
 
@@ -252,9 +250,7 @@ class AtomicConverter:
                 df[col] = df[col].map(mapper)
 
     def filter_by_rating(
-        self,
-        low: Union[None, int, float] = None,
-        high: Union[None, int, float] = None
+        self, low: Union[None, int, float] = None, high: Union[None, int, float] = None
     ):
         r"""Filter interactions by rating range.
 
@@ -271,7 +267,9 @@ class AtomicConverter:
             low = low if low is not None else ratings.min()
             high = high if high is not None else ratings.max()
             self.interactions = df[(low <= ratings) & (ratings <= high)]
-            infoLogger(f"[Converter] >>> Filter dataframe according to {RATING.name} ...")
+            infoLogger(
+                f"[Converter] >>> Filter dataframe according to {RATING.name} ..."
+            )
         except KeyError:
             infoLogger(
                 f"[Converter] >>> Skip `filter_by_rating` because of `inter` has no field of `{RATING.name}' ..."
@@ -284,7 +282,7 @@ class AtomicConverter:
         low4item: Union[None, int, float] = None,
         high4item: Union[None, int, float] = None,
         master: str = USER.name,
-        strict: bool = True
+        strict: bool = True,
     ):
         r"""Filter interactions by k-core settings for users and items.
 
@@ -308,10 +306,10 @@ class AtomicConverter:
             If ``True``, iteratively filter until convergence. If ``False``,
             apply the filter only once.
         """
-        low4user = low4user if low4user else float('-inf')
-        high4user = high4user if high4user else float('inf')
-        low4item = low4item if low4item else float('-inf')
-        high4item = high4item if high4item else float('inf')
+        low4user = low4user if low4user else float("-inf")
+        high4user = high4user if high4user else float("inf")
+        low4item = low4item if low4item else float("-inf")
+        high4item = high4item if high4item else float("inf")
         df = self.interactions
         dsz = -1
         infoLogger(
@@ -354,42 +352,34 @@ class AtomicConverter:
         master : str, optional
             The column name used as the user identifier.
         """
-        infoLogger(f"[Converter] >>> Map user ID to Token ...")
+        infoLogger("[Converter] >>> Map user ID to Token ...")
         user_ids = sorted(self.interactions[master].unique().tolist())
         self.userCount = len(user_ids)
 
         user_tokens = list(range(len(user_ids)))
-        self.userMaps = dict(
-            zip(user_ids, user_tokens)
-        )
+        self.userMaps = dict(zip(user_ids, user_tokens))
 
         if self.userFeats is not None:
             self.userFeats = self.userFeats[self.userFeats[master].isin(user_ids)]
             self.userFeats = self.userFeats.sort_values([master])
 
-        self.map_col(
-            master, self.userMaps,
-            pools=(self.interactions, self.userFeats)
-        )
+        self.map_col(master, self.userMaps, pools=(self.interactions, self.userFeats))
 
     def item2token(self):
         r"""Map raw item IDs to contiguous integer tokens."""
-        infoLogger(f"[Converter] >>> Map item ID to Token ...")
+        infoLogger("[Converter] >>> Map item ID to Token ...")
         item_ids = sorted(self.interactions[ITEM.name].unique().tolist())
         self.itemCount = len(item_ids)
 
         item_tokens = range(len(item_ids))
-        self.itemMaps = dict(
-            zip(item_ids, item_tokens)
-        )
+        self.itemMaps = dict(zip(item_ids, item_tokens))
 
         if self.itemFeats is not None:
             self.itemFeats = self.itemFeats[self.itemFeats[ITEM.name].isin(item_ids)]
             self.itemFeats = self.itemFeats.sort_values([ITEM.name])
 
         self.map_col(
-            ITEM.name, self.itemMaps,
-            pools=(self.interactions, self.itemFeats)
+            ITEM.name, self.itemMaps, pools=(self.interactions, self.itemFeats)
         )
 
     def sort_by_timestamp(self, df: pd.DataFrame, master: Optional[str] = USER.name):
@@ -417,7 +407,9 @@ class AtomicConverter:
         try:
             if master is not None:
                 df = df.sort_values(by=[master, TIMESTAMP.name])
-                infoLogger(f"[Converter] >>> Sort data by [{master}] [{TIMESTAMP.name}] ...")
+                infoLogger(
+                    f"[Converter] >>> Sort data by [{master}] [{TIMESTAMP.name}] ..."
+                )
             else:
                 df = df.sort_values(by=[TIMESTAMP.name])
                 infoLogger(f"[Converter] >>> Sort data by [{TIMESTAMP.name}] ...")
@@ -459,7 +451,7 @@ class AtomicConverter:
         self.validiter = pd.concat(validgroups)
         self.testiter = pd.concat(testgroups)
 
-        return ''.join(map(str, ratios)) + '_ROU'
+        return "".join(map(str, ratios)) + "_ROU"
 
     def split_by_RAU(self, ratios: Iterable = (8, 1, 1)):
         r"""Split interactions by ratio, ensuring at least one item per user per split.
@@ -474,7 +466,9 @@ class AtomicConverter:
         str
             A code string encoding the split configuration.
         """
-        infoLogger(f"[Converter] >>> Split by RAU (Ratio and At least one on User): {ratios} ...")
+        infoLogger(
+            f"[Converter] >>> Split by RAU (Ratio and At least one on User): {ratios} ..."
+        )
         traingroups = []
         validgroups = []
         testgroups = []
@@ -496,7 +490,7 @@ class AtomicConverter:
         self.validiter = pd.concat(validgroups)
         self.testiter = pd.concat(testgroups)
 
-        return ''.join(map(str, ratios)) + '_RAU'
+        return "".join(map(str, ratios)) + "_RAU"
 
     def split_by_ROD(self, ratios: Iterable = (8, 1, 1)):
         r"""Split interactions by ratio over the whole dataset (global split).
@@ -511,19 +505,19 @@ class AtomicConverter:
         str
             A code string encoding the split configuration.
         """
-        infoLogger(f"[Converter] >>> Split data by ROT (Ratio On Dataset): {ratios} ...")
-        self.interactions = self.sort_by_timestamp(
-            self.interactions, master=None
+        infoLogger(
+            f"[Converter] >>> Split data by ROT (Ratio On Dataset): {ratios} ..."
         )
+        self.interactions = self.sort_by_timestamp(self.interactions, master=None)
         markers = np.floor(
             (np.cumsum(ratios) / np.sum(ratios)) * len(self.interactions)
         ).astype(int)
 
-        self.trainiter = self.interactions.iloc[:markers[0]]
-        self.validiter = self.interactions.iloc[markers[0]:markers[1]]
-        self.testiter = self.interactions.iloc[markers[1]:]
+        self.trainiter = self.interactions.iloc[: markers[0]]
+        self.validiter = self.interactions.iloc[markers[0] : markers[1]]
+        self.testiter = self.interactions.iloc[markers[1] :]
 
-        return ''.join(map(str, ratios)) + '_ROD'
+        return "".join(map(str, ratios)) + "_ROD"
 
     def split_by_LOU(self):
         r"""Split interactions using a leave-one-out strategy per user.
@@ -533,7 +527,7 @@ class AtomicConverter:
         str
             A code string encoding the split configuration.
         """
-        infoLogger(f"[Converter] >>> Split by LOU (Leave-one-out On User) ...")
+        infoLogger("[Converter] >>> Split by LOU (Leave-one-out On User) ...")
         traingroups = []
         validgroups = []
         testgroups = []
@@ -553,7 +547,7 @@ class AtomicConverter:
         self.validiter = pd.concat(validgroups)
         self.testiter = pd.concat(testgroups)
 
-        return '_LOU'
+        return "_LOU"
 
     def split_by_DOU(self, days: int = 1):
         r"""Split interactions by day boundary on a per-user basis.
@@ -576,19 +570,34 @@ class AtomicConverter:
         last_date = self.interactions[TIMESTAMP.name].max().item()
 
         # Group interactions by user and calculate user timestamps
-        user_timestamps = self.interactions.groupby(USER.name)[TIMESTAMP.name].max().sort_values()
+        user_timestamps = (
+            self.interactions.groupby(USER.name)[TIMESTAMP.name].max().sort_values()
+        )
 
         # Split interactions into train, validation, and test sets based on user timestamps
         traingroups = user_timestamps[user_timestamps < (last_date - 2 * seconds)].index
-        validgroups = user_timestamps[(user_timestamps >= (last_date - 2 * seconds)) & (user_timestamps < (last_date - seconds))].index
+        validgroups = user_timestamps[
+            (user_timestamps >= (last_date - 2 * seconds))
+            & (user_timestamps < (last_date - seconds))
+        ].index
         testgroups = user_timestamps[user_timestamps >= (last_date - seconds)].index
 
-        assert len(traingroups) >= 0, f"The given `days` of {days} leads to zero-size trainsets ..."
-        assert len(validgroups) >= 0, f"The given `days` of {days} leads to zero-size validsets ..."
-        assert len(testgroups) >= 0, f"The given `days` of {days} leads to zero-size testsets ..."
+        assert len(traingroups) >= 0, (
+            f"The given `days` of {days} leads to zero-size trainsets ..."
+        )
+        assert len(validgroups) >= 0, (
+            f"The given `days` of {days} leads to zero-size validsets ..."
+        )
+        assert len(testgroups) >= 0, (
+            f"The given `days` of {days} leads to zero-size testsets ..."
+        )
 
-        self.trainiter = self.interactions[self.interactions[USER.name].isin(traingroups)]
-        self.validiter = self.interactions[self.interactions[USER.name].isin(validgroups)]
+        self.trainiter = self.interactions[
+            self.interactions[USER.name].isin(traingroups)
+        ]
+        self.validiter = self.interactions[
+            self.interactions[USER.name].isin(validgroups)
+        ]
         self.testiter = self.interactions[self.interactions[USER.name].isin(testgroups)]
 
         return f"{days}_DOU"
@@ -611,17 +620,25 @@ class AtomicConverter:
 
         seconds_per_day = 86400
         seconds = seconds_per_day * days
-        timestamps =  self.interactions[TIMESTAMP.name]
+        timestamps = self.interactions[TIMESTAMP.name]
         last_date = self.interactions[TIMESTAMP.name].max().item()
 
         # Split interactions into train, validation, and test sets based on user timestamps
-        traintimes  = timestamps < (last_date - 2 * seconds)
-        validtimes = (timestamps >= (last_date - 2 * seconds)) & (timestamps < (last_date - seconds))
+        traintimes = timestamps < (last_date - 2 * seconds)
+        validtimes = (timestamps >= (last_date - 2 * seconds)) & (
+            timestamps < (last_date - seconds)
+        )
         testtimes = timestamps >= (last_date - seconds)
 
-        assert traintimes.any(), f"The given `days` of {days} leads to zero-size trainsets ..."
-        assert validtimes.any(), f"The given `days` of {days} leads to zero-size validsets ..."
-        assert testtimes.any(), f"The given `days` of {days} leads to zero-size testsets ..."
+        assert traintimes.any(), (
+            f"The given `days` of {days} leads to zero-size trainsets ..."
+        )
+        assert validtimes.any(), (
+            f"The given `days` of {days} leads to zero-size validsets ..."
+        )
+        assert testtimes.any(), (
+            f"The given `days` of {days} leads to zero-size testsets ..."
+        )
 
         self.trainiter = self.interactions[traintimes]
         self.validiter = self.interactions[validtimes]
@@ -631,18 +648,15 @@ class AtomicConverter:
 
     def resort_iters(self):
         r"""Re-sort train, valid, and test splits by user and timestamp."""
-        infoLogger(f"[Converter] >>> Resort for train|valid|test iters ...")
+        infoLogger("[Converter] >>> Resort for train|valid|test iters ...")
         self.trainiter = self.sort_by_timestamp(
-            self.trainiter.reset_index(drop=True),
-            master=USER.name
+            self.trainiter.reset_index(drop=True), master=USER.name
         )
         self.validiter = self.sort_by_timestamp(
-            self.validiter.reset_index(drop=True),
-            master=USER.name
+            self.validiter.reset_index(drop=True), master=USER.name
         )
         self.testiter = self.sort_by_timestamp(
-            self.testiter.reset_index(drop=True),
-            master=USER.name
+            self.testiter.reset_index(drop=True), master=USER.name
         )
 
     def save(self, path: str):
@@ -657,37 +671,34 @@ class AtomicConverter:
 
         infoLogger(f"[Converter] >>> Save `train.txt' to {path} ...")
         df = pd.DataFrame(self.trainiter)
-        df.to_csv(os.path.join(path, 'train.txt'), sep='\t', index=False)
+        df.to_csv(os.path.join(path, "train.txt"), sep="\t", index=False)
 
         infoLogger(f"[Converter] >>> Save `valid.txt' to {path} ...")
         df = pd.DataFrame(self.validiter)
-        df.to_csv(os.path.join(path, 'valid.txt'), sep='\t', index=False)
+        df.to_csv(os.path.join(path, "valid.txt"), sep="\t", index=False)
 
         infoLogger(f"[Converter] >>> Save `test.txt' to {path} ...")
         df = pd.DataFrame(self.testiter)
-        df.to_csv(os.path.join(path, 'test.txt'), sep='\t', index=False)
+        df.to_csv(os.path.join(path, "test.txt"), sep="\t", index=False)
 
         if self.userFeats is not None:
             infoLogger(f"[Converter] >>> Save `user.txt' to {path} ...")
-            self.userFeats.to_csv(
-                os.path.join(path, 'user.txt'),
-                sep='\t', index=False
-            )
+            self.userFeats.to_csv(os.path.join(path, "user.txt"), sep="\t", index=False)
 
         if self.itemFeats is not None:
             infoLogger(f"[Converter] >>> Save `item.txt' to {path} ...")
-            self.itemFeats.to_csv(
-                os.path.join(path, 'item.txt'),
-                sep='\t', index=False
-            )
+            self.itemFeats.to_csv(os.path.join(path, "item.txt"), sep="\t", index=False)
 
         self.summary()
 
     def make_dataset(
         self,
-        kcore4user: int = 10, kcore4item: int = 10, star4pos: int = 0,
-        splitting: Literal['ROU', 'ROD', 'LOU', 'DOU', 'DOD'] = 'ROU',
-        ratios: Tuple[int, int, int] = (8, 1, 1), days: int = 1,
+        kcore4user: int = 10,
+        kcore4item: int = 10,
+        star4pos: int = 0,
+        splitting: Literal["ROU", "ROD", "LOU", "DOU", "DOD"] = "ROU",
+        ratios: Tuple[int, int, int] = (8, 1, 1),
+        days: int = 1,
         strict: bool = True,
     ):
         r"""Run the full pipeline: load, filter, tokenize, split, and save.
@@ -724,49 +735,57 @@ class AtomicConverter:
         NotImplementedError
             If *splitting* is not one of the supported strategies.
         """
-        assert len(ratios) == 3, f"'ratios' should in length of 3 but a length of {len(ratios)} is received ..."
+        assert len(ratios) == 3, (
+            f"'ratios' should in length of 3 but a length of {len(ratios)} is received ..."
+        )
         self.load()
         self.filter_by_rating(low=star4pos, high=None)
         self.filter_by_core(low4user=kcore4user, low4item=kcore4item, strict=strict)
         self.user2token()
         self.item2token()
         self.interactions = self.sort_by_timestamp(self.interactions)
-        if splitting == 'ROU':
+        if splitting == "ROU":
             s = self.split_by_ROU(ratios)
-        elif splitting == 'RAU':
+        elif splitting == "RAU":
             s = self.split_by_RAU(ratios)
-        elif splitting == 'ROD':
+        elif splitting == "ROD":
             s = self.split_by_ROD(ratios)
-        elif splitting == 'LOU':
+        elif splitting == "LOU":
             s = self.split_by_LOU()
-        elif splitting == 'DOU':
+        elif splitting == "DOU":
             s = self.split_by_DOU(days)
-        elif splitting == 'DOD':
+        elif splitting == "DOD":
             s = self.split_by_DOD(days)
         else:
             raise NotImplementedError(f"Invalid splitting method: {splitting}")
         self.resort_iters()
 
         code = f"{kcore4user}{kcore4item}{star4pos}{s}"
-        path = os.path.join(
-            self.root, 'Processed',
-            '_'.join([self.dataset, code])
-        )
+        path = os.path.join(self.root, "Processed", "_".join([self.dataset, code]))
 
         self.save(path)
 
     def summary(self):
         r"""Print a summary table of dataset statistics."""
         from prettytable import PrettyTable
-        table = PrettyTable(['#User', '#Item', '#Interactions', '#Train', '#Valid', '#Test', 'Density'])
+
+        table = PrettyTable(
+            ["#User", "#Item", "#Interactions", "#Train", "#Valid", "#Test", "Density"]
+        )
         trainsize = len(self.trainiter)
         validsize = len(self.validiter)
         testsize = len(self.testiter)
-        table.add_row([
-            self.userCount, self.itemCount, trainsize + validsize + testsize,
-            trainsize, validsize, testsize,
-            (trainsize + validsize + testsize) / (self.userCount * self.itemCount)
-        ])
+        table.add_row(
+            [
+                self.userCount,
+                self.itemCount,
+                trainsize + validsize + testsize,
+                trainsize,
+                validsize,
+                testsize,
+                (trainsize + validsize + testsize) / (self.userCount * self.itemCount),
+            ]
+        )
         infoLogger(table)
 
 
@@ -796,7 +815,6 @@ URLS = {
     "Amazon2014Tools": "https://zenodo.org/records/10995912/files/Amazon2014Tools.zip",
     "Amazon2014Toys": "https://zenodo.org/records/10995912/files/Amazon2014Toys.zip",
     "Amazon2014Video": "https://zenodo.org/records/10995912/files/Amazon2014Video.zip",
-
     # =====================================Amazon2018=====================================
     "Amazon2018AllBeauty": "https://zenodo.org/records/10997743/files/Amazon2018AllBeauty.zip",
     "Amazon2018Appliances": "https://zenodo.org/records/10997743/files/Amazon2018Appliances.zip",
@@ -827,33 +845,26 @@ URLS = {
     "Amazon2018Tools": "https://zenodo.org/records/10997743/files/Amazon2018Tools.zip",
     "Amazon2018Toys": "https://zenodo.org/records/10997743/files/Amazon2018Toys.zip",
     "Amazon2018Video": "https://zenodo.org/records/10997743/files/Amazon2018Video.zip",
-
     # =====================================MovieLens=====================================
     "MovieLens100K": "https://zenodo.org/records/10998034/files/MovieLens100K.zip",
     "MovieLens10M": "https://zenodo.org/records/10998034/files/MovieLens10M.zip",
     "MovieLens1M": "https://zenodo.org/records/10998034/files/MovieLens1M.zip",
     "MovieLens20M": "https://zenodo.org/records/10998034/files/MovieLens20M.zip",
-
     # =====================================Tmall=====================================
     "Tmall2016Buy": "https://zenodo.org/records/10998081/files/Tmall2016Buy.zip",
     "Tmall2016Click": "https://zenodo.org/records/10998081/files/Tmall2016Click.zip",
-
     # =====================================Gowalla=====================================
     "Gowalla2010": "https://zenodo.org/records/10997653/files/Gowalla2010.zip",
-
     # =====================================Yelp=====================================
     "Yelp2018": "https://zenodo.org/records/10998102/files/Yelp2018.zip",
     "Yelp2021": "https://zenodo.org/records/10998102/files/Yelp2021.zip",
     "Yelp2022": "https://zenodo.org/records/10998102/files/Yelp2022.zip",
-
     # =====================================Steam=====================================
     "Steam": "https://zenodo.org/records/10998197/files/Steam.zip",
-
     # =====================================Retailrocket=====================================
     "RetailrocketAddtocart": "https://zenodo.org/records/10998222/files/RetailrocketAddtocart.zip",
     "RetailrocketTransaction": "https://zenodo.org/records/10998222/files/RetailrocketTransaction.zip",
     "RetailrocketView": "https://zenodo.org/records/10998222/files/RetailrocketView.zip",
-
     # =====================================YahooMusic=====================================
     "YahooMusicR1": "https://zenodo.org/records/10998284/files/YahooMusicR1.zip",
 }

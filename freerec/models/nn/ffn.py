@@ -1,11 +1,9 @@
-
-
-from typing import Optional, Callable
+from typing import Callable, Optional
 
 import torch
 import torch.nn as nn
 
-__all__ = ['FeedForwardNetwork']
+__all__ = ["FeedForwardNetwork"]
 
 
 class FeedForwardNetwork(nn.Module):
@@ -35,8 +33,8 @@ class FeedForwardNetwork(nn.Module):
         embedding_dim: int,
         activation: Callable = nn.ReLU,
         hidden_size: Optional[int] = None,
-        hidden_dropout_rate: float = 0.,
-        norm_eps: float = 1.e-12,
+        hidden_dropout_rate: float = 0.0,
+        norm_eps: float = 1.0e-12,
         bias: bool = False,
     ):
         r"""Initialize FeedForwardNetwork."""
@@ -47,7 +45,7 @@ class FeedForwardNetwork(nn.Module):
             nn.Linear(embedding_dim, self.hidden_size, bias=bias),
             activation(),
             nn.Linear(self.hidden_size, embedding_dim, bias=bias),
-            nn.Dropout(p=hidden_dropout_rate)
+            nn.Dropout(p=hidden_dropout_rate),
         )
         self.norm = nn.LayerNorm(embedding_dim, eps=norm_eps)
 

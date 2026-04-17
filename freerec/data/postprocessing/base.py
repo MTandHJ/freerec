@@ -1,21 +1,28 @@
+import random
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Sized,
+    TypeVar,
+)
 
-
-
-from typing import TypeVar, Any, Iterator, Iterable, Callable, Dict, List, Optional, Sized
-
-import torch, random
+import torch
 import torchdata.datapipes as dp
-from torch.utils.data.graph_settings import get_all_graph_pipes
 from torch.utils.data.datapipes.datapipe import IterDataPipe
+from torch.utils.data.graph_settings import get_all_graph_pipes
 
 from ..datasets.base import RecDataSet
 from ..fields import Field, FieldTuple
 
+__all__ = ["BaseProcessor", "Source", "PostProcessor", "SampleMultiplexer"]
 
-__all__ = ['BaseProcessor', 'Source', 'PostProcessor', 'SampleMultiplexer']
 
-
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class Launcher(dp.iter.IterDataPipe):
@@ -126,8 +133,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
         fields = field_dict.keys()
         return cls.listmap(
-            lambda values: dict(zip(fields, values)),
-            zip(*field_dict.values())
+            lambda values: dict(zip(fields, values)), zip(*field_dict.values())
         )
 
 
@@ -148,9 +154,10 @@ class Source(BaseProcessor):
 
     def __init__(
         self,
-        dataset: RecDataSet, source: Iterable[Dict[Field, Any]],
+        dataset: RecDataSet,
+        source: Iterable[Dict[Field, Any]],
         datasize: Optional[int] = None,
-        shuffle: bool = True
+        shuffle: bool = True,
     ) -> None:
         r"""Initialize the Source."""
         super().__init__(dataset)
@@ -246,10 +253,7 @@ class SampleMultiplexer(IterDataPipe):
     [0, 0, 0, 0, 0, 1, 1, 1, 1, 1]
     """
 
-    def __init__(
-        self,
-        pipes_to_weights_dict: Dict[IterDataPipe, float]
-    ):
+    def __init__(self, pipes_to_weights_dict: Dict[IterDataPipe, float]):
         r"""Initialize the SampleMultiplexer."""
         if not pipes_to_weights_dict:
             raise ValueError("Empty dictionary passed to SampleMultiplexerDataPipe")
@@ -259,7 +263,9 @@ class SampleMultiplexer(IterDataPipe):
                 raise ValueError(f"Expecting a positive and non-zero weight, got {v}")
             total_weight += v
 
-        self.pipes_and_weights = tuple([(k, v / total_weight) for k, v in pipes_to_weights_dict.items()])
+        self.pipes_and_weights = tuple(
+            [(k, v / total_weight) for k, v in pipes_to_weights_dict.items()]
+        )
 
         self._rng = random.Random()
         self.set_seed(0)
@@ -290,7 +296,9 @@ class SampleMultiplexer(IterDataPipe):
                         # remove the current stream
                         new_total = 1 - weight
                         assert new_total > 0
-                        pipes_and_weights = [(k, v / new_total) for k, v in pipes_and_weights if k != it]
+                        pipes_and_weights = [
+                            (k, v / new_total) for k, v in pipes_and_weights if k != it
+                        ]
                     break
 
         # only one stream left

@@ -1,33 +1,32 @@
+import gzip
+import json
+import os
+from typing import Dict, List, Optional
 
-
-
-from typing import List, Dict, Optional
-
-import gzip, json, os
 import pandas as pd
 
-from ..tags import USER, ITEM, TIMESTAMP, RATING
-
+from ..tags import ITEM, RATING, TIMESTAMP, USER
 
 __all__ = ["extract_from_amazon2023"]
 
 
 INTER_FIELDS = {
-    'user_id': USER.name,
-    'asin': ITEM.name,
-    'rating': RATING.name,
-    'timestamp': TIMESTAMP.name,
-    'parent_asin': 'parent_asin'
+    "user_id": USER.name,
+    "asin": ITEM.name,
+    "rating": RATING.name,
+    "timestamp": TIMESTAMP.name,
+    "parent_asin": "parent_asin",
 }
 
 ITEM_FIELDS = {
-    'parent_asin': 'parent_asin',
-    'title': 'title',
-    'categories': 'categories',
+    "parent_asin": "parent_asin",
+    "title": "title",
+    "categories": "categories",
     # 'features': 'features',
     # 'description': 'description',
-    'images': 'image_urls'
+    "images": "image_urls",
 }
+
 
 def open_and_read_json_gz(root, file) -> List:
     r"""Read a gzipped JSON-lines file and return all records as a list.
@@ -49,12 +48,13 @@ def open_and_read_json_gz(root, file) -> List:
         data.append(json.loads(line.strip()))
     return data
 
+
 def extract_from_amazon2023(
     root: str,
     review_file: Optional[str] = None,
     meta_file: Optional[str] = None,
     inter_fields: Dict = INTER_FIELDS,
-    item_fields: Dict = ITEM_FIELDS
+    item_fields: Dict = ITEM_FIELDS,
 ):
     r"""Extract interaction and item dataframes from Amazon Reviews 2023.
 
@@ -93,9 +93,19 @@ def extract_from_amazon2023(
 
     # find review/meta data
     if meta_file is None:
-        meta_file = next(filter(lambda file: file.endswith('gz') and file.startswith('meta'), os.listdir(root)))
+        meta_file = next(
+            filter(
+                lambda file: file.endswith("gz") and file.startswith("meta"),
+                os.listdir(root),
+            )
+        )
     if review_file is None:
-        review_file = next(filter(lambda file: file.endswith('gz') and not file.startswith('meta'), os.listdir(root)))
+        review_file = next(
+            filter(
+                lambda file: file.endswith("gz") and not file.startswith("meta"),
+                os.listdir(root),
+            )
+        )
 
     # fields
     inter_fields.update(INTER_FIELDS)
@@ -104,24 +114,25 @@ def extract_from_amazon2023(
     # interaction data
     ego_cols, cur_cols = list(inter_fields.keys()), list(inter_fields.values())
     inter_df = pd.DataFrame(
-        [[row[key] for key in ego_cols] for row in open_and_read_json_gz(root, review_file)],
-        columns=cur_cols
+        [
+            [row[key] for key in ego_cols]
+            for row in open_and_read_json_gz(root, review_file)
+        ],
+        columns=cur_cols,
     )
 
     # item meta data
     ego_cols, cur_cols = list(item_fields.keys()), list(item_fields.values())
     raw_meta = {
-        row['parent_asin']: [row[key] for key in ego_cols] + [row['details'].get('Brand', '')]
+        row["parent_asin"]: [row[key] for key in ego_cols]
+        + [row["details"].get("Brand", "")]
         for row in open_and_read_json_gz(root, meta_file)
     }
     uniques = inter_df.groupby(ITEM.name).head(1)
-    items, parents = uniques[ITEM.name], uniques['parent_asin']
+    items, parents = uniques[ITEM.name], uniques["parent_asin"]
     raw_item = [
         [item_id] + raw_meta[parent_id] for (item_id, parent_id) in zip(items, parents)
     ]
-    item_df = pd.DataFrame(
-        raw_item,
-        columns=[ITEM.name] + cur_cols + ['brand']
-    )
+    item_df = pd.DataFrame(raw_item, columns=[ITEM.name] + cur_cols + ["brand"])
 
     return inter_df, item_df

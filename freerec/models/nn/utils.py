@@ -1,10 +1,7 @@
-
-
 import torch
 import torch.nn as nn
 
-
-__all__ = ['Unsqueeze']
+__all__ = ["Unsqueeze"]
 
 
 class Unsqueeze(nn.Module):

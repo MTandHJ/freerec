@@ -1,21 +1,27 @@
-
-
-from typing import TypeVar, Any, Literal, Optional, Union, Iterator, Iterable, Callable, Dict, List
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 import torchdata.datapipes as dp
 from torch.utils.data import DataChunk, default_collate
 
-from .sampler import NUM_NEGS_FOR_SAMPLE_BASED_RANKING
 from ..datasets.base import RecDataSet
 from ..fields import Field, FieldTuple
+from .sampler import NUM_NEGS_FOR_SAMPLE_BASED_RANKING
 
+__all__ = ["BaseProcessor", "PostProcessor"]
 
-__all__ = ['BaseProcessor', 'Postprocessor']
-
-
-T = TypeVar('T')
-T_co = TypeVar('T_co', covariant=True)
-
+T = TypeVar("T")
+T_co = TypeVar("T_co", covariant=True)
 
 class Launcher(dp.iter.IterDataPipe):
     r"""An internal datapipe that yields indices in ``[0, datasize)`` each epoch.
@@ -30,7 +36,6 @@ class Launcher(dp.iter.IterDataPipe):
     """
 
     def __init__(self, datasize: int, shuffle: bool = True): ...
-
     def set_seed(self, seed: int) -> None:
         r"""Set the random seed for shuffling.
 
@@ -40,7 +45,6 @@ class Launcher(dp.iter.IterDataPipe):
             Random seed value.
         """
         ...
-
 
 class BaseProcessor(dp.iter.IterDataPipe):
     r"""A base processor that defines the property of fields.
@@ -57,7 +61,6 @@ class BaseProcessor(dp.iter.IterDataPipe):
     """
 
     def __init__(self, dataset: RecDataSet) -> None: ...
-
     @property
     def dataset(self) -> RecDataSet:
         r"""Return the underlying :class:`~RecDataSet`."""
@@ -115,7 +118,9 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'GenTrainNegativeSampler'
-    def gen_train_sampling_neg_(self: T, num_negatives: int = 1, unseen_only: bool = True) -> T:
+    def gen_train_sampling_neg_(
+        self: T, num_negatives: int = 1, unseen_only: bool = True
+    ) -> T:
         r"""Sampling negatives for each user.
 
         Parameters
@@ -141,7 +146,11 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'SeqTrainPositiveSampler'
-    def seq_train_yielding_pos_(self: T, start_idx_for_target: Optional[int] = 1, end_idx_for_input: Optional[int] = -1) -> T:
+    def seq_train_yielding_pos_(
+        self: T,
+        start_idx_for_target: Optional[int] = 1,
+        end_idx_for_input: Optional[int] = -1,
+    ) -> T:
         r"""Yielding positive sequence for each user sequence.
 
         Parameters
@@ -175,9 +184,11 @@ class BaseProcessor(dp.iter.IterDataPipe):
         Field(ITEM:ID,ITEM,SEQUENCE): (3562, 9621, 9989, 10579),
         Field(ITEM:ID,ITEM,POSITIVE): (3562, 9621, 9989, 10579)}
         """
-        
+
     # Functional form of 'SeqTrainNegativeSampler'
-    def seq_train_sampling_neg_(self: T, num_negatives: int = 1, unseen_only: bool = True) -> T:
+    def seq_train_sampling_neg_(
+        self: T, num_negatives: int = 1, unseen_only: bool = True
+    ) -> T:
         r"""Sampling negatives for each positive.
 
         Parameters
@@ -205,7 +216,11 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'ValidSampler'
-    def valid_sampling_(self: T, ranking: Literal['full', 'pool'] = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING) -> T:
+    def valid_sampling_(
+        self: T,
+        ranking: Literal["full", "pool"] = "full",
+        num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING,
+    ) -> T:
         r"""Sampler for validation.
 
         Parameters
@@ -248,7 +263,11 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'TestSampler'
-    def test_sampling_(self: T, ranking: Literal['full', 'pool'] = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING) -> T:
+    def test_sampling_(
+        self: T,
+        ranking: Literal["full", "pool"] = "full",
+        num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING,
+    ) -> T:
         r"""Sampler for test.
 
         Parameters
@@ -382,7 +401,9 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'LeftPaddingRow'
-    def lpad_(self: T, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0) -> T:
+    def lpad_(
+        self: T, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0
+    ) -> T:
         r"""Left-pad sequences to a maximum length.
 
         Parameters
@@ -420,7 +441,9 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'RightPaddingRow'
-    def rpad_(self: T, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0) -> T:
+    def rpad_(
+        self: T, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0
+    ) -> T:
         r"""Right-pad sequences to a maximum length.
 
         Parameters
@@ -502,22 +525,24 @@ class BaseProcessor(dp.iter.IterDataPipe):
         The returned tensor is at least 2-d.
         """
 
-    #========================================Functional forms from IterDataPipe========================================
+    # ========================================Functional forms from IterDataPipe========================================
 
     # Functional form of 'Batcher'
-    def batch(self: T, batch_size: int, drop_last: bool = False, wrapper_class=DataChunk) -> T:
+    def batch(
+        self: T, batch_size: int, drop_last: bool = False, wrapper_class=DataChunk
+    ) -> T:
         r"""
         Creates mini-batches of data (functional name: ``batch``). An outer dimension will be added as
         ``batch_size`` if ``drop_last`` is set to ``True``, or ``length % batch_size`` for the
         last batch if ``drop_last`` is set to ``False``.
-    
+
         Args:
             datapipe: Iterable DataPipe being batched
             batch_size: The size of each batch
             drop_last: Option to drop the last batch if it's not full
             wrapper_class: wrapper to apply onto each batch (type ``List``) before yielding,
                 defaults to ``DataChunk``
-    
+
         Example:
             >>> # xdoctest: +SKIP
             >>> from torchdata.datapipes.iter import IterableWrapper
@@ -526,22 +551,31 @@ class BaseProcessor(dp.iter.IterDataPipe):
             >>> list(dp)
             [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
         """
-    
+
     # Functional form of 'CollatorIterDataPipe'
-    def collate(self: T, conversion: Optional[Union[Callable[..., Any],Dict[Union[str, Any], Union[Callable, Any]],]] = default_collate, collate_fn: Optional[Callable] = None) -> T:
+    def collate(
+        self: T,
+        conversion: Optional[
+            Union[
+                Callable[..., Any],
+                Dict[Union[str, Any], Union[Callable, Any]],
+            ]
+        ] = default_collate,
+        collate_fn: Optional[Callable] = None,
+    ) -> T:
         r"""
         Collates samples from DataPipe to Tensor(s) by a custom collate function (functional name: ``collate``).
         By default, it uses :func:`torch.utils.data.default_collate`.
-    
+
         .. note::
             While writing a custom collate function, you can import :func:`torch.utils.data.default_collate` for the
             default behavior and `functools.partial` to specify any additional arguments.
-    
+
         Args:
             datapipe: Iterable DataPipe being collated
             collate_fn: Customized collate function to collect and combine data or a batch of data.
                 Default function collates to Tensor(s) based on data type.
-    
+
         Example:
             >>> # xdoctest: +SKIP
             >>> # Convert integer data to float Tensor
@@ -575,24 +609,24 @@ class BaseProcessor(dp.iter.IterDataPipe):
         Applies a function over each item from the source DataPipe (functional name: ``map``).
         The function can be any regular Python function or partial object. Lambda
         function is not recommended as it is not supported by pickle.
-    
+
         Args:
             datapipe: Source Iterable DataPipe
             fn: Function being applied over each item
             input_col: Index or indices of data which ``fn`` is applied, such as:
-    
+
                 - ``None`` as default to apply ``fn`` to the data directly.
                 - Integer(s) is used for list/tuple.
                 - Key(s) is used for dict.
-    
+
             output_col: Index of data where result of ``fn`` is placed. ``output_col`` can be specified
                 only when ``input_col`` is not ``None``
-    
+
                 - ``None`` as default to replace the index that ``input_col`` specified; For ``input_col`` with
                   multiple indices, the left-most one is used, and other indices will be removed.
                 - Integer is used for list/tuple. ``-1`` represents to append result at the end.
                 - Key is used for dict. New key is acceptable.
-    
+
         Example:
             >>> # xdoctest: +SKIP
             >>> from torchdata.datapipes.iter import IterableWrapper, Mapper
@@ -615,7 +649,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         Wrapper that allows DataPipe to be sharded (functional name: ``sharding_filter``). After ``apply_sharding`` is
         called, each instance of the DataPipe (on different workers) will have every `n`-th element of the
         original DataPipe, where `n` equals to the number of instances.
-    
+
         Args:
             source_datapipe: Iterable DataPipe that will be sharded
         """
@@ -625,12 +659,12 @@ class BaseProcessor(dp.iter.IterDataPipe):
         r"""
         Undoes batching of data (functional name: ``unbatch``). In other words, it flattens the data up to the specified level
         within a batched DataPipe.
-    
+
         Args:
             datapipe: Iterable DataPipe being un-batched
             unbatch_level: Defaults to ``1`` (only flattening the top level). If set to ``2``,
                 it will flatten the top two levels, and ``-1`` will flatten the entire DataPipe.
-    
+
         Example:
             >>> # xdoctest: +SKIP
             >>> from torchdata.datapipes.iter import IterableWrapper
@@ -649,17 +683,17 @@ class BaseProcessor(dp.iter.IterDataPipe):
         Combines elements from the source DataPipe to batches and applies a function
         over each batch, then flattens the outputs to a single, unnested IterDataPipe
         (functional name: ``map_batches``).
-    
+
         Args:
             datapipe: Source IterDataPipe
             fn: The function to be applied to each batch of data
             batch_size: The size of batch to be aggregated from ``datapipe``
             input_col: Index or indices of data which ``fn`` is applied, such as:
-    
+
                 - ``None`` as default to apply ``fn`` to the data directly.
                 - Integer(s) is used for list/tuple.
                 - Key(s) is used for dict.
-    
+
         Example:
             >>> from torchdata.datapipes.iter import IterableWrapper
             >>> def fn(batch):
@@ -668,20 +702,19 @@ class BaseProcessor(dp.iter.IterDataPipe):
             >>> mapped_dp = source_dp.map_batches(fn, batch_size=3)
             >>> list(mapped_dp)
             [1, 2, 3, 4, 5]
-    
+
         Notes:
             Compared with ``map``, the reason that ``map_batches`` doesn't take
             ``output_col`` argument is the size of ``fn`` output is not guaranteed
             to be the same as input batch. With different size, this operation cannot
             assign data back to original data structure.
-    
+
             And, this operation is introduced based on the use case from `TorchText`.
             A pybinded C++ vectorized function can be applied for efficiency.
         """
 
     def __iter__(self) -> Iterator[Dict[Field, Any]]: ...
 
-   
 class Source(BaseProcessor):
     r"""Source datapipe that serves as the starting point of train/valid/test pipelines.
 
@@ -699,9 +732,10 @@ class Source(BaseProcessor):
 
     def __init__(
         self,
-        dataset: RecDataSet, source: Iterable[Dict[Field, Any]],
+        dataset: RecDataSet,
+        source: Iterable[Dict[Field, Any]],
         datasize: Optional[int] = None,
-        shuffle: bool = True
+        shuffle: bool = True,
     ) -> None:
         self.source: Iterable[Dict[Field, Any]]
         self.datasize: int
@@ -722,7 +756,6 @@ class PostProcessor(BaseProcessor):
     source : :class:`~BaseProcessor`
         The data pipeline to be wrapped.
     """
-
 
 class SampleMultiplexer(dp.iter.IterDataPipe):
     r"""Yield items by sampling from weighted :class:`~IterDataPipe` instances.
@@ -755,7 +788,4 @@ class SampleMultiplexer(dp.iter.IterDataPipe):
     >>> list(sample_mul_dp)
     [0, 0, 0, 0, 0, 1, 1, 1, 1, 1]
     """
-    def __init__(
-        self,
-        pipes_to_weights_dict: Dict[dp.iter.IterDataPipe, float]
-    ): ...
+    def __init__(self, pipes_to_weights_dict: Dict[dp.iter.IterDataPipe, float]): ...

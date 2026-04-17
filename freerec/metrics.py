@@ -5,24 +5,32 @@ Includes regression metrics (MAE, MSE, RMSE), ranking metrics
 classification metrics (LogLoss, AUC, GAUC).
 """
 
-from typing import Optional, Union, List, Iterable, Literal
-from functools import  partial
-
-import torch
-import numpy as np
-from sklearn.metrics import roc_auc_score
 from collections import defaultdict
+from functools import partial
+from typing import Iterable, List, Literal, Optional, Union
 
+import numpy as np
+import torch
+from sklearn.metrics import roc_auc_score
 
 __all__ = [
-    'mean_abs_error', 'mean_squared_error', 'root_mse',
-    'precision', 'recall', 'f1_score', 'hit_rate',
-    'normalized_dcg', 'mean_reciprocal_rank', 'mean_average_precision',
-    'log_loss', 'auroc', 'group_auroc'
+    "mean_abs_error",
+    "mean_squared_error",
+    "root_mse",
+    "precision",
+    "recall",
+    "f1_score",
+    "hit_rate",
+    "normalized_dcg",
+    "mean_reciprocal_rank",
+    "mean_average_precision",
+    "log_loss",
+    "auroc",
+    "group_auroc",
 ]
 
 
-def _reduce(reduction: Literal['mean', 'sum', 'none'] ='mean'):
+def _reduce(reduction: Literal["mean", "sum", "none"] = "mean"):
     r"""Decorator that applies a reduction to the output of a metric function.
 
     The decorated function should accept ``preds`` and ``targets`` as its
@@ -47,37 +55,42 @@ def _reduce(reduction: Literal['mean', 'sum', 'none'] ='mean'):
     ... def mean_squared_error(preds, targets):
     ...     return (preds - targets).pow(2).mean(-1)
     """
+
     def decorator(func):
         def wrapper(
             preds: Union[List[torch.Tensor], torch.Tensor],
             targets: Union[List[torch.Tensor], torch.Tensor],
             *,
-            reduction: str = reduction, **kwargs
+            reduction: str = reduction,
+            **kwargs,
         ):
             func_ = partial(func, **kwargs)
             if isinstance(preds, List):
-                results = torch.tensor(list(map(
-                    func_, preds, targets
-                )))
+                results = torch.tensor(list(map(func_, preds, targets)))
             else:
                 results = func_(preds, targets)
-            if reduction == 'none':
+            if reduction == "none":
                 return results
-            elif reduction == 'mean':
+            elif reduction == "mean":
                 return results.mean()
-            elif reduction == 'sum':
+            elif reduction == "sum":
                 return results.sum()
             else:
-                raise ValueError(f"reduction should be 'none'|'mean'|'sum' but {reduction} is received ...")
+                raise ValueError(
+                    f"reduction should be 'none'|'mean'|'sum' but {reduction} is received ..."
+                )
+
         wrapper.__name__ = func.__name__
         wrapper.__doc__ = func.__doc__
         return wrapper
+
     return decorator
 
 
 # quality of predictions ========================================================================
 
-@_reduce('mean')
+
+@_reduce("mean")
 def mean_abs_error(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
     r"""Compute Mean Absolute Error (MAE).
 
@@ -111,7 +124,8 @@ def mean_abs_error(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
     preds, targets = preds.float(), targets.float()
     return (preds - targets).abs().mean(-1)
 
-@_reduce('mean')
+
+@_reduce("mean")
 def mean_squared_error(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
     r"""Compute Mean Squared Error (MSE).
 
@@ -145,7 +159,8 @@ def mean_squared_error(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tens
     preds, targets = preds.float(), targets.float()
     return (preds - targets).pow(2).mean(-1)
 
-@_reduce('mean')
+
+@_reduce("mean")
 def root_mse(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
     r"""Compute Root Mean Squared Error (RMSE).
 
@@ -182,8 +197,11 @@ def root_mse(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
 
 # quality of the set of recommendations ========================================================================
 
-@_reduce('mean')
-def precision(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
+
+@_reduce("mean")
+def precision(
+    preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None
+) -> torch.Tensor:
     r"""Compute Precision at K.
 
     .. math::
@@ -231,8 +249,11 @@ def precision(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = 
     relevant = targets.gather(-1, indices).sum(-1)
     return relevant / k
 
-@_reduce('mean')
-def recall(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
+
+@_reduce("mean")
+def recall(
+    preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None
+) -> torch.Tensor:
     r"""Compute Recall at K.
 
     .. math::
@@ -284,8 +305,11 @@ def recall(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = Non
     relevant[~invalid] /= total[~invalid]
     return relevant
 
-@_reduce('mean')
-def f1_score(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
+
+@_reduce("mean")
+def f1_score(
+    preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None
+) -> torch.Tensor:
     r"""Compute the F1 score at K.
 
     The F1 score is the harmonic mean of precision and recall:
@@ -326,8 +350,8 @@ def f1_score(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = N
         k = preds.size(-1)
     else:
         k = min(k, preds.size(-1))
-    precision_k = precision(preds, targets, k=k, reduction='none')
-    recall_k = recall(preds, targets, k=k, reduction='none')
+    precision_k = precision(preds, targets, k=k, reduction="none")
+    recall_k = recall(preds, targets, k=k, reduction="none")
     score = 2 * precision_k * recall_k
     part2 = precision_k + recall_k
     valid = part2 != 0
@@ -335,8 +359,10 @@ def f1_score(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = N
     return score
 
 
-@_reduce('mean')
-def hit_rate(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
+@_reduce("mean")
+def hit_rate(
+    preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None
+) -> torch.Tensor:
     r"""Compute Hit Rate at K.
 
     Returns 1 if at least one relevant item appears in the top-K
@@ -383,7 +409,9 @@ def hit_rate(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = N
     relevant = targets.gather(-1, indices).sum(-1)
     return (relevant > 0).float()
 
+
 # quality of the list of recommendations
+
 
 def _dcg(target: torch.Tensor) -> torch.Tensor:
     r"""Compute Discounted Cumulative Gain for a relevance vector.
@@ -405,8 +433,11 @@ def _dcg(target: torch.Tensor) -> torch.Tensor:
     denom = torch.log2(torch.arange(target.shape[-1], device=target.device) + 2.0)
     return (target / denom).sum(dim=-1)
 
-@_reduce('mean')
-def normalized_dcg(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
+
+@_reduce("mean")
+def normalized_dcg(
+    preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None
+) -> torch.Tensor:
     r"""Compute Normalized Discounted Cumulative Gain (NDCG) at K.
 
     .. math::
@@ -461,6 +492,7 @@ def normalized_dcg(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[in
     dcg[~invalid] /= ideal_dcg[~invalid]
     return dcg
 
+
 def _single_reciprocal_rank(preds: torch.Tensor, targets: torch.Tensor):
     r"""Compute the reciprocal rank for a single query.
 
@@ -477,13 +509,16 @@ def _single_reciprocal_rank(preds: torch.Tensor, targets: torch.Tensor):
         Reciprocal rank, or 0 if no relevant item exists.
     """
     if not targets.sum():
-        return 0.
+        return 0.0
     positions = torch.nonzero(targets).view(-1)
     res = 1.0 / (positions[0] + 1.0)
     return res
 
-@_reduce('mean')
-def mean_reciprocal_rank(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
+
+@_reduce("mean")
+def mean_reciprocal_rank(
+    preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None
+) -> torch.Tensor:
     r"""Compute Mean Reciprocal Rank (MRR) at K.
 
     .. math::
@@ -534,7 +569,8 @@ def mean_reciprocal_rank(preds: torch.Tensor, targets: torch.Tensor, *, k: Optio
     else:
         return _single_reciprocal_rank(preds, targets)
 
-def _single_adverage_precision(preds: torch.Tensor, targets: torch.Tensor):
+
+def _single_average_precision(preds: torch.Tensor, targets: torch.Tensor):
     r"""Compute Average Precision for a single query.
 
     Parameters
@@ -550,13 +586,24 @@ def _single_adverage_precision(preds: torch.Tensor, targets: torch.Tensor):
         Average precision, or 0 if no relevant item exists.
     """
     if not targets.sum():
-        return 0.
-    positions = torch.arange(1, len(targets) + 1, device=targets.device, dtype=torch.float32)[targets > 0]
-    res = torch.div((torch.arange(len(positions), device=positions.device, dtype=torch.float32) + 1), positions).mean()
+        return 0.0
+    positions = torch.arange(
+        1, len(targets) + 1, device=targets.device, dtype=torch.float32
+    )[targets > 0]
+    res = torch.div(
+        (
+            torch.arange(len(positions), device=positions.device, dtype=torch.float32)
+            + 1
+        ),
+        positions,
+    ).mean()
     return res
 
-@_reduce('mean')
-def mean_average_precision(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
+
+@_reduce("mean")
+def mean_average_precision(
+    preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None
+) -> torch.Tensor:
     r"""Compute Mean Average Precision (MAP) at K.
 
     .. math::
@@ -605,18 +652,20 @@ def mean_average_precision(preds: torch.Tensor, targets: torch.Tensor, *, k: Opt
     targets = targets.gather(-1, indices)
 
     if preds.ndim == 2:
-        return torch.tensor(list(map(_single_adverage_precision, preds, targets)))
+        return torch.tensor(list(map(_single_average_precision, preds, targets)))
     else:
-        return _single_adverage_precision(preds, targets)
-
+        return _single_average_precision(preds, targets)
 
 
 # quality of CTR
 
+
 def log_loss(
-    preds: Iterable, targets: Iterable, *,
-    reduction: Literal['mean', 'sum', 'none'] = 'mean',
-    eps: float = 1.e-8
+    preds: Iterable,
+    targets: Iterable,
+    *,
+    reduction: Literal["mean", "sum", "none"] = "mean",
+    eps: float = 1.0e-8,
 ) -> np.ndarray:
     r"""Compute binary logarithmic loss (log-loss).
 
@@ -656,18 +705,17 @@ def log_loss(
     preds = np.array(preds, dtype=float)
     preds = np.clip(preds, eps, 1 - eps)
     targets = np.array(targets)
-    loss = -(
-        targets * np.log(preds)
-        + (1 - targets) * np.log(1 - preds)
-    )
-    if reduction == 'none':
+    loss = -(targets * np.log(preds) + (1 - targets) * np.log(1 - preds))
+    if reduction == "none":
         return loss
-    elif reduction == 'mean':
+    elif reduction == "mean":
         return np.mean(loss)
-    elif reduction == 'sum':
+    elif reduction == "sum":
         return np.sum(loss)
     else:
-        raise ValueError(f"reduction should be 'none'|'mean'|'sum' but {reduction} is received ...")
+        raise ValueError(
+            f"reduction should be 'none'|'mean'|'sum' but {reduction} is received ..."
+        )
 
 
 def auroc(preds: Iterable, targets: Iterable) -> np.ndarray:
@@ -702,11 +750,15 @@ def auroc(preds: Iterable, targets: Iterable) -> np.ndarray:
         return roc_auc_score(targets, preds)
     except ValueError:
         # Return `1` if only one class presents in `targets`
-        return 1.
+        return 1.0
+
 
 def group_auroc(
-    preds: Iterable, targets: Iterable, groups: Iterable,
-    *, reduction: Literal['mean', 'none'] = 'mean'
+    preds: Iterable,
+    targets: Iterable,
+    groups: Iterable,
+    *,
+    reduction: Literal["mean", "none"] = "mean",
 ) -> np.ndarray:
     r"""Compute Group AUC (GAUC).
 
@@ -745,22 +797,26 @@ def group_auroc(
     for group, pred, target in zip(groups, preds, targets):
         group_preds[group].append(pred)
         group_targets[group].append(target)
-    group_sizes = np.array([
-        len(targets) if len(set(targets)) > 1 else 0
-        for targets in group_targets.values()
-    ])
-    aurocs = np.fromiter(map(
-        auroc,
-        group_preds.values(), group_targets.values()
-    ), dtype=float)
-    if reduction == 'none':
+    group_sizes = np.array(
+        [
+            len(targets) if len(set(targets)) > 1 else 0
+            for targets in group_targets.values()
+        ]
+    )
+    aurocs = np.fromiter(
+        map(auroc, group_preds.values(), group_targets.values()), dtype=float
+    )
+    if reduction == "none":
         return aurocs
-    elif reduction == 'mean':
+    elif reduction == "mean":
         return np.sum(aurocs * group_sizes) / np.sum(group_sizes)
     else:
-        raise ValueError(f"reduction should be 'none'|'mean' but {reduction} is received ...")
+        raise ValueError(
+            f"reduction should be 'none'|'mean' but {reduction} is received ..."
+        )
 
 
 if __name__ == "__main__":
     import doctest
+
     doctest.testmod()

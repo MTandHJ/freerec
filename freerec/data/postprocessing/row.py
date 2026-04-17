@@ -1,24 +1,22 @@
-
-
-
-from typing import Iterable, Any, Callable, List, Dict
+from itertools import chain, repeat
+from typing import Any, Callable, Dict, Iterable, List
 
 import numpy as np
 import torchdata.datapipes as dp
-from itertools import repeat, chain
 
-from .base import PostProcessor
 from ..fields import Field
-
+from .base import PostProcessor
 
 __all__ = [
-    "LeftPruningRow", "RightPruningRow",
+    "LeftPruningRow",
+    "RightPruningRow",
     "AddingRow",
-    "LeftPaddingRow", "RightPaddingRow",
+    "LeftPaddingRow",
+    "RightPaddingRow",
 ]
 
 
-#==================================Filter==================================
+# ==================================Filter==================================
 class RowFilter(PostProcessor):
     r"""Filter rows by applying a predicate to specified fields.
 
@@ -38,8 +36,10 @@ class RowFilter(PostProcessor):
     """
 
     def __init__(
-        self, source: dp.iter.IterableWrapper,
-        fn: Callable, checked_fields: Iterable[Field]
+        self,
+        source: dp.iter.IterableWrapper,
+        fn: Callable,
+        checked_fields: Iterable[Field],
     ):
         r"""Initialize the RowFilter."""
         super().__init__(source)
@@ -48,7 +48,9 @@ class RowFilter(PostProcessor):
 
     def _check(self, row: Dict[Field, Any]) -> bool:
         r"""Return whether all checked fields pass the predicate."""
-        return all(self.fn(field, row.get(field, None)) for field in self.checked_fields)
+        return all(
+            self.fn(field, row.get(field, None)) for field in self.checked_fields
+        )
 
     def __iter__(self):
         r"""Yield rows that pass the filter."""
@@ -57,7 +59,7 @@ class RowFilter(PostProcessor):
                 yield row
 
 
-#==================================Mapper==================================
+# ==================================Mapper==================================
 class RowMapper(PostProcessor):
     r"""Apply a mapping function to specified fields of each row.
 
@@ -77,8 +79,10 @@ class RowMapper(PostProcessor):
     """
 
     def __init__(
-        self, source: dp.iter.IterableWrapper,
-        fn: Callable, modified_fields: Iterable[Field]
+        self,
+        source: dp.iter.IterableWrapper,
+        fn: Callable,
+        modified_fields: Iterable[Field],
     ):
         r"""Initialize the RowMapper."""
         super().__init__(source)
@@ -129,20 +133,20 @@ class LeftPruningRow(RowMapper):
     """
 
     def __init__(
-        self, source: dp.iter.IterDataPipe, maxlen: int, modified_fields: Iterable[Field]
+        self,
+        source: dp.iter.IterDataPipe,
+        maxlen: int,
+        modified_fields: Iterable[Field],
     ) -> None:
         r"""Initialize the LeftPruningRow."""
 
         self.maxlen = maxlen
 
-        super().__init__(
-            source, self._prune,
-            modified_fields
-        )
+        super().__init__(source, self._prune, modified_fields)
 
     def _prune(self, field: Field, x: Iterable) -> Iterable:
         r"""Return the last ``maxlen`` elements of *x*."""
-        return x[-self.maxlen:]
+        return x[-self.maxlen :]
 
 
 @dp.functional_datapipe("rprune_")
@@ -182,7 +186,7 @@ class RightPruningRow(LeftPruningRow):
 
     def _prune(self, field: Field, x: Iterable) -> Iterable:
         r"""Return the first ``maxlen`` elements of *x*."""
-        return x[:self.maxlen]
+        return x[: self.maxlen]
 
 
 @dp.functional_datapipe("add_")
@@ -217,16 +221,16 @@ class AddingRow(RowMapper):
     """
 
     def __init__(
-        self, source: dp.iter.IterDataPipe, offset: int, modified_fields: Iterable[Field]
+        self,
+        source: dp.iter.IterDataPipe,
+        offset: int,
+        modified_fields: Iterable[Field],
     ) -> None:
         r"""Initialize the AddingRow."""
 
         self.offset = offset
 
-        super().__init__(
-            source, self._add,
-            modified_fields
-        )
+        super().__init__(source, self._add, modified_fields)
 
     def _add(self, field: Field, x: Iterable) -> List:
         r"""Add ``self.offset`` element-wise to *x*.
@@ -284,22 +288,24 @@ class LeftPaddingRow(RowMapper):
     """
 
     def __init__(
-        self, source: dp.iter.IterDataPipe, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0
+        self,
+        source: dp.iter.IterDataPipe,
+        maxlen: int,
+        modified_fields: Iterable[Field],
+        padding_value: int = 0,
     ) -> None:
         r"""Initialize the LeftPaddingRow."""
 
         self.maxlen = maxlen
         self.padding_value = int(padding_value)
 
-        super().__init__(
-            source, self._pad,
-            modified_fields
-        )
+        super().__init__(source, self._pad, modified_fields)
 
         self.sure_zero_elems()
 
     def sure_zero_elems(self):
         r"""Infer the padding element shape from the first row."""
+
         def guess_zero(field: Field, value: Iterable):
             if isinstance(value, Iterable):
                 if len(value) == 0:

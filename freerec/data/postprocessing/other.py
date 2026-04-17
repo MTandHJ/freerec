@@ -1,10 +1,7 @@
-
-
-
 import torchdata.datapipes as dp
 
 
-@dp.functional_datapipe('mark_')
+@dp.functional_datapipe("mark_")
 class Marker(dp.iter.IterDataPipe):
     r"""Attach constant key-value markers to every row yielded by a datapipe.
 
@@ -30,10 +27,7 @@ class Marker(dp.iter.IterDataPipe):
      {'i': 2, 'dataset': 'A'}]
     """
 
-    def __init__(
-        self, source: dp.iter.IterDataPipe,
-        **markers
-    ):
+    def __init__(self, source: dp.iter.IterDataPipe, **markers):
         r"""Initialize the Marker."""
         super().__init__()
 

@@ -1,49 +1,39 @@
-
 from typing import Dict
 
 import torch
 import torch.nn as nn
+
 import freerec
 
-freerec.declare(version='1.0.1')
+freerec.declare(version="1.0.1")
 
 cfg = freerec.parser.Parser()
 cfg.add_argument("--embedding-dim", type=int, default=64)
 cfg.set_defaults(
     description="MF-BPR",
     root="../../data",
-    dataset='Yelp2018_10104811_ROU',
+    dataset="Yelp2018_10104811_ROU",
     epochs=1000,
     batch_size=2048,
-    optimizer='adam',
+    optimizer="adam",
     lr=1e-3,
     weight_decay=1e-4,
-    seed=1
+    seed=1,
 )
 cfg.compile()
 
 
 class MF(freerec.models.GenRecArch):
-
     def __init__(
-        self, dataset: freerec.data.datasets.RecDataSet,
-        embedding_dim: int = 64
+        self, dataset: freerec.data.datasets.RecDataSet, embedding_dim: int = 64
     ) -> None:
         super().__init__(dataset)
 
-        self.User.add_module(
-            "embeddings", nn.Embedding(
-                self.User.count, embedding_dim
-            )
-        )
+        self.User.add_module("embeddings", nn.Embedding(self.User.count, embedding_dim))
 
-        self.Item.add_module(
-            "embeddings", nn.Embedding(
-                self.Item.count, embedding_dim
-            )
-        )
+        self.Item.add_module("embeddings", nn.Embedding(self.Item.count, embedding_dim))
 
-        self.criterion = freerec.criterions.BPRLoss(reduction='mean')
+        self.criterion = freerec.criterions.BPRLoss(reduction="mean")
 
         self.reset_parameters()
 
@@ -52,18 +42,22 @@ class MF(freerec.models.GenRecArch):
             if isinstance(m, nn.Linear):
                 nn.init.xavier_normal_(m.weight)
                 if m.bias is not None:
-                    nn.init.constant_(m.bias, 0.)
+                    nn.init.constant_(m.bias, 0.0)
             elif isinstance(m, nn.Embedding):
-                nn.init.normal_(m.weight, std=1.e-4)
+                nn.init.normal_(m.weight, std=1.0e-4)
             elif isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d)):
-                nn.init.constant_(m.weight, 1.)
-                nn.init.constant_(m.bias, 0.)
+                nn.init.constant_(m.weight, 1.0)
+                nn.init.constant_(m.bias, 0.0)
 
     def sure_trainpipe(self, batch_size: int):
-        return self.dataset.train().choiced_user_ids_source(
-        ).gen_train_sampling_pos_().gen_train_sampling_neg_(
-            num_negatives=1
-        ).batch_(batch_size).tensor_()
+        return (
+            self.dataset.train()
+            .choiced_user_ids_source()
+            .gen_train_sampling_pos_()
+            .gen_train_sampling_neg_(num_negatives=1)
+            .batch_(batch_size)
+            .tensor_()
+        )
 
     def encode(self):
         return self.User.embeddings.weight, self.Item.embeddings.weight
@@ -79,13 +73,13 @@ class MF(freerec.models.GenRecArch):
     def fit(self, data: Dict[freerec.data.fields.Field, torch.Tensor]):
         userEmbds, itemEmbds = self.encode()
         users, positives, negatives = data[self.User], data[self.IPos], data[self.INeg]
-        userEmbds = userEmbds[users] # (B, 1, D)
-        iposEmbds = itemEmbds[positives] # (B, 1, D)
-        inegEmbds = itemEmbds[negatives] # (B, K, D)
+        userEmbds = userEmbds[users]  # (B, 1, D)
+        iposEmbds = itemEmbds[positives]  # (B, 1, D)
+        inegEmbds = itemEmbds[negatives]  # (B, K, D)
 
         rec_loss = self.criterion(
             torch.einsum("BKD,BKD->BK", userEmbds, iposEmbds),
-            torch.einsum("BKD,BKD->BK", userEmbds, inegEmbds)
+            torch.einsum("BKD,BKD->BK", userEmbds, inegEmbds),
         )
 
         return rec_loss
@@ -97,18 +91,17 @@ class MF(freerec.models.GenRecArch):
         self.ranking_buffer[self.Item] = itemEmbds.detach().clone()
 
     def recommend_from_full(self, data: Dict[freerec.data.fields.Field, torch.Tensor]):
-        userEmbds = self.ranking_buffer[self.User][data[self.User]] # (B, 1, D)
+        userEmbds = self.ranking_buffer[self.User][data[self.User]]  # (B, 1, D)
         itemEmbds = self.ranking_buffer[self.Item]
         return torch.einsum("BKD,ND->BN", userEmbds, itemEmbds)
 
     def recommend_from_pool(self, data: Dict[freerec.data.fields.Field, torch.Tensor]):
-        userEmbds = self.ranking_buffer[self.User][data[self.User]] # (B, 1, D)
-        itemEmbds = self.ranking_buffer[self.Item][data[self.IUnseen]] # (B, 101, D)
+        userEmbds = self.ranking_buffer[self.User][data[self.User]]  # (B, 1, D)
+        itemEmbds = self.ranking_buffer[self.Item][data[self.IUnseen]]  # (B, 101, D)
         return torch.einsum("BKD,BKD->BK", userEmbds, itemEmbds)
 
 
 class CoachForMFBPR(freerec.launcher.Coach):
-
     def train_per_epoch(self, epoch: int):
         for data in self.dataloader:
             data = self.dict_to_device(data)
@@ -117,11 +110,13 @@ class CoachForMFBPR(freerec.launcher.Coach):
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
-            
+
             self.monitor(
-                loss.item(), 
-                n=len(data[self.User]), reduction="mean", 
-                mode='train', pool=['LOSS']
+                loss.item(),
+                n=len(data[self.User]),
+                reduction="mean",
+                mode="train",
+                pool=["LOSS"],
             )
 
 
@@ -130,12 +125,11 @@ def main():
     try:
         dataset = getattr(freerec.data.datasets, cfg.dataset)(root=cfg.root)
     except AttributeError:
-        dataset = freerec.data.datasets.RecDataSet(cfg.root, cfg.dataset, tasktag=cfg.tasktag)
-    
-    model = MF(
-        dataset,
-        embedding_dim=cfg.embedding_dim
-    )
+        dataset = freerec.data.datasets.RecDataSet(
+            cfg.root, cfg.dataset, tasktag=cfg.tasktag
+        )
+
+    model = MF(dataset, embedding_dim=cfg.embedding_dim)
     trainpipe = model.sure_trainpipe(cfg.batch_size)
     validpipe = model.sure_validpipe(cfg.ranking)
     testpipe = model.sure_testpipe(cfg.ranking)
@@ -146,7 +140,7 @@ def main():
         validpipe=validpipe,
         testpipe=testpipe,
         model=model,
-        cfg=cfg
+        cfg=cfg,
     )
     coach.fit()
 

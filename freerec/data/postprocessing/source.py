@@ -1,18 +1,17 @@
-
-
-
-from typing import Any, Iterable, Dict
-
 import random
+from typing import Any, Dict, Iterable
+
 import torchdata.datapipes as dp
 
-from .base import Source
 from ..datasets.base import RecDataSet
 from ..fields import Field
-
+from .base import Source
 
 __all__ = [
-    'RandomChoicedSource', 'RandomShuffledSource', 'OrderedSource', 'PipedSource'
+    "RandomChoicedSource",
+    "RandomShuffledSource",
+    "OrderedSource",
+    "PipedSource",
 ]
 
 
@@ -31,9 +30,7 @@ class RandomChoicedSource(Source):
         The source data rows to sample from.
     """
 
-    def __init__(
-        self, dataset: RecDataSet, source: Iterable[Dict[Field, Any]]
-    ) -> None:
+    def __init__(self, dataset: RecDataSet, source: Iterable[Dict[Field, Any]]) -> None:
         r"""Initialize the RandomChoicedSource."""
         super().__init__(dataset, source, dataset.datasize, shuffle=False)
 
@@ -118,7 +115,9 @@ class PipedSource(Source):
     def __init__(self, dataset: RecDataSet, source: dp.iter.IterDataPipe) -> None:
         r"""Initialize the PipedSource."""
         super().__init__(dataset, source)
-        assert isinstance(source, dp.iter.IterDataPipe), f"PipedSource needs `IterDataPipe` but {type(source)} received ..."
+        assert isinstance(source, dp.iter.IterDataPipe), (
+            f"PipedSource needs `IterDataPipe` but {type(source)} received ..."
+        )
 
     def __iter__(self):
         r"""Yield rows from the upstream datapipe."""

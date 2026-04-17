@@ -1,9 +1,6 @@
-
-
 from .base import MatchingRecDataSet, NextItemRecDataSet
 
-
-#===================================MatchingRecDataSset===================================
+# ===================================MatchingRecDataSset===================================
 
 
 class MovieLens100K_10101811_ROU(MatchingRecDataSet):
@@ -166,7 +163,7 @@ class MovieLens20M_10101712_ROU(MatchingRecDataSet):
     """
 
 
-#===================================NextItemRecDataSset===================================
+# ===================================NextItemRecDataSset===================================
 
 
 class MovieLens100K_550_LOU(NextItemRecDataSet):

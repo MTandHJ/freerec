@@ -1,32 +1,37 @@
+import logging
+import os
+import pickle
+import random
+import time
+from collections import defaultdict
+from typing import Any, Callable, Dict, List, NoReturn, Union
 
-
-from typing import Callable, Dict, List, Union, Any, NoReturn
-import torch, yaml
+import matplotlib.pyplot as plt
 import numpy as np
+import torch
+import yaml
 from torch.utils.tensorboard import SummaryWriter
 
-import logging, time, random, os, pickle
-from collections import defaultdict
-import matplotlib.pyplot as plt
-
+from .ddp import all_gather, is_main_process
 from .dict2obj import Config
-from .ddp import is_main_process, all_gather
-
 
 LOGGER = Config(
-    name='RecSys', filename='log.txt', level=logging.DEBUG,
-    filelevel=logging.DEBUG, consolelevel=logging.INFO,
+    name="RecSys",
+    filename="log.txt",
+    level=logging.DEBUG,
+    filelevel=logging.DEBUG,
+    consolelevel=logging.INFO,
     formatter=Config(
-        filehandler=logging.Formatter('%(asctime)s:\t%(message)s'),
-        consolehandler=logging.Formatter('%(message)s')
+        filehandler=logging.Formatter("%(asctime)s:\t%(message)s"),
+        consolehandler=logging.Formatter("%(message)s"),
     ),
     info=print,
-    debug=print
+    debug=print,
 )
 
 COLOR = {
-    'current': "{0}",
-    'cpu': "{0}",
+    "current": "{0}",
+    "cpu": "{0}",
     0: "{0}",
     1: "\033[1;35m{0}\033[0m",
     2: "\033[1;34m{0}\033[0m",
@@ -51,11 +56,12 @@ class AverageMeter:
     """
 
     def __init__(
-        self, name: str, metric: Callable,
-        fmt: str = ".5f", best_caster: Callable = max
+        self, name: str, metric: Callable, fmt: str = ".5f", best_caster: Callable = max
     ):
         r"""Initialize the meter."""
-        assert isinstance(metric, Callable), f"metric should be Callable but {type(metric)} received ..."
+        assert isinstance(metric, Callable), (
+            f"metric should be Callable but {type(metric)} received ..."
+        )
         self.name = name
         self.fmt = fmt
         self.caster = best_caster
@@ -75,9 +81,9 @@ class AverageMeter:
 
     def reset(self) -> None:
         r"""Reset the meter values."""
-        self.val = 0.
-        self.avg = 0.
-        self.sum = 0.
+        self.val = 0.0
+        self.avg = 0.0
+        self.sum = 0.0
         self.count = 0
         self.active = False
 
@@ -90,7 +96,9 @@ class AverageMeter:
         elif reduction == "sum":
             val = sum(vals)
         else:
-            raise ValueError(f"Receive reduction {reduction} but 'mean' or 'sum' expected ...")
+            raise ValueError(
+                f"Receive reduction {reduction} but 'mean' or 'sum' expected ..."
+            )
         return val, int(sum(ns))
 
     def update(self, val: float, n: int = 1, reduction: str = "mean") -> None:
@@ -164,12 +172,10 @@ class AverageMeter:
         timeline = np.arange(len(self.history)) * freq
         self.fig = plt.figure(dpi=300)
         ax = self.fig.gca()
-        ax.plot(
-            timeline, self.history, marker='', figure=self.fig
-        )
+        ax.plot(timeline, self.history, marker="", figure=self.fig)
         ax.set_title(self.name)
 
-    def save(self, path: str, mode: str = '') -> None:
+    def save(self, path: str, mode: str = "") -> None:
         r"""Save the plotted curve as a PNG file.
 
         Parameters
@@ -242,10 +248,7 @@ class AverageMeter:
             Reduction mode: ``'mean'`` or ``'sum'``, by default ``'mean'``.
         """
         self.active = True
-        self.update(
-            val=self.check(*values),
-            n=n, reduction=reduction
-        )
+        self.update(val=self.check(*values), n=n, reduction=reduction)
 
 
 class Monitor(Config):
@@ -287,9 +290,11 @@ class Monitor(Config):
         for prefix, monitors in self.items():
             for metric, meters in monitors.items():
                 for meter in meters:
-                    meter.history = state_dict[prefix][metric].get(meter.name, meter.history)
+                    meter.history = state_dict[prefix][metric].get(
+                        meter.name, meter.history
+                    )
 
-    def save(self, path: str, filename: str = 'monitors.pickle'):
+    def save(self, path: str, filename: str = "monitors.pickle"):
         r"""Save the current state of the monitors to disk via :func:`export_pickle`.
 
         Parameters
@@ -316,11 +321,7 @@ class Monitor(Config):
                 for metric, meters in monitors.items():
                     for meter in meters:
                         for t, val in enumerate(meter.history):
-                            writer.add_scalar(
-                                '/'.join([prefix, meter.name]),
-                                val,
-                                t
-                            )
+                            writer.add_scalar("/".join([prefix, meter.name]), val, t)
 
 
 def export_pickle(data: Any, file: str) -> NoReturn:
@@ -348,6 +349,7 @@ def export_pickle(data: Any, file: str) -> NoReturn:
     finally:
         if fh is not None:
             fh.close()
+
 
 def import_pickle(file: str) -> Any:
     r"""Import data from a pickle file.
@@ -377,6 +379,7 @@ def import_pickle(file: str) -> Any:
         if fh is not None:
             fh.close()
 
+
 def export_yaml(data: Any, file: str) -> NoReturn:
     r"""Export data into YAML format.
 
@@ -388,9 +391,8 @@ def export_yaml(data: Any, file: str) -> NoReturn:
         Destination file path.
     """
     with open(file, encoding="UTF-8", mode="w") as fh:
-        fh.write(
-            yaml.dump(data, sort_keys=False)
-        )
+        fh.write(yaml.dump(data, sort_keys=False))
+
 
 def import_yaml(file: str) -> Any:
     r"""Import data from a YAML file.
@@ -405,14 +407,12 @@ def import_yaml(file: str) -> Any:
     Any
         The deserialized object.
     """
-    with open(file, encoding="UTF-8", mode='r') as f:
+    with open(file, encoding="UTF-8", mode="r") as f:
         data = yaml.full_load(f)
     return data
 
-def set_logger(
-    path: str,
-    log2file: bool = True, log2console: bool = True
-) -> None:
+
+def set_logger(path: str, log2file: bool = True, log2console: bool = True) -> None:
     r"""Set up a logger instance.
 
     Parameters
@@ -434,8 +434,7 @@ def set_logger(
 
     if log2file:
         handler = logging.FileHandler(
-            os.path.join(path, LOGGER.filename), 
-            encoding='utf-8'
+            os.path.join(path, LOGGER.filename), encoding="utf-8"
         )
         handler.setLevel(LOGGER.filelevel)
         handler.setFormatter(LOGGER.formatter.filehandler)
@@ -445,13 +444,20 @@ def set_logger(
         handler.setLevel(LOGGER.consolelevel)
         handler.setFormatter(LOGGER.formatter.consolehandler)
         logger.addHandler(handler)
-    logger.debug("========================================================================")
-    logger.debug("========================================================================")
-    logger.debug("========================================================================")
+    logger.debug(
+        "========================================================================"
+    )
+    logger.debug(
+        "========================================================================"
+    )
+    logger.debug(
+        "========================================================================"
+    )
     logger.propagate = False
-    LOGGER['info'] = logger.info
-    LOGGER['debug'] = logger.debug
+    LOGGER["info"] = logger.info
+    LOGGER["debug"] = logger.debug
     return logger
+
 
 def set_color(device: Union[int, str]):
     r"""Set the ANSI color code for terminal output of the specified device.
@@ -464,9 +470,10 @@ def set_color(device: Union[int, str]):
     try:
         if isinstance(device, int):
             device = device % 4
-        COLOR['current'] = COLOR[device]
+        COLOR["current"] = COLOR[device]
     except KeyError:
         pass
+
 
 def infoLogger(words: str, main_process_only: bool = True):
     r"""Log an info-level message.
@@ -485,9 +492,10 @@ def infoLogger(words: str, main_process_only: bool = True):
     """
     if main_process_only and not is_main_process():
         return
-    words = COLOR['current'].format(words)
+    words = COLOR["current"].format(words)
     LOGGER.info(words)
     return words
+
 
 def debugLogger(words: str):
     r"""Log a debug-level message.
@@ -504,6 +512,7 @@ def debugLogger(words: str):
     """
     LOGGER.debug(words)
     return words
+
 
 def warnLogger(warn: str):
     r"""Log a warning-level message.
@@ -522,6 +531,7 @@ def warnLogger(warn: str):
     LOGGER.info(words)
     return words
 
+
 def timemeter(func):
     r"""Decorator that measures and logs the wall-clock time of a function.
 
@@ -535,16 +545,22 @@ def timemeter(func):
     Callable
         The wrapped function that logs elapsed time after each call.
     """
+
     def wrapper(*args, **kwargs):
         r"""Wrap the function with timing."""
         start = time.time()
         results = func(*args, **kwargs)
         end = time.time()
-        infoLogger(f"[Wall TIME] >>> {func.__qualname__} takes {end-start:.6f} seconds ...", False)
-        return  results
+        infoLogger(
+            f"[Wall TIME] >>> {func.__qualname__} takes {end - start:.6f} seconds ...",
+            False,
+        )
+        return results
+
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
     return wrapper
+
 
 def mkdirs(*paths: str) -> None:
     r"""Create directories, ignoring those that already exist.
@@ -560,6 +576,7 @@ def mkdirs(*paths: str) -> None:
         except FileExistsError:
             pass
 
+
 def activate_benchmark(benchmark: bool) -> None:
     r"""Activate or deactivate the cuDNN benchmark mode.
 
@@ -570,12 +587,18 @@ def activate_benchmark(benchmark: bool) -> None:
         if ``False``, do the opposite.
     """
     from torch.backends import cudnn
+
     if benchmark:
-        infoLogger(f"[Benchmark] >>> cudnn.benchmark == True | cudnn.deterministic == False")
+        infoLogger(
+            "[Benchmark] >>> cudnn.benchmark == True | cudnn.deterministic == False"
+        )
         cudnn.benchmark, cudnn.deterministic = True, False
     else:
-        infoLogger(f"[Benchmark] >>> cudnn.benchmark == False | cudnn.deterministic == True")
+        infoLogger(
+            "[Benchmark] >>> cudnn.benchmark == False | cudnn.deterministic == True"
+        )
         cudnn.benchmark, cudnn.deterministic = False, True
+
 
 def set_seed(seed: int) -> int:
     r"""Set the seed for all random number generators.
@@ -601,4 +624,3 @@ def set_seed(seed: int) -> int:
     torch.cuda.manual_seed_all(seed)
     infoLogger(f"[Seed] >>> Set seed: {seed}")
     return seed
-

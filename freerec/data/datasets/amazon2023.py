@@ -1,9 +1,6 @@
+from .base import MatchingRecDataSet
 
-
-from .base import MatchingRecDataSet, NextItemRecDataSet
-
-
-#===================================MatchingRecDataSset===================================
+# ===================================MatchingRecDataSset===================================
 
 
 class Amazon2023Baby_554811_ROU(MatchingRecDataSet):
@@ -186,6 +183,4 @@ class Amazon2023Toys_10104811_ROU(MatchingRecDataSet):
     """
 
 
-
-
-#===================================NextItemRecDataSset===================================
+# ===================================NextItemRecDataSset===================================

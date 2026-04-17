@@ -1,18 +1,27 @@
+import math
+from typing import Dict, Iterable, Literal, Optional, Tuple, Union
 
-
-from typing import Literal, Optional, Union, Iterable, Tuple, Dict
-
-import torch, math
+import torch
 import torch.nn as nn
 
-from ..data.datasets.base import RecDataSet
-from ..data.postprocessing import PostProcessor
-from ..data.fields import Field, FieldModule, FieldModuleList
-from ..data.tags import USER, ITEM, ID, LABEL, SIZE, SEQUENCE, UNSEEN, SEEN, POSITIVE, NEGATIVE
 from ..criterions import BaseCriterion
+from ..data.datasets.base import RecDataSet
+from ..data.fields import Field, FieldModule, FieldModuleList
+from ..data.postprocessing import PostProcessor
+from ..data.tags import (
+    ID,
+    ITEM,
+    LABEL,
+    NEGATIVE,
+    POSITIVE,
+    SEEN,
+    SEQUENCE,
+    SIZE,
+    UNSEEN,
+    USER,
+)
 
-
-__all__ = ['RecSysArch', 'GenRecArch', 'SeqRecArch', 'PredRecArch']
+__all__ = ["RecSysArch", "GenRecArch", "SeqRecArch", "PredRecArch"]
 
 
 class RecSysArch(nn.Module):
@@ -78,9 +87,10 @@ class RecSysArch(nn.Module):
         self.__fields = FieldModuleList(self.__fields)
 
     def to(
-        self, device: Optional[Union[int, torch.device]] = None,
+        self,
+        device: Optional[Union[int, torch.device]] = None,
         dtype: Optional[Union[torch.dtype, str]] = None,
-        non_blocking: bool = False
+        non_blocking: bool = False,
     ):
         r"""Move and/or cast the parameters and buffers.
 
@@ -108,18 +118,15 @@ class RecSysArch(nn.Module):
             if isinstance(m, nn.Linear):
                 nn.init.xavier_normal_(m.weight)
                 if m.bias is not None:
-                    nn.init.constant_(m.bias, 0.)
+                    nn.init.constant_(m.bias, 0.0)
             elif isinstance(m, nn.Embedding):
-                nn.init.trunc_normal_(
-                    m.weight,
-                    std=math.sqrt(1. / m.weight.size(1))
-                )
+                nn.init.trunc_normal_(m.weight, std=math.sqrt(1.0 / m.weight.size(1)))
             elif isinstance(m, nn.GRU):
                 nn.init.xavier_uniform_(m.weight_hh_l0)
                 nn.init.xavier_uniform_(m.weight_ih_l0)
             elif isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d)):
-                nn.init.constant_(m.weight, 1.)
-                nn.init.constant_(m.bias, 0.)
+                nn.init.constant_(m.weight, 1.0)
+                nn.init.constant_(m.bias, 0.0)
 
     def sure_trainpipe(self) -> PostProcessor:
         r"""Return the training data pipeline.
@@ -210,7 +217,9 @@ class RecSysArch(nn.Module):
         """
         raise NotImplementedError
 
-    def encode(self, data: Dict[Field, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
+    def encode(
+        self, data: Dict[Field, torch.Tensor]
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         r"""Encode user and item embeddings.
 
         Parameters
@@ -232,7 +241,9 @@ class RecSysArch(nn.Module):
         """
         raise NotImplementedError
 
-    def fit(self, data: Dict[Field, torch.Tensor]) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
+    def fit(
+        self, data: Dict[Field, torch.Tensor]
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
         r"""Compute training losses from the given data.
 
         Parameters
@@ -252,7 +263,9 @@ class RecSysArch(nn.Module):
         """
         raise NotImplementedError
 
-    def forward(self, data: Dict[Field, torch.Tensor], ranking: Literal['full', 'pool'] = 'full'):
+    def forward(
+        self, data: Dict[Field, torch.Tensor], ranking: Literal["full", "pool"] = "full"
+    ):
         r"""Run a forward pass for training or inference.
 
         Parameters
@@ -270,7 +283,7 @@ class RecSysArch(nn.Module):
         if self.training:
             return self.fit(data)
         else:
-            if ranking == 'full':
+            if ranking == "full":
                 return self.recommend_from_full(data)
             else:
                 return self.recommend_from_pool(data)
@@ -284,7 +297,7 @@ class GenRecArch(RecSysArch):
     """
 
     def sure_validpipe(
-        self, ranking: str = 'full', batch_size: int = 512
+        self, ranking: str = "full", batch_size: int = 512
     ) -> PostProcessor:
         r"""Return the validation data pipeline.
 
@@ -300,13 +313,16 @@ class GenRecArch(RecSysArch):
         :class:`~PostProcessor`
             The configured validation post-processor.
         """
-        return self.dataset.valid().ordered_user_ids_source(
-        ).valid_sampling_(
-            ranking
-        ).batch_(batch_size).tensor_()
+        return (
+            self.dataset.valid()
+            .ordered_user_ids_source()
+            .valid_sampling_(ranking)
+            .batch_(batch_size)
+            .tensor_()
+        )
 
     def sure_testpipe(
-        self, ranking: str = 'full', batch_size: int = 512
+        self, ranking: str = "full", batch_size: int = 512
     ) -> PostProcessor:
         r"""Return the test data pipeline.
 
@@ -322,10 +338,13 @@ class GenRecArch(RecSysArch):
         :class:`~PostProcessor`
             The configured test post-processor.
         """
-        return self.dataset.test().ordered_user_ids_source(
-        ).test_sampling_(
-            ranking
-        ).batch_(batch_size).tensor_()
+        return (
+            self.dataset.test()
+            .ordered_user_ids_source()
+            .test_sampling_(ranking)
+            .batch_(batch_size)
+            .tensor_()
+        )
 
 
 class SeqRecArch(RecSysArch):
@@ -346,7 +365,10 @@ class SeqRecArch(RecSysArch):
     PADDING_VALUE: int = 0
 
     def sure_validpipe(
-        self, maxlen: int, ranking: str = 'full', batch_size: int = 512,
+        self,
+        maxlen: int,
+        ranking: str = "full",
+        batch_size: int = 512,
     ) -> PostProcessor:
         r"""Return the validation data pipeline with sequence handling.
 
@@ -364,20 +386,24 @@ class SeqRecArch(RecSysArch):
         :class:`~PostProcessor`
             The configured validation post-processor.
         """
-        return self.dataset.valid().ordered_user_ids_source(
-        ).valid_sampling_(
-            ranking
-        ).lprune_(
-            maxlen, modified_fields=(self.ISeq,)
-        ).add_(
-            offset=self.NUM_PADS, modified_fields=(self.ISeq,)
-        ).lpad_(
-            maxlen, modified_fields=(self.ISeq,),
-            padding_value=self.PADDING_VALUE
-        ).batch_(batch_size).tensor_()
+        return (
+            self.dataset.valid()
+            .ordered_user_ids_source()
+            .valid_sampling_(ranking)
+            .lprune_(maxlen, modified_fields=(self.ISeq,))
+            .add_(offset=self.NUM_PADS, modified_fields=(self.ISeq,))
+            .lpad_(
+                maxlen, modified_fields=(self.ISeq,), padding_value=self.PADDING_VALUE
+            )
+            .batch_(batch_size)
+            .tensor_()
+        )
 
     def sure_testpipe(
-        self, maxlen: int, ranking: str = 'full', batch_size: int = 512,
+        self,
+        maxlen: int,
+        ranking: str = "full",
+        batch_size: int = 512,
     ) -> PostProcessor:
         r"""Return the test data pipeline with sequence handling.
 
@@ -395,17 +421,18 @@ class SeqRecArch(RecSysArch):
         :class:`~PostProcessor`
             The configured test post-processor.
         """
-        return self.dataset.test().ordered_user_ids_source(
-        ).test_sampling_(
-            ranking
-        ).lprune_(
-            maxlen, modified_fields=(self.ISeq,)
-        ).add_(
-            offset=self.NUM_PADS, modified_fields=(self.ISeq,)
-        ).lpad_(
-            maxlen, modified_fields=(self.ISeq,),
-            padding_value=self.PADDING_VALUE
-        ).batch_(batch_size).tensor_()
+        return (
+            self.dataset.test()
+            .ordered_user_ids_source()
+            .test_sampling_(ranking)
+            .lprune_(maxlen, modified_fields=(self.ISeq,))
+            .add_(offset=self.NUM_PADS, modified_fields=(self.ISeq,))
+            .lpad_(
+                maxlen, modified_fields=(self.ISeq,), padding_value=self.PADDING_VALUE
+            )
+            .batch_(batch_size)
+            .tensor_()
+        )
 
 
 class PredRecArch(RecSysArch):
@@ -416,7 +443,8 @@ class PredRecArch(RecSysArch):
     """
 
     def sure_validpipe(
-        self, batch_size: int = 4096,
+        self,
+        batch_size: int = 4096,
     ) -> PostProcessor:
         r"""Return the validation data pipeline.
 
@@ -430,12 +458,11 @@ class PredRecArch(RecSysArch):
         :class:`~PostProcessor`
             The configured validation post-processor.
         """
-        return self.dataset.valid().ordered_inter_source().batch_(
-            batch_size
-        ).tensor_()
+        return self.dataset.valid().ordered_inter_source().batch_(batch_size).tensor_()
 
     def sure_testpipe(
-        self, batch_size: int = 4096,
+        self,
+        batch_size: int = 4096,
     ) -> PostProcessor:
         r"""Return the test data pipeline.
 
@@ -449,6 +476,4 @@ class PredRecArch(RecSysArch):
         :class:`~PostProcessor`
             The configured test post-processor.
         """
-        return self.dataset.test().ordered_inter_source().batch_(
-            batch_size
-        ).tensor_()
+        return self.dataset.test().ordered_inter_source().batch_(batch_size).tensor_()

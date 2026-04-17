@@ -1,18 +1,15 @@
-
-
-
+import math
 from typing import Optional
 
-import math
 import polars as pl
 
-
-__all__ = ['Normalizer', 'Counter', 'ReIndexer', 'StandardScaler', 'MinMaxScaler']
+__all__ = ["Normalizer", "Counter", "ReIndexer", "StandardScaler", "MinMaxScaler"]
 
 
 NORMALIZERS = dict()
 
-def register_normalizer(normalizer: 'Normalizer', name: Optional[str] = None):
+
+def register_normalizer(normalizer: "Normalizer", name: Optional[str] = None):
     r"""Register a normalizer class in the global registry.
 
     Parameters
@@ -36,8 +33,10 @@ def register_normalizer(normalizer: 'Normalizer', name: Optional[str] = None):
         methods.
     """
     name = normalizer.__name__ if name is None else name
-    assert hasattr(normalizer, 'partial_fit'), f"`partial_fit` method is not in `{name}`"
-    assert hasattr(normalizer, 'normalize'), f"`normalize` method is not in `{name}`"
+    assert hasattr(normalizer, "partial_fit"), (
+        f"`partial_fit` method is not in `{name}`"
+    )
+    assert hasattr(normalizer, "normalize"), f"`normalize` method is not in `{name}`"
     NORMALIZERS[name.upper()] = normalizer
     return normalizer
 
@@ -232,8 +231,8 @@ class StandardScaler(Normalizer):
         super().reset()
         self.nums = 0
         self.sum = 0
-        self.ssum = 0 # sum of squared
-        self.eps = 1.e-8
+        self.ssum = 0  # sum of squared
+        self.eps = 1.0e-8
 
     @property
     def mean(self):
@@ -243,9 +242,7 @@ class StandardScaler(Normalizer):
     @property
     def std(self):
         r"""Return the sample standard deviation of fitted values."""
-        return math.sqrt(
-            (self.ssum - self.sum ** 2 / self.nums) / (self.nums - 1)
-        )
+        return math.sqrt((self.ssum - self.sum**2 / self.nums) / (self.nums - 1))
 
     def partial_fit(self, data: pl.Series):
         r"""Accumulate statistics from a data batch.
@@ -305,9 +302,9 @@ class MinMaxScaler(Normalizer):
     def reset(self):
         r"""Reset min and max to initial sentinel values."""
         super().reset()
-        self.min = float('inf')
-        self.max = float('-inf')
-        self.eps = 1.e-8
+        self.min = float("inf")
+        self.max = float("-inf")
+        self.eps = 1.0e-8
 
     def partial_fit(self, data: pl.Series):
         r"""Update running min and max from a data batch.
@@ -340,4 +337,5 @@ class MinMaxScaler(Normalizer):
 
 if __name__ == "__main__":
     import doctest
+
     doctest.testmod()

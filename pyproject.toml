@@ -46,12 +46,32 @@ all = [
     "freerec[metrics]",
     "freerec[nn]",
 ]
+dev = [
+    "ruff>=0.4.0",
+    "pytest>=7.0",
+    "pre-commit>=3.0",
+]
 
 [project.scripts]
 freerec = "freerec.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/MTandHJ/freerec"
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501", "E741"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+"freerec/launcher.py" = ["F403", "F405"]
+
+[tool.ruff.format]
+quote-style = "double"
 
 [tool.hatch.build.targets.wheel]
 packages = ["freerec"]

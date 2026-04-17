@@ -1,9 +1,6 @@
-
-
 from .base import MatchingRecDataSet, NextItemRecDataSet
 
-
-#===================================MatchingRecDataSset===================================
+# ===================================MatchingRecDataSset===================================
 
 
 class Yelp2018_10104811_ROU(MatchingRecDataSet):
@@ -106,7 +103,7 @@ class Yelp2021_10104712_ROU(MatchingRecDataSet):
     """
 
 
-#===================================NextItemRecDataSset===================================
+# ===================================NextItemRecDataSset===================================
 
 
 class Yelp2018_550_LOU(NextItemRecDataSet):
@@ -199,4 +196,5 @@ class Yelp2019_550_S3Rec(NextItemRecDataSet):
     | 30431  | 20033  | 10.395780618448294 |     316354    | 255492 | 30431  | 30431 | 0.0005189327918159183 |
     +--------+--------+--------------------+---------------+--------+--------+-------+-----------------------+
     """
+
     URL = "https://zenodo.org/records/11003210/files/Yelp2019_550_S3Rec.zip"

@@ -1,7 +1,2 @@
-
-
 from . import nn
-
-from .base import (
-    RecSysArch, GenRecArch, SeqRecArch, PredRecArch
-)
+from .base import GenRecArch, PredRecArch, RecSysArch, SeqRecArch

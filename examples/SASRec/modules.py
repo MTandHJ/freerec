@@ -1,6 +1,7 @@
+import copy
+import math
 
-
-import torch, math, copy
+import torch
 import torch.nn as nn
 import torch.nn.functional as fn
 
@@ -58,13 +59,19 @@ class MultiHeadAttention(nn.Module):
         return x
 
     def forward(self, input_tensor, attention_mask):
-        mixed_query_layer = self.query(input_tensor) # (B, L, D)
-        mixed_key_layer = self.key(input_tensor) # (B, L, D)
-        mixed_value_layer = self.value(input_tensor) # (B, L, D)
+        mixed_query_layer = self.query(input_tensor)  # (B, L, D)
+        mixed_key_layer = self.key(input_tensor)  # (B, L, D)
+        mixed_value_layer = self.value(input_tensor)  # (B, L, D)
 
-        query_layer = self.transpose_for_scores(mixed_query_layer).permute(0, 2, 1, 3) # (B, H, L, D // H)
-        key_layer = self.transpose_for_scores(mixed_key_layer).permute(0, 2, 3, 1) # (B, H, D // H, L)
-        value_layer = self.transpose_for_scores(mixed_value_layer).permute(0, 2, 1, 3) # (B, H, L, D // H)
+        query_layer = self.transpose_for_scores(mixed_query_layer).permute(
+            0, 2, 1, 3
+        )  # (B, H, L, D // H)
+        key_layer = self.transpose_for_scores(mixed_key_layer).permute(
+            0, 2, 3, 1
+        )  # (B, H, D // H, L)
+        value_layer = self.transpose_for_scores(mixed_value_layer).permute(
+            0, 2, 1, 3
+        )  # (B, H, L, D // H)
 
         # Take the dot product between "query" and "key" to get the raw attention scores.
         attention_scores = torch.matmul(query_layer, key_layer)

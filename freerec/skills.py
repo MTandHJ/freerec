@@ -140,9 +140,8 @@ Freerec provides built-in dataset classes in `freerec/data/datasets/`:
 - Datasets with `STREAMING=False` (e.g., PredictionRecDataSet) shuffle chunks during training
 - Sequential datasets use `NUM_PADS=1` for padding token reservation
 - Field tags (USER, ITEM, ID, etc.) control data flow through the pipeline
-"""
+""",
     },
-
     "tune": {
         "name": "tune",
         "description": "Tutorial for hyperparameter tuning with freerec",
@@ -318,9 +317,8 @@ freerec tune BERT4Rec_tune tune_config.yaml
 - Each subprocess gets unique ID based on timestamp
 - Device assignment is round-robin based on availability
 - Results are stored in pickle files for programmatic access
-"""
+""",
     },
-
     "log": {
         "name": "log",
         "description": "Guide for reading and understanding freerec training logs",
@@ -562,9 +560,8 @@ for run_dir in glob.glob('logs/expName/*'):
 | `monitors.pkl` | Full metric history | Pickle dict | `import_pickle()` |
 | `best.pkl` | Best results | Pickle dict | `import_pickle()` |
 | `*.png` | Metric curves | PNG images | Load with matplotlib |
-"""
+""",
     },
-
     "workflow": {
         "name": "workflow",
         "description": "Overview of freerec's training pipeline and architecture",
@@ -829,8 +826,8 @@ CORE_LOG_PATH = "./logs/{description}/core"
 | Tuner | `launcher.py` | `Adapter` |
 | Metrics | `utils.py` | `AverageMeter`, `Monitor` |
 | Logging | `utils.py` | `infoLogger`, `LOGGER` |
-"""
-    }
+""",
+    },
 }
 
 

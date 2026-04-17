@@ -1,9 +1,7 @@
-
-
 from .base import PredictionRecDataSet
 
 
-class Frappe_x1_BARS(PredictionRecDataSet): 
+class Frappe_x1_BARS(PredictionRecDataSet):
     r"""
     Frappe_x1 dataset used in [BARS](https://github.com/reczoo/Datasets).
 

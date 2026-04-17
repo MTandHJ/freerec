@@ -1,22 +1,32 @@
-
-
-
-from typing import Literal, List, Tuple, Optional, Iterable
-
 import random
+from typing import Iterable, List, Literal, Optional, Tuple
+
 import torchdata.datapipes as dp
 
-from .base import PostProcessor, BaseProcessor
-from ..fields import Field
-from ..tags import USER, ITEM, ID, SEQUENCE, UNSEEN, SEEN, POSITIVE, NEGATIVE,  MATCHING, NEXTITEM
-from ..utils import negsamp_vectorized_bsearch
 from ...utils import timemeter
-
+from ..fields import Field
+from ..tags import (
+    ID,
+    ITEM,
+    MATCHING,
+    NEGATIVE,
+    NEXTITEM,
+    POSITIVE,
+    SEEN,
+    SEQUENCE,
+    UNSEEN,
+    USER,
+)
+from ..utils import negsamp_vectorized_bsearch
+from .base import BaseProcessor, PostProcessor
 
 __all__ = [
-    'GenTrainPositiveSampler', 'GenTrainNegativeSampler',
-    'SeqTrainPositiveYielder', 'SeqTrainNegativeSampler',
-    'ValidSampler', 'TestSampler',
+    "GenTrainPositiveSampler",
+    "GenTrainNegativeSampler",
+    "SeqTrainPositiveYielder",
+    "SeqTrainNegativeSampler",
+    "ValidSampler",
+    "TestSampler",
 ]
 
 
@@ -73,7 +83,7 @@ class BaseSampler(PostProcessor):
         self.__unseenItems = tuple(tuple(items) for items in unseenItems)
 
 
-#===============================For Training ===============================
+# ===============================For Training ===============================
 
 
 @dp.functional_datapipe("gen_train_sampling_pos_")
@@ -98,7 +108,7 @@ class GenTrainPositiveSampler(BaseSampler):
 
         self.listmap(
             lambda row: seenItems[row[self.User]].update(row[self.ISeq]),
-            self.dataset.train().to_seqs()
+            self.dataset.train().to_seqs(),
         )
 
         # sorting for ordered positives
@@ -169,14 +179,17 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
     def __init__(
         self,
         source: BaseProcessor,
-        num_negatives: int = 1, unseen_only: bool = True,
-        nums_need_vectorized_bsearch: int = 17
+        num_negatives: int = 1,
+        unseen_only: bool = True,
+        nums_need_vectorized_bsearch: int = 17,
     ) -> None:
         r"""Initialize the GenTrainNegativeSampler."""
         self.unseen_only = unseen_only
         super().__init__(source)
         self.num_negatives = num_negatives
-        self.need_vectorized_bsearch = self.num_negatives >= nums_need_vectorized_bsearch
+        self.need_vectorized_bsearch = (
+            self.num_negatives >= nums_need_vectorized_bsearch
+        )
 
     @timemeter
     def prepare(self):
@@ -186,7 +199,7 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
         if self.unseen_only:
             self.listmap(
                 lambda row: seenItems[row[self.User]].update(row[self.ISeq]),
-                self.dataset.train().to_seqs()
+                self.dataset.train().to_seqs(),
             )
 
         # sorting for ordered positives
@@ -218,18 +231,14 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
         if self.need_vectorized_bsearch:
             # `vectorized_bsearch` would be faster
             # if more negatives are sampled at once
-            return negsamp_vectorized_bsearch(
-                seen, self.Item.count, self.num_negatives
-            )
+            return negsamp_vectorized_bsearch(seen, self.Item.count, self.num_negatives)
         else:
             return self.listmap(self._sample_one, [seen] * self.num_negatives)
 
     def __iter__(self):
         r"""Yield rows augmented with sampled negative items."""
         for row in self.source:
-            row[self.INeg] = self._sample_neg(
-                row[self.User]
-            )
+            row[self.INeg] = self._sample_neg(row[self.User])
             yield row
 
 
@@ -294,8 +303,8 @@ class SeqTrainPositiveYielder(BaseSampler):
         for row in self.source:
             seq = row[self.ISeq]
             if self._check(seq):
-                row[self.IPos] = seq[self.start_idx_for_target:]
-                row[self.ISeq] = seq[:self.end_idx_for_input]
+                row[self.IPos] = seq[self.start_idx_for_target :]
+                row[self.ISeq] = seq[: self.end_idx_for_input]
                 yield row
 
 
@@ -338,8 +347,9 @@ class SeqTrainNegativeSampler(BaseSampler):
     def __init__(
         self,
         source: BaseProcessor,
-        num_negatives: int = 1, unseen_only: bool = True,
-        nums_need_vectorized_bsearch: int = 17
+        num_negatives: int = 1,
+        unseen_only: bool = True,
+        nums_need_vectorized_bsearch: int = 17,
     ) -> None:
         r"""Initialize the SeqTrainNegativeSampler."""
         self.unseen_only = unseen_only
@@ -355,7 +365,7 @@ class SeqTrainNegativeSampler(BaseSampler):
         if self.unseen_only:
             self.listmap(
                 lambda row: seenItems[row[self.User]].update(row[self.ISeq]),
-                self.dataset.train().to_seqs()
+                self.dataset.train().to_seqs(),
             )
 
         # sorting for ordered positives
@@ -394,22 +404,19 @@ class SeqTrainNegativeSampler(BaseSampler):
                     seen, self.Item.count, (len(positives), self.num_negatives)
                 )
             else:
-                return negsamp_vectorized_bsearch(
-                    seen, self.Item.count, len(positives)
-                )
+                return negsamp_vectorized_bsearch(seen, self.Item.count, len(positives))
         else:
             return self.listmap(self._sample_one, [seen] * len(positives))
 
     def __iter__(self):
         r"""Yield rows augmented with sampled negatives for each positive."""
         for row in self.source:
-            row[self.INeg] = self._sample_neg(
-                row[self.User], row[self.IPos]
-            )
+            row[self.INeg] = self._sample_neg(row[self.User], row[self.IPos])
             yield row
 
 
-#===============================For Evaluation===============================
+# ===============================For Evaluation===============================
+
 
 @dp.functional_datapipe("valid_sampling_")
 class ValidSampler(BaseSampler):
@@ -461,13 +468,17 @@ class ValidSampler(BaseSampler):
     """
 
     def __init__(
-        self, source: BaseProcessor,
-        ranking: Literal['full', 'pool'] = 'full', num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING
+        self,
+        source: BaseProcessor,
+        ranking: Literal["full", "pool"] = "full",
+        num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING,
     ) -> None:
         r"""Initialize the ValidSampler."""
         super().__init__(source)
-        assert ranking in ('full', 'pool'), f"`ranking` should be 'full' or 'pool' but {ranking} received ..."
-        self.sampling_neg = True if ranking == 'pool' else False
+        assert ranking in ("full", "pool"), (
+            f"`ranking` should be 'full' or 'pool' but {ranking} received ..."
+        )
+        self.sampling_neg = True if ranking == "pool" else False
         self.num_negatives = num_negatives
 
     @timemeter
@@ -478,12 +489,12 @@ class ValidSampler(BaseSampler):
 
         self.listmap(
             lambda row: seenItems[row[self.User]].extend(row[self.ISeq]),
-            self.dataset.train().to_seqs()
+            self.dataset.train().to_seqs(),
         )
 
         self.listmap(
             lambda row: unseenItems[row[self.User]].extend(row[self.ISeq]),
-            self.dataset.valid().to_seqs()
+            self.dataset.valid().to_seqs(),
         )
 
         self.seenItems = seenItems
@@ -494,13 +505,9 @@ class ValidSampler(BaseSampler):
         r"""Sample negatives for pool-based ranking."""
         idx = (user, k)
         if self.negItems.get(idx, None) is None:
-            seen = sorted(set(
-                (positive,) + seen
-            ))
+            seen = sorted(set((positive,) + seen))
             self.negItems[idx] = tuple(
-                negsamp_vectorized_bsearch(
-                    seen, self.Item.count, self.num_negatives
-                )
+                negsamp_vectorized_bsearch(seen, self.Item.count, self.num_negatives)
             )
         return self.negItems[idx]
 
@@ -515,7 +522,12 @@ class ValidSampler(BaseSampler):
             seq = seen = self.seenItems[user]
             for k, positive in enumerate(self.unseenItems[user]):
                 unseen = (positive,) + self._sample_neg(user, k, positive, seen)
-                yield {self.User: user, self.ISeq: seq, self.IUnseen: unseen, self.ISeen: seen}
+                yield {
+                    self.User: user,
+                    self.ISeq: seq,
+                    self.IUnseen: unseen,
+                    self.ISeen: seen,
+                }
 
     def _matching_from_full(self):
         r"""Yield matching rows for full ranking."""
@@ -524,7 +536,12 @@ class ValidSampler(BaseSampler):
             if self._check(user):
                 seq = seen = self.seenItems[user]
                 unseen = self.unseenItems[user]
-                yield {self.User: user, self.ISeq: seq, self.IUnseen: unseen, self.ISeen: seen}
+                yield {
+                    self.User: user,
+                    self.ISeq: seq,
+                    self.IUnseen: unseen,
+                    self.ISeen: seen,
+                }
 
     def _nextitem_from_pool(self):
         r"""Yield next-item rows with pool-based negative sampling."""
@@ -534,7 +551,12 @@ class ValidSampler(BaseSampler):
             for k, positive in enumerate(self.unseenItems[user]):
                 seq = self.seenItems[user] + self.unseenItems[user][:k]
                 unseen = (positive,) + self._sample_neg(user, k, positive, seen)
-                yield {self.User: user, self.ISeq: seq, self.IUnseen: unseen, self.ISeen: seen}
+                yield {
+                    self.User: user,
+                    self.ISeq: seq,
+                    self.IUnseen: unseen,
+                    self.ISeen: seen,
+                }
 
     def _nextitem_from_full(self):
         r"""Yield next-item rows for full ranking."""
@@ -544,7 +566,12 @@ class ValidSampler(BaseSampler):
             for k, positive in enumerate(self.unseenItems[user]):
                 seq = self.seenItems[user] + self.unseenItems[user][:k]
                 unseen = (positive,)
-                yield {self.User: user, self.ISeq: seq, self.IUnseen: unseen, self.ISeen: seen}
+                yield {
+                    self.User: user,
+                    self.ISeq: seq,
+                    self.IUnseen: unseen,
+                    self.ISeen: seen,
+                }
 
     def __iter__(self):
         r"""Yield validation rows according to task type and ranking mode."""
@@ -617,17 +644,17 @@ class TestSampler(ValidSampler):
 
         self.listmap(
             lambda row: seenItems[row[self.User]].extend(row[self.ISeq]),
-            self.dataset.train().to_seqs()
+            self.dataset.train().to_seqs(),
         )
 
         self.listmap(
             lambda row: seenItems[row[self.User]].extend(row[self.ISeq]),
-            self.dataset.valid().to_seqs()
+            self.dataset.valid().to_seqs(),
         )
 
         self.listmap(
             lambda row: unseenItems[row[self.User]].extend(row[self.ISeq]),
-            self.dataset.test().to_seqs()
+            self.dataset.test().to_seqs(),
         )
 
         self.seenItems = seenItems

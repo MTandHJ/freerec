@@ -1,12 +1,9 @@
-
-
 from .base import NextItemRecDataSet
 
+# ===================================MatchingRecDataSset===================================
 
-#===================================MatchingRecDataSset===================================
 
-
-#===================================NextItemRecDataSset===================================
+# ===================================NextItemRecDataSset===================================
 
 
 class Amazon2018Books_550_LOU(NextItemRecDataSet):

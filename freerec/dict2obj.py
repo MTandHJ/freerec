@@ -1,5 +1,3 @@
-
-
 from typing import Any
 
 
@@ -51,11 +49,7 @@ class Config(dict):
     AttributeError: 'Config' object has no attribute 'e'
     """
 
-    def __init__(
-        self, *args,
-        prefix: str = ">>>",
-        **kwargs
-    ):
+    def __init__(self, *args, prefix: str = ">>>", **kwargs):
         r"""Initialize the Config and mirror initial items as attributes."""
         super(Config, self).__init__(*args, **kwargs)
         for name, attr in self.items():
@@ -114,4 +108,5 @@ class Config(dict):
 
 if __name__ == "__main__":
     import doctest
+
     doctest.testmod()

@@ -1,30 +1,41 @@
-
-
 from typing import Optional, Tuple
 
 import torch
-from torch_geometric.utils import coalesce, \
-                scatter, spmm, \
-                to_undirected, to_edge_index, \
-                add_remaining_self_loops, remove_self_loops, \
-                k_hop_subgraph, \
-                dropout_node, dropout_edge, dropout_path
+from torch_geometric.utils import (
+    add_remaining_self_loops,
+    coalesce,
+    dropout_edge,
+    dropout_node,
+    dropout_path,
+    k_hop_subgraph,
+    remove_self_loops,
+    scatter,
+    spmm,
+    to_edge_index,
+    to_undirected,
+)
 from torch_geometric.utils.num_nodes import maybe_num_nodes
 
-
 __all__ = [
-    'coalesce',
-    'scatter', 'spmm',
-    'to_undirected', 'to_edge_index',
-    'add_self_loops', 'remove_self_loops',
-    'k_hop_subgraph',
-    'dropout_node', 'dropout_edge', 'dropout_path',
-    'to_adjacency', 'to_normalized',
-    'get_knn_graph'
+    "coalesce",
+    "scatter",
+    "spmm",
+    "to_undirected",
+    "to_edge_index",
+    "add_self_loops",
+    "remove_self_loops",
+    "k_hop_subgraph",
+    "dropout_node",
+    "dropout_edge",
+    "dropout_path",
+    "to_adjacency",
+    "to_normalized",
+    "get_knn_graph",
 ]
 
 
 add_self_loops = add_remaining_self_loops
+
 
 def to_adjacency(
     edge_index: torch.Tensor,
@@ -53,15 +64,14 @@ def to_adjacency(
         edge_weight = torch.ones_like(edge_index[0], dtype=torch.float)
 
     return torch.sparse_coo_tensor(
-        edge_index.clone(),
-        edge_weight.clone(),
-        size=(num_nodes, num_nodes)
+        edge_index.clone(), edge_weight.clone(), size=(num_nodes, num_nodes)
     ).to_sparse_csr()
+
 
 def to_normalized(
     edge_index: torch.Tensor,
     edge_weight: Optional[torch.Tensor] = None,
-    normalization: str = 'sym',
+    normalization: str = "sym",
 ) -> Tuple[torch.Tensor]:
     r"""Normalize edge weights using degree-based normalization.
 
@@ -102,38 +112,35 @@ def to_normalized(
     if edge_weight is None:
         edge_weight = torch.ones_like(edge_index[0], dtype=torch.float)
 
-    adj = torch.sparse_coo_tensor(
-        edge_index, values=edge_weight
-    )
+    adj = torch.sparse_coo_tensor(edge_index, values=edge_weight)
 
     row_sum = torch.sparse.sum(adj, dim=1).to_dense()
     col_sum = torch.sparse.sum(adj, dim=0).to_dense()
 
-    if normalization == 'sym':
+    if normalization == "sym":
         row_inv_sqrt = row_sum.pow(-0.5)
         col_inv_sqrt = col_sum.pow(-0.5)
-        row_inv_sqrt.masked_fill_(torch.isinf(row_inv_sqrt), 0.)
-        col_inv_sqrt.masked_fill_(torch.isinf(col_inv_sqrt), 0.)
+        row_inv_sqrt.masked_fill_(torch.isinf(row_inv_sqrt), 0.0)
+        col_inv_sqrt.masked_fill_(torch.isinf(col_inv_sqrt), 0.0)
         edge_weight = row_inv_sqrt[row] * edge_weight * col_inv_sqrt[col]
-    elif normalization == 'left':
-        row_inv = row_sum.pow(-1.)
-        row_inv.masked_fill_(torch.isinf(row_inv), 0.)
+    elif normalization == "left":
+        row_inv = row_sum.pow(-1.0)
+        row_inv.masked_fill_(torch.isinf(row_inv), 0.0)
         edge_weight = row_inv[row] * edge_weight
-    elif normalization == 'right':
-        col_inv = col_sum.pow(-1.)
-        col_inv.masked_fill_(torch.isinf(col_inv), 0.)
+    elif normalization == "right":
+        col_inv = col_sum.pow(-1.0)
+        col_inv.masked_fill_(torch.isinf(col_inv), 0.0)
         edge_weight = edge_weight * col_inv[col]
     else:
         raise NotImplementedError(
-            f"Normalization should be in 'sym', 'left' or 'right' ..."
+            "Normalization should be in 'sym', 'left' or 'right' ..."
         )
 
     return edge_index, edge_weight
 
+
 def get_knn_graph(
-    sim_mat: torch.Tensor, k: int,
-    symmetric: bool = True,
-    reduce: str = 'max'
+    sim_mat: torch.Tensor, k: int, symmetric: bool = True, reduce: str = "max"
 ):
     r"""Construct a k-nearest-neighbor graph from a similarity matrix.
 
@@ -170,13 +177,13 @@ def get_knn_graph(
 
     rows = torch.arange(0, M, device=device).unsqueeze(-1).repeat(1, k)
     rows, cols = rows.flatten(), cols.flatten()
-    edge_index = torch.stack(
-        (rows, cols), dim=0
-    )
+    edge_index = torch.stack((rows, cols), dim=0)
     edge_weight = vals.flatten()
 
     if symmetric:
         assert M == N, "`symmetric == True` but `sim_mat` is not a square matrix ..."
-        edge_index, edge_weight = to_undirected(edge_index, edge_attr=edge_weight, reduce=reduce)
+        edge_index, edge_weight = to_undirected(
+            edge_index, edge_attr=edge_weight, reduce=reduce
+        )
 
     return edge_index, edge_weight

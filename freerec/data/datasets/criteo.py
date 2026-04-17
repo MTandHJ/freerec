@@ -1,9 +1,7 @@
-
-
 from .base import PredictionRecDataSet
 
 
-class Criteo_x1_BARS(PredictionRecDataSet): 
+class Criteo_x1_BARS(PredictionRecDataSet):
     r"""
     Criteo_x1 dataset used in [BARS](https://github.com/reczoo/Datasets).
 
