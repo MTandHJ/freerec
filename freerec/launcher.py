@@ -1118,9 +1118,7 @@ class Adapter:
                     "runs": [],
                 }
             results["timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%S")
-            results["runs"].append(
-                {"id": id_, "params": params, "metrics": data}
-            )
+            results["runs"].append({"id": id_, "params": params, "metrics": data})
             with open(results_path, "w", encoding="utf8") as f:
                 json.dump(results, f, indent=2)
         except Exception:
