@@ -144,6 +144,25 @@ class Yelp2018_500_LOU(NextItemRecDataSet):
     """
 
 
+class Yelp2018_10100_LOU(NextItemRecDataSet):
+    r"""
+    Settings
+    --------
+    kcore4user: 10
+    kcore4item: 10
+    star4pos: 0
+    splitting: LOU
+
+    Statistics
+    ----------
+    +-------+-------+---------------+---------+--------+-------+-----------------------+
+    | #User | #Item | #Interactions |  #Train | #Valid | #Test |        Density        |
+    +-------+-------+---------------+---------+--------+-------+-----------------------+
+    | 77277 | 45638 |    2103896    | 1949342 | 77277  | 77277 | 0.0005965507692751298 |
+    +-------+-------+---------------+---------+--------+-------+-----------------------+
+    """
+
+
 class Yelp2021_550_LOU(NextItemRecDataSet):
     r"""
     Settings

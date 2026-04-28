@@ -3,14 +3,11 @@ from freerec.data.datasets.allrecipes import (
     Allrecipes_MMSSL,
 )
 from freerec.data.datasets.amazon2014 import (
-    # Matching (MMRec)
     Amazon2014Baby_550_MMRec,
     Amazon2014Beauty_500_LOU,
-    # NextItem
     Amazon2014Beauty_550_LOU,
     Amazon2014Beauty_1000_LOU,
     Amazon2014Beauty_10104712_ROU,
-    # Matching
     Amazon2014Beauty_10104811_ROU,
     Amazon2014Books_10104712_ROU,
     Amazon2014Books_10104811_ROU,
@@ -36,6 +33,8 @@ from freerec.data.datasets.amazon2014 import (
     Amazon2014Movies_10104811_ROU,
     Amazon2014Office_500_LOU,
     Amazon2014Office_550_LOU,
+    Amazon2014Sports_500_LOU,
+    Amazon2014Sports_550_LOU,
     Amazon2014Sports_550_MMRec,
     Amazon2014Tools_500_LOU,
     Amazon2014Tools_550_LOU,
@@ -44,7 +43,6 @@ from freerec.data.datasets.amazon2014 import (
     Amazon2014Video_1000_LOU,
 )
 from freerec.data.datasets.amazon2018 import (
-    # NextItem
     Amazon2018Books_550_LOU,
     Amazon2018CDs_550_LOU,
     Amazon2018Clothing_550_LOU,
@@ -56,7 +54,6 @@ from freerec.data.datasets.amazon2018 import (
     Amazon2018Toys_550_LOU,
 )
 from freerec.data.datasets.amazon2023 import (
-    # Matching
     Amazon2023Baby_554811_ROU,
     Amazon2023Beauty_554811_ROU,
     Amazon2023Beauty_10104811_ROU,
@@ -72,14 +69,13 @@ from freerec.data.datasets.base import (
     PredictionRecDataSet,
     RecDataSet,
 )
-from freerec.data.datasets.criteo import Criteo_x1_BARS  # Prediction
-from freerec.data.datasets.frappe import Frappe_x1_BARS  # Prediction
+from freerec.data.datasets.criteo import Criteo_x1_BARS
+from freerec.data.datasets.frappe import Frappe_x1_BARS
 from freerec.data.datasets.gowalla import (
     Gowalla2010_10100712_ROU,
-    # Matching
     Gowalla2010_10100811_ROU,
 )
-from freerec.data.datasets.microlens import MicroLens100K  # Matching
+from freerec.data.datasets.microlens import MicroLens100K
 from freerec.data.datasets.movielens import (
     MovieLens1M_500_LOU,
     MovieLens1M_550_LOU,
@@ -94,28 +90,22 @@ from freerec.data.datasets.movielens import (
     MovieLens20M_10101712_ROU,
     MovieLens20M_10101811_ROU,
     MovieLens100K_500_LOU,
-    # NextItem
     MovieLens100K_550_LOU,
     MovieLens100K_10101712_ROU,
-    # Matching
     MovieLens100K_10101811_ROU,
 )
-from freerec.data.datasets.steam import Steam_550_LOU  # NextItem
+from freerec.data.datasets.steam import Steam_550_LOU
 from freerec.data.datasets.tiktok import (
-    # Matching (MMGCN)
     Tiktok_000811_RAU,
-    # Matching (MMSSL)
     Tiktok_MMSSL,
 )
 from freerec.data.datasets.yelp import (
     Yelp2018_500_LOU,
-    # NextItem
     Yelp2018_550_LOU,
+    Yelp2018_10100_LOU,
     Yelp2018_554311_ROU,
     Yelp2018_10104712_ROU,
-    # Matching
     Yelp2018_10104811_ROU,
-    # NextItem (S3Rec)
     Yelp2019_550_S3Rec,
     Yelp2021_500_LOU,
     Yelp2021_550_LOU,
