@@ -472,6 +472,7 @@ class ValidSampler(BaseSampler):
         source: BaseProcessor,
         ranking: Literal["full", "pool"] = "full",
         num_negatives: int = NUM_NEGS_FOR_SAMPLE_BASED_RANKING,
+        exclude = None,
     ) -> None:
         r"""Initialize the ValidSampler."""
         super().__init__(source)
@@ -480,6 +481,29 @@ class ValidSampler(BaseSampler):
         )
         self.sampling_neg = True if ranking == "pool" else False
         self.num_negatives = num_negatives
+
+        if exclude is not None:
+            assert len(exclude) == self.User.count, f"exclude list length error"
+            self.prepare_exclude(exclude)
+            
+    @timemeter
+    def prepare_exclude(self, exclude):
+        seenItems = [[] for _ in range(self.User.count)]
+        unseenItems = [[] for _ in range(self.User.count)]
+
+        self.listmap(
+            lambda row: seenItems[row[self.User]].extend(row[self.ISeq]),
+            self.dataset.train().to_seqs()
+        )
+
+        self.listmap(
+            lambda row: unseenItems[row[self.User]].extend([i for i in row[self.ISeq] if i not in exclude[row[self.User]]]),
+            self.dataset.valid().to_seqs()
+        )
+
+        self.seenItems = seenItems
+        self.unseenItems = unseenItems
+        self.negItems = dict()
 
     @timemeter
     def prepare(self):
