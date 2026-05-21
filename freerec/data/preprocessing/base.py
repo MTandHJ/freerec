@@ -1,4 +1,3 @@
-import freerec
 import json
 import os
 from math import floor
@@ -9,6 +8,7 @@ import numpy as np
 import pandas as pd
 import requests
 
+import freerec
 from freerec.data.tags import ITEM, RATING, TIMESTAMP, USER
 from freerec.data.utils import download_from_url, extract_archive
 from freerec.utils import infoLogger, mkdirs
@@ -91,7 +91,9 @@ class URLRegistry:
     def _write_cache(cls) -> None:
         cls.CACHE_PATH.parent.mkdir(exist_ok=True)
         cls._cache["freerec_version"] = freerec.__version__
-        infoLogger(f"[Converter] >>> Cache available dataset links in '{cls.CACHE_PATH}'.")
+        infoLogger(
+            f"[Converter] >>> Cache available dataset links in '{cls.CACHE_PATH}'."
+        )
         with open(cls.CACHE_PATH, "w") as f:
             json.dump(cls._cache, f, indent=2)
 
