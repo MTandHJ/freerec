@@ -91,6 +91,7 @@ class URLRegistry:
     def _write_cache(cls) -> None:
         cls.CACHE_PATH.parent.mkdir(exist_ok=True)
         cls._cache["freerec_version"] = freerec.__version__
+        infoLogger(f"[Converter] >>> Cache available dataset links in '{cls.CACHE_PATH}'.")
         with open(cls.CACHE_PATH, "w") as f:
             json.dump(cls._cache, f, indent=2)
 
