@@ -1,15 +1,98 @@
+import freerec
+import json
 import os
 from math import floor
+from pathlib import Path
 from typing import Iterable, Literal, Mapping, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
+import requests
 
 from freerec.data.tags import ITEM, RATING, TIMESTAMP, USER
 from freerec.data.utils import download_from_url, extract_archive
 from freerec.utils import infoLogger, mkdirs
 
-__all__ = ["AtomicConverter"]
+__all__ = ["AtomicConverter", "URLRegistry"]
+
+
+class URLRegistry:
+    r"""Resolve dataset names to download URLs via a remote registry.
+
+    On first access, loads a local cache. If the cache is missing,
+    stale (different ``freerec`` version), or does not contain the
+    requested dataset, the latest registry is fetched from a remote
+    JSON file and cached to ``~/.freerec/dataset_registry.json``.
+
+    Falls back to a built-in dictionary when the remote is unreachable
+    and the dataset is not in the local cache.
+    """
+
+    REMOTE_URL = os.environ.get(
+        "FREEREC_REGISTRY_URL",
+        "https://raw.githubusercontent.com/MTandHJ/freerec/master/freerec/data/registry.json",
+    )
+    CACHE_PATH = Path.home() / ".freerec" / "dataset_registry.json"
+    BUILTIN: dict = {}
+    _cache: Optional[dict] = None
+
+    @classmethod
+    def get(cls, name: str) -> str:
+        r"""Return the download URL for *name*.
+
+        Parameters
+        ----------
+        name : str
+            Dataset name.
+
+        Returns
+        -------
+        str
+            The download URL.
+
+        Raises
+        ------
+        KeyError
+            If *name* is not found in any source.
+        """
+        if cls._cache is None:
+            cls._load()
+        if cls._should_refresh() or name not in cls._cache["datasets"]:
+            cls._fetch_remote()
+        url = cls._cache["datasets"].get(name)
+        if url is not None:
+            return url
+        return cls.BUILTIN[name]
+
+    @classmethod
+    def _should_refresh(cls) -> bool:
+        return cls._cache.get("freerec_version") != freerec.__version__
+
+    @classmethod
+    def _fetch_remote(cls) -> None:
+        try:
+            resp = requests.get(cls.REMOTE_URL, timeout=5)
+            resp.raise_for_status()
+            cls._cache = resp.json()
+            cls._cache["freerec_version"] = freerec.__version__
+            cls._write_cache()
+        except Exception:
+            pass
+
+    @classmethod
+    def _load(cls) -> None:
+        try:
+            with open(cls.CACHE_PATH) as f:
+                cls._cache = json.load(f)
+        except Exception:
+            cls._cache = {"freerec_version": "", "datasets": {}}
+
+    @classmethod
+    def _write_cache(cls) -> None:
+        cls.CACHE_PATH.parent.mkdir(exist_ok=True)
+        cls._cache["freerec_version"] = freerec.__version__
+        with open(cls.CACHE_PATH, "w") as f:
+            json.dump(cls._cache, f, indent=2)
 
 
 class AtomicConverter:
@@ -75,7 +158,7 @@ class AtomicConverter:
                 try:
                     extract_archive(
                         download_from_url(
-                            URLS[self.dataset],
+                            URLRegistry.get(self.dataset),
                             root=self.root,
                             filename=zipfile,
                             overwrite=False,
@@ -789,7 +872,7 @@ class AtomicConverter:
         infoLogger(table)
 
 
-URLS = {
+URLRegistry.BUILTIN = {
     # =====================================Amazon2014=====================================
     "Amazon2014APPs": "https://zenodo.org/records/10995912/files/Amazon2014Apps.zip",
     "Amazon2014Automotive": "https://zenodo.org/records/10995912/files/Amazon2014Automotive.zip",
