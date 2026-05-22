@@ -581,7 +581,7 @@ class Coach(ChiefCoach):
             The epoch number stored in the checkpoint.
         """
         path = os.path.join(self.cfg.CHECKPOINT_PATH, self.cfg.CHECKPOINT_FILENAME)
-        checkpoint = torch.load(path, weights_only=False)
+        checkpoint = torch.load(path, weights_only=True)
         for module in self.cfg.CHECKPOINT_MODULES:
             getattr(self, module).load_state_dict(checkpoint[module])
         self.monitors.load_state_dict(checkpoint["monitors"])
