@@ -17,6 +17,7 @@ __all__ = [
 
 
 # ==================================Filter==================================
+@dp.functional_datapipe("filter_")
 class RowFilter(PostProcessor):
     r"""Filter rows by applying a predicate to specified fields.
 
@@ -60,6 +61,7 @@ class RowFilter(PostProcessor):
 
 
 # ==================================Mapper==================================
+@dp.functional_datapipe("map_")
 class RowMapper(PostProcessor):
     r"""Apply a mapping function to specified fields of each row.
 

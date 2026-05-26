@@ -309,6 +309,40 @@ class BaseProcessor(dp.iter.IterDataPipe):
         Field(ITEM:ID,ITEM,SEEN): (9449, 9839, 10076, 11155)}
         """
 
+    # Functional form of 'RowFilter'
+    def filter_(self: T, fn: Callable, modified_fields: Iterable[Field]) -> T:
+        r"""Filter rows by applying a predicate to specified fields.
+
+        Parameters
+        ----------
+        fn : callable
+            A function ``fn(field, value) -> bool`` applied to each checked field.
+        checked_fields : iterable of :class:`~Field`
+            The fields to be checked.
+
+        Raises
+        ------
+        TypeError
+            If ``checked_fields`` is not an iterable.
+        """
+
+    # Functional form of 'RowMapper'
+    def map_(self: T, fn: Callable, modified_fields: Iterable[Field]) -> T:
+        r"""Apply a mapping function to specified fields of each row.
+
+        Parameters
+        ----------
+        fn : callable
+            A function ``fn(field, value) -> new_value`` applied to each modified field.
+        modified_fields : iterable of :class:`~Field`
+            The fields to be modified.
+
+        Raises
+        ------
+        TypeError
+            If ``modified_fields`` is not an iterable.
+        """
+
     # Functional form of 'LeftPruningRow'
     def lprune_(self: T, maxlen: int, modified_fields: Iterable[Field]) -> T:
         r"""Prune the left side of sequences to a specified maximum length.
