@@ -266,28 +266,22 @@ class Parser(Config):
             help="Optimizer: adam (default), sgd, ...",
         )
         self.add_argument(
-            "--nesterov", action="store_true", default=False, help="nesterov for SGD"
+            "--optimizer",
+            type=str,
+            default="AdamW",
+            help="Optimizer: adam (default), sgd, ...",
         )
         self.add_argument(
-            "-mom",
-            "--momentum",
+            "--optim-first-moment-decay",
             type=float,
             default=0.9,
-            help="the momentum used for SGD",
+            help="the first moment decay rate used for sgd, adam (beta1) ...",
         )
         self.add_argument(
-            "-beta1",
-            "--beta1",
-            type=float,
-            default=0.9,
-            help="the first beta argument for Adam",
-        )
-        self.add_argument(
-            "-beta2",
-            "--beta2",
+            "--optim-second-moment-decay",
             type=float,
             default=0.999,
-            help="the second beta argument for Adam",
+            help="the second moment decay rate used for adam (beta2)",
         )
         self.add_argument(
             "-wd",
