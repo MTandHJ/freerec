@@ -222,6 +222,13 @@ class Parser(Config):
 
         self.parser = argparse.ArgumentParser()
 
+        self.add_argument("--config", type=str, default=None, help="config.yaml")
+
+        # Experiment
+        self.add_argument("--id", type=str, default=time.strftime(TIME))
+        self.add_argument("-m", "--description", type=str, default="RecSys")
+
+        # Data
         self.add_argument("--root", type=str, default=".", help="data path")
         self.add_argument(
             "--dataset",
@@ -236,7 +243,6 @@ class Parser(Config):
             default=None,
             help="to specify a tasktag for dataset",
         )
-        self.add_argument("--config", type=str, default=None, help="config.yaml")
         self.add_argument(
             "--ranking",
             type=str,
@@ -251,14 +257,16 @@ class Parser(Config):
             help="True: retain seen candidates during evaluation",
         )
 
+        # Backend
         self.add_argument(
             "--device",
             default=torch.cuda.current_device() if torch.cuda.is_available() else "cpu",
             help="device",
         )
         self.add_argument("--ddp-backend", type=str, default="nccl", help="ddp backend")
+        self.add_argument("--num-workers", type=int, default=4)
 
-        # model
+        # Training
         self.add_argument(
             "--optimizer",
             type=str,
@@ -299,21 +307,7 @@ class Parser(Config):
         self.add_argument("-gas", "--gradient-accumulation-steps", type=int, default=1)
         self.add_argument("--epochs", type=int, default=None)
 
-        # logging
-        self.add_argument(
-            "--log2file",
-            action="store_false",
-            default=True,
-            help="if True, save logs to a file",
-        )
-        self.add_argument(
-            "--log2console",
-            action="store_false",
-            default=True,
-            help="if True, display logs on the console",
-        )
-
-        # eval
+        # Evaluation
         self.add_argument(
             "--eval-valid",
             action="store_false",
@@ -337,8 +331,7 @@ class Parser(Config):
             help="the steps for early stopping",
         )
 
-        self.add_argument("--num-workers", type=int, default=4)
-
+        # Reproducibility
         self.add_argument(
             "--seed", type=int, default=1, help="calling --seed=-1 for a random seed"
         )
@@ -355,8 +348,19 @@ class Parser(Config):
             help="resume the training from the recent checkpoint",
         )
 
-        self.add_argument("--id", type=str, default=time.strftime(TIME))
-        self.add_argument("-m", "--description", type=str, default="RecSys")
+        # Logging
+        self.add_argument(
+            "--log2file",
+            action="store_false",
+            default=True,
+            help="if True, save logs to a file",
+        )
+        self.add_argument(
+            "--log2console",
+            action="store_false",
+            default=True,
+            help="if True, display logs on the console",
+        )
 
     def add_argument(self, *args: str, **kwargs):
         r"""Add an argument to the internal :class:`argparse.ArgumentParser`.
