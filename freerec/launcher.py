@@ -267,14 +267,20 @@ class ChiefCoach(metaclass=abc.ABCMeta):
             self.optimizer = torch.optim.Adam(
                 self.model.parameters(),
                 lr=self.cfg.lr,
-                betas=(self.cfg.optim_first_moment_decay, self.cfg.optim_second_moment_decay),
+                betas=(
+                    self.cfg.optim_first_moment_decay,
+                    self.cfg.optim_second_moment_decay,
+                ),
                 weight_decay=self.cfg.weight_decay,
             )
         elif self.cfg.optimizer.lower() == "adamw":
             self.optimizer = torch.optim.AdamW(
                 self.model.parameters(),
                 lr=self.cfg.lr,
-                betas=(self.cfg.optim_first_moment_decay, self.cfg.optim_second_moment_decay),
+                betas=(
+                    self.cfg.optim_first_moment_decay,
+                    self.cfg.optim_second_moment_decay,
+                ),
                 weight_decay=self.cfg.weight_decay,
             )
         else:

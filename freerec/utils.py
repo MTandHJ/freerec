@@ -170,6 +170,7 @@ class AverageMeter:
         """
         timeline = np.arange(len(self.history)) * freq
         import matplotlib
+
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
 
