@@ -265,13 +265,7 @@ class Parser(Config):
         self.add_argument(
             "--optimizer",
             type=str,
-            default="adam",
-            help="Optimizer: adam (default), sgd, ...",
-        )
-        self.add_argument(
-            "--optimizer",
-            type=str,
-            default="AdamW",
+            default="Adam",
             help="Optimizer: adam (default), sgd, ...",
         )
         self.add_argument(
