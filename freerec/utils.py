@@ -169,6 +169,8 @@ class AverageMeter:
             Evaluation frequency used to scale the x-axis, by default 1.
         """
         timeline = np.arange(len(self.history)) * freq
+        import matplotlib
+        matplotlib.use("Agg")
         import matplotlib.pyplot as plt
 
         self.fig = plt.figure(dpi=300)
