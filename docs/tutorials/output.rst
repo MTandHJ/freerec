@@ -9,7 +9,7 @@
 .. code-block:: text
 
    ./logs/{description}/{dataset}/{id}/
-   ├── README.md                   # 配置快照
+   ├── config.json                 # 配置快照
    ├── log.txt                     # 完整训练日志
    ├── model.pt                    # 最终模型权重
    ├── best.pt                     # 最佳模型权重
@@ -25,7 +25,7 @@
 
    ./logs/{description}/core/          # freerec tune 专用
    ├── results.json                    # 所有子实验的聚合结果
-   ├── README.md                       # 配置快照
+   ├── config.json                     # tune 配置快照
    └── log.txt                         # 调参协调日志
 
    ./infos/{description}/{dataset}/{device}/
@@ -34,10 +34,10 @@
 各文件说明
 ----------
 
-README.md
-^^^^^^^^^
+config.json
+^^^^^^^^^^^
 
-配置快照，记录了本次实验的所有参数设置，便于复现。
+JSON 格式的配置快照，记录了本次实验的所有参数设置，便于复现和程序读取。
 
 log.txt
 ^^^^^^^
@@ -182,6 +182,13 @@ results.json（freerec tune）
        "description": "SASRec",
        "dataset": "Amazon2014Beauty_550_LOU",
        "timestamp": "2026-04-17T10:30:00",
+       "config": {
+           "config": "configs/Amazon2014Beauty_550_LOU.yaml",
+           "dataset": "Amazon2014Beauty_550_LOU",
+           "seed": 0,
+           "embedding_dim": 64,
+           "lr": 0.0005
+       },
        "runs": [
            {
                "id": "0417103000",
@@ -208,6 +215,8 @@ results.json（freerec tune）
      - 数据集名称
    * - ``timestamp``
      - 最近一次写入时间（ISO 8601）
+   * - ``config``
+     - 最近一次完成的子实验运行配置摘要；已过滤路径、文件名、设备、日志等常规字段，缺失时为 ``{}``
    * - ``runs[].id``
      - 子实验 ID（时间戳格式）
    * - ``runs[].params``

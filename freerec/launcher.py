@@ -33,6 +33,47 @@ from freerec.utils import (
 __all__ = ["ChiefCoach", "Coach", "Adapter"]
 
 
+RESULTS_CONFIG_EXCLUDES = frozenset(
+    {
+        # File names
+        "SAVED_FILENAME",
+        "BEST_FILENAME",
+        "CHECKPOINT_FILENAME",
+        "CONFIG_FILENAME",
+        "MONITOR_FILENAME",
+        "MONITOR_BEST_FILENAME",
+        "RESULTS_FILENAME",
+        "SUMMARY_FILENAME",
+        # Output dirs and generated paths
+        "DATA_DIR",
+        "SUMMARY_DIR",
+        "CHECKPOINT_PATH",
+        "LOG_PATH",
+        "CORE_CHECKPOINT_PATH",
+        "CORE_LOG_PATH",
+        # Checkpoint plumbing
+        "CHECKPOINT_FREQ",
+        "CHECKPOINT_MODULES",
+        # Runtime and machine-specific fields
+        "id",
+        "device",
+        "ddp_backend",
+        "num_workers",
+        "benchmark",
+        "resume",
+        "log2console",
+        "log2file",
+        # Tune coordinator fields and top-level duplicates
+        "description",
+        "COMMAND",
+        "ENVS",
+        "PARAMS",
+        "DEFAULTS",
+        "EXCLUSIVE",
+    }
+)
+
+
 DEFAULT_METRICS = {
     "LOSS": lambda x: x,
     #############
@@ -1069,6 +1110,49 @@ class Adapter:
         file_ = os.path.join(logPath, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME)
         return import_pickle(file_)
 
+    def load_config(self, logPath: str) -> Dict:
+        r"""Load the runtime config JSON from a subprocess log directory.
+
+        Parameters
+        ----------
+        logPath : str
+            Path to the experiment logs.
+
+        Returns
+        -------
+        dict
+            Runtime configuration snapshot. Returns an empty dict when the
+            snapshot is missing or unreadable.
+        """
+        filename = getattr(self.cfg, "CONFIG_FILENAME", "config.json")
+        file_ = os.path.join(logPath, filename)
+        if not os.path.exists(file_):
+            return {}
+        try:
+            with open(file_, "r", encoding="utf8") as fh:
+                return json.load(fh)
+        except Exception:
+            return {}
+
+    def filter_config(self, config: Dict) -> Dict:
+        r"""Remove routine runtime fields from a results config snapshot.
+
+        Parameters
+        ----------
+        config : dict
+            Runtime configuration snapshot loaded from a run directory.
+
+        Returns
+        -------
+        dict
+            Filtered configuration for ``results.json``.
+        """
+        return {
+            key: value
+            for key, value in config.items()
+            if key not in RESULTS_CONFIG_EXCLUDES
+        }
+
     def write(self, id_: str, logPath: str, params: Dict):
         r"""Write experiment results to TensorBoard and ``results.json``.
 
@@ -1116,8 +1200,16 @@ class Adapter:
                     "dataset": self.cfg.ENVS.get("dataset", ""),
                     "runs": [],
                 }
+            results.setdefault("runs", [])
             results["timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%S")
-            results["runs"].append({"id": id_, "params": params, "metrics": data})
+            results["config"] = self.filter_config(self.load_config(logPath))
+            results["runs"].append(
+                {
+                    "id": id_,
+                    "params": params,
+                    "metrics": data,
+                }
+            )
             with open(results_path, "w", encoding="utf8") as f:
                 json.dump(results, f, indent=2)
         except Exception:

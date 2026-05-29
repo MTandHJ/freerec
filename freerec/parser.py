@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import time
 from argparse import ArgumentParser
@@ -67,6 +68,8 @@ MONITOR_FILENAME : str
     The filename of the monitor.
 MONITOR_BEST_FILENAME : str
     The filename of the best monitor.
+CONFIG_FILENAME : str
+    The filename of the runtime config snapshot.
 RESULTS_FILENAME : str
     The filename of the aggregated tuning results JSON (saved under ``CORE_LOG_PATH``).
 description : str
@@ -101,6 +104,7 @@ CONFIG = Config(
     SUMMARY_FILENAME="SUMMARY.md",
     MONITOR_FILENAME="monitors.pkl",
     MONITOR_BEST_FILENAME="best.pkl",
+    CONFIG_FILENAME="config.json",
     RESULTS_FILENAME="results.json",
     # monitors
     monitors=[],
@@ -110,6 +114,7 @@ CONFIG = Config(
 CORE_CONFIG = Config(
     MONITOR_BEST_FILENAME=CONFIG.MONITOR_BEST_FILENAME,
     CHECKPOINT_FILENAME=CONFIG.CHECKPOINT_FILENAME,
+    CONFIG_FILENAME=CONFIG.CONFIG_FILENAME,
     RESULTS_FILENAME=CONFIG.RESULTS_FILENAME,
     EXCLUSIVE=False,
     COMMAND=None,
@@ -185,26 +190,16 @@ class Parser(Config):
         self.parse()
 
     @main_process_only
-    def readme(self, path: str, mode: str = "w") -> None:
-        r"""Write a README.md file containing all configuration key-value pairs.
+    def dump_config(self, path: str) -> None:
+        r"""Write a JSON file containing all configuration key-value pairs.
 
         Parameters
         ----------
         path : str
-            The directory to write the README.md file into.
-        mode : str, optional
-            The file opening mode, by default ``"w"``.
+            The directory to write the config snapshot into.
         """
-        time_ = time.strftime("%Y-%m-%d-%H:%M:%S")
-        file_ = os.path.join(path, "README.md")
-        s = "|  {key}  |   {val}    |\n"
-        info = "\n## {0} \n\n\n".format(time_)
-        info += "|  Attribute   |   Value   |\n"
-        info += "| :-------------: | :-----------: |\n"
-        for key in sorted(self.keys(), key=lambda x: x.upper()):
-            info += s.format(key=key, val=self[key])
-        with open(file_, mode, encoding="utf8") as fh:
-            fh.write(info)
+        with open(os.path.join(path, self.CONFIG_FILENAME), "w", encoding="utf8") as fh:
+            json.dump(self, fh, indent=2, default=str)
 
     def reset(self):
         r"""Reset all configurations to the defaults defined in CONFIG."""
@@ -484,7 +479,7 @@ class Parser(Config):
         2. Generate ``CHECKPOINT_PATH`` and ``LOG_PATH`` from templates.
         3. Initialize DDP if running in distributed mode.
         4. Configure device, logger, random seed, and benchmark mode.
-        5. Write README.md under both ``CHECKPOINT_PATH`` and ``LOG_PATH``.
+        5. Write ``config.json`` under both ``CHECKPOINT_PATH`` and ``LOG_PATH``.
         """
         args = self.load()
         self.update(**dict(args._get_kwargs()))
@@ -512,8 +507,8 @@ class Parser(Config):
 
         self.set_tasktag()
 
-        self.readme(self.CHECKPOINT_PATH)  # create README.md
-        self.readme(self.LOG_PATH)
+        self.dump_config(self.CHECKPOINT_PATH)
+        self.dump_config(self.LOG_PATH)
 
         if is_main_process():
             infoLogger(str(self))
@@ -631,7 +626,7 @@ class CoreParser(Config):
         2. Validate the configuration via :meth:`check`.
         3. Generate ``CORE_CHECKPOINT_PATH`` and ``CORE_LOG_PATH``.
         4. Configure the logger.
-        5. Write README.md under ``CORE_LOG_PATH``.
+        5. Write ``config.json`` under ``CORE_LOG_PATH``.
         """
         self.load(args)
         self.check()
@@ -649,29 +644,15 @@ class CoreParser(Config):
             log2console=self.log2console,
         )
 
-        self.readme(self.CORE_LOG_PATH)
+        self.dump_config(self.CORE_LOG_PATH)
 
-    def readme(self, path: str, mode: str = "w") -> None:
-        r"""Write a README.md file with environment, parameter, and default settings.
+    def dump_config(self, path: str) -> None:
+        r"""Write a JSON file with environment, parameter, and default settings.
 
         Parameters
         ----------
         path : str
-            The directory to write the README.md file into.
-        mode : str, optional
-            The file opening mode, by default ``"w"``.
+            The directory to write the config snapshot into.
         """
-        time_ = time.strftime("%Y-%m-%d-%H:%M:%S")
-        file_ = os.path.join(path, "README.md")
-        s = "|  {key}  |   {val}    |\n"
-        info = "\n## {0} \n\n\n".format(time_)
-        info += "|  Attribute   |   Value   |\n"
-        info += "| :-------------: | :-----------: |\n"
-        for key, val in self.ENVS.items():
-            info += s.format(key=key, val=val)
-        for key, val in self.PARAMS.items():
-            info += s.format(key=key, val=val)
-        for key, val in self.DEFAULTS.items():
-            info += s.format(key=f"{key} (default)", val=val)
-        with open(file_, mode, encoding="utf8") as fh:
-            fh.write(info)
+        with open(os.path.join(path, self.CONFIG_FILENAME), "w", encoding="utf8") as fh:
+            json.dump(self, fh, indent=2, default=str)

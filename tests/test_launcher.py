@@ -1,5 +1,9 @@
+import json
+
 import torch
 
+from freerec.dict2obj import Config
+from freerec.launcher import Adapter
 from freerec.utils import (
     AverageMeter,
     export_pickle,
@@ -8,6 +12,22 @@ from freerec.utils import (
     import_yaml,
     set_seed,
 )
+
+
+class DummySummaryWriter:
+    def __init__(self, log_dir):
+        self.log_dir = log_dir
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return None
+
+    def add_hparams(self, params, metrics):
+        self.params = params
+        self.metrics = metrics
+
 
 # ---------------------------------------------------------------------------
 # AverageMeter
@@ -112,6 +132,157 @@ class TestSerialization:
         export_yaml(data, path)
         loaded = import_yaml(path)
         assert loaded == data
+
+
+# ---------------------------------------------------------------------------
+# Adapter results.json
+# ---------------------------------------------------------------------------
+
+
+class TestAdapterResults:
+    def make_adapter(self, core_log_path):
+        adapter = Adapter()
+        adapter.cfg = Config(
+            CORE_LOG_PATH=str(core_log_path),
+            DATA_DIR="data",
+            MONITOR_BEST_FILENAME="best.pkl",
+            CONFIG_FILENAME="config.json",
+            RESULTS_FILENAME="results.json",
+            ENVS=Config(
+                description="eval_BERT4Rec",
+                dataset="Amazon2014Beauty_550_LOU",
+            ),
+        )
+        return adapter
+
+    def test_write_includes_runtime_config_snapshot(self, tmp_path, monkeypatch):
+        monkeypatch.setattr("freerec.launcher.SummaryWriter", DummySummaryWriter)
+
+        core_log_path = tmp_path / "logs" / "eval_BERT4Rec" / "core"
+        run_log_path = (
+            tmp_path
+            / "logs"
+            / "eval_BERT4Rec"
+            / "Amazon2014Beauty_550_LOU"
+            / "0426200647"
+        )
+        (run_log_path / "data").mkdir(parents=True)
+        core_log_path.mkdir(parents=True)
+
+        export_pickle(
+            {
+                "train": {"LOSS": 6.001080085781005},
+                "valid": {"NDCG@10": 0.05495695602421134},
+                "test": {"NDCG@10": 0.040461423737339484},
+                "best": {"NDCG@10": 0.04153840716245088},
+            },
+            str(run_log_path / "data" / "best.pkl"),
+        )
+        with open(run_log_path / "config.json", "w", encoding="utf8") as fh:
+            json.dump(
+                {
+                    "SAVED_FILENAME": "model.pt",
+                    "BEST_FILENAME": "best.pt",
+                    "CHECKPOINT_FILENAME": "checkpoint.tar",
+                    "CONFIG_FILENAME": "config.json",
+                    "DATA_DIR": "data",
+                    "SUMMARY_DIR": "summary",
+                    "CHECKPOINT_PATH": "./infos/eval_BERT4Rec/Amazon2014Beauty_550_LOU/1",
+                    "LOG_PATH": "./logs/eval_BERT4Rec/Amazon2014Beauty_550_LOU/0426200647",
+                    "dataset": "Amazon2014Beauty_550_LOU",
+                    "description": "eval_BERT4Rec",
+                    "id": "0426200647",
+                    "config": "configs/Amazon2014Beauty_550_LOU.yaml",
+                    "seed": 4,
+                    "eval_valid": True,
+                    "eval_test": False,
+                    "tasktag": None,
+                    "device": "cuda:1",
+                    "ddp_backend": "nccl",
+                    "num_workers": 4,
+                    "benchmark": False,
+                    "resume": False,
+                    "log2console": True,
+                    "log2file": True,
+                    "monitors": ["LOSS", "NDCG@10"],
+                    "embedding_dim": 64,
+                    "lr": 0.005,
+                },
+                fh,
+            )
+
+        adapter = self.make_adapter(core_log_path)
+        adapter.write(
+            "0426200647",
+            str(run_log_path),
+            {"config": "configs/Amazon2014Beauty_550_LOU.yaml", "seed": 4},
+        )
+
+        with open(core_log_path / "results.json", "r", encoding="utf8") as fh:
+            results = json.load(fh)
+
+        assert results["description"] == "eval_BERT4Rec"
+        assert results["dataset"] == "Amazon2014Beauty_550_LOU"
+        assert results["config"]["seed"] == 4
+        assert results["config"]["eval_valid"] is True
+        assert results["config"]["eval_test"] is False
+        assert results["config"]["tasktag"] is None
+        assert results["config"]["monitors"] == ["LOSS", "NDCG@10"]
+        assert results["config"]["lr"] == 0.005
+        assert "SAVED_FILENAME" not in results["config"]
+        assert "CHECKPOINT_PATH" not in results["config"]
+        assert "LOG_PATH" not in results["config"]
+        assert "description" not in results["config"]
+        assert "id" not in results["config"]
+        assert "device" not in results["config"]
+        assert "ddp_backend" not in results["config"]
+        assert "num_workers" not in results["config"]
+        assert "benchmark" not in results["config"]
+        assert "resume" not in results["config"]
+        assert "log2console" not in results["config"]
+        assert "log2file" not in results["config"]
+        assert results["runs"] == [
+            {
+                "id": "0426200647",
+                "params": {
+                    "config": "configs/Amazon2014Beauty_550_LOU.yaml",
+                    "seed": 4,
+                },
+                "metrics": {
+                    "train": {"LOSS": 6.001080085781005},
+                    "valid": {"NDCG@10": 0.05495695602421134},
+                    "test": {"NDCG@10": 0.040461423737339484},
+                    "best": {"NDCG@10": 0.04153840716245088},
+                },
+            }
+        ]
+
+    def test_write_uses_empty_config_when_missing(self, tmp_path, monkeypatch):
+        monkeypatch.setattr("freerec.launcher.SummaryWriter", DummySummaryWriter)
+
+        core_log_path = tmp_path / "logs" / "eval_BERT4Rec" / "core"
+        run_log_path = (
+            tmp_path
+            / "logs"
+            / "eval_BERT4Rec"
+            / "Amazon2014Beauty_550_LOU"
+            / "0426200648"
+        )
+        (run_log_path / "data").mkdir(parents=True)
+        core_log_path.mkdir(parents=True)
+        export_pickle(
+            {"valid": {"NDCG@10": 0.1}},
+            str(run_log_path / "data" / "best.pkl"),
+        )
+
+        adapter = self.make_adapter(core_log_path)
+        adapter.write("0426200648", str(run_log_path), {"seed": 5})
+
+        with open(core_log_path / "results.json", "r", encoding="utf8") as fh:
+            results = json.load(fh)
+
+        assert results["config"] == {}
+        assert results["runs"][0]["params"] == {"seed": 5}
 
 
 # ---------------------------------------------------------------------------

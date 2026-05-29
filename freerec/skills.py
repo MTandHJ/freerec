@@ -118,18 +118,20 @@ Each combination runs as an independent process; device assignment is round-robi
     logs/[ExperimentName]/
     ├── core/
     │   ├── log.txt              # Coordinator log
-    │   ├── README.md            # Config summary
+    │   ├── config.json          # Tune config snapshot
     │   └── results.json         # Aggregated results (appended per-run)
     └── [dataset]/[id]/          # id = MMDDHHMMSS, one per hyperparam combo
-        ├── log.txt, model.pt, best.pt
+        ├── config.json, log.txt, model.pt, best.pt
         ├── summary/{SUMMARY.md,*.png}
         └── data/{monitors.pkl, best.pkl}
 
 ### results.json
     {"description": "...", "dataset": "...", "timestamp": "...",
+     "config": {...},
      "runs": [{"id": "MMDDHHMMSS", "params": {...},
                "metrics": {"train": {}, "valid": {}, "test": {}, "best": {}}}]}
 
+    Top-level "config" is a filtered config summary of the latest finished run.
     Multiple tune sessions to the same description append to the same file.
 
 ### Reading Results

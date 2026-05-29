@@ -11,6 +11,7 @@ class TestCONFIG:
         assert CONFIG.CHECKPOINT_FREQ == 1
         assert "model" in CONFIG.CHECKPOINT_MODULES
         assert CONFIG.SUMMARY_FILENAME == "SUMMARY.md"
+        assert CONFIG.CONFIG_FILENAME == "config.json"
         assert CONFIG.which4best == "LOSS"
 
     def test_config_is_config_instance(self):
@@ -27,6 +28,9 @@ class TestCONFIG:
 
     def test_core_config_inherits_monitor_best(self):
         assert CORE_CONFIG.MONITOR_BEST_FILENAME == CONFIG.MONITOR_BEST_FILENAME
+
+    def test_core_config_inherits_config_filename(self):
+        assert CORE_CONFIG.CONFIG_FILENAME == CONFIG.CONFIG_FILENAME
 
 
 class TestCoreParser:

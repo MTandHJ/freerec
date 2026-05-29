@@ -149,14 +149,14 @@ compile() 做了什么
 2. 生成日志和 checkpoint 路径
 3. 初始化分布式训练（如有多卡）
 4. 配置设备、日志、随机种子
-5. 在日志目录写入 ``README.md``（保存当前配置快照）
+5. 在日志目录写入 ``config.json``（保存当前配置快照）
 
 生成的目录结构：
 
 .. code-block:: text
 
    ./logs/{description}/{dataset}/{id}/
-   ├── README.md         # 配置快照
+   ├── config.json       # 配置快照
    ├── log.txt           # 训练日志
    ├── data/
    │   ├── monitors.pkl  # 指标历史记录
