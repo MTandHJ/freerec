@@ -4,6 +4,7 @@ infos/
 logs/
 media/
 .vscode/
+.DS_Store
 simple_demo.py
 
 # Byte-compiled / optimized / DLL files
