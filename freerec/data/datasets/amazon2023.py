@@ -1,4 +1,4 @@
-from freerec.data.datasets.base import MatchingRecDataSet
+from freerec.data.datasets.base import MatchingRecDataSet, NextItemRecDataSet
 
 # ===================================MatchingRecDataSset===================================
 
@@ -184,3 +184,60 @@ class Amazon2023Toys_10104811_ROU(MatchingRecDataSet):
 
 
 # ===================================NextItemRecDataSset===================================
+
+
+class Amazon2023Games_550_LOU(NextItemRecDataSet):
+    r"""
+    Settings
+    --------
+    kcore4user: 5
+    kcore4item: 5
+    star4pos: 0
+    splitting: LOU
+
+    Statistics
+    ----------
+    +-------+-------+---------------+--------+--------+-------+-----------------------+
+    | #User | #Item | #Interactions | #Train | #Valid | #Test |        Density        |
+    +-------+-------+---------------+--------+--------+-------+-----------------------+
+    | 94762 | 25612 |     814586    | 625062 | 94762  | 94762 | 0.0003356288079423736 |
+    +-------+-------+---------------+--------+--------+-------+-----------------------+
+    """
+
+
+class Amazon2023Instruments_550_LOU(NextItemRecDataSet):
+    r"""
+    Settings
+    --------
+    kcore4user: 5
+    kcore4item: 5
+    star4pos: 0
+    splitting: LOU
+
+    Statistics
+    ----------
+    +-------+-------+---------------+--------+--------+-------+------------------------+
+    | #User | #Item | #Interactions | #Train | #Valid | #Test |        Density         |
+    +-------+-------+---------------+--------+--------+-------+------------------------+
+    | 57439 | 24587 |     511836    | 396958 | 57439  | 57439 | 0.00036242522498769274 |
+    +-------+-------+---------------+--------+--------+-------+------------------------+
+    """
+
+
+class Amazon2023Scientific_550_LOU(NextItemRecDataSet):
+    r"""
+    Settings
+    --------
+    kcore4user: 5
+    kcore4item: 5
+    star4pos: 0
+    splitting: LOU
+
+    Statistics
+    ----------
+    +-------+-------+---------------+--------+--------+-------+-----------------------+
+    | #User | #Item | #Interactions | #Train | #Valid | #Test |        Density        |
+    +-------+-------+---------------+--------+--------+-------+-----------------------+
+    | 50985 | 25848 |     412947    | 310977 | 50985  | 50985 | 0.0003133465711554794 |
+    +-------+-------+---------------+--------+--------+-------+-----------------------+
+    """

@@ -62,6 +62,9 @@ from freerec.data.datasets.amazon2023 import (
     Amazon2023Office_554811_ROU,
     Amazon2023Toys_554811_ROU,
     Amazon2023Toys_10104811_ROU,
+    Amazon2023Games_550_LOU,
+    Amazon2023Instruments_550_LOU,
+    Amazon2023Scientific_550_LOU,
 )
 from freerec.data.datasets.base import (
     MatchingRecDataSet,
