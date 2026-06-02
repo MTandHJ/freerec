@@ -217,9 +217,7 @@ class RecSysArch(nn.Module):
         """
         raise NotImplementedError
 
-    def encode(
-        self, data: Dict[Field, torch.Tensor]
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    def encode(self, data: Dict[Field, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
         r"""Encode user and item embeddings.
 
         Parameters
@@ -241,9 +239,7 @@ class RecSysArch(nn.Module):
         """
         raise NotImplementedError
 
-    def fit(
-        self, data: Dict[Field, torch.Tensor]
-    ) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
+    def fit(self, data: Dict[Field, torch.Tensor]) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
         r"""Compute training losses from the given data.
 
         Parameters
@@ -263,9 +259,7 @@ class RecSysArch(nn.Module):
         """
         raise NotImplementedError
 
-    def forward(
-        self, data: Dict[Field, torch.Tensor], ranking: Literal["full", "pool"] = "full"
-    ):
+    def forward(self, data: Dict[Field, torch.Tensor], ranking: Literal["full", "pool"] = "full"):
         r"""Run a forward pass for training or inference.
 
         Parameters
@@ -296,9 +290,7 @@ class GenRecArch(RecSysArch):
     ordered user ID sources.
     """
 
-    def sure_validpipe(
-        self, ranking: str = "full", batch_size: int = 512
-    ) -> PostProcessor:
+    def sure_validpipe(self, ranking: str = "full", batch_size: int = 512) -> PostProcessor:
         r"""Return the validation data pipeline.
 
         Parameters
@@ -313,17 +305,9 @@ class GenRecArch(RecSysArch):
         :class:`~PostProcessor`
             The configured validation post-processor.
         """
-        return (
-            self.dataset.valid()
-            .ordered_user_ids_source()
-            .valid_sampling_(ranking)
-            .batch_(batch_size)
-            .tensor_()
-        )
+        return self.dataset.valid().ordered_user_ids_source().valid_sampling_(ranking).batch_(batch_size).tensor_()
 
-    def sure_testpipe(
-        self, ranking: str = "full", batch_size: int = 512
-    ) -> PostProcessor:
+    def sure_testpipe(self, ranking: str = "full", batch_size: int = 512) -> PostProcessor:
         r"""Return the test data pipeline.
 
         Parameters
@@ -338,13 +322,7 @@ class GenRecArch(RecSysArch):
         :class:`~PostProcessor`
             The configured test post-processor.
         """
-        return (
-            self.dataset.test()
-            .ordered_user_ids_source()
-            .test_sampling_(ranking)
-            .batch_(batch_size)
-            .tensor_()
-        )
+        return self.dataset.test().ordered_user_ids_source().test_sampling_(ranking).batch_(batch_size).tensor_()
 
 
 class SeqRecArch(RecSysArch):
@@ -392,9 +370,7 @@ class SeqRecArch(RecSysArch):
             .valid_sampling_(ranking)
             .lprune_(maxlen, modified_fields=(self.ISeq,))
             .add_(offset=self.NUM_PADS, modified_fields=(self.ISeq,))
-            .lpad_(
-                maxlen, modified_fields=(self.ISeq,), padding_value=self.PADDING_VALUE
-            )
+            .lpad_(maxlen, modified_fields=(self.ISeq,), padding_value=self.PADDING_VALUE)
             .batch_(batch_size)
             .tensor_()
         )
@@ -427,9 +403,7 @@ class SeqRecArch(RecSysArch):
             .test_sampling_(ranking)
             .lprune_(maxlen, modified_fields=(self.ISeq,))
             .add_(offset=self.NUM_PADS, modified_fields=(self.ISeq,))
-            .lpad_(
-                maxlen, modified_fields=(self.ISeq,), padding_value=self.PADDING_VALUE
-            )
+            .lpad_(maxlen, modified_fields=(self.ISeq,), padding_value=self.PADDING_VALUE)
             .batch_(batch_size)
             .tensor_()
         )

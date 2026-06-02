@@ -54,13 +54,9 @@ class AverageMeter:
         by default ``max``.
     """
 
-    def __init__(
-        self, name: str, metric: Callable, fmt: str = ".5f", best_caster: Callable = max
-    ):
+    def __init__(self, name: str, metric: Callable, fmt: str = ".5f", best_caster: Callable = max):
         r"""Initialize the meter."""
-        assert isinstance(metric, Callable), (
-            f"metric should be Callable but {type(metric)} received ..."
-        )
+        assert isinstance(metric, Callable), f"metric should be Callable but {type(metric)} received ..."
         self.name = name
         self.fmt = fmt
         self.caster = best_caster
@@ -95,9 +91,7 @@ class AverageMeter:
         elif reduction == "sum":
             val = sum(vals)
         else:
-            raise ValueError(
-                f"Receive reduction {reduction} but 'mean' or 'sum' expected ..."
-            )
+            raise ValueError(f"Receive reduction {reduction} but 'mean' or 'sum' expected ...")
         return val, int(sum(ns))
 
     def update(self, val: float, n: int = 1, reduction: str = "mean") -> None:
@@ -155,9 +149,7 @@ class AverageMeter:
         else:
             val = np.array(val)
         if np.isnan(val) or np.isinf(val):
-            raise ValueError(
-                f"The metric of {self.name} got an unexpected value: {val.item()}."
-            )
+            raise ValueError(f"The metric of {self.name} got an unexpected value: {val.item()}.")
         return val.item()
 
     def plot(self, freq: int = 1) -> None:
@@ -296,9 +288,7 @@ class Monitor(Config):
         for prefix, monitors in self.items():
             for metric, meters in monitors.items():
                 for meter in meters:
-                    meter.history = state_dict[prefix][metric].get(
-                        meter.name, meter.history
-                    )
+                    meter.history = state_dict[prefix][metric].get(meter.name, meter.history)
 
     def save(self, path: str, filename: str = "monitors.pickle"):
         r"""Save the current state of the monitors to disk via :func:`export_pickle`.
@@ -439,9 +429,7 @@ def set_logger(path: str, log2file: bool = True, log2console: bool = True) -> No
     logger.setLevel(LOGGER.level)
 
     if log2file:
-        handler = logging.FileHandler(
-            os.path.join(path, LOGGER.filename), encoding="utf-8"
-        )
+        handler = logging.FileHandler(os.path.join(path, LOGGER.filename), encoding="utf-8")
         handler.setLevel(LOGGER.filelevel)
         handler.setFormatter(LOGGER.formatter.filehandler)
         logger.addHandler(handler)
@@ -450,15 +438,9 @@ def set_logger(path: str, log2file: bool = True, log2console: bool = True) -> No
         handler.setLevel(LOGGER.consolelevel)
         handler.setFormatter(LOGGER.formatter.consolehandler)
         logger.addHandler(handler)
-    logger.debug(
-        "========================================================================"
-    )
-    logger.debug(
-        "========================================================================"
-    )
-    logger.debug(
-        "========================================================================"
-    )
+    logger.debug("========================================================================")
+    logger.debug("========================================================================")
+    logger.debug("========================================================================")
     logger.propagate = False
     LOGGER["info"] = logger.info
     LOGGER["debug"] = logger.debug
@@ -595,14 +577,10 @@ def activate_benchmark(benchmark: bool) -> None:
     from torch.backends import cudnn
 
     if benchmark:
-        infoLogger(
-            "[Benchmark] >>> cudnn.benchmark == True | cudnn.deterministic == False"
-        )
+        infoLogger("[Benchmark] >>> cudnn.benchmark == True | cudnn.deterministic == False")
         cudnn.benchmark, cudnn.deterministic = True, False
     else:
-        infoLogger(
-            "[Benchmark] >>> cudnn.benchmark == False | cudnn.deterministic == True"
-        )
+        infoLogger("[Benchmark] >>> cudnn.benchmark == False | cudnn.deterministic == True")
         cudnn.benchmark, cudnn.deterministic = False, True
 
 

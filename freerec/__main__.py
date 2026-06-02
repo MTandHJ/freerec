@@ -142,9 +142,7 @@ def setup(args):
             print(f"torchdata {TORCHDATA_VERSION} already installed, skipping.")
             return
         else:
-            print(
-                f"torchdata {torchdata.__version__} found, replacing with {TORCHDATA_VERSION}..."
-            )
+            print(f"torchdata {torchdata.__version__} found, replacing with {TORCHDATA_VERSION}...")
     except ImportError:
         print(f"Installing torchdata=={TORCHDATA_VERSION} (--no-deps)...")
 
@@ -237,9 +235,7 @@ def main():
     make_parser.set_defaults(func=make)
 
     make_parser.add_argument("dataset", type=str, help="output dataset name")
-    make_parser.add_argument(
-        "--root", type=str, default=".", help="data, default to '.'"
-    )
+    make_parser.add_argument("--root", type=str, default=".", help="data, default to '.'")
     make_parser.add_argument(
         "--filedir",
         type=str,

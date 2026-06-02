@@ -91,9 +91,7 @@ class URLRegistry:
     def _write_cache(cls) -> None:
         cls.CACHE_PATH.parent.mkdir(exist_ok=True)
         cls._cache["freerec_version"] = freerec.__version__
-        infoLogger(
-            f"[Converter] >>> Cache available dataset links in '{cls.CACHE_PATH}'."
-        )
+        infoLogger(f"[Converter] >>> Cache available dataset links in '{cls.CACHE_PATH}'.")
         with open(cls.CACHE_PATH, "w") as f:
             json.dump(cls._cache, f, indent=2)
 
@@ -148,9 +146,7 @@ class AtomicConverter:
         filedir = filedir if filedir else dataset
         self.path = os.path.join(self.root, filedir)
 
-        if not os.path.exists(self.path) or not any(
-            True for _ in os.scandir(self.path)
-        ):
+        if not os.path.exists(self.path) or not any(True for _ in os.scandir(self.path)):
             infoLogger(f"[Converter] >>> {self.path} is not available ...")
             zipfile = dataset + ".zip"
             zippath = os.path.join(self.root, zipfile)
@@ -169,9 +165,7 @@ class AtomicConverter:
                         self.path,
                     )
                 except KeyError:
-                    raise FileNotFoundError(
-                        f"No such file of {self.path} and no such dataset {self.dataset} online..."
-                    )
+                    raise FileNotFoundError(f"No such file of {self.path} and no such dataset {self.dataset} online...")
 
         self.dataset = dataset if dataset else self.__class__.__name__
 
@@ -316,9 +310,7 @@ class AtomicConverter:
         infoLogger(f"[Converter] >>> Reorder fields: {columns} ...")
         self.interactions = self.interactions[columns]
 
-    def map_col(
-        self, col: str, mapper: Mapping, pools: Optional[Iterable[pd.DataFrame]] = None
-    ):
+    def map_col(self, col: str, mapper: Mapping, pools: Optional[Iterable[pd.DataFrame]] = None):
         r"""Apply a mapping to a column across multiple dataframes.
 
         Parameters
@@ -335,9 +327,7 @@ class AtomicConverter:
             if df is not None:
                 df[col] = df[col].map(mapper)
 
-    def filter_by_rating(
-        self, low: Union[None, int, float] = None, high: Union[None, int, float] = None
-    ):
+    def filter_by_rating(self, low: Union[None, int, float] = None, high: Union[None, int, float] = None):
         r"""Filter interactions by rating range.
 
         Parameters
@@ -353,13 +343,9 @@ class AtomicConverter:
             low = low if low is not None else ratings.min()
             high = high if high is not None else ratings.max()
             self.interactions = df[(low <= ratings) & (ratings <= high)]
-            infoLogger(
-                f"[Converter] >>> Filter dataframe according to {RATING.name} ..."
-            )
+            infoLogger(f"[Converter] >>> Filter dataframe according to {RATING.name} ...")
         except KeyError:
-            infoLogger(
-                f"[Converter] >>> Skip `filter_by_rating` because of `inter` has no field of `{RATING.name}' ..."
-            )
+            infoLogger(f"[Converter] >>> Skip `filter_by_rating` because of `inter` has no field of `{RATING.name}' ...")
 
     def filter_by_core(
         self,
@@ -410,17 +396,13 @@ class AtomicConverter:
             # filter by user
             users = df[master]
             counts = users.value_counts()
-            bool_indices = users.isin(
-                counts[(low4user <= counts) & (counts <= high4user)].index
-            )
+            bool_indices = users.isin(counts[(low4user <= counts) & (counts <= high4user)].index)
             df = df[bool_indices]
 
             # filter by item
             items = df[ITEM.name]
             counts = items.value_counts()
-            bool_indices = items.isin(
-                counts[(low4item <= counts) & (counts <= high4item)].index
-            )
+            bool_indices = items.isin(counts[(low4item <= counts) & (counts <= high4item)].index)
             df = df[bool_indices]
 
             infoLogger(f"[Converter] >>> Current datasize: {len(df)}")
@@ -464,9 +446,7 @@ class AtomicConverter:
             self.itemFeats = self.itemFeats[self.itemFeats[ITEM.name].isin(item_ids)]
             self.itemFeats = self.itemFeats.sort_values([ITEM.name])
 
-        self.map_col(
-            ITEM.name, self.itemMaps, pools=(self.interactions, self.itemFeats)
-        )
+        self.map_col(ITEM.name, self.itemMaps, pools=(self.interactions, self.itemFeats))
 
     def sort_by_timestamp(self, df: pd.DataFrame, master: Optional[str] = USER.name):
         r"""Sort a dataframe by timestamp, optionally grouped by a master column.
@@ -493,9 +473,7 @@ class AtomicConverter:
         try:
             if master is not None:
                 df = df.sort_values(by=[master, TIMESTAMP.name])
-                infoLogger(
-                    f"[Converter] >>> Sort data by [{master}] [{TIMESTAMP.name}] ..."
-                )
+                infoLogger(f"[Converter] >>> Sort data by [{master}] [{TIMESTAMP.name}] ...")
             else:
                 df = df.sort_values(by=[TIMESTAMP.name])
                 infoLogger(f"[Converter] >>> Sort data by [{TIMESTAMP.name}] ...")
@@ -552,9 +530,7 @@ class AtomicConverter:
         str
             A code string encoding the split configuration.
         """
-        infoLogger(
-            f"[Converter] >>> Split by RAU (Ratio and At least one on User): {ratios} ..."
-        )
+        infoLogger(f"[Converter] >>> Split by RAU (Ratio and At least one on User): {ratios} ...")
         traingroups = []
         validgroups = []
         testgroups = []
@@ -591,13 +567,9 @@ class AtomicConverter:
         str
             A code string encoding the split configuration.
         """
-        infoLogger(
-            f"[Converter] >>> Split data by ROT (Ratio On Dataset): {ratios} ..."
-        )
+        infoLogger(f"[Converter] >>> Split data by ROT (Ratio On Dataset): {ratios} ...")
         self.interactions = self.sort_by_timestamp(self.interactions, master=None)
-        markers = np.floor(
-            (np.cumsum(ratios) / np.sum(ratios)) * len(self.interactions)
-        ).astype(int)
+        markers = np.floor((np.cumsum(ratios) / np.sum(ratios)) * len(self.interactions)).astype(int)
 
         self.trainiter = self.interactions.iloc[: markers[0]]
         self.validiter = self.interactions.iloc[markers[0] : markers[1]]
@@ -656,34 +628,21 @@ class AtomicConverter:
         last_date = self.interactions[TIMESTAMP.name].max().item()
 
         # Group interactions by user and calculate user timestamps
-        user_timestamps = (
-            self.interactions.groupby(USER.name)[TIMESTAMP.name].max().sort_values()
-        )
+        user_timestamps = self.interactions.groupby(USER.name)[TIMESTAMP.name].max().sort_values()
 
         # Split interactions into train, validation, and test sets based on user timestamps
         traingroups = user_timestamps[user_timestamps < (last_date - 2 * seconds)].index
         validgroups = user_timestamps[
-            (user_timestamps >= (last_date - 2 * seconds))
-            & (user_timestamps < (last_date - seconds))
+            (user_timestamps >= (last_date - 2 * seconds)) & (user_timestamps < (last_date - seconds))
         ].index
         testgroups = user_timestamps[user_timestamps >= (last_date - seconds)].index
 
-        assert len(traingroups) >= 0, (
-            f"The given `days` of {days} leads to zero-size trainsets ..."
-        )
-        assert len(validgroups) >= 0, (
-            f"The given `days` of {days} leads to zero-size validsets ..."
-        )
-        assert len(testgroups) >= 0, (
-            f"The given `days` of {days} leads to zero-size testsets ..."
-        )
+        assert len(traingroups) >= 0, f"The given `days` of {days} leads to zero-size trainsets ..."
+        assert len(validgroups) >= 0, f"The given `days` of {days} leads to zero-size validsets ..."
+        assert len(testgroups) >= 0, f"The given `days` of {days} leads to zero-size testsets ..."
 
-        self.trainiter = self.interactions[
-            self.interactions[USER.name].isin(traingroups)
-        ]
-        self.validiter = self.interactions[
-            self.interactions[USER.name].isin(validgroups)
-        ]
+        self.trainiter = self.interactions[self.interactions[USER.name].isin(traingroups)]
+        self.validiter = self.interactions[self.interactions[USER.name].isin(validgroups)]
         self.testiter = self.interactions[self.interactions[USER.name].isin(testgroups)]
 
         return f"{days}_DOU"
@@ -711,20 +670,12 @@ class AtomicConverter:
 
         # Split interactions into train, validation, and test sets based on user timestamps
         traintimes = timestamps < (last_date - 2 * seconds)
-        validtimes = (timestamps >= (last_date - 2 * seconds)) & (
-            timestamps < (last_date - seconds)
-        )
+        validtimes = (timestamps >= (last_date - 2 * seconds)) & (timestamps < (last_date - seconds))
         testtimes = timestamps >= (last_date - seconds)
 
-        assert traintimes.any(), (
-            f"The given `days` of {days} leads to zero-size trainsets ..."
-        )
-        assert validtimes.any(), (
-            f"The given `days` of {days} leads to zero-size validsets ..."
-        )
-        assert testtimes.any(), (
-            f"The given `days` of {days} leads to zero-size testsets ..."
-        )
+        assert traintimes.any(), f"The given `days` of {days} leads to zero-size trainsets ..."
+        assert validtimes.any(), f"The given `days` of {days} leads to zero-size validsets ..."
+        assert testtimes.any(), f"The given `days` of {days} leads to zero-size testsets ..."
 
         self.trainiter = self.interactions[traintimes]
         self.validiter = self.interactions[validtimes]
@@ -735,15 +686,9 @@ class AtomicConverter:
     def resort_iters(self):
         r"""Re-sort train, valid, and test splits by user and timestamp."""
         infoLogger("[Converter] >>> Resort for train|valid|test iters ...")
-        self.trainiter = self.sort_by_timestamp(
-            self.trainiter.reset_index(drop=True), master=USER.name
-        )
-        self.validiter = self.sort_by_timestamp(
-            self.validiter.reset_index(drop=True), master=USER.name
-        )
-        self.testiter = self.sort_by_timestamp(
-            self.testiter.reset_index(drop=True), master=USER.name
-        )
+        self.trainiter = self.sort_by_timestamp(self.trainiter.reset_index(drop=True), master=USER.name)
+        self.validiter = self.sort_by_timestamp(self.validiter.reset_index(drop=True), master=USER.name)
+        self.testiter = self.sort_by_timestamp(self.testiter.reset_index(drop=True), master=USER.name)
 
     def save(self, path: str):
         r"""Save train/valid/test splits and optional feature files to disk.
@@ -821,9 +766,7 @@ class AtomicConverter:
         NotImplementedError
             If *splitting* is not one of the supported strategies.
         """
-        assert len(ratios) == 3, (
-            f"'ratios' should in length of 3 but a length of {len(ratios)} is received ..."
-        )
+        assert len(ratios) == 3, f"'ratios' should in length of 3 but a length of {len(ratios)} is received ..."
         self.load()
         self.filter_by_rating(low=star4pos, high=None)
         self.filter_by_core(low4user=kcore4user, low4item=kcore4item, strict=strict)
@@ -855,9 +798,7 @@ class AtomicConverter:
         r"""Print a summary table of dataset statistics."""
         from prettytable import PrettyTable
 
-        table = PrettyTable(
-            ["#User", "#Item", "#Interactions", "#Train", "#Valid", "#Test", "Density"]
-        )
+        table = PrettyTable(["#User", "#Item", "#Interactions", "#Train", "#Valid", "#Test", "Density"])
         trainsize = len(self.trainiter)
         validsize = len(self.validiter)
         testsize = len(self.testiter)

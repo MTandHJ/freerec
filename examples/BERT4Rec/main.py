@@ -61,9 +61,7 @@ class BERT4Rec(freerec.models.SeqRecArch):
 
         self.Position = nn.Embedding(maxlen, embedding_dim)
         self.embdDropout = nn.Dropout(p=dropout_rate)
-        self.register_buffer(
-            "positions", torch.tensor(range(0, maxlen), dtype=torch.long).unsqueeze(0)
-        )
+        self.register_buffer("positions", torch.tensor(range(0, maxlen), dtype=torch.long).unsqueeze(0))
 
         self.layernorm = nn.LayerNorm(embedding_dim)
         self.dropout = nn.Dropout(dropout_rate)
@@ -101,9 +99,7 @@ class BERT4Rec(freerec.models.SeqRecArch):
             self.dataset.train()
             .shuffled_seqs_source(maxlen)
             .add_(self.NUM_PADS, modified_fields=(self.ISeq,))
-            .lpad_(
-                maxlen, modified_fields=(self.ISeq,), padding_value=self.PADDING_VALUE
-            )
+            .lpad_(maxlen, modified_fields=(self.ISeq,), padding_value=self.PADDING_VALUE)
             .batch_(batch_size)
             .tensor_()
         )
@@ -120,9 +116,7 @@ class BERT4Rec(freerec.models.SeqRecArch):
                 modified_fields=(self.ISeq,),
                 padding_value=self.PADDING_VALUE,
             )
-            .rpad_(
-                maxlen, modified_fields=(self.ISeq,), padding_value=self.MASKING_VALUE
-            )
+            .rpad_(maxlen, modified_fields=(self.ISeq,), padding_value=self.MASKING_VALUE)
             .batch_(batch_size)
             .tensor_()
         )
@@ -139,9 +133,7 @@ class BERT4Rec(freerec.models.SeqRecArch):
                 modified_fields=(self.ISeq,),
                 padding_value=self.PADDING_VALUE,
             )
-            .rpad_(
-                maxlen, modified_fields=(self.ISeq,), padding_value=self.MASKING_VALUE
-            )
+            .rpad_(maxlen, modified_fields=(self.ISeq,), padding_value=self.MASKING_VALUE)
             .batch_(batch_size)
             .tensor_()
         )
@@ -162,18 +154,14 @@ class BERT4Rec(freerec.models.SeqRecArch):
     def random_mask(self, seqs: torch.Tensor, p: float):
         padding_mask = seqs == self.PADDING_VALUE
         rnds = torch.rand(seqs.size(), device=seqs.device)
-        masked_seqs = torch.where(
-            rnds < p, torch.ones_like(seqs).fill_(self.MASKING_VALUE), seqs
-        )
+        masked_seqs = torch.where(rnds < p, torch.ones_like(seqs).fill_(self.MASKING_VALUE), seqs)
         masked_seqs.masked_fill_(padding_mask, self.PADDING_VALUE)
         masks = masked_seqs == self.MASKING_VALUE  # (B, S)
         labels = seqs[masks]
         return masked_seqs, labels, masks
 
     def fit(self, data: Dict[freerec.data.fields.Field, torch.Tensor]):
-        masked_seqs, labels, masks = self.random_mask(
-            seqs=data[self.ISeq], p=self.mask_ratio
-        )
+        masked_seqs, labels, masks = self.random_mask(seqs=data[self.ISeq], p=self.mask_ratio)
         data[self.ISeq] = masked_seqs
 
         userEmbds = self.encode(data)  # (B, S, D)
@@ -219,9 +207,7 @@ def main():
     try:
         dataset = getattr(freerec.data.datasets, cfg.dataset)(root=cfg.root)
     except AttributeError:
-        dataset = freerec.data.datasets.RecDataSet(
-            cfg.root, cfg.dataset, tasktag=cfg.tasktag
-        )
+        dataset = freerec.data.datasets.RecDataSet(cfg.root, cfg.dataset, tasktag=cfg.tasktag)
 
     model = BERT4Rec(
         dataset,

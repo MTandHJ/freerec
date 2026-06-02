@@ -76,9 +76,7 @@ def _reduce(reduction: Literal["mean", "sum", "none"] = "mean"):
             elif reduction == "sum":
                 return results.sum()
             else:
-                raise ValueError(
-                    f"reduction should be 'none'|'mean'|'sum' but {reduction} is received ..."
-                )
+                raise ValueError(f"reduction should be 'none'|'mean'|'sum' but {reduction} is received ...")
 
         wrapper.__name__ = func.__name__
         wrapper.__doc__ = func.__doc__
@@ -199,9 +197,7 @@ def root_mse(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
 
 
 @_reduce("mean")
-def precision(
-    preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None
-) -> torch.Tensor:
+def precision(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
     r"""Compute Precision at K.
 
     .. math::
@@ -251,9 +247,7 @@ def precision(
 
 
 @_reduce("mean")
-def recall(
-    preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None
-) -> torch.Tensor:
+def recall(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
     r"""Compute Recall at K.
 
     .. math::
@@ -307,9 +301,7 @@ def recall(
 
 
 @_reduce("mean")
-def f1_score(
-    preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None
-) -> torch.Tensor:
+def f1_score(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
     r"""Compute the F1 score at K.
 
     The F1 score is the harmonic mean of precision and recall:
@@ -360,9 +352,7 @@ def f1_score(
 
 
 @_reduce("mean")
-def hit_rate(
-    preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None
-) -> torch.Tensor:
+def hit_rate(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
     r"""Compute Hit Rate at K.
 
     Returns 1 if at least one relevant item appears in the top-K
@@ -435,9 +425,7 @@ def _dcg(target: torch.Tensor) -> torch.Tensor:
 
 
 @_reduce("mean")
-def normalized_dcg(
-    preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None
-) -> torch.Tensor:
+def normalized_dcg(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
     r"""Compute Normalized Discounted Cumulative Gain (NDCG) at K.
 
     .. math::
@@ -516,9 +504,7 @@ def _single_reciprocal_rank(preds: torch.Tensor, targets: torch.Tensor):
 
 
 @_reduce("mean")
-def mean_reciprocal_rank(
-    preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None
-) -> torch.Tensor:
+def mean_reciprocal_rank(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
     r"""Compute Mean Reciprocal Rank (MRR) at K.
 
     .. math::
@@ -587,23 +573,16 @@ def _single_average_precision(preds: torch.Tensor, targets: torch.Tensor):
     """
     if not targets.sum():
         return 0.0
-    positions = torch.arange(
-        1, len(targets) + 1, device=targets.device, dtype=torch.float32
-    )[targets > 0]
+    positions = torch.arange(1, len(targets) + 1, device=targets.device, dtype=torch.float32)[targets > 0]
     res = torch.div(
-        (
-            torch.arange(len(positions), device=positions.device, dtype=torch.float32)
-            + 1
-        ),
+        (torch.arange(len(positions), device=positions.device, dtype=torch.float32) + 1),
         positions,
     ).mean()
     return res
 
 
 @_reduce("mean")
-def mean_average_precision(
-    preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None
-) -> torch.Tensor:
+def mean_average_precision(preds: torch.Tensor, targets: torch.Tensor, *, k: Optional[int] = None) -> torch.Tensor:
     r"""Compute Mean Average Precision (MAP) at K.
 
     .. math::
@@ -713,9 +692,7 @@ def log_loss(
     elif reduction == "sum":
         return np.sum(loss)
     else:
-        raise ValueError(
-            f"reduction should be 'none'|'mean'|'sum' but {reduction} is received ..."
-        )
+        raise ValueError(f"reduction should be 'none'|'mean'|'sum' but {reduction} is received ...")
 
 
 def auroc(preds: Iterable, targets: Iterable) -> np.ndarray:
@@ -797,23 +774,14 @@ def group_auroc(
     for group, pred, target in zip(groups, preds, targets):
         group_preds[group].append(pred)
         group_targets[group].append(target)
-    group_sizes = np.array(
-        [
-            len(targets) if len(set(targets)) > 1 else 0
-            for targets in group_targets.values()
-        ]
-    )
-    aurocs = np.fromiter(
-        map(auroc, group_preds.values(), group_targets.values()), dtype=float
-    )
+    group_sizes = np.array([len(targets) if len(set(targets)) > 1 else 0 for targets in group_targets.values()])
+    aurocs = np.fromiter(map(auroc, group_preds.values(), group_targets.values()), dtype=float)
     if reduction == "none":
         return aurocs
     elif reduction == "mean":
         return np.sum(aurocs * group_sizes) / np.sum(group_sizes)
     else:
-        raise ValueError(
-            f"reduction should be 'none'|'mean' but {reduction} is received ..."
-        )
+        raise ValueError(f"reduction should be 'none'|'mean' but {reduction} is received ...")
 
 
 if __name__ == "__main__":

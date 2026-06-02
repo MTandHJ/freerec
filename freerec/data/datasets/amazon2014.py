@@ -264,9 +264,7 @@ class Amazon2014Electronics_550_MMRec(MatchingRecDataSet):
     +--------+--------+-----------------+---------------+---------+--------+--------+------------------------+
     """
 
-    URL = (
-        "https://zenodo.org/records/11003225/files/Amazon2014Electronics_550_MMRec.zip"
-    )
+    URL = "https://zenodo.org/records/11003225/files/Amazon2014Electronics_550_MMRec.zip"
 
 
 # ===================================NextItemRecDataSset===================================

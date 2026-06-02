@@ -27,9 +27,7 @@ class Batcher_(PostProcessor):
         Whether to drop the last incomplete batch. Default is ``False``.
     """
 
-    def __init__(
-        self, source: PostProcessor, batch_size: int, drop_last: bool = False
-    ) -> None:
+    def __init__(self, source: PostProcessor, batch_size: int, drop_last: bool = False) -> None:
         r"""Initialize the Batcher_."""
         super().__init__(source)
 

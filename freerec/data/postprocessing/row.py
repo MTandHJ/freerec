@@ -49,9 +49,7 @@ class RowFilter(PostProcessor):
 
     def _check(self, row: Dict[Field, Any]) -> bool:
         r"""Return whether all checked fields pass the predicate."""
-        return all(
-            self.fn(field, row.get(field, None)) for field in self.checked_fields
-        )
+        return all(self.fn(field, row.get(field, None)) for field in self.checked_fields)
 
     def __iter__(self):
         r"""Yield rows that pass the filter."""

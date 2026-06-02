@@ -75,9 +75,7 @@ class SASRec(freerec.models.SeqRecArch):
 
         self.Position = nn.Embedding(maxlen, embedding_dim)
         self.embdDropout = nn.Dropout(p=dropout_rate)
-        self.register_buffer(
-            "positions", torch.tensor(range(0, maxlen), dtype=torch.long).unsqueeze(0)
-        )
+        self.register_buffer("positions", torch.tensor(range(0, maxlen), dtype=torch.long).unsqueeze(0))
 
         self.attnLNs = nn.ModuleList()  # to be Q for self-attention
         self.attnLayers = nn.ModuleList()
@@ -107,9 +105,7 @@ class SASRec(freerec.models.SeqRecArch):
         # False False False ...
         # ....
         # True indices that the corresponding position is not allowed to attend !
-        self.register_buffer(
-            "attnMask", torch.ones((maxlen, maxlen), dtype=torch.bool).triu(diagonal=1)
-        )
+        self.register_buffer("attnMask", torch.ones((maxlen, maxlen), dtype=torch.bool).triu(diagonal=1))
 
         if cfg.loss == "BCE":
             self.criterion = freerec.criterions.BCELoss4Logits(reduction="mean")
@@ -156,21 +152,14 @@ class SASRec(freerec.models.SeqRecArch):
     def after_one_block(self, seqs: torch.Tensor, padding_mask: torch.Tensor, l: int):
         # inputs: (B, S, D)
         Q = self.attnLNs[l](seqs)
-        seqs = (
-            self.attnLayers[l](
-                Q, seqs, seqs, attn_mask=self.attnMask, need_weights=False
-            )[0]
-            + seqs
-        )
+        seqs = self.attnLayers[l](Q, seqs, seqs, attn_mask=self.attnMask, need_weights=False)[0] + seqs
 
         seqs = self.fwdLNs[l](seqs)
         seqs = self.fwdLayers[l](seqs)
 
         return seqs.masked_fill(padding_mask, 0.0)
 
-    def encode(
-        self, data: Dict[freerec.data.fields.Field, torch.Tensor]
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    def encode(self, data: Dict[freerec.data.fields.Field, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
         seqs = data[self.ISeq]
         padding_mask = (seqs == self.PADDING_VALUE).unsqueeze(-1)
         seqs = self.Item.embeddings(seqs)  # (B, S) -> (B, S, D)
@@ -185,9 +174,7 @@ class SASRec(freerec.models.SeqRecArch):
 
         return userEmbds, self.Item.embeddings.weight[self.NUM_PADS :]
 
-    def fit(
-        self, data: Dict[freerec.data.fields.Field, torch.Tensor]
-    ) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
+    def fit(self, data: Dict[freerec.data.fields.Field, torch.Tensor]) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
         userEmbds, itemEmbds = self.encode(data)
         indices = data[self.ISeq] != self.PADDING_VALUE
         userEmbds = userEmbds[indices]  # (M, D)
@@ -201,9 +188,7 @@ class SASRec(freerec.models.SeqRecArch):
             if cfg.loss == "BCE":
                 posLabels = torch.ones_like(posLogits)
                 negLabels = torch.zeros_like(negLogits)
-                rec_loss = self.criterion(posLogits, posLabels) + self.criterion(
-                    negLogits, negLabels
-                )
+                rec_loss = self.criterion(posLogits, posLabels) + self.criterion(negLogits, negLabels)
             elif cfg.loss == "BPR":
                 rec_loss = self.criterion(posLogits, negLogits)
         elif cfg.loss == "CE":
@@ -213,16 +198,12 @@ class SASRec(freerec.models.SeqRecArch):
 
         return rec_loss
 
-    def recommend_from_full(
-        self, data: Dict[freerec.data.fields.Field, torch.Tensor]
-    ) -> torch.Tensor:
+    def recommend_from_full(self, data: Dict[freerec.data.fields.Field, torch.Tensor]) -> torch.Tensor:
         userEmbds, itemEmbds = self.encode(data)
         userEmbds = userEmbds[:, -1, :]  # (B, D)
         return torch.einsum("BD,ND->BN", userEmbds, itemEmbds)
 
-    def recommend_from_pool(
-        self, data: Dict[freerec.data.fields.Field, torch.Tensor]
-    ) -> torch.Tensor:
+    def recommend_from_pool(self, data: Dict[freerec.data.fields.Field, torch.Tensor]) -> torch.Tensor:
         userEmbds, itemEmbds = self.encode(data)
         userEmbds = userEmbds[:, -1, :]  # (B, D)
         itemEmbds = itemEmbds[data[self.IUnseen]]  # (B, K, D)
@@ -254,9 +235,7 @@ def main():
     try:
         dataset = getattr(freerec.data.datasets, cfg.dataset)(root=cfg.root)
     except AttributeError:
-        dataset = freerec.data.datasets.RecDataSet(
-            cfg.root, cfg.dataset, tasktag=cfg.tasktag
-        )
+        dataset = freerec.data.datasets.RecDataSet(cfg.root, cfg.dataset, tasktag=cfg.tasktag)
 
     model = SASRec(
         dataset,

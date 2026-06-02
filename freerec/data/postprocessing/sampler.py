@@ -187,9 +187,7 @@ class GenTrainNegativeSampler(GenTrainPositiveSampler):
         self.unseen_only = unseen_only
         super().__init__(source)
         self.num_negatives = num_negatives
-        self.need_vectorized_bsearch = (
-            self.num_negatives >= nums_need_vectorized_bsearch
-        )
+        self.need_vectorized_bsearch = self.num_negatives >= nums_need_vectorized_bsearch
 
     @timemeter
     def prepare(self):
@@ -400,9 +398,7 @@ class SeqTrainNegativeSampler(BaseSampler):
             # `vectorized_bsearch` would be faster
             # if more negatives are sampled at once
             if self.num_negatives > 1:
-                return negsamp_vectorized_bsearch(
-                    seen, self.Item.count, (len(positives), self.num_negatives)
-                )
+                return negsamp_vectorized_bsearch(seen, self.Item.count, (len(positives), self.num_negatives))
             else:
                 return negsamp_vectorized_bsearch(seen, self.Item.count, len(positives))
         else:
@@ -475,9 +471,7 @@ class ValidSampler(BaseSampler):
     ) -> None:
         r"""Initialize the ValidSampler."""
         super().__init__(source)
-        assert ranking in ("full", "pool"), (
-            f"`ranking` should be 'full' or 'pool' but {ranking} received ..."
-        )
+        assert ranking in ("full", "pool"), f"`ranking` should be 'full' or 'pool' but {ranking} received ..."
         self.sampling_neg = True if ranking == "pool" else False
         self.num_negatives = num_negatives
 
@@ -506,9 +500,7 @@ class ValidSampler(BaseSampler):
         idx = (user, k)
         if self.negItems.get(idx, None) is None:
             seen = sorted(set((positive,) + seen))
-            self.negItems[idx] = tuple(
-                negsamp_vectorized_bsearch(seen, self.Item.count, self.num_negatives)
-            )
+            self.negItems[idx] = tuple(negsamp_vectorized_bsearch(seen, self.Item.count, self.num_negatives))
         return self.negItems[idx]
 
     def _check(self, user: int) -> bool:

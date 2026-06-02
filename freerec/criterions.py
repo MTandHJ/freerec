@@ -34,9 +34,7 @@ class BaseCriterion(nn.Module):
         self.reduction = reduction
 
     @staticmethod
-    def regularize(
-        params: Union[torch.Tensor, Iterable[torch.Tensor]], rtype: str = "l2"
-    ):
+    def regularize(params: Union[torch.Tensor, Iterable[torch.Tensor]], rtype: str = "l2"):
         r"""Compute a regularization penalty over the given parameters.
 
         Parameters
@@ -271,9 +269,7 @@ class L1Loss(BaseCriterion):
         return F.l1_loss(inputs, targets, reduction=reduction)
 
 
-def cross_entropy_with_logits(
-    logits: torch.Tensor, targets: torch.Tensor, reduction: str = "mean"
-) -> torch.Tensor:
+def cross_entropy_with_logits(logits: torch.Tensor, targets: torch.Tensor, reduction: str = "mean") -> torch.Tensor:
     r"""Compute cross-entropy loss from unnormalized logits.
 
     Parameters
@@ -313,14 +309,10 @@ def binary_cross_entropy_with_logits(
     :class:`torch.Tensor`
         Computed loss.
     """
-    return F.binary_cross_entropy_with_logits(
-        logits, targets.to(logits.dtype), reduction=reduction
-    )
+    return F.binary_cross_entropy_with_logits(logits, targets.to(logits.dtype), reduction=reduction)
 
 
-def kl_div_loss_with_logits(
-    logits: torch.Tensor, targets: torch.Tensor, reduction: str = "batchmean"
-) -> torch.Tensor:
+def kl_div_loss_with_logits(logits: torch.Tensor, targets: torch.Tensor, reduction: str = "batchmean") -> torch.Tensor:
     r"""Compute KL divergence loss from unnormalized logits.
 
     Applies log-softmax to *logits* and softmax to *targets* before
@@ -347,9 +339,7 @@ def kl_div_loss_with_logits(
     return F.kl_div(inputs, targets, reduction=reduction)
 
 
-def bpr_loss_with_logits(
-    pos_scores: torch.Tensor, neg_scores: torch.Tensor, reduction: str = "mean"
-) -> torch.Tensor:
+def bpr_loss_with_logits(pos_scores: torch.Tensor, neg_scores: torch.Tensor, reduction: str = "mean") -> torch.Tensor:
     r"""Compute Bayesian Personalized Ranking loss.
 
     .. math::
@@ -386,6 +376,4 @@ def bpr_loss_with_logits(
     elif reduction == "sum":
         return loss.sum()
     else:
-        raise NotImplementedError(
-            f"reduction mode of '{reduction}' is not supported ..."
-        )
+        raise NotImplementedError(f"reduction mode of '{reduction}' is not supported ...")

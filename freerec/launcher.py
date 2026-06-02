@@ -151,9 +151,7 @@ class _DummyModule(torch.nn.Module):
 
     def step(self, *args, **kwargs):
         r"""Raise :class:`NotImplementedError`."""
-        raise NotImplementedError(
-            "No optimizer or lr scheduler available for Coach ..."
-        )
+        raise NotImplementedError("No optimizer or lr scheduler available for Coach ...")
 
     def backward(self, *args, **kwargs):
         r"""Raise :class:`NotImplementedError`."""
@@ -309,15 +307,9 @@ class ChiefCoach(metaclass=abc.ABCMeta):
                 rs = MultiProcessingReadingService(self.cfg.num_workers)
             return rs
 
-        self.trainloader = DataLoader2(
-            datapipe=self.trainpipe, reading_service=get_reading_service()
-        )
-        self.validloader = DataLoader2(
-            datapipe=self.validpipe, reading_service=get_reading_service()
-        )
-        self.testloader = DataLoader2(
-            datapipe=self.testpipe, reading_service=get_reading_service()
-        )
+        self.trainloader = DataLoader2(datapipe=self.trainpipe, reading_service=get_reading_service())
+        self.validloader = DataLoader2(datapipe=self.validpipe, reading_service=get_reading_service())
+        self.testloader = DataLoader2(datapipe=self.testpipe, reading_service=get_reading_service())
 
     def set_other(self):
         r"""Hook for additional setup. Override in subclasses."""
@@ -388,9 +380,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         epoch : int
             The current epoch number.
         """
-        raise NotImplementedError(
-            f"{self.__class__.__name__}.train_per_epoch() should be implemented ..."
-        )
+        raise NotImplementedError(f"{self.__class__.__name__}.train_per_epoch() should be implemented ...")
 
     @abc.abstractmethod
     def evaluate(self, epoch: int, step: int = -1, mode: str = "valid"):
@@ -405,9 +395,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         mode : str, optional
             One of ``'valid'`` or ``'test'``, by default ``'valid'``.
         """
-        raise NotImplementedError(
-            f"{self.__class__.__name__}.evaluate() should be implemented ..."
-        )
+        raise NotImplementedError(f"{self.__class__.__name__}.evaluate() should be implemented ...")
 
     def register_metric(
         self,
@@ -493,8 +481,7 @@ class ChiefCoach(metaclass=abc.ABCMeta):
 
         except KeyError:
             raise KeyError(
-                f"The metric of {lastname} is not included. "
-                f"You can register by calling `register_metric(...)' ..."
+                f"The metric of {lastname} is not included. You can register by calling `register_metric(...)' ..."
             )
         return meter
 
@@ -570,9 +557,7 @@ class Coach(ChiefCoach):
         """
         if is_main_process():
             filename = self.cfg.SAVED_FILENAME if filename is None else filename
-            torch.save(
-                self.model.state_dict(), os.path.join(self.cfg.LOG_PATH, filename)
-            )
+            torch.save(self.model.state_dict(), os.path.join(self.cfg.LOG_PATH, filename))
 
         synchronize()
         return
@@ -646,9 +631,7 @@ class Coach(ChiefCoach):
         start_epoch: int = 0
         if self.cfg.resume:
             start_epoch = self.load_checkpoint()
-            infoLogger(
-                f"[Coach] >>> Load last checkpoint and train from epoch: {start_epoch}"
-            )
+            infoLogger(f"[Coach] >>> Load last checkpoint and train from epoch: {start_epoch}")
         return start_epoch
 
     def save_best(self) -> None:
@@ -657,9 +640,7 @@ class Coach(ChiefCoach):
 
     def load_best(self) -> None:
         r"""Load the best saved model."""
-        infoLogger(
-            f"[Coach] >>> Load best model @Epoch: {self._best_epoch} ({self._best_step}) "
-        )
+        infoLogger(f"[Coach] >>> Load best model @Epoch: {self._best_epoch} ({self._best_step}) ")
         self.load(self.cfg.LOG_PATH, self.cfg.BEST_FILENAME)
 
     def check_best(self, epoch: int, step: int = -1) -> None:
@@ -684,9 +665,7 @@ class Coach(ChiefCoach):
                 self._best_epoch = epoch
                 self._best_step = step
                 self._stopping_steps = 0
-                infoLogger(
-                    f"[Coach] >>> Better ***{self.meter4best.name}*** of ***{self._best:.4f}*** "
-                )
+                infoLogger(f"[Coach] >>> Better ***{self.meter4best.name}*** of ***{self._best:.4f}*** ")
                 self.save_best()
             else:
                 if self._stopping_steps >= self._early_stop_patience:
@@ -726,9 +705,7 @@ class Coach(ChiefCoach):
 
         export_pickle(
             best,
-            os.path.join(
-                self.cfg.LOG_PATH, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME
-            ),
+            os.path.join(self.cfg.LOG_PATH, self.cfg.DATA_DIR, self.cfg.MONITOR_BEST_FILENAME),
         )
 
     @torch.no_grad()
@@ -838,9 +815,7 @@ class Coach(ChiefCoach):
                     if val != -1:  # Only save available data.
                         best[mode][meter.name] = val
 
-        file_ = os.path.join(
-            self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR, self.cfg.SUMMARY_FILENAME
-        )
+        file_ = os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR, self.cfg.SUMMARY_FILENAME)
         with open(file_, "w", encoding="utf8") as fh:
             fh.write(info)
 
@@ -848,9 +823,7 @@ class Coach(ChiefCoach):
         infoLogger(str(df))
         infoLogger(f"[LoG_PaTH] >>> {self.cfg.LOG_PATH}")
 
-        self.monitors.write(
-            os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR)
-        )  # tensorboard
+        self.monitors.write(os.path.join(self.cfg.LOG_PATH, self.cfg.SUMMARY_DIR))  # tensorboard
         self.monitors.save(
             os.path.join(self.cfg.LOG_PATH, self.cfg.DATA_DIR),
             self.cfg.MONITOR_FILENAME,
@@ -861,8 +834,7 @@ class Coach(ChiefCoach):
     def dict_to_device(self, data: Dict[Field, Any]) -> Dict[Field, Any]:
         r"""Move all :class:`torch.Tensor` values in a dict to the target device."""
         return {
-            field: value.to(self.device) if isinstance(value, torch.Tensor) else value
-            for field, value in data.items()
+            field: value.to(self.device) if isinstance(value, torch.Tensor) else value for field, value in data.items()
         }
 
     def evaluate(self, epoch: int, step: int = -1, mode: str = "valid"):
@@ -892,16 +864,9 @@ class Coach(ChiefCoach):
             if self.cfg.ranking == "full":
                 scores = self.model(data, ranking="full")
                 if self.remove_seen:
-                    seen = (
-                        self.Item.to_csr(data[self.ISeen])
-                        .to(self.device)
-                        .to_dense()
-                        .bool()
-                    )
+                    seen = self.Item.to_csr(data[self.ISeen]).to(self.device).to_dense().bool()
                     scores[seen] = -1e23
-                targets = (
-                    self.Item.to_csr(data[self.IUnseen]).to(self.device).to_dense()
-                )
+                targets = self.Item.to_csr(data[self.IUnseen]).to(self.device).to_dense()
             elif self.cfg.ranking == "pool":
                 scores = self.model(data, ranking="pool")
                 if self.Label in data:
@@ -910,9 +875,7 @@ class Coach(ChiefCoach):
                     targets = torch.zeros_like(scores)
                     targets[:, 0].fill_(1)
             else:
-                raise NotImplementedError(
-                    f"`ranking` should be 'full' or 'pool' but {self.cfg.ranking} received ..."
-                )
+                raise NotImplementedError(f"`ranking` should be 'full' or 'pool' but {self.cfg.ranking} received ...")
 
             if self.Label in data:
                 groups.extend(users)
@@ -929,12 +892,8 @@ class Coach(ChiefCoach):
             )
 
         # TODO: Multi GPUs Support
-        self.monitor(
-            y_pred, y_true, n=1, reduction="mean", mode=mode, pool=["LOGLOSS", "AUC"]
-        )
-        self.monitor(
-            y_pred, y_true, groups, n=1, reduction="mean", mode=mode, pool=["GAUC"]
-        )
+        self.monitor(y_pred, y_true, n=1, reduction="mean", mode=mode, pool=["LOGLOSS", "AUC"])
+        self.monitor(y_pred, y_true, groups, n=1, reduction="mean", mode=mode, pool=["GAUC"])
 
     @timemeter
     def train(self, epoch: int):
@@ -1153,11 +1112,7 @@ class Adapter:
         dict
             Filtered configuration for ``results.json``.
         """
-        return {
-            key: value
-            for key, value in config.items()
-            if key not in RESULTS_CONFIG_EXCLUDES
-        }
+        return {key: value for key, value in config.items() if key not in RESULTS_CONFIG_EXCLUDES}
 
     def write(self, id_: str, logPath: str, params: Dict):
         r"""Write experiment results to TensorBoard and ``results.json``.
@@ -1194,9 +1149,7 @@ class Adapter:
                 )
 
             # Append to results.json
-            results_path = os.path.join(
-                self.cfg.CORE_LOG_PATH, self.cfg.RESULTS_FILENAME
-            )
+            results_path = os.path.join(self.cfg.CORE_LOG_PATH, self.cfg.RESULTS_FILENAME)
             if os.path.exists(results_path):
                 with open(results_path, "r", encoding="utf8") as f:
                     results = json.load(f)
@@ -1232,9 +1185,7 @@ class Adapter:
     def product_grid(self):
         r"""Yield parameter dicts for full Cartesian-product grid search."""
         for vals in product(*self.values):
-            yield self.cfg.DEFAULTS | {
-                option: val for option, val in zip(self.params, vals)
-            }
+            yield self.cfg.DEFAULTS | {option: val for option, val in zip(self.params, vals)}
 
     def save_checkpoint(self, source: List) -> None:
         r"""Save remaining parameter combinations to a checkpoint."""

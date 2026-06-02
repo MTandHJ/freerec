@@ -106,9 +106,7 @@ class GRU4Rec(freerec.models.SeqRecArch):
             .valid_sampling_(ranking)
             .lprune_(maxlen, modified_fields=(self.ISeq,))
             .add_(self.NUM_PADS, modified_fields=(self.ISeq,))
-            .rpad_(
-                maxlen, modified_fields=(self.ISeq,), padding_value=self.PADDING_VALUE
-            )
+            .rpad_(maxlen, modified_fields=(self.ISeq,), padding_value=self.PADDING_VALUE)
             .batch_(batch_size)
             .tensor_()
         )
@@ -120,9 +118,7 @@ class GRU4Rec(freerec.models.SeqRecArch):
             .test_sampling_(ranking)
             .lprune_(maxlen, modified_fields=(self.ISeq,))
             .add_(self.NUM_PADS, modified_fields=(self.ISeq,))
-            .rpad_(
-                maxlen, modified_fields=(self.ISeq,), padding_value=self.PADDING_VALUE
-            )
+            .rpad_(maxlen, modified_fields=(self.ISeq,), padding_value=self.PADDING_VALUE)
             .batch_(batch_size)
             .tensor_()
         )
@@ -142,10 +138,7 @@ class GRU4Rec(freerec.models.SeqRecArch):
 
         userEmbds = gru_out.gather(
             dim=1,
-            index=mask.sum(1, keepdim=True)
-            .add(-1)
-            .clamp_min(0)
-            .expand((-1, 1, gru_out.size(-1))),
+            index=mask.sum(1, keepdim=True).add(-1).clamp_min(0).expand((-1, 1, gru_out.size(-1))),
             # clamp_min(0) used for empty sequence
         ).squeeze(1)  # (B, D)
 
@@ -166,9 +159,7 @@ class GRU4Rec(freerec.models.SeqRecArch):
                 posLabels = torch.ones_like(posLogits)
                 negLabels = torch.zeros_like(negLogits)
 
-                rec_loss = self.criterion(posLogits, posLabels) + self.criterion(
-                    negLogits, negLabels
-                )
+                rec_loss = self.criterion(posLogits, posLabels) + self.criterion(negLogits, negLabels)
             elif cfg.loss == "BPR":
                 rec_loss = self.criterion(posLogits, negLogits)
         elif cfg.loss == "CE":
@@ -214,9 +205,7 @@ def main():
     try:
         dataset = getattr(freerec.data.datasets, cfg.dataset)(root=cfg.root)
     except AttributeError:
-        dataset = freerec.data.datasets.RecDataSet(
-            cfg.root, cfg.dataset, tasktag=cfg.tasktag
-        )
+        dataset = freerec.data.datasets.RecDataSet(cfg.root, cfg.dataset, tasktag=cfg.tasktag)
 
     model = GRU4Rec(
         dataset,

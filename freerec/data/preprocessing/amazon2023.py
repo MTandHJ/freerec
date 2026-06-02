@@ -114,25 +114,19 @@ def extract_from_amazon2023(
     # interaction data
     ego_cols, cur_cols = list(inter_fields.keys()), list(inter_fields.values())
     inter_df = pd.DataFrame(
-        [
-            [row[key] for key in ego_cols]
-            for row in open_and_read_json_gz(root, review_file)
-        ],
+        [[row[key] for key in ego_cols] for row in open_and_read_json_gz(root, review_file)],
         columns=cur_cols,
     )
 
     # item meta data
     ego_cols, cur_cols = list(item_fields.keys()), list(item_fields.values())
     raw_meta = {
-        row["parent_asin"]: [row[key] for key in ego_cols]
-        + [row["details"].get("Brand", "")]
+        row["parent_asin"]: [row[key] for key in ego_cols] + [row["details"].get("Brand", "")]
         for row in open_and_read_json_gz(root, meta_file)
     }
     uniques = inter_df.groupby(ITEM.name).head(1)
     items, parents = uniques[ITEM.name], uniques["parent_asin"]
-    raw_item = [
-        [item_id] + raw_meta[parent_id] for (item_id, parent_id) in zip(items, parents)
-    ]
+    raw_item = [[item_id] + raw_meta[parent_id] for (item_id, parent_id) in zip(items, parents)]
     item_df = pd.DataFrame(raw_item, columns=[ITEM.name] + cur_cols + ["brand"])
 
     return inter_df, item_df

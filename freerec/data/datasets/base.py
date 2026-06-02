@@ -88,9 +88,7 @@ def safe_mode(*modes):
             if self.mode not in modes:
                 fname = f"\033[0m\033[0;31;47m{func.__name__}\033[0m\033[1;31m"
                 mode = f"\033[0m\033[0;31;47m{self.mode}\033[0m\033[1;31m"
-                warnLogger(
-                    f"{fname} runs in {mode} mode. Make sure that this is intentional ..."
-                )
+                warnLogger(f"{fname} runs in {mode} mode. Make sure that this is intentional ...")
             return func(self, *args, **kwargs)
 
         wrapper.__name__ == func.__name__
@@ -156,9 +154,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     DEFAULT_CHUNK_FILE = "p{chunk}.pkl"
     DEFAULT_CHUNK_SIZE = 256 * 512
     DEFAULT_CONFIG_FILE = "config.yaml"
-    STREAMING: bool = (
-        True  # if `False`, iter(dataset) will shuffle the saved chunks during training.
-    )
+    STREAMING: bool = True  # if `False`, iter(dataset) will shuffle the saved chunks during training.
 
     TASK: TaskTags
     URL: Optional[str] = None
@@ -184,9 +180,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         self.path = os.path.join(root, "Processed", filedir)
         if is_empty_dir(self.path):
             if download and self.URL is not None:
-                extract_archive(
-                    download_from_url(self.URL, root, overwrite=False), self.path
-                )
+                extract_archive(download_from_url(self.URL, root, overwrite=False), self.path)
             else:
                 raise FileNotFoundError(
                     f"No such file of {self.path}, or this dir is empty. \n"
@@ -219,8 +213,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
             cfg = import_yaml(cfg)
 
         self.cfg: Dict[str, Dict] = {
-            field_name.upper(): self.DEFAULT_FIELD_CONFIG | field_cfg
-            for field_name, field_cfg in cfg.items()
+            field_name.upper(): self.DEFAULT_FIELD_CONFIG | field_cfg for field_name, field_cfg in cfg.items()
         }
 
     def check(self):
@@ -267,9 +260,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         r"""Set the dataset fields."""
         self.__fields = FieldTuple(fields)
 
-    def build_fields(
-        self, columns: Iterable[str], *tags: FieldTags
-    ) -> FieldTuple[Field]:
+    def build_fields(self, columns: Iterable[str], *tags: FieldTags) -> FieldTuple[Field]:
         r"""Build :class:`~Field` objects from column names and optional tags.
 
         Parameters
@@ -288,9 +279,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         for colname in columns:
             field_cfg = self.cfg.get(colname, self.DEFAULT_FIELD_CONFIG).copy()
             private_tags = [FieldTags(tag) for tag in field_cfg.pop("tags")]
-            field = self.DEFAULT_FIELD_BUILDER.get(
-                colname, Field(colname, FEATURE)
-            ).fork(*tags, *private_tags)
+            field = self.DEFAULT_FIELD_BUILDER.get(colname, Field(colname, FEATURE)).fork(*tags, *private_tags)
             field.set_normalizer(**field_cfg)
             fields.append(field)
         return FieldTuple(fields)
@@ -305,9 +294,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         """
         self.rng.seed(seed)
 
-    def read_chunk(
-        self, fields: Iterable[Field], streaming: bool = True
-    ) -> Iterator[pl.DataFrame]:
+    def read_chunk(self, fields: Iterable[Field], streaming: bool = True) -> Iterator[pl.DataFrame]:
         r"""Yield chunks of data for the current mode.
 
         Parameters
@@ -351,9 +338,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
                 infoLogger(f"[DataSet] >>> Load Schema from {schema_file} ...")
                 schema = import_pickle(schema_file)
                 if sha1_hash != schema.get("sha1_hash", ""):
-                    infoLogger(
-                        "[DataSet] >>> Schema's sha1 hash value is not matched ..."
-                    )
+                    infoLogger("[DataSet] >>> Schema's sha1 hash value is not matched ...")
                     raise RecSetBuildingError
             else:
                 raise RecSetBuildingError
@@ -392,8 +377,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
 
                 for k, chunk in enumerate(df.iter_slices(self.DEFAULT_CHUNK_SIZE)):
                     chunk = chunk.with_columns(
-                        field.normalize(chunk.select(pl.col(field.name)))
-                        for field in schema["fields"]
+                        field.normalize(chunk.select(pl.col(field.name))) for field in schema["fields"]
                     )
                     export_pickle(
                         chunk.to_dict(as_series=False),
@@ -516,9 +500,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
             Each dict maps the same fields to a single value per row.
         """
         fields = coldata.keys()
-        return cls.listmap(
-            lambda values: dict(zip(fields, values)), zip(*coldata.values())
-        )
+        return cls.listmap(lambda values: dict(zip(fields, values)), zip(*coldata.values()))
 
     def __repr__(self) -> str:
         r"""Return a compact string representation."""
@@ -530,9 +512,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         cfg = " | ".join(map(str, self.fields))
         return f"[{self.__class__.__name__}] >>> " + cfg
 
-    def __getitem__(
-        self, fields: Union[Field, Iterable[Field]]
-    ) -> Optional[Dict[Field, List]]:
+    def __getitem__(self, fields: Union[Field, Iterable[Field]]) -> Optional[Dict[Field, List]]:
         r"""Retrieve full column data for the given fields.
 
         Parameters
@@ -564,9 +544,7 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
 
     def __iter__(self) -> Iterator[Dict[Field, Any]]:
         r"""Iterate over the dataset row by row for the current mode."""
-        for chunk in self.read_chunk(
-            self.fields, streaming=self.STREAMING or (self.mode != "train")
-        ):
+        for chunk in self.read_chunk(self.fields, streaming=self.STREAMING or (self.mode != "train")):
             yield from self.to_rows(chunk)
 
 
@@ -585,9 +563,7 @@ class RecDataSet(BaseSet):
         Item = self.fields[ITEM, ID]
         return self.to_rows(self[User, Item])
 
-    def to_seqs(
-        self, maxlen: Optional[int] = None
-    ) -> List[Dict[Field, Union[int, Tuple[int]]]]:
+    def to_seqs(self, maxlen: Optional[int] = None) -> List[Dict[Field, Union[int, Tuple[int]]]]:
         r"""Group interactions into per-user item sequences.
 
         Parameters
@@ -711,9 +687,7 @@ class RecDataSet(BaseSet):
 
     @safe_mode("train")
     @timemeter
-    def to_heterograph(
-        self, *edge_types: Tuple[Tuple[FieldTags], Optional[str], Tuple[FieldTags]]
-    ):
+    def to_heterograph(self, *edge_types: Tuple[Tuple[FieldTags], Optional[str], Tuple[FieldTags]]):
         r"""Convert the dataset to a heterogeneous graph.
 
         Parameters
@@ -766,9 +740,7 @@ class RecDataSet(BaseSet):
                 graph[node.name].x = torch.empty((node.count, 0), dtype=torch.long)
         for src, edge, dst in zip(srcs, edges, dsts):
             u, v = data[src], data[dst]
-            graph[src.name, edge, dst.name].edge_index = torch.stack(
-                (u, v), dim=0
-            )  # 2 x N
+            graph[src.name, edge, dst.name].edge_index = torch.stack((u, v), dim=0)  # 2 x N
         return graph.coalesce()
 
     def to_bigraph(
@@ -803,9 +775,7 @@ class RecDataSet(BaseSet):
         """
         return self.to_heterograph((src, edge_type, dst))
 
-    def to_graph(
-        self, src: Tuple[FieldTags] = (USER, ID), dst: Tuple[FieldTags] = (ITEM, ID)
-    ):
+    def to_graph(self, src: Tuple[FieldTags] = (USER, ID), dst: Tuple[FieldTags] = (ITEM, ID)):
         r"""Convert the dataset to an undirected homogeneous graph.
 
         Parameters
@@ -864,9 +834,7 @@ class RecDataSet(BaseSet):
 
         User = self.fields[src]
         Item = self.fields[dst]
-        edge_index, edge_weight = to_normalized(
-            self.to_graph(src, dst).edge_index, normalization=normalization
-        )
+        edge_index, edge_weight = to_normalized(self.to_graph(src, dst).edge_index, normalization=normalization)
         return to_adjacency(edge_index, edge_weight, num_nodes=User.count + Item.count)
 
     @safe_mode("valid", "test")
@@ -982,9 +950,7 @@ class RecDataSet(BaseSet):
         """
         from freerec.data.postprocessing.source import RandomShuffledSource
 
-        return RandomShuffledSource(
-            self, self.to_roll_seqs(minlen, maxlen, keep_at_least_itself)
-        )
+        return RandomShuffledSource(self, self.to_roll_seqs(minlen, maxlen, keep_at_least_itself))
 
     @safe_mode("valid", "test")
     def ordered_inter_source(self):
@@ -1059,8 +1025,7 @@ class MatchingRecDataSet(RecDataSet):
                 self.trainsize,
                 self.validsize,
                 self.testsize,
-                (self.trainsize + self.validsize + self.testsize)
-                / (User.count * Item.count),
+                (self.trainsize + self.validsize + self.testsize) / (User.count * Item.count),
             ]
         )
 
@@ -1100,8 +1065,7 @@ class NextItemRecDataSet(RecDataSet):
                 self.trainsize,
                 self.validsize,
                 self.testsize,
-                (self.trainsize + self.validsize + self.testsize)
-                / (User.count * Item.count),
+                (self.trainsize + self.validsize + self.testsize) / (User.count * Item.count),
             ]
         )
 

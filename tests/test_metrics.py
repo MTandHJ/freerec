@@ -82,9 +82,7 @@ class TestRootMSE:
     def test_none(self, regression_data):
         preds, targets = regression_data
         result = root_mse(preds, targets, reduction="none")
-        torch.testing.assert_close(
-            result, torch.tensor([0.5874, 0.5895]), atol=5e-5, rtol=0
-        )
+        torch.testing.assert_close(result, torch.tensor([0.5874, 0.5895]), atol=5e-5, rtol=0)
 
     def test_mean(self, regression_data):
         preds, targets = regression_data
@@ -123,9 +121,7 @@ class TestPrecision:
     def test_k3_none(self, ranking_data):
         preds, targets = ranking_data
         result = precision(preds, targets, k=3, reduction="none")
-        torch.testing.assert_close(
-            result, torch.tensor([0.3333, 0.6667]), atol=5e-5, rtol=0
-        )
+        torch.testing.assert_close(result, torch.tensor([0.3333, 0.6667]), atol=5e-5, rtol=0)
 
     def test_k3_mean(self, ranking_data):
         preds, targets = ranking_data
@@ -149,9 +145,7 @@ class TestF1Score:
     def test_k3_none(self, ranking_data):
         preds, targets = ranking_data
         result = f1_score(preds, targets, k=3, reduction="none")
-        torch.testing.assert_close(
-            result, torch.tensor([0.4000, 0.8000]), atol=5e-5, rtol=0
-        )
+        torch.testing.assert_close(result, torch.tensor([0.4000, 0.8000]), atol=5e-5, rtol=0)
 
     def test_k3_mean(self, ranking_data):
         preds, targets = ranking_data
@@ -175,9 +169,7 @@ class TestNormalizedDCG:
     def test_k3_none(self, ranking_data):
         preds, targets = ranking_data
         result = normalized_dcg(preds, targets, k=3, reduction="none")
-        torch.testing.assert_close(
-            result, torch.tensor([0.6131, 0.6934]), atol=5e-5, rtol=0
-        )
+        torch.testing.assert_close(result, torch.tensor([0.6131, 0.6934]), atol=5e-5, rtol=0)
 
     def test_k3_mean(self, ranking_data):
         preds, targets = ranking_data
@@ -201,9 +193,7 @@ class TestMeanAveragePrecision:
     def test_none(self, ranking_data):
         preds, targets = ranking_data
         result = mean_average_precision(preds, targets, reduction="none")
-        torch.testing.assert_close(
-            result, torch.tensor([0.7500, 0.5833]), atol=5e-5, rtol=0
-        )
+        torch.testing.assert_close(result, torch.tensor([0.7500, 0.5833]), atol=5e-5, rtol=0)
 
     def test_mean(self, ranking_data):
         preds, targets = ranking_data
@@ -216,9 +206,7 @@ class TestMeanAveragePrecision:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize(
-    "metric_fn", [recall, normalized_dcg, mean_reciprocal_rank, mean_average_precision]
-)
+@pytest.mark.parametrize("metric_fn", [recall, normalized_dcg, mean_reciprocal_rank, mean_average_precision])
 def test_all_zero_targets(metric_fn):
     """Metrics should return 0 when targets are all zeros."""
     preds = torch.tensor([[0.5, 0.3, 0.2]])

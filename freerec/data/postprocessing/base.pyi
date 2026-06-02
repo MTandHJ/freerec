@@ -118,9 +118,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'GenTrainNegativeSampler'
-    def gen_train_sampling_neg_(
-        self: T, num_negatives: int = 1, unseen_only: bool = True
-    ) -> T:
+    def gen_train_sampling_neg_(self: T, num_negatives: int = 1, unseen_only: bool = True) -> T:
         r"""Sampling negatives for each user.
 
         Parameters
@@ -186,9 +184,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'SeqTrainNegativeSampler'
-    def seq_train_sampling_neg_(
-        self: T, num_negatives: int = 1, unseen_only: bool = True
-    ) -> T:
+    def seq_train_sampling_neg_(self: T, num_negatives: int = 1, unseen_only: bool = True) -> T:
         r"""Sampling negatives for each positive.
 
         Parameters
@@ -435,9 +431,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'LeftPaddingRow'
-    def lpad_(
-        self: T, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0
-    ) -> T:
+    def lpad_(self: T, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0) -> T:
         r"""Left-pad sequences to a maximum length.
 
         Parameters
@@ -475,9 +469,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
         """
 
     # Functional form of 'RightPaddingRow'
-    def rpad_(
-        self: T, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0
-    ) -> T:
+    def rpad_(self: T, maxlen: int, modified_fields: Iterable[Field], padding_value: int = 0) -> T:
         r"""Right-pad sequences to a maximum length.
 
         Parameters
@@ -562,9 +554,7 @@ class BaseProcessor(dp.iter.IterDataPipe):
     # ========================================Functional forms from IterDataPipe========================================
 
     # Functional form of 'Batcher'
-    def batch(
-        self: T, batch_size: int, drop_last: bool = False, wrapper_class=DataChunk
-    ) -> T:
+    def batch(self: T, batch_size: int, drop_last: bool = False, wrapper_class=DataChunk) -> T:
         r"""
         Creates mini-batches of data (functional name: ``batch``). An outer dimension will be added as
         ``batch_size`` if ``drop_last`` is set to ``True``, or ``length % batch_size`` for the

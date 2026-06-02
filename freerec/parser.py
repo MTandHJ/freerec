@@ -287,12 +287,8 @@ class Parser(Config):
             default=None,
             help="weight for 'l1|l2|...' regularzation",
         )
-        self.add_argument(
-            "-lr", "--lr", "--LR", "--learning-rate", type=float, default=None
-        )
-        self.add_argument(
-            "-b", "--batch-size", type=int, default=None, help="batch size per device"
-        )
+        self.add_argument("-lr", "--lr", "--LR", "--learning-rate", type=float, default=None)
+        self.add_argument("-b", "--batch-size", type=int, default=None, help="batch size per device")
         self.add_argument("-gas", "--gradient-accumulation-steps", type=int, default=1)
         self.add_argument("--epochs", type=int, default=None)
 
@@ -309,9 +305,7 @@ class Parser(Config):
             default=False,
             help="if True, evaluate testset",
         )
-        self.add_argument(
-            "--eval-freq", type=int, default=5, help="the evaluation frequency"
-        )
+        self.add_argument("--eval-freq", type=int, default=5, help="the evaluation frequency")
         self.add_argument(
             "-esp",
             "--early-stop-patience",
@@ -321,9 +315,7 @@ class Parser(Config):
         )
 
         # Reproducibility
-        self.add_argument(
-            "--seed", type=int, default=1, help="calling --seed=-1 for a random seed"
-        )
+        self.add_argument("--seed", type=int, default=1, help="calling --seed=-1 for a random seed")
         self.add_argument(
             "--benchmark",
             action="store_true",
@@ -458,9 +450,7 @@ class Parser(Config):
                     self[key] = val
                 else:
                     self[key] = val
-                    warnLogger(
-                        f"Find an undefined parameter `{key}' in `{args.config}' ..."
-                    )
+                    warnLogger(f"Find an undefined parameter `{key}' in `{args.config}' ...")
         return self.parser.parse_args()
 
     @timemeter
@@ -492,9 +482,7 @@ class Parser(Config):
         )
 
         self.set_device(self.device)
-        set_logger(
-            path=self.LOG_PATH, log2file=self.log2file, log2console=self.log2console
-        )
+        set_logger(path=self.LOG_PATH, log2file=self.log2file, log2console=self.log2console)
 
         activate_benchmark(self.benchmark)
         self.seed = set_seed(self.seed)
@@ -578,9 +566,7 @@ class CoreParser(Config):
             raise ValueError(template)
         for key in ("root", "dataset", "device"):
             if self.ENVS.get(key, None) is None:
-                raise KeyError(
-                    f"No `{key}' is allocated, calling '--{key}' to specify it"
-                )
+                raise KeyError(f"No `{key}' is allocated, calling '--{key}' to specify it")
 
         self.ENVS = Config(self.ENVS)
         self.PARAMS = Config(self.PARAMS)

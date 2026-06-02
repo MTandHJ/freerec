@@ -30,8 +30,7 @@ class MultiHeadAttention(nn.Module):
         super(MultiHeadAttention, self).__init__()
         if hidden_size % n_heads != 0:
             raise ValueError(
-                "The hidden size (%d) is not a multiple of the number of attention "
-                "heads (%d)" % (hidden_size, n_heads)
+                "The hidden size (%d) is not a multiple of the number of attention heads (%d)" % (hidden_size, n_heads)
             )
 
         self.num_attention_heads = n_heads
@@ -63,15 +62,9 @@ class MultiHeadAttention(nn.Module):
         mixed_key_layer = self.key(input_tensor)  # (B, L, D)
         mixed_value_layer = self.value(input_tensor)  # (B, L, D)
 
-        query_layer = self.transpose_for_scores(mixed_query_layer).permute(
-            0, 2, 1, 3
-        )  # (B, H, L, D // H)
-        key_layer = self.transpose_for_scores(mixed_key_layer).permute(
-            0, 2, 3, 1
-        )  # (B, H, D // H, L)
-        value_layer = self.transpose_for_scores(mixed_value_layer).permute(
-            0, 2, 1, 3
-        )  # (B, H, L, D // H)
+        query_layer = self.transpose_for_scores(mixed_query_layer).permute(0, 2, 1, 3)  # (B, H, L, D // H)
+        key_layer = self.transpose_for_scores(mixed_key_layer).permute(0, 2, 3, 1)  # (B, H, D // H, L)
+        value_layer = self.transpose_for_scores(mixed_value_layer).permute(0, 2, 1, 3)  # (B, H, L, D // H)
 
         # Take the dot product between "query" and "key" to get the raw attention scores.
         attention_scores = torch.matmul(query_layer, key_layer)
@@ -111,9 +104,7 @@ class FeedForward(nn.Module):
 
     """
 
-    def __init__(
-        self, hidden_size, inner_size, hidden_dropout_prob, hidden_act, layer_norm_eps
-    ):
+    def __init__(self, hidden_size, inner_size, hidden_dropout_prob, hidden_act, layer_norm_eps):
         super(FeedForward, self).__init__()
         self.dense_1 = nn.Linear(hidden_size, inner_size)
         self.intermediate_act_fn = self.get_hidden_act(hidden_act)

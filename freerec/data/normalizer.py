@@ -33,9 +33,7 @@ def register_normalizer(normalizer: "Normalizer", name: Optional[str] = None):
         methods.
     """
     name = normalizer.__name__ if name is None else name
-    assert hasattr(normalizer, "partial_fit"), (
-        f"`partial_fit` method is not in `{name}`"
-    )
+    assert hasattr(normalizer, "partial_fit"), f"`partial_fit` method is not in `{name}`"
     assert hasattr(normalizer, "normalize"), f"`normalize` method is not in `{name}`"
     NORMALIZERS[name.upper()] = normalizer
     return normalizer

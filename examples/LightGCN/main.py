@@ -31,17 +31,11 @@ class LightGCN(freerec.models.GenRecArch):
 
         self.num_layers = cfg.num_layers
 
-        self.User.add_module(
-            "embeddings", nn.Embedding(self.User.count, cfg.embedding_dim)
-        )
+        self.User.add_module("embeddings", nn.Embedding(self.User.count, cfg.embedding_dim))
 
-        self.Item.add_module(
-            "embeddings", nn.Embedding(self.Item.count, cfg.embedding_dim)
-        )
+        self.Item.add_module("embeddings", nn.Embedding(self.Item.count, cfg.embedding_dim))
 
-        self.register_buffer(
-            "Adj", self.dataset.train().to_normalized_adj(normalization="sym")
-        )
+        self.register_buffer("Adj", self.dataset.train().to_normalized_adj(normalization="sym"))
 
         self.criterion = freerec.criterions.BPRLoss(reduction="mean")
 
@@ -70,9 +64,7 @@ class LightGCN(freerec.models.GenRecArch):
         )
 
     def encode(self) -> Tuple[torch.Tensor, torch.Tensor]:
-        allEmbds = torch.cat(
-            (self.User.embeddings.weight, self.Item.embeddings.weight), dim=0
-        )  # (N, D)
+        allEmbds = torch.cat((self.User.embeddings.weight, self.Item.embeddings.weight), dim=0)  # (N, D)
         avgEmbds = allEmbds / (self.num_layers + 1)
         for _ in range(self.num_layers):
             allEmbds = self.Adj @ allEmbds
@@ -171,9 +163,7 @@ def main():
     try:
         dataset = getattr(freerec.data.datasets, cfg.dataset)(root=cfg.root)
     except AttributeError:
-        dataset = freerec.data.datasets.RecDataSet(
-            cfg.root, cfg.dataset, tasktag=cfg.tasktag
-        )
+        dataset = freerec.data.datasets.RecDataSet(cfg.root, cfg.dataset, tasktag=cfg.tasktag)
 
     model = LightGCN(dataset)
 

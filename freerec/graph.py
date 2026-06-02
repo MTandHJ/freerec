@@ -63,9 +63,7 @@ def to_adjacency(
     if edge_weight is None:
         edge_weight = torch.ones_like(edge_index[0], dtype=torch.float)
 
-    return torch.sparse_coo_tensor(
-        edge_index.clone(), edge_weight.clone(), size=(num_nodes, num_nodes)
-    ).to_sparse_csr()
+    return torch.sparse_coo_tensor(edge_index.clone(), edge_weight.clone(), size=(num_nodes, num_nodes)).to_sparse_csr()
 
 
 def to_normalized(
@@ -132,16 +130,12 @@ def to_normalized(
         col_inv.masked_fill_(torch.isinf(col_inv), 0.0)
         edge_weight = edge_weight * col_inv[col]
     else:
-        raise NotImplementedError(
-            "Normalization should be in 'sym', 'left' or 'right' ..."
-        )
+        raise NotImplementedError("Normalization should be in 'sym', 'left' or 'right' ...")
 
     return edge_index, edge_weight
 
 
-def get_knn_graph(
-    sim_mat: torch.Tensor, k: int, symmetric: bool = True, reduce: str = "max"
-):
+def get_knn_graph(sim_mat: torch.Tensor, k: int, symmetric: bool = True, reduce: str = "max"):
     r"""Construct a k-nearest-neighbor graph from a similarity matrix.
 
     For each row of *sim_mat* the top-*k* entries are selected.  Optionally
@@ -182,8 +176,6 @@ def get_knn_graph(
 
     if symmetric:
         assert M == N, "`symmetric == True` but `sim_mat` is not a square matrix ..."
-        edge_index, edge_weight = to_undirected(
-            edge_index, edge_attr=edge_weight, reduce=reduce
-        )
+        edge_index, edge_weight = to_undirected(edge_index, edge_attr=edge_weight, reduce=reduce)
 
     return edge_index, edge_weight

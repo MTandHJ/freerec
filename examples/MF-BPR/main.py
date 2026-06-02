@@ -24,9 +24,7 @@ cfg.compile()
 
 
 class MF(freerec.models.GenRecArch):
-    def __init__(
-        self, dataset: freerec.data.datasets.RecDataSet, embedding_dim: int = 64
-    ) -> None:
+    def __init__(self, dataset: freerec.data.datasets.RecDataSet, embedding_dim: int = 64) -> None:
         super().__init__(dataset)
 
         self.User.add_module("embeddings", nn.Embedding(self.User.count, embedding_dim))
@@ -125,9 +123,7 @@ def main():
     try:
         dataset = getattr(freerec.data.datasets, cfg.dataset)(root=cfg.root)
     except AttributeError:
-        dataset = freerec.data.datasets.RecDataSet(
-            cfg.root, cfg.dataset, tasktag=cfg.tasktag
-        )
+        dataset = freerec.data.datasets.RecDataSet(cfg.root, cfg.dataset, tasktag=cfg.tasktag)
 
     model = MF(dataset, embedding_dim=cfg.embedding_dim)
     trainpipe = model.sure_trainpipe(cfg.batch_size)

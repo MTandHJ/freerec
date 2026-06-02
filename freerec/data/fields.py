@@ -64,9 +64,7 @@ class Field:
         r"""Initialize field with a name and tags."""
         self.__name = str(name)
         self.__tags = set(tags)
-        self.__identifier = (name,) + tuple(
-            sorted(self.__tags, key=lambda tag: tag.value)
-        )
+        self.__identifier = (name,) + tuple(sorted(self.__tags, key=lambda tag: tag.value))
         self.__hash_value = hash(self.identifier)
         self.count = None
 
@@ -204,16 +202,12 @@ class Field:
 
     def __str__(self) -> str:
         r"""Return a concise string of the form ``name:count:TAG1,TAG2``."""
-        return (
-            f"{self.name}:{self.count}:{','.join(map(lambda tag: tag.name, self.tags))}"
-        )
+        return f"{self.name}:{self.count}:{','.join(map(lambda tag: tag.name, self.tags))}"
 
     def set_normalizer(
         self,
         dtype: Union[None, str, pl.DataType] = None,
-        fill_null_strategy: Literal[
-            "forward", "backward", "min", "max", "zero", "one"
-        ] = "zero",
+        fill_null_strategy: Literal["forward", "backward", "min", "max", "zero", "one"] = "zero",
         normalizer: Union[None, Literal["standard", "minmax", "reindex"]] = None,
         **kwargs,
     ):
@@ -278,9 +272,7 @@ class Field:
             data = data.fill_null(strategy=self._fill_null_strategy)
             return data
 
-    def fit(
-        self, data: Union[pl.Series, pl.DataFrame, pl.LazyFrame], partial: bool = True
-    ) -> pl.Series:
+    def fit(self, data: Union[pl.Series, pl.DataFrame, pl.LazyFrame], partial: bool = True) -> pl.Series:
         r"""Fit the normalizer on *data* and return the cast series.
 
         Parameters
@@ -623,9 +615,7 @@ class FieldModuleList(torch.nn.ModuleList):
     def __init__(self, fields: Iterable[FieldModule]) -> None:
         r"""Initialize with an iterable of :class:`~FieldModule` instances."""
         super().__init__(fields)
-        assert all(isinstance(field, FieldModule) for field in self), (
-            "'FieldModuleList' receives 'FieldModule' only ..."
-        )
+        assert all(isinstance(field, FieldModule) for field in self), "'FieldModuleList' receives 'FieldModule' only ..."
 
     def match(self, *tags: FieldTags) -> "FieldModuleList":
         r"""Return field modules that match all given tags.
@@ -703,9 +693,7 @@ class FieldModuleList(torch.nn.ModuleList):
         AssertionError
             If *field* is not a :class:`~FieldModule`.
         """
-        assert isinstance(field, FieldModule), (
-            "'FieldModuleList' receives 'FieldModule' only ..."
-        )
+        assert isinstance(field, FieldModule), "'FieldModuleList' receives 'FieldModule' only ..."
         return super().insert(index, field)
 
     def append(self, field: FieldModule) -> "FieldModuleList":
@@ -726,9 +714,7 @@ class FieldModuleList(torch.nn.ModuleList):
         AssertionError
             If *field* is not a :class:`~FieldModule`.
         """
-        assert isinstance(field, FieldModule), (
-            "'FieldModuleList' receives 'FieldModule' only ..."
-        )
+        assert isinstance(field, FieldModule), "'FieldModuleList' receives 'FieldModule' only ..."
         return super().append(field)
 
     def extend(self, fields: Iterable[FieldModule]) -> "FieldModuleList":
