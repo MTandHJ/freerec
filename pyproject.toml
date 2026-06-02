@@ -59,7 +59,7 @@ freerec = "freerec.__main__:main"
 Homepage = "https://github.com/MTandHJ/freerec"
 
 [tool.ruff]
-line-length = 121
+line-length = 101
 target-version = "py39"
 
 [tool.ruff.lint]

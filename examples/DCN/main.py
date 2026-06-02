@@ -132,7 +132,9 @@ class DCN(freerec.models.PredRecArch):
     def sure_trainpipe(self, batch_size: int):
         return self.dataset.train().shuffled_inter_source().batch_(batch_size).tensor_()
 
-    def encode(self, data: Dict[freerec.data.fields.Field, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
+    def encode(
+        self, data: Dict[freerec.data.fields.Field, torch.Tensor]
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         embeddings = torch.cat(
             [field.embeddings(data[field]).flatten(1) for field in self.input_fields],
             dim=-1,
@@ -213,7 +215,9 @@ class CoachForDCN(freerec.launcher.Coach):
 def main():
 
     try:
-        dataset = getattr(freerec.data.datasets, cfg.dataset)(root=cfg.root, cfg=cfg.get("fields", None))
+        dataset = getattr(freerec.data.datasets, cfg.dataset)(
+            root=cfg.root, cfg=cfg.get("fields", None)
+        )
     except AttributeError:
         dataset = freerec.data.datasets.PredictionRecDataSet(
             cfg.root, cfg.dataset, tasktag=cfg.tasktag, cfg=cfg.get("fields", None)

@@ -272,7 +272,9 @@ class Field:
             data = data.fill_null(strategy=self._fill_null_strategy)
             return data
 
-    def fit(self, data: Union[pl.Series, pl.DataFrame, pl.LazyFrame], partial: bool = True) -> pl.Series:
+    def fit(
+        self, data: Union[pl.Series, pl.DataFrame, pl.LazyFrame], partial: bool = True
+    ) -> pl.Series:
         r"""Fit the normalizer on *data* and return the cast series.
 
         Parameters
@@ -615,7 +617,9 @@ class FieldModuleList(torch.nn.ModuleList):
     def __init__(self, fields: Iterable[FieldModule]) -> None:
         r"""Initialize with an iterable of :class:`~FieldModule` instances."""
         super().__init__(fields)
-        assert all(isinstance(field, FieldModule) for field in self), "'FieldModuleList' receives 'FieldModule' only ..."
+        assert all(isinstance(field, FieldModule) for field in self), (
+            "'FieldModuleList' receives 'FieldModule' only ..."
+        )
 
     def match(self, *tags: FieldTags) -> "FieldModuleList":
         r"""Return field modules that match all given tags.

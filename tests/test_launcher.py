@@ -159,7 +159,9 @@ class TestAdapterResults:
         monkeypatch.setattr("freerec.launcher.SummaryWriter", DummySummaryWriter)
 
         core_log_path = tmp_path / "logs" / "eval_BERT4Rec" / "core"
-        run_log_path = tmp_path / "logs" / "eval_BERT4Rec" / "Amazon2014Beauty_550_LOU" / "0426200647"
+        run_log_path = (
+            tmp_path / "logs" / "eval_BERT4Rec" / "Amazon2014Beauty_550_LOU" / "0426200647"
+        )
         (run_log_path / "data").mkdir(parents=True)
         core_log_path.mkdir(parents=True)
 
@@ -255,7 +257,9 @@ class TestAdapterResults:
         monkeypatch.setattr("freerec.launcher.SummaryWriter", DummySummaryWriter)
 
         core_log_path = tmp_path / "logs" / "eval_BERT4Rec" / "core"
-        run_log_path = tmp_path / "logs" / "eval_BERT4Rec" / "Amazon2014Beauty_550_LOU" / "0426200648"
+        run_log_path = (
+            tmp_path / "logs" / "eval_BERT4Rec" / "Amazon2014Beauty_550_LOU" / "0426200648"
+        )
         (run_log_path / "data").mkdir(parents=True)
         core_log_path.mkdir(parents=True)
         export_pickle(

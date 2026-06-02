@@ -159,7 +159,9 @@ class GRU4Rec(freerec.models.SeqRecArch):
                 posLabels = torch.ones_like(posLogits)
                 negLabels = torch.zeros_like(negLogits)
 
-                rec_loss = self.criterion(posLogits, posLabels) + self.criterion(negLogits, negLabels)
+                rec_loss = self.criterion(posLogits, posLabels) + self.criterion(
+                    negLogits, negLabels
+                )
             elif cfg.loss == "BPR":
                 rec_loss = self.criterion(posLogits, negLogits)
         elif cfg.loss == "CE":

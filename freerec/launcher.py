@@ -307,8 +307,12 @@ class ChiefCoach(metaclass=abc.ABCMeta):
                 rs = MultiProcessingReadingService(self.cfg.num_workers)
             return rs
 
-        self.trainloader = DataLoader2(datapipe=self.trainpipe, reading_service=get_reading_service())
-        self.validloader = DataLoader2(datapipe=self.validpipe, reading_service=get_reading_service())
+        self.trainloader = DataLoader2(
+            datapipe=self.trainpipe, reading_service=get_reading_service()
+        )
+        self.validloader = DataLoader2(
+            datapipe=self.validpipe, reading_service=get_reading_service()
+        )
         self.testloader = DataLoader2(datapipe=self.testpipe, reading_service=get_reading_service())
 
     def set_other(self):
@@ -380,7 +384,9 @@ class ChiefCoach(metaclass=abc.ABCMeta):
         epoch : int
             The current epoch number.
         """
-        raise NotImplementedError(f"{self.__class__.__name__}.train_per_epoch() should be implemented ...")
+        raise NotImplementedError(
+            f"{self.__class__.__name__}.train_per_epoch() should be implemented ..."
+        )
 
     @abc.abstractmethod
     def evaluate(self, epoch: int, step: int = -1, mode: str = "valid"):
@@ -665,7 +671,9 @@ class Coach(ChiefCoach):
                 self._best_epoch = epoch
                 self._best_step = step
                 self._stopping_steps = 0
-                infoLogger(f"[Coach] >>> Better ***{self.meter4best.name}*** of ***{self._best:.4f}*** ")
+                infoLogger(
+                    f"[Coach] >>> Better ***{self.meter4best.name}*** of ***{self._best:.4f}*** "
+                )
                 self.save_best()
             else:
                 if self._stopping_steps >= self._early_stop_patience:
@@ -834,7 +842,8 @@ class Coach(ChiefCoach):
     def dict_to_device(self, data: Dict[Field, Any]) -> Dict[Field, Any]:
         r"""Move all :class:`torch.Tensor` values in a dict to the target device."""
         return {
-            field: value.to(self.device) if isinstance(value, torch.Tensor) else value for field, value in data.items()
+            field: value.to(self.device) if isinstance(value, torch.Tensor) else value
+            for field, value in data.items()
         }
 
     def evaluate(self, epoch: int, step: int = -1, mode: str = "valid"):
@@ -875,7 +884,9 @@ class Coach(ChiefCoach):
                     targets = torch.zeros_like(scores)
                     targets[:, 0].fill_(1)
             else:
-                raise NotImplementedError(f"`ranking` should be 'full' or 'pool' but {self.cfg.ranking} received ...")
+                raise NotImplementedError(
+                    f"`ranking` should be 'full' or 'pool' but {self.cfg.ranking} received ..."
+                )
 
             if self.Label in data:
                 groups.extend(users)
@@ -1037,7 +1048,9 @@ class Adapter:
             self.cfg.DEFAULTS[key] = val
             defaults += piece.format(key=key, vals=val)
 
-        cfg_infos = f"command: {self.cfg.COMMAND} \nenvs: \n{envs}params: \n{params}defaults: \n{defaults}"
+        cfg_infos = (
+            f"command: {self.cfg.COMMAND} \nenvs: \n{envs}params: \n{params}defaults: \n{defaults}"
+        )
         infoLogger(f"\033[0;31;47m{cfg_infos}\033[0m")
 
     def deploy_params(self, key: str, vals: Iterable):

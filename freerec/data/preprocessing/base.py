@@ -165,7 +165,9 @@ class AtomicConverter:
                         self.path,
                     )
                 except KeyError:
-                    raise FileNotFoundError(f"No such file of {self.path} and no such dataset {self.dataset} online...")
+                    raise FileNotFoundError(
+                        f"No such file of {self.path} and no such dataset {self.dataset} online..."
+                    )
 
         self.dataset = dataset if dataset else self.__class__.__name__
 
@@ -327,7 +329,9 @@ class AtomicConverter:
             if df is not None:
                 df[col] = df[col].map(mapper)
 
-    def filter_by_rating(self, low: Union[None, int, float] = None, high: Union[None, int, float] = None):
+    def filter_by_rating(
+        self, low: Union[None, int, float] = None, high: Union[None, int, float] = None
+    ):
         r"""Filter interactions by rating range.
 
         Parameters
@@ -345,7 +349,9 @@ class AtomicConverter:
             self.interactions = df[(low <= ratings) & (ratings <= high)]
             infoLogger(f"[Converter] >>> Filter dataframe according to {RATING.name} ...")
         except KeyError:
-            infoLogger(f"[Converter] >>> Skip `filter_by_rating` because of `inter` has no field of `{RATING.name}' ...")
+            infoLogger(
+                f"[Converter] >>> Skip `filter_by_rating` because of `inter` has no field of `{RATING.name}' ..."
+            )
 
     def filter_by_core(
         self,
@@ -633,7 +639,8 @@ class AtomicConverter:
         # Split interactions into train, validation, and test sets based on user timestamps
         traingroups = user_timestamps[user_timestamps < (last_date - 2 * seconds)].index
         validgroups = user_timestamps[
-            (user_timestamps >= (last_date - 2 * seconds)) & (user_timestamps < (last_date - seconds))
+            (user_timestamps >= (last_date - 2 * seconds))
+            & (user_timestamps < (last_date - seconds))
         ].index
         testgroups = user_timestamps[user_timestamps >= (last_date - seconds)].index
 
@@ -686,9 +693,15 @@ class AtomicConverter:
     def resort_iters(self):
         r"""Re-sort train, valid, and test splits by user and timestamp."""
         infoLogger("[Converter] >>> Resort for train|valid|test iters ...")
-        self.trainiter = self.sort_by_timestamp(self.trainiter.reset_index(drop=True), master=USER.name)
-        self.validiter = self.sort_by_timestamp(self.validiter.reset_index(drop=True), master=USER.name)
-        self.testiter = self.sort_by_timestamp(self.testiter.reset_index(drop=True), master=USER.name)
+        self.trainiter = self.sort_by_timestamp(
+            self.trainiter.reset_index(drop=True), master=USER.name
+        )
+        self.validiter = self.sort_by_timestamp(
+            self.validiter.reset_index(drop=True), master=USER.name
+        )
+        self.testiter = self.sort_by_timestamp(
+            self.testiter.reset_index(drop=True), master=USER.name
+        )
 
     def save(self, path: str):
         r"""Save train/valid/test splits and optional feature files to disk.
@@ -766,7 +779,9 @@ class AtomicConverter:
         NotImplementedError
             If *splitting* is not one of the supported strategies.
         """
-        assert len(ratios) == 3, f"'ratios' should in length of 3 but a length of {len(ratios)} is received ..."
+        assert len(ratios) == 3, (
+            f"'ratios' should in length of 3 but a length of {len(ratios)} is received ..."
+        )
         self.load()
         self.filter_by_rating(low=star4pos, high=None)
         self.filter_by_core(low4user=kcore4user, low4item=kcore4item, strict=strict)
@@ -798,7 +813,9 @@ class AtomicConverter:
         r"""Print a summary table of dataset statistics."""
         from prettytable import PrettyTable
 
-        table = PrettyTable(["#User", "#Item", "#Interactions", "#Train", "#Valid", "#Test", "Density"])
+        table = PrettyTable(
+            ["#User", "#Item", "#Interactions", "#Train", "#Valid", "#Test", "Density"]
+        )
         trainsize = len(self.trainiter)
         validsize = len(self.validiter)
         testsize = len(self.testiter)

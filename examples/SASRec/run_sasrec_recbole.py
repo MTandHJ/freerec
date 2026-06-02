@@ -141,7 +141,9 @@ class SASRec(freerec.models.SeqRecArch):
         attention_mask = torch.where(attention_mask, 0.0, -1.0e4)
         return attention_mask
 
-    def encode(self, data: Dict[freerec.data.fields.Field, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
+    def encode(
+        self, data: Dict[freerec.data.fields.Field, torch.Tensor]
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         seqs = data[self.ISeq]
         attention_mask = self.extend_attention_mask(seqs)
 
@@ -155,7 +157,9 @@ class SASRec(freerec.models.SeqRecArch):
 
         return seqs, self.Item.embeddings.weight[self.NUM_PADS :]
 
-    def fit(self, data: Dict[freerec.data.fields.Field, torch.Tensor]) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
+    def fit(
+        self, data: Dict[freerec.data.fields.Field, torch.Tensor]
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
         userEmbds, itemEmbds = self.encode(data)
         indices = data[self.ISeq] != self.PADDING_VALUE
         userEmbds = userEmbds[indices]  # (M, D)
@@ -169,7 +173,9 @@ class SASRec(freerec.models.SeqRecArch):
             if cfg.loss == "BCE":
                 posLabels = torch.ones_like(posLogits)
                 negLabels = torch.zeros_like(negLogits)
-                rec_loss = self.criterion(posLogits, posLabels) + self.criterion(negLogits, negLabels)
+                rec_loss = self.criterion(posLogits, posLabels) + self.criterion(
+                    negLogits, negLabels
+                )
             elif cfg.loss == "BPR":
                 rec_loss = self.criterion(posLogits, negLogits)
         elif cfg.loss == "CE":
@@ -179,12 +185,16 @@ class SASRec(freerec.models.SeqRecArch):
 
         return rec_loss
 
-    def recommend_from_full(self, data: Dict[freerec.data.fields.Field, torch.Tensor]) -> torch.Tensor:
+    def recommend_from_full(
+        self, data: Dict[freerec.data.fields.Field, torch.Tensor]
+    ) -> torch.Tensor:
         userEmbds, itemEmbds = self.encode(data)
         userEmbds = userEmbds[:, -1, :]  # (B, D)
         return torch.einsum("BD,ND->BN", userEmbds, itemEmbds)
 
-    def recommend_from_pool(self, data: Dict[freerec.data.fields.Field, torch.Tensor]) -> torch.Tensor:
+    def recommend_from_pool(
+        self, data: Dict[freerec.data.fields.Field, torch.Tensor]
+    ) -> torch.Tensor:
         userEmbds, itemEmbds = self.encode(data)
         userEmbds = userEmbds[:, -1, :]  # (B, D)
         itemEmbds = itemEmbds[data[self.IUnseen]]  # (B, K, D)

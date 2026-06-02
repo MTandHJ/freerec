@@ -116,7 +116,9 @@ def download_from_url(
     if filename is None:
         filename = url.split("/")[-1]
         # Empty filenames are invalid
-        assert filename, "Can't construct file-name from this URL. Please set the `filename` option manually."
+        assert filename, (
+            "Can't construct file-name from this URL. Please set the `filename` option manually."
+        )
     file_ = os.path.join(root, filename)
 
     assert retries >= 0, "Number of retries should be at least 0"
@@ -143,7 +145,9 @@ def download_from_url(
                     raise RuntimeError("Failed downloading url %s" % url)
                 with open(file_, "wb") as f:
                     if log:
-                        progress_bar = tqdm.tqdm(total=filesize, unit="B", unit_scale=True, desc="վ'ᴗ' ի-")
+                        progress_bar = tqdm.tqdm(
+                            total=filesize, unit="B", unit_scale=True, desc="վ'ᴗ' ի-"
+                        )
                         for chunk in r.iter_content(chunk_size=chunk_size):
                             if chunk:  # filter out keep-alive new chunks
                                 progress_bar.update(len(chunk))

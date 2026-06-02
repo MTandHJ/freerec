@@ -64,7 +64,9 @@ class LightGCN(freerec.models.GenRecArch):
         )
 
     def encode(self) -> Tuple[torch.Tensor, torch.Tensor]:
-        allEmbds = torch.cat((self.User.embeddings.weight, self.Item.embeddings.weight), dim=0)  # (N, D)
+        allEmbds = torch.cat(
+            (self.User.embeddings.weight, self.Item.embeddings.weight), dim=0
+        )  # (N, D)
         avgEmbds = allEmbds / (self.num_layers + 1)
         for _ in range(self.num_layers):
             allEmbds = self.Adj @ allEmbds

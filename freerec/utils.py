@@ -58,7 +58,9 @@ class AverageMeter:
 
     def __init__(self, name: str, metric: Callable, fmt: str = ".5f", best_caster: Callable = max):
         r"""Initialize the meter."""
-        assert isinstance(metric, Callable), f"metric should be Callable but {type(metric)} received ..."
+        assert isinstance(metric, Callable), (
+            f"metric should be Callable but {type(metric)} received ..."
+        )
         self.name = name
         self.fmt = fmt
         self.caster = best_caster
@@ -453,8 +455,8 @@ def set_logger(path: str, log2file: bool = True, log2console: bool = True) -> No
             return
 
         debugLogger(
-            "[FreeRec] >>> Unhandled exception:\n%s" %
-            "".join(traceback.format_exception(exc_type, exc, tb))
+            "[FreeRec] >>> Unhandled exception:\n%s"
+            % "".join(traceback.format_exception(exc_type, exc, tb))
         )
         sys.__excepthook__(exc_type, exc, tb)
 

@@ -63,7 +63,9 @@ def to_adjacency(
     if edge_weight is None:
         edge_weight = torch.ones_like(edge_index[0], dtype=torch.float)
 
-    return torch.sparse_coo_tensor(edge_index.clone(), edge_weight.clone(), size=(num_nodes, num_nodes)).to_sparse_csr()
+    return torch.sparse_coo_tensor(
+        edge_index.clone(), edge_weight.clone(), size=(num_nodes, num_nodes)
+    ).to_sparse_csr()
 
 
 def to_normalized(

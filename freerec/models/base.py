@@ -305,7 +305,13 @@ class GenRecArch(RecSysArch):
         :class:`~PostProcessor`
             The configured validation post-processor.
         """
-        return self.dataset.valid().ordered_user_ids_source().valid_sampling_(ranking).batch_(batch_size).tensor_()
+        return (
+            self.dataset.valid()
+            .ordered_user_ids_source()
+            .valid_sampling_(ranking)
+            .batch_(batch_size)
+            .tensor_()
+        )
 
     def sure_testpipe(self, ranking: str = "full", batch_size: int = 512) -> PostProcessor:
         r"""Return the test data pipeline.
@@ -322,7 +328,13 @@ class GenRecArch(RecSysArch):
         :class:`~PostProcessor`
             The configured test post-processor.
         """
-        return self.dataset.test().ordered_user_ids_source().test_sampling_(ranking).batch_(batch_size).tensor_()
+        return (
+            self.dataset.test()
+            .ordered_user_ids_source()
+            .test_sampling_(ranking)
+            .batch_(batch_size)
+            .tensor_()
+        )
 
 
 class SeqRecArch(RecSysArch):

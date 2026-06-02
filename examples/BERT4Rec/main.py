@@ -61,7 +61,9 @@ class BERT4Rec(freerec.models.SeqRecArch):
 
         self.Position = nn.Embedding(maxlen, embedding_dim)
         self.embdDropout = nn.Dropout(p=dropout_rate)
-        self.register_buffer("positions", torch.tensor(range(0, maxlen), dtype=torch.long).unsqueeze(0))
+        self.register_buffer(
+            "positions", torch.tensor(range(0, maxlen), dtype=torch.long).unsqueeze(0)
+        )
 
         self.layernorm = nn.LayerNorm(embedding_dim)
         self.dropout = nn.Dropout(dropout_rate)

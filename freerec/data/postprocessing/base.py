@@ -261,7 +261,9 @@ class SampleMultiplexer(IterDataPipe):
                 raise ValueError(f"Expecting a positive and non-zero weight, got {v}")
             total_weight += v
 
-        self.pipes_and_weights = tuple([(k, v / total_weight) for k, v in pipes_to_weights_dict.items()])
+        self.pipes_and_weights = tuple(
+            [(k, v / total_weight) for k, v in pipes_to_weights_dict.items()]
+        )
 
         self._rng = random.Random()
         self.set_seed(0)
@@ -292,7 +294,9 @@ class SampleMultiplexer(IterDataPipe):
                         # remove the current stream
                         new_total = 1 - weight
                         assert new_total > 0
-                        pipes_and_weights = [(k, v / new_total) for k, v in pipes_and_weights if k != it]
+                        pipes_and_weights = [
+                            (k, v / new_total) for k, v in pipes_and_weights if k != it
+                        ]
                     break
 
         # only one stream left

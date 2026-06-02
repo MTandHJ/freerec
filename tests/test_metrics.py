@@ -206,7 +206,9 @@ class TestMeanAveragePrecision:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("metric_fn", [recall, normalized_dcg, mean_reciprocal_rank, mean_average_precision])
+@pytest.mark.parametrize(
+    "metric_fn", [recall, normalized_dcg, mean_reciprocal_rank, mean_average_precision]
+)
 def test_all_zero_targets(metric_fn):
     """Metrics should return 0 when targets are all zeros."""
     preds = torch.tensor([[0.5, 0.3, 0.2]])

@@ -154,7 +154,9 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
     DEFAULT_CHUNK_FILE = "p{chunk}.pkl"
     DEFAULT_CHUNK_SIZE = 256 * 512
     DEFAULT_CONFIG_FILE = "config.yaml"
-    STREAMING: bool = True  # if `False`, iter(dataset) will shuffle the saved chunks during training.
+    STREAMING: bool = (
+        True  # if `False`, iter(dataset) will shuffle the saved chunks during training.
+    )
 
     TASK: TaskTags
     URL: Optional[str] = None
@@ -213,7 +215,8 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
             cfg = import_yaml(cfg)
 
         self.cfg: Dict[str, Dict] = {
-            field_name.upper(): self.DEFAULT_FIELD_CONFIG | field_cfg for field_name, field_cfg in cfg.items()
+            field_name.upper(): self.DEFAULT_FIELD_CONFIG | field_cfg
+            for field_name, field_cfg in cfg.items()
         }
 
     def check(self):
@@ -279,7 +282,9 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
         for colname in columns:
             field_cfg = self.cfg.get(colname, self.DEFAULT_FIELD_CONFIG).copy()
             private_tags = [FieldTags(tag) for tag in field_cfg.pop("tags")]
-            field = self.DEFAULT_FIELD_BUILDER.get(colname, Field(colname, FEATURE)).fork(*tags, *private_tags)
+            field = self.DEFAULT_FIELD_BUILDER.get(colname, Field(colname, FEATURE)).fork(
+                *tags, *private_tags
+            )
             field.set_normalizer(**field_cfg)
             fields.append(field)
         return FieldTuple(fields)
@@ -377,7 +382,8 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
 
                 for k, chunk in enumerate(df.iter_slices(self.DEFAULT_CHUNK_SIZE)):
                     chunk = chunk.with_columns(
-                        field.normalize(chunk.select(pl.col(field.name))) for field in schema["fields"]
+                        field.normalize(chunk.select(pl.col(field.name)))
+                        for field in schema["fields"]
                     )
                     export_pickle(
                         chunk.to_dict(as_series=False),
@@ -544,7 +550,9 @@ class BaseSet(dp.iter.IterDataPipe, metaclass=abc.ABCMeta):
 
     def __iter__(self) -> Iterator[Dict[Field, Any]]:
         r"""Iterate over the dataset row by row for the current mode."""
-        for chunk in self.read_chunk(self.fields, streaming=self.STREAMING or (self.mode != "train")):
+        for chunk in self.read_chunk(
+            self.fields, streaming=self.STREAMING or (self.mode != "train")
+        ):
             yield from self.to_rows(chunk)
 
 
@@ -834,7 +842,9 @@ class RecDataSet(BaseSet):
 
         User = self.fields[src]
         Item = self.fields[dst]
-        edge_index, edge_weight = to_normalized(self.to_graph(src, dst).edge_index, normalization=normalization)
+        edge_index, edge_weight = to_normalized(
+            self.to_graph(src, dst).edge_index, normalization=normalization
+        )
         return to_adjacency(edge_index, edge_weight, num_nodes=User.count + Item.count)
 
     @safe_mode("valid", "test")
