@@ -2,7 +2,9 @@ import logging
 import os
 import pickle
 import random
+import sys
 import time
+import traceback
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, NoReturn, Union
 
@@ -444,6 +446,20 @@ def set_logger(path: str, log2file: bool = True, log2console: bool = True) -> No
     logger.propagate = False
     LOGGER["info"] = logger.info
     LOGGER["debug"] = logger.debug
+
+    def log_exception(exc_type, exc, tb):
+        if issubclass(exc_type, KeyboardInterrupt):
+            sys.__excepthook__(exc_type, exc, tb)
+            return
+
+        debugLogger(
+            "[FreeRec] >>> Unhandled exception:\n%s" %
+            "".join(traceback.format_exception(exc_type, exc, tb))
+        )
+        sys.__excepthook__(exc_type, exc, tb)
+
+    sys.excepthook = log_exception
+
     return logger
 
 
