@@ -55,6 +55,7 @@ RESULTS_CONFIG_EXCLUDES = frozenset(
         "CHECKPOINT_FREQ",
         "CHECKPOINT_MODULES",
         # Runtime and machine-specific fields
+        "root",
         "id",
         "device",
         "ddp_backend",
