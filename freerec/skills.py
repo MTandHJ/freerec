@@ -95,7 +95,7 @@ Each combination runs as an independent process; device assignment is round-robi
       root: ../../data
       dataset: Amazon2014Beauty_550_LOU
       device: '0,0,1,1,2,2,3,3'   #  one entry = one concurrent task
-    params:                          # Cartesian product of all values
+    params:                          # Cartesian product by default; use --zip to pair by position
       lr: [1.e-4, 5.e-4, 1.e-3]
       batch_size: [256, 512]
     defaults:
@@ -112,6 +112,7 @@ Each combination runs as an independent process; device assignment is round-robi
     --dataset NAME    Override config's dataset
     --device STR      Override config's device assignment
     --num-workers N   Override config's num_workers
+    --zip             Zip parameter lists by position instead of Cartesian product
     --resume          Resume from last checkpoint
 
 ### Output

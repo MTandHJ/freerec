@@ -18,7 +18,7 @@ class TestCONFIG:
         assert isinstance(CONFIG, Config)
 
     def test_core_config_has_required_keys(self):
-        assert CORE_CONFIG.EXCLUSIVE is False
+        assert CORE_CONFIG.ZIP is False
         assert CORE_CONFIG.COMMAND is None
         assert isinstance(CORE_CONFIG.ENVS, dict)
         assert isinstance(CORE_CONFIG.PARAMS, dict)
@@ -39,5 +39,5 @@ class TestCoreParser:
     def test_init(self):
         parser = CoreParser()
         assert isinstance(parser, Config)
-        assert parser.EXCLUSIVE is False
+        assert parser.ZIP is False
         assert parser.COMMAND is None

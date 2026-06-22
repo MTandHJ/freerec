@@ -70,7 +70,7 @@ RESULTS_CONFIG_EXCLUDES = frozenset(
         "ENVS",
         "PARAMS",
         "DEFAULTS",
-        "EXCLUSIVE",
+        "ZIP",
     }
 )
 
@@ -1190,15 +1190,22 @@ class Adapter:
                 "\033[0;31;47m[Adapter] >>> Unknown errors happen. This is mainly due to abnormal exits of child processes.\033[0m"
             )
 
-    def each_grid(self):
-        r"""Yield parameter dicts for exclusive (one-at-a-time) grid search."""
-        for key, vals in zip(self.params, self.values):
-            for val in vals:
-                yield self.cfg.DEFAULTS | {key: val}
-
     def product_grid(self):
         r"""Yield parameter dicts for full Cartesian-product grid search."""
         for vals in product(*self.values):
+            yield self.cfg.DEFAULTS | {option: val for option, val in zip(self.params, vals)}
+
+    def zip_grid(self):
+        r"""Yield parameter dicts by zipping candidate lists by position."""
+        if not self.values:
+            yield self.cfg.DEFAULTS
+            return
+        lengths = {len(vals) for vals in self.values}
+        if len(lengths) > 1:
+            raise ValueError(
+                f"All parameter lists must have the same length when using '--zip', but got {sorted(lengths)}."
+            )
+        for vals in zip(*self.values):
             yield self.cfg.DEFAULTS | {option: val for option, val in zip(self.params, vals)}
 
     def save_checkpoint(self, source: List) -> None:
@@ -1218,7 +1225,7 @@ class Adapter:
 
     def resume(self):
         r"""Resume grid search from the last checkpoint or start fresh."""
-        source = self.each_grid() if self.cfg.EXCLUSIVE else self.product_grid()
+        source = self.zip_grid() if self.cfg.ZIP else self.product_grid()
         source = list(source)[::-1]
         source = self.load_checkpoint() if self.cfg.resume else source
         return source

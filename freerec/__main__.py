@@ -208,10 +208,10 @@ def main():
     tune_parser.add_argument("description", type=str, help="...")
     tune_parser.add_argument("config", type=str, help="config.yml")
     tune_parser.add_argument(
-        "--exclusive",
+        "--zip",
         action="store_true",
         default=False,
-        help="one by one or one for all",
+        help="zip parameter lists by position instead of using Cartesian product",
     )
 
     tune_parser.add_argument("--root", type=str, default=None, help="data")

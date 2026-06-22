@@ -100,6 +100,17 @@ FreeRec 使用 YAML 文件管理训练配置。一个典型的配置文件包含
    defaults:
      config: configs/Amazon2014Beauty_550_LOU.yaml
 
+默认情况下，``params`` 会按笛卡尔积展开。若需要按位置联合参数，可以使用
+``--zip``：
+
+.. code-block:: bash
+
+   freerec tune <experiment_name> tune_config.yaml --zip
+
+例如 ``a: [1, 2, 3]`` 和 ``b: [3, 4, 5]`` 会展开为
+``(a=1, b=3)``, ``(a=2, b=4)``, ``(a=3, b=5)``。
+使用 ``--zip`` 时，各参数列表长度必须一致。
+
 .. list-table::
    :header-rows: 1
    :widths: 20 80

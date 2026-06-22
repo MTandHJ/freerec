@@ -1,5 +1,6 @@
 import json
 
+import pytest
 import torch
 
 from freerec.dict2obj import Config
@@ -137,6 +138,44 @@ class TestSerialization:
 # ---------------------------------------------------------------------------
 # Adapter results.json
 # ---------------------------------------------------------------------------
+
+
+class TestAdapterGrid:
+    def make_adapter(self):
+        adapter = Adapter()
+        adapter.cfg = Config(DEFAULTS=Config(config="configs/base.yaml"))
+        return adapter
+
+    def test_product_grid_uses_cartesian_product(self):
+        adapter = self.make_adapter()
+        adapter.deploy_params("a", [1, 2])
+        adapter.deploy_params("b", [3, 4])
+
+        assert list(adapter.product_grid()) == [
+            {"config": "configs/base.yaml", "a": 1, "b": 3},
+            {"config": "configs/base.yaml", "a": 1, "b": 4},
+            {"config": "configs/base.yaml", "a": 2, "b": 3},
+            {"config": "configs/base.yaml", "a": 2, "b": 4},
+        ]
+
+    def test_zip_grid_combines_values_by_position(self):
+        adapter = self.make_adapter()
+        adapter.deploy_params("a", [1, 2, 3])
+        adapter.deploy_params("b", [3, 4, 5])
+
+        assert list(adapter.zip_grid()) == [
+            {"config": "configs/base.yaml", "a": 1, "b": 3},
+            {"config": "configs/base.yaml", "a": 2, "b": 4},
+            {"config": "configs/base.yaml", "a": 3, "b": 5},
+        ]
+
+    def test_zip_grid_requires_same_lengths(self):
+        adapter = self.make_adapter()
+        adapter.deploy_params("a", [1, 2])
+        adapter.deploy_params("b", [3, 4, 5])
+
+        with pytest.raises(ValueError, match="same length"):
+            list(adapter.zip_grid())
 
 
 class TestAdapterResults:

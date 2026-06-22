@@ -74,8 +74,8 @@ RESULTS_FILENAME : str
     The filename of the aggregated tuning results JSON (saved under ``CORE_LOG_PATH``).
 description : str
     The description of the recommender system.
-EXCLUSIVE : bool
-    If True, run a command exclusively.
+ZIP : bool
+    If True, zip parameter lists by position instead of using Cartesian product.
 COMMAND : str
     The command to be run.
 ENVS : dict
@@ -116,7 +116,7 @@ CORE_CONFIG = Config(
     CHECKPOINT_FILENAME=CONFIG.CHECKPOINT_FILENAME,
     CONFIG_FILENAME=CONFIG.CONFIG_FILENAME,
     RESULTS_FILENAME=CONFIG.RESULTS_FILENAME,
-    EXCLUSIVE=False,
+    ZIP=False,
     COMMAND=None,
     ENVS=dict(),
     PARAMS=dict(),
@@ -507,8 +507,9 @@ class CoreParser(Config):
     ALL_ENVS : tuple
         Names of environment-level arguments that can be overridden from
         the command line.
-    EXCLUSIVE : bool
-        If ``True``, run grid search entries one by one.
+    ZIP : bool
+        If ``True``, zip parameter lists by position instead of using
+        Cartesian product.
     COMMAND : str
         The shell command template for each subprocess.
     ENVS : :class:`~Config`
@@ -516,7 +517,7 @@ class CoreParser(Config):
     PARAMS : :class:`~Config`
         Parameter grid for hyperparameter search.
     DEFAULTS : :class:`~Config`
-        Default parameter values used when ``EXCLUSIVE`` is ``True``.
+        Default parameter values shared by all tuning runs.
     """
 
     ALL_ENVS = ("description", "root", "device", "num_workers")
@@ -559,8 +560,8 @@ class CoreParser(Config):
 
         where 'command' is necessary but 'envs', 'params' and 'defaults' are optional ...
 
-        Notes: when calling '--exclusive' for grid search one by one,
-            'defaults' is required for clear comparsions in tensorbaord.
+        Notes: params use Cartesian product by default. Calling '--zip' zips
+            all parameter lists by position.
         """
         if self.COMMAND is None:
             raise ValueError(template)
@@ -578,12 +579,12 @@ class CoreParser(Config):
         Parameters
         ----------
         args : :class:`argparse.ArgumentParser`
-            The parsed command-line arguments containing ``config``,
-            ``exclusive``, ``resume``, and environment overrides.
+            The parsed command-line arguments containing ``config``, ``zip``,
+            ``resume``, and environment overrides.
         """
         config = {key.upper(): vals for key, vals in import_yaml(args.config).items()}
         self.update(**config)
-        self.EXCLUSIVE = args.exclusive
+        self.ZIP = args.zip
         self.resume = args.resume
         for key, val in args._get_kwargs():
             if key in self.ALL_ENVS and val is not None:
