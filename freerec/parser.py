@@ -98,7 +98,7 @@ CONFIG = Config(
     # path|file
     SAVED_FILENAME="model.pt",
     BEST_FILENAME="best.pt",
-    CHECKPOINT_FREQ=1,
+    CHECKPOINT_FREQ=10,
     CHECKPOINT_MODULES=["model", "optimizer", "lr_scheduler"],
     CHECKPOINT_FILENAME="checkpoint.tar",
     SUMMARY_FILENAME="SUMMARY.md",
