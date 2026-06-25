@@ -554,17 +554,18 @@ class Coach(ChiefCoach):
         r"""Whether to remove seen items during full-ranking evaluation."""
         return not (self.cfg.retain_seen or self.dataset.has_duplicates())
 
-    def save(self, filename: Optional[str] = None) -> None:
-        r"""Save the model state dict to ``LOG_PATH``.
+    def save(self, state_dict: Dict, filename: str) -> None:
+        r"""Save a state dict to ``LOG_PATH``.
 
         Parameters
         ----------
-        filename : str, optional
-            Target filename. If ``None``, uses ``cfg.SAVED_FILENAME``.
+        state_dict : dict
+            State dict to save.
+        filename : str
+            Target filename under ``cfg.LOG_PATH``.
         """
         if is_main_process():
-            filename = self.cfg.SAVED_FILENAME if filename is None else filename
-            torch.save(self.model.state_dict(), os.path.join(self.cfg.LOG_PATH, filename))
+            torch.save(state_dict, os.path.join(self.cfg.LOG_PATH, filename))
 
         synchronize()
         return
@@ -641,9 +642,13 @@ class Coach(ChiefCoach):
             infoLogger(f"[Coach] >>> Load last checkpoint and train from epoch: {start_epoch}")
         return start_epoch
 
+    def save_last(self) -> None:
+        r"""Save the final model before loading the best checkpoint."""
+        self.save(self.model.state_dict(), self.cfg.SAVED_FILENAME)
+
     def save_best(self) -> None:
-        r"""Save the current model as the best model."""
-        self.save(self.cfg.BEST_FILENAME)
+        r"""Save the current model as the best checkpoint."""
+        self.save(self.model.state_dict(), self.cfg.BEST_FILENAME)
 
     def load_best(self) -> None:
         r"""Load the best saved model."""
@@ -962,14 +967,13 @@ class Coach(ChiefCoach):
                         self.test(epoch)
                 self.train(epoch + 1)
 
-            self.save()
-
             # last epoch
             self.valid(self.cfg.epochs)
             self.test(self.cfg.epochs)
         except EarlyStopError:
             infoLogger(f"[Coach] >>> Early Stop @Epoch: {epoch}")
-            self.save()
+        finally:
+            self.save_last()
         self._stopping_steps = -1
         best = self.summary()
         self.eval_at_best()
