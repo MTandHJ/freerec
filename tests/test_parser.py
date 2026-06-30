@@ -8,7 +8,7 @@ class TestCONFIG:
     def test_config_has_required_keys(self):
         assert CONFIG.SAVED_FILENAME == "model.pt"
         assert CONFIG.BEST_FILENAME == "best.pt"
-        assert CONFIG.CHECKPOINT_FREQ == 1
+        assert CONFIG.CHECKPOINT_FREQ == 10
         assert "model" in CONFIG.CHECKPOINT_MODULES
         assert CONFIG.SUMMARY_FILENAME == "SUMMARY.md"
         assert CONFIG.CONFIG_FILENAME == "config.json"

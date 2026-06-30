@@ -86,13 +86,12 @@ def main_process_only(func):
         A wrapper that calls *func* only when :func:`is_main_process` is ``True``.
     """
 
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         r"""Execute the function only on the main process."""
         if is_main_process():
             return func(*args, **kwargs)
 
-    wrapper.__name__ = func.__name__
-    wrapper.__func__ = func.__doc__
     return wrapper
 
 

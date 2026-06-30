@@ -1,3 +1,4 @@
+import functools
 import logging
 import os
 import pickle
@@ -552,6 +553,7 @@ def timemeter(func):
         The wrapped function that logs elapsed time after each call.
     """
 
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         r"""Wrap the function with timing."""
         start = time.time()
@@ -563,8 +565,6 @@ def timemeter(func):
         )
         return results
 
-    wrapper.__doc__ = func.__doc__
-    wrapper.__name__ = func.__name__
     return wrapper
 
 

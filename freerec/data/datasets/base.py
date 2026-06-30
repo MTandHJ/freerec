@@ -3,7 +3,7 @@ import glob
 import os
 import random
 from copy import copy
-from functools import lru_cache
+from functools import lru_cache, wraps
 from typing import (
     Any,
     Callable,
@@ -83,6 +83,7 @@ def safe_mode(*modes):
     def decorator(func):
         r"""Wrap *func* with a mode check."""
 
+        @wraps(func)
         def wrapper(self, *args, **kwargs):
             r"""Call the wrapped function after an optional mode warning."""
             if self.mode not in modes:
@@ -91,8 +92,6 @@ def safe_mode(*modes):
                 warnLogger(f"{fname} runs in {mode} mode. Make sure that this is intentional ...")
             return func(self, *args, **kwargs)
 
-        wrapper.__name__ == func.__name__
-        wrapper.__doc__ = func.__doc__
         return wrapper
 
     return decorator

@@ -6,7 +6,7 @@ classification metrics (LogLoss, AUC, GAUC).
 """
 
 from collections import defaultdict
-from functools import partial
+from functools import partial, wraps
 from typing import Iterable, List, Literal, Optional, Union
 
 import numpy as np
@@ -57,6 +57,7 @@ def _reduce(reduction: Literal["mean", "sum", "none"] = "mean"):
     """
 
     def decorator(func):
+        @wraps(func)
         def wrapper(
             preds: Union[List[torch.Tensor], torch.Tensor],
             targets: Union[List[torch.Tensor], torch.Tensor],
@@ -80,8 +81,6 @@ def _reduce(reduction: Literal["mean", "sum", "none"] = "mean"):
                     f"reduction should be 'none'|'mean'|'sum' but {reduction} is received ..."
                 )
 
-        wrapper.__name__ = func.__name__
-        wrapper.__doc__ = func.__doc__
         return wrapper
 
     return decorator
