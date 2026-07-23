@@ -99,6 +99,10 @@
     "RetailrocketAddtocart": "https://zenodo.org/records/10998222/files/RetailrocketAddtocart.zip",
     "RetailrocketTransaction": "https://zenodo.org/records/10998222/files/RetailrocketTransaction.zip",
     "RetailrocketView": "https://zenodo.org/records/10998222/files/RetailrocketView.zip",
-    "YahooMusicR1": "https://zenodo.org/records/10998284/files/YahooMusicR1.zip"
+    "YahooMusicR1": "https://zenodo.org/records/10998284/files/YahooMusicR1.zip",
+    "Anime": "https://zenodo.org/records/21504345/files/Anime.zip",
+    "BookCrossing": "https://zenodo.org/records/21504345/files/BookCrossing.zip",
+    "LastFM": "https://zenodo.org/records/21504345/files/LastFM.zip",
+    "Twitch100K": "https://zenodo.org/records/21504345/files/Twitch100k.zip"
   }
 }
