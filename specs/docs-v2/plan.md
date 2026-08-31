@@ -52,8 +52,8 @@ docs/
 
 **conf.py 变更：**
 ```python
-language = 'zh_CN'
-locale_dirs = ['locales/']
+language = "zh_CN"
+locale_dirs = ["locales/"]
 gettext_compact = False
 ```
 

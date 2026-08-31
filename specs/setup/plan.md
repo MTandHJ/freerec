@@ -23,10 +23,11 @@ FreeRec 当前使用 `setup.py` 管理安装，依赖声明不全（14 个第三
 
 ```python
 # 旧
-__version__ = '0.9.7'
+__version__ = "0.9.7"
 
 # 新
 from importlib.metadata import version
+
 __version__ = version("freerec")
 ```
 
@@ -44,6 +45,7 @@ def setup(args):
     # 1. 检测 torch
     try:
         import torch
+
         print(f"torch {torch.__version__} detected, skipping torch installation.")
     except ImportError:
         print("Error: torch is not installed.")
@@ -53,6 +55,7 @@ def setup(args):
     # 2. 检测 torchdata
     try:
         import torchdata
+
         if torchdata.__version__ == "0.7.0":
             print("torchdata 0.7.0 already installed, skipping.")
             return
@@ -62,10 +65,7 @@ def setup(args):
         print("Installing torchdata==0.7.0 (--no-deps)...")
 
     # 3. 安装
-    subprocess.check_call([
-        sys.executable, "-m", "pip", "install",
-        "torchdata==0.7.0", "--no-deps"
-    ])
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "torchdata==0.7.0", "--no-deps"])
 
     # 4. 验证
     ...
@@ -74,8 +74,9 @@ def setup(args):
 subparser 注册（在 `main()` 的 `make_parser` 之后）：
 
 ```python
-setup_parser = subparsers.add_parser("setup",
-    help="Install torchdata==0.7.0 without overriding existing torch")
+setup_parser = subparsers.add_parser(
+    "setup", help="Install torchdata==0.7.0 without overriding existing torch"
+)
 setup_parser.set_defaults(func=setup)
 ```
 

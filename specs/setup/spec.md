@@ -111,6 +111,7 @@ include = [
 - **代码读取**：`__init__.py` 中改为：
   ```python
   from importlib.metadata import version
+
   __version__ = version("freerec")
   ```
 - 删除原 `__version__ = '0.9.7'` 硬编码
