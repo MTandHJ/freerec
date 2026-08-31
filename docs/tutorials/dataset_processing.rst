@@ -85,6 +85,9 @@ FreeRec 采用与 `RecBole <https://github.com/RUCAIBox/RecSysDatasets>`_ 兼容
    * - ``--kcore4item``
      - 10
      - 物品至少有 k 条交互
+   * - ``-mif, --match-item-file``
+     - 关闭
+     - 删除 ``.inter`` 中 ``ITEM`` 不在 ``.item`` 文件里的交互
 
 **列名设置** （仅在列名不是默认值时需要指定）：
 
@@ -92,6 +95,17 @@ FreeRec 采用与 `RecBole <https://github.com/RUCAIBox/RecSysDatasets>`_ 兼容
 - ``--itemColname`` — 物品 ID 列名（默认 ``ITEM``）
 - ``--ratingColname`` — 评分列名（默认 ``RATING``，无评分可省略）
 - ``--timestampColname`` — 时间戳列名（默认 ``TIMESTAMP``）
+
+按 ``.item`` 文件过滤交互
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+当 ``.inter`` 中包含未出现在 ``.item`` 文件中的物品时，可以使用
+``-mif`` 或 ``--match-item-file`` 删除这些交互。该过滤发生在评分过滤和
+k-core 过滤之前，因此后续统计只基于清理后的交互。
+
+.. code-block:: bash
+
+   freerec make MovieLens1M --root ./data --match-item-file --splitting LOU
 
 拆分方法
 --------

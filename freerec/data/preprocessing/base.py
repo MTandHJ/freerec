@@ -329,6 +329,26 @@ class AtomicConverter:
             if df is not None:
                 df[col] = df[col].map(mapper)
 
+    def filter_inter_by_item_file(self):
+        r"""Drop interactions whose item does not appear in the item file."""
+        if self.itemFeats is None:
+            infoLogger(
+                "[Converter] >>> Skip `filter_inter_by_item_file` because no `.item` file is loaded ..."
+            )
+            return
+
+        allowed_items = self.itemFeats[ITEM.name].unique()
+        items = self.interactions[ITEM.name]
+        missing_indices = ~items.isin(allowed_items)
+        removed_interactions = int(missing_indices.sum())
+        removed_items = int(items[missing_indices].nunique())
+
+        self.interactions = self.interactions[~missing_indices]
+        infoLogger(
+            f"[Converter] >>> Drop {removed_interactions} interactions "
+            f"with {removed_items} items missing from `.item` ..."
+        )
+
     def filter_by_rating(
         self, low: Union[None, int, float] = None, high: Union[None, int, float] = None
     ):
@@ -744,6 +764,7 @@ class AtomicConverter:
         ratios: Tuple[int, int, int] = (8, 1, 1),
         days: int = 1,
         strict: bool = True,
+        match_item_file: bool = False,
     ):
         r"""Run the full pipeline: load, filter, tokenize, split, and save.
 
@@ -773,6 +794,9 @@ class AtomicConverter:
         strict : bool, optional
             If ``True``, iteratively apply k-core filtering until
             convergence. If ``False``, apply only once.
+        match_item_file : bool, optional
+            If ``True``, drop interactions whose item is absent from the
+            loaded ``.item`` file before rating and k-core filtering.
 
         Raises
         ------
@@ -783,6 +807,8 @@ class AtomicConverter:
             f"'ratios' should in length of 3 but a length of {len(ratios)} is received ..."
         )
         self.load()
+        if match_item_file:
+            self.filter_inter_by_item_file()
         self.filter_by_rating(low=star4pos, high=None)
         self.filter_by_core(low4user=kcore4user, low4item=kcore4item, strict=strict)
         self.user2token()

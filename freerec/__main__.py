@@ -113,6 +113,7 @@ def make(args):
         splitting=args.splitting,
         ratios=tuple(map(int, args.ratios.split(","))),
         days=args.days,
+        match_item_file=args.match_item_file,
     )
 
 
@@ -241,6 +242,14 @@ def main():
         type=str,
         default=None,
         help="filedir saving data. Using `dataset` instead if None (default)",
+    )
+    make_parser.add_argument(
+        "-mif",
+        "--match-item-file",
+        action="store_true",
+        dest="match_item_file",
+        default=False,
+        help="drop interactions whose ITEM does not appear in the .item file",
     )
 
     make_parser.add_argument(

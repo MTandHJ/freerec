@@ -35,6 +35,8 @@ with k-core filtering, tokenization, and train/valid/test splitting.
     --days          7      Days for time-based splitting (DOU/DOD)
     --root          .      Data root directory
     --filedir       None   Subdirectory storing raw files (defaults to dataset name)
+    --match-item-file
+                    False  Drop interactions whose ITEM is absent from .item
 
 ### Splitting Strategies
     ROU  Ratio On User — splits each user's history by ratio.
@@ -52,8 +54,8 @@ with k-core filtering, tokenization, and train/valid/test splitting.
     └── chunks/{train,valid,test}/      # Pickled data for streaming
 
 ### Pipeline
-    Load → Rating filter (≥star4pos) → k-core filter → Tokenize →
-    Sort (by timestamp) → Split → Save
+    Load → Optional item-file match → Rating filter (≥star4pos) →
+    k-core filter → Tokenize → Sort (by timestamp) → Split → Save
 
 ### Dataset Classes (freerec/data/datasets/)
     RecDataSet              Base class (IterDataPipe)
